@@ -1160,6 +1160,8 @@ EXEC_CC = $(CC) ${1} -o ${2} -c ${3}
 #LOG_CC = $(file >>$(B)/compile_commands.txt,{ "target": "${1}", "directory": "$(shell pwd)/$(shell dirname $3)", "command": "${CC} ${2} -o ${3} -c ${4}", "file": "$(shell pwd)/${4}", "relative_file": "${4}" })
 
 EXEC_CXX = $(CXX) -std=c++1y ${CXXFLAGS} ${1} -o ${2} -c ${3}
+
+EXEC_CXX = $(CXX) -std=c++1y ${CXXFLAGS} ${1} -o ${2} -c ${3}
 #LOG_CXX = $(file >>$(B)/compile_commands.txt,{ "target": "${1}", "directory": "$(shell pwd)/$(shell dirname $3)", "command": "${CXX} ${2} -o ${3} -c ${4}", "file": "$(shell pwd)/${4}", "relative_file": "${4}"})
 
 # TREMULOUS CLIENT
@@ -1185,6 +1187,11 @@ $(echo_cmd) "RENDERER_COMMON_CC $<"
 $(Q)$(call EXEC_CC,${REF_CC_FLAGS},'$@','$<')
 $(Q)$(call LOG_CC,renderer_common,${REF_CC_FLAGS},$@,$<)
 endef
+define DO_RENDERER_COMMON_CXX
+$(echo_cmd) "RENDERER_COMMON_CXX $<"
+$(Q)$(call EXEC_CXX,${REF_CC_FLAGS},'$@','$<')
+$(Q)$(call LOG_CXX,renderer_common,${REF_CC_FLAGS},$@,$<)
+endef
 ##########################################
 # Renderers
 ##########################################
@@ -1208,6 +1215,11 @@ define DO_RENDERERGL2_CC
 $(echo_cmd) "GL2_RENDERER_CC $<"
 $(Q)$(call EXEC_CC,${REF_CC_FLAGS},'$@','$<')
 $(Q)$(call LOG_CC,opengl2,${REF_CC_FLAGS},$@,$<)
+endef
+define DO_RENDERERGL2_CXX
+$(echo_cmd) "RENDERERGL2_CXX $<"
+$(Q)$(call EXEC_CXX,${REF_CC_FLAGS},'$@','$<')
+$(Q)$(call LOG_CXX,opengl2,${REF_CC_FLAGS},$@,$<)
 endef
 
 define DO_REF_STR
@@ -2364,15 +2376,14 @@ endif
 #-bbq
 ifeq ($(USE_RESTCLIENT),1)
   Q3OBJ += \
-  	$(B)/client/restclient/connection.o \
-  	$(B)/client/restclient/helpers.o \
-  	$(B)/client/restclient/restclient.o
+  $(B)/client/restclient/connection.o \
+  $(B)/client/restclient/helpers.o \
+  $(B)/client/restclient/restclient.o
 endif
 
 ifeq ($(HAVE_VM_COMPILED),true)
   ifneq ($(findstring $(ARCH),x86 x86_64),)
-    Q3OBJ += \
-      $(B)/client/vm_x86.o
+    Q3OBJ += $(B)/client/vm_x86.o
   endif
   ifneq ($(findstring $(ARCH),ppc ppc64),)
     Q3OBJ += $(B)/client/vm_powerpc.o $(B)/client/vm_powerpc_asm.o
@@ -2821,14 +2832,17 @@ $(B)/client/%.o: $(ZDIR)/%.c
 $(B)/client/%.o: $(SDLDIR)/%.c
 	$(DO_CC)
 
+$(B)/client/%.o: $(SDLDIR)/%.cpp
+	$(DO_CXX)
+
 $(B)/client/%.o: $(SYSDIR)/%.c
 	$(DO_CC)
 
 $(B)/client/%.o: $(SYSDIR)/%.cpp
 	$(DO_CXX)
 
-$(B)/client/%.o: $(SYSDIR)/%.m
-	$(DO_CC)
+$(B)/client/%.o: $(SYSDIR)/%.mm
+	$(DO_CXX)
 
 #-wtf
 $(B)/client/restclient/%.o: $(RESTDIR)/%.cpp
@@ -2841,6 +2855,8 @@ $(B)/client/%.o: $(SYSDIR)/%.rc
 
 $(B)/renderercommon/%.o: $(SDLDIR)/%.c
 	$(DO_RENDERER_COMMON_CC)
+$(B)/renderercommon/%.o: $(SDLDIR)/%.cpp
+	$(DO_RENDERER_COMMON_CXX)
 $(B)/renderercommon/%.o: $(JPDIR)/%.c
 	$(DO_RENDERER_COMMON_CC)
 
@@ -2863,7 +2879,12 @@ $(B)/renderergl2/%.o: $(RCOMMONDIR)/%.c
 	$(DO_RENDERER_COMMON_CC)
 $(B)/renderergl2/%.o: $(RGL2DIR)/%.c
 	$(DO_RENDERERGL2_CC)
+$(B)/renderergl2/%.o: $(RCOMMONDIR)/%.cpp
+	$(DO_RENDERER_COMMON_CXX)
+$(B)/renderergl2/%.o: $(RGL2DIR)/%.cpp
+	$(DO_RENDERERGL2_CXX)
 
+$
 $(B)/ded/%.o: $(ASMDIR)/%.s
 	$(DO_DED_AS)
 
@@ -2892,14 +2913,17 @@ $(B)/ded/%.o: $(SYSDIR)/%.c
 $(B)/ded/%.o: $(SYSDIR)/%.cpp
 	$(DO_DED_CXX)
 
-$(B)/ded/%.o: $(SYSDIR)/%.m
-	$(DO_DED_CC)
+$(B)/ded/%.o: $(SYSDIR)/%.mm
+	$(DO_DED_CXX)
 
 $(B)/ded/%.o: $(SYSDIR)/%.rc
 	$(DO_WINDRES)
 
 $(B)/ded/%.o: $(NDIR)/%.c
 	$(DO_DED_CC)
+
+$(B)/ded/%.o: $(NDIR)/%.cpp
+	$(DO_DED_CXX)
 
 # Extra dependencies to ensure the git version is incorporated
 ifeq ($(USE_GIT),1)

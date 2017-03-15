@@ -168,11 +168,11 @@ typedef int intptr_t;
 
 typedef unsigned char 		byte;
 
-#ifdef __cplusplus
-enum qboolean : int {qfalse, qtrue};
-#else
+//#ifdef __cplusplus
+//enum qboolean : int {qfalse, qtrue};
+//#else
 typedef enum {qfalse, qtrue}	qboolean;
-#endif
+//#endif
 
 typedef union {
 	float f;
@@ -277,7 +277,6 @@ typedef enum {
 	ERR_DROP,					// print to console and disconnect from game
 	ERR_SERVERDISCONNECT,		// don't kill server
 	ERR_DISCONNECT,				// client disconnected from the server
-	ERR_NEED_CD					// pop up the need-cd dialog
 } errorParm_t;
 
 
@@ -821,7 +820,7 @@ int Com_HexStrToInt( const char *str );
 int QDECL Com_sprintf (char *dest, int size, const char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
 
 char *Com_SkipTokens( char *s, int numTokens, const char *sep );
-char *Com_SkipCharset( char *s, char *sep );
+char *Com_SkipCharset( char *s, const char *sep );
 
 void Com_RandomBytes( byte *string, int len );
 
@@ -984,7 +983,8 @@ typedef enum {
 // a trace is returned when a box is swept through the world
 typedef struct {
 	qboolean	allsolid;	// if true, plane is not valid
-	qboolean	startsolid;	// if true, the initial point was in a solid area
+// FIXME: startsolid is supposed to be bool
+	int /*qboolean*/	startsolid;	// if true, the initial point was in a solid area
 	float		fraction;	// time completed, 1.0 = didn't hit anything
 	vec3_t		endpos;		// final position
 	cplane_t	plane;		// surface normal at impact, transformed to world space

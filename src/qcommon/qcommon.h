@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 extern "C" {
 #endif
 
-#include "../qcommon/cm_public.h"
+#include "cm_public.h"
 
 //Ignore __attribute__ on non-gcc platforms
 #ifndef __GNUC__
@@ -108,8 +108,8 @@ void MSG_ReadDeltaEntity( int alternateProtocol, msg_t *msg, entityState_t *from
 
 void MSG_WriteDeltaPlayerstate( int alternateProtocol, msg_t *msg, struct playerState_s *from, struct playerState_s *to );
 void MSG_ReadDeltaPlayerstate( msg_t *msg, struct playerState_s *from, struct playerState_s *to );
-struct alternatePlayerState_s;
-void MSG_ReadDeltaAlternatePlayerstate( msg_t *msg, struct alternatePlayerState_s *from, struct alternatePlayerState_s *to );
+struct alternatePlayerState_t;
+void MSG_ReadDeltaAlternatePlayerstate( msg_t *msg, struct alternatePlayerState_t *from, struct alternatePlayerState_t *to );
 
 
 void MSG_ReportChangeVectors_f( void );
@@ -631,23 +631,14 @@ void	CL_ForwardCommandToServer( const char *string );
 // things like godmode, noclip, etc, are commands directed to the server,
 // so when they are typed in at the console, they will need to be forwarded.
 
-void CL_CDDialog( void );
-// bring up the "need a cd to play" dialog
-
 void CL_FlushMemory( void );
 // dump all memory on an error
 
 void CL_ShutdownAll(qboolean shutdownRef);
 // shutdown client
 
-void CL_InitRef(void);
-// initialize renderer interface
-
 void CL_StartHunkUsers( qboolean rendererOnly );
 // start all the client stuff using the hunk
-
-void CL_Snd_Shutdown(void);
-// Restart sound subsystem
 
 void Key_KeynameCompletion( void(*callback)(const char *s) );
 // for keyname autocompletion

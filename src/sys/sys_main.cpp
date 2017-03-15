@@ -35,9 +35,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 #include "../script/cvar.h"
+#include "../script/cmd.h"
 #ifndef DEDICATED
 #include "../script/http_client.h"
 #include "../script/client.h"
+#include "../script/bind.h"
 #endif
 #include "../script/rapidjson.h"
 #include "../script/nettle.h"
@@ -622,6 +624,34 @@ void Sys_SigHandler( int signal )
 # endif
 #endif
 
+#ifdef __APPLE__
+/*
+=================
+Sys_StripAppBundle
+
+Discovers if passed dir is suffixed with the directory structure of a Mac OS X
+.app bundle. If it is, the .app directory structure is stripped off the end and
+the result is returned. If not, dir is returned untouched.
+=================
+*/
+const char *Sys_StripAppBundle( const char *dir )
+{
+	static char cwd[MAX_OSPATH];
+
+	Q_strncpyz(cwd, dir, sizeof(cwd));
+	if(strcmp(Sys_Basename(cwd), "MacOS"))
+		return dir;
+	Q_strncpyz(cwd, Sys_Dirname(cwd), sizeof(cwd));
+	if(strcmp(Sys_Basename(cwd), "Contents"))
+		return dir;
+	Q_strncpyz(cwd, Sys_Dirname(cwd), sizeof(cwd));
+	if(!strstr(Sys_Basename(cwd), ".app"))
+		return dir;
+	Q_strncpyz(cwd, Sys_Dirname(cwd), sizeof(cwd));
+	return cwd;
+}
+#endif
+
 #ifndef DEDICATED
 
 void SDLVersionCheck()
@@ -712,11 +742,13 @@ int main( int argc, char **argv )
     );
 
     script::cvar::init(std::move(lua));
+    script::cmd::init(std::move(lua));
     script::rapidjson::init(std::move(lua));
     script::nettle::init(std::move(lua));
 
 #ifndef DEDICATED
     script::client::init(std::move(lua));
+    script::keybind::init(std::move(lua));
     script::http_client::init(std::move(lua));
 #endif
 
