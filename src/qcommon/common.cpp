@@ -1261,8 +1261,8 @@ Goals:
 #define HUNK_FREE_MAGIC 0x89537893
 
 typedef struct {
-    int magic;
-    int size;
+    unsigned int magic;
+    unsigned int size;
 } hunkHeader_t;
 
 typedef struct {
