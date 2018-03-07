@@ -31,6 +31,9 @@ cvar_t *sv_voip;
 cvar_t *sv_voipProtocol;
 #endif
 
+#define PERS_SCORE 0  // !!! MUST NOT CHANGE, SERVER AND GAME BOTH REFERENCE !!!
+
+
 serverStatic_t	svs;				// persistant server info
 server_t sv {};					    // local server
 
@@ -788,7 +791,7 @@ static void SV_ConnectionlessPacket( netadr_t from, msg_t *msg )
     }
 
     char *s = MSG_ReadBigString( msg );
-    Cmd_TokenizeString( s );
+    Cmd_TokenizeString2( s, false );
 
     const std::string c { Cmd_Argv(0) };
 
