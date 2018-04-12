@@ -1102,6 +1102,10 @@ void R_Init( void ) {
 	Com_Memset( &backEnd, 0, sizeof( backEnd ) );
 	Com_Memset( &tess, 0, sizeof( tess ) );
 
+#ifdef NEW_FILESYSTEM
+	tr.new_filesystem = ri.Cvar_VariableIntegerValue("new_filesystem") ? true : false;
+#endif
+
 //	Swap_Init();
 
 	if ( (intptr_t)tess.xyz & 15 ) {

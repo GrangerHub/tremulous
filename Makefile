@@ -262,6 +262,8 @@ RCOMMONDIR=$(MOUNT_DIR)/renderercommon
 RGL1DIR=$(MOUNT_DIR)/renderergl1
 RGL2DIR=$(MOUNT_DIR)/renderergl2
 CMDIR=$(MOUNT_DIR)/qcommon
+FSDIR=$(MOUNT_DIR)/filesystem
+FSDIR_FSCORE=$(MOUNT_DIR)/filesystem/fscore
 SDLDIR=$(MOUNT_DIR)/sdl
 ASMDIR=$(MOUNT_DIR)/asm
 SYSDIR=$(MOUNT_DIR)/sys
@@ -826,6 +828,10 @@ endif
 ifneq ($(BUILD_DATA_PK3),0)
   TARGETS += \
     $(B)/$(BASEGAME)/data-$(VERSION).pk3
+endif
+
+ifeq ($(NEW_FILESYSTEM),1)
+  BASE_CFLAGS += -DNEW_FILESYSTEM
 endif
 
 ifeq ($(USE_OPENAL),1)
@@ -1833,7 +1839,28 @@ Q3OBJ = \
   $(B)/client/sdl_snd.o \
   \
   $(B)/client/con_log.o \
-  $(B)/client/sys_main.o
+  $(B)/client/sys_main.o \
+  \
+  $(B)/client/fsc_cache.o \
+  $(B)/client/fsc_crosshair.o \
+  $(B)/client/fsc_gameparse.o \
+  $(B)/client/fsc_iteration.o \
+  $(B)/client/fsc_main.o \
+  $(B)/client/fsc_md4.o \
+  $(B)/client/fsc_misc.o \
+  $(B)/client/fsc_os.o \
+  $(B)/client/fsc_pk3.o \
+  $(B)/client/fsc_sha256.o \
+  $(B)/client/fsc_shader.o \
+  $(B)/client/fs_commands.o \
+  $(B)/client/fs_download.o \
+  $(B)/client/fs_fileio.o \
+  $(B)/client/fs_filelist.o \
+  $(B)/client/fs_lookup.o \
+  $(B)/client/fs_main.o \
+  $(B)/client/fs_misc.o \
+  $(B)/client/fs_reference.o \
+  $(B)/client/fs_trusted_vms.o
 
 ifdef MINGW
   Q3OBJ += \
@@ -2351,7 +2378,28 @@ Q3DOBJ = \
   $(B)/ded/null_snddma.o \
   \
   $(B)/ded/con_log.o \
-  $(B)/ded/sys_main.o
+  $(B)/ded/sys_main.o \
+  \
+  $(B)/ded/fsc_cache.o \
+  $(B)/ded/fsc_crosshair.o \
+  $(B)/ded/fsc_gameparse.o \
+  $(B)/ded/fsc_iteration.o \
+  $(B)/ded/fsc_main.o \
+  $(B)/ded/fsc_md4.o \
+  $(B)/ded/fsc_misc.o \
+  $(B)/ded/fsc_os.o \
+  $(B)/ded/fsc_pk3.o \
+  $(B)/ded/fsc_sha256.o \
+  $(B)/ded/fsc_shader.o \
+  $(B)/ded/fs_commands.o \
+  $(B)/ded/fs_download.o \
+  $(B)/ded/fs_fileio.o \
+  $(B)/ded/fs_filelist.o \
+  $(B)/ded/fs_lookup.o \
+  $(B)/ded/fs_main.o \
+  $(B)/ded/fs_misc.o \
+  $(B)/ded/fs_reference.o \
+  $(B)/ded/fs_trusted_vms.o
 
 ifeq ($(ARCH),x86)
   Q3DOBJ += \
@@ -2646,6 +2694,11 @@ $(B)/client/%.o: $(SDIR)/%.c
 $(B)/client/%.o: $(CMDIR)/%.c
 	$(DO_CC)
 
+$(B)/client/%.o: $(FSDIR)/%.cpp
+	$(DO_CXX)
+$(B)/client/%.o: $(FSDIR_FSCORE)/%.cpp
+	$(DO_CXX)
+
 $(B)/client/%.o: $(CDIR)/%.cpp
 	$(DO_CXX)
 
@@ -2753,6 +2806,11 @@ $(B)/ded/%.o: $(SDIR)/%.cpp
 
 $(B)/ded/%.o: $(CMDIR)/%.c
 	$(DO_DED_CC)
+
+$(B)/ded/%.o: $(FSDIR)/%.cpp
+	$(DO_DED_CXX)
+$(B)/ded/%.o: $(FSDIR_FSCORE)/%.cpp
+	$(DO_DED_CXX)
 
 $(B)/ded/%.o: $(CMDIR)/%.cpp
 	$(DO_DED_CXX)

@@ -2295,6 +2295,42 @@ Loads any of the supported image types into a cannonical
 32 bit format.
 =================
 */
+#ifdef NEW_FILESYSTEM
+void R_LoadImageNewFS( const char *name, byte **pic, int *width, int *height, GLenum *picFormat, int *numMips ) {
+	char localName[MAX_QPATH];
+	const fsc_file_t *file;
+	const char *extension;
+	int i;
+
+	// Default outputs
+	*pic = NULL;
+	*width = 0;
+	*height = 0;
+	*picFormat = GL_RGBA8;
+	*numMips = 0;
+
+	// Look up the file
+	COM_StripExtension(name, localName, MAX_QPATH);
+	file = ri.fs_image_lookup(localName, r_ext_compressed_textures->integer ? LOOKUPFLAG_ENABLE_DDS : 0, false);
+	if(!file) return;
+
+	// Get extension
+	extension = ri.fs_file_extension(file);
+	if(!extension) extension = "";
+
+	if(!Q_stricmp(extension, "dds")) {
+		R_LoadDDS(va("%s.%s", localName, extension), pic, width, height, picFormat, numMips);
+		return; }
+
+	for(i=0; i<numImageLoaders; ++i) {
+		if(!Q_stricmp(extension, imageLoaders[i].ext)) {
+			// NOTE: It would be better to change the image loaders to take the actual fsc_file_t instead of
+			//    a string. However this seems to work for now and should *probably* have the same results.
+			imageLoaders[i].ImageLoader(va("%s.%s", localName, extension), pic, width, height);
+			return; } }
+
+	ri.Printf(PRINT_DEVELOPER, "WARNING: R_LoadImage got file with unknown extension from fs_image_lookup"); }
+#endif
 void R_LoadImage( const char *name, byte **pic, int *width, int *height, GLenum *picFormat, int *numMips )
 {
 	bool orgNameFailed = false;
@@ -2303,6 +2339,12 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, GLenum 
 	char localName[ MAX_QPATH ];
 	const char *ext;
 	const char *altName;
+
+#ifdef NEW_FILESYSTEM
+	if(tr.new_filesystem) {
+		R_LoadImageNewFS(name, pic, width, height, picFormat, numMips);
+		return; }
+#endif
 
 	*pic = NULL;
 	*width = 0;

@@ -376,7 +376,7 @@ static int FS_GetModList(char *listbuf, int bufsize) {
 
 	for(i=0; i<list.count; ++i) {
 		char *mod_name = list.mod_dirs[i];
-		if(!Q_stricmp(mod_name, com_basegame->string)) continue;
+		if(!Q_stricmp(mod_name, fs_basegame->string)) continue;
 		if(!Q_stricmp(mod_name, "basemod")) continue;
 
 		FS_GetModDescription(mod_name, description, sizeof(description));
@@ -423,14 +423,49 @@ int	FS_GetFileList(  const char *path, const char *extension, char *listbuf, int
 		// Check for new demos before displaying the UI demo menu
 		fs_auto_refresh(); }
 
+	/*
 	if(!Q_stricmp(path, "models/players") && extension && !Q_stricmp(extension, "/")
 			&& Q_stricmp(current_mod_dir, BASETA)) {
 		// Special case to block missionpack pak0.pk3 models from the standard non-TA model list
 		// which doesn't handle their skin setting correctly
 		flags |= FL_FLAG_IGNORE_TAPAK0; }
+	*/
 
 	{
 		filelist_query_t query = {extension, 0, flags};
+		pFiles = list_files(path, &nFiles, &query);
+	}
+
+	for (i =0; i < nFiles; i++) {
+		nLen = strlen(pFiles[i]) + 1;
+		if (nTotal + nLen + 1 < bufsize) {
+			strcpy(listbuf, pFiles[i]);
+			listbuf += nLen;
+			nTotal += nLen;
+		}
+		else {
+			nFiles = i;
+			break;
+		}
+	}
+
+	FS_FreeFileList(pFiles);
+
+	return nFiles;
+}
+
+int	FS_GetFilteredFiles( const char *path, const char *extension, const char *filter, char *listbuf, int bufsize ) {
+	int i;
+	int flags = FL_FLAG_USE_PURE_LIST;
+	int nFiles = 0;
+	int nTotal = 0;
+	int nLen;
+	char **pFiles = NULL;
+
+	*listbuf = 0;
+
+	{
+		filelist_query_t query = {extension, filter, flags};
 		pFiles = list_files(path, &nFiles, &query);
 	}
 

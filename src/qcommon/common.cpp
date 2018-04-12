@@ -381,7 +381,11 @@ void Engine_Exit(const char* p )
         CL_Shutdown(p[0] ? p : "Client quit", true, true);
         VM_Forced_Unload_Done();
         Com_Shutdown();
+#ifdef NEW_FILESYSTEM
+		fs_close_all_handles();
+#else
         FS_Shutdown(true);
+#endif
     }
     Sys_Quit ();
 }
@@ -1575,12 +1579,14 @@ void Com_InitHunkMemory( void )
     int nMinAlloc;
     const char *pMsg = NULL;
 
+#ifndef NEW_FILESYSTEM
     // make sure the file system has allocated and "not" freed any temp blocks
     // this allows the config and product id files ( journal files too ) to be loaded
     // by the file system without redunant routines in the file system utilizing different
     // memory systems
     if (FS_LoadStack() != 0)
         Com_Error( ERR_FATAL, "Hunk initialization failed. File system load stack not zero");
+#endif
 
     // allocate the stack based hunk allocator
     cv = Cvar_Get( "com_hunkMegs", DEF_COMHUNKMEGS_S, CVAR_LATCH | CVAR_ARCHIVE );
@@ -2376,6 +2382,15 @@ For controlling environment variables
 
 void Com_ExecuteCfg(void)
 {
+#ifdef NEW_FILESYSTEM
+	fs_execute_config_file("default.cfg", FS_CONFIGTYPE_DEFAULT, EXEC_APPEND, qfalse);
+	if(!Com_SafeMode()) {
+		// skip the q3config.cfg and autoexec.cfg if "safe" is on the command line
+		fs_execute_config_file(Q3CONFIG_CFG, FS_CONFIGTYPE_SETTINGS, EXEC_APPEND, qfalse);
+		fs_execute_config_file("autoexec.cfg", FS_CONFIGTYPE_SETTINGS, EXEC_APPEND, qfalse); }
+	Cbuf_Execute();
+	Com_Printf("\n");
+#else
     Cbuf_ExecuteText(EXEC_NOW, "exec default.cfg\n");
     Cbuf_Execute(); // Always execute after exec to prevent text buffer overflowing
 
@@ -2387,6 +2402,7 @@ void Com_ExecuteCfg(void)
         Cbuf_ExecuteText(EXEC_NOW, "exec autoexec.cfg\n");
         Cbuf_Execute();
     }
+#endif
 }
 
 /*
@@ -2419,7 +2435,11 @@ void Com_GameRestart(int checksumFeed, bool disconnect)
             CL_Shutdown("Game directory changed", disconnect, false);
         }
 
+#ifdef NEW_FILESYSTEM
+		fs_set_mod_dir(Cvar_VariableString("fs_game"), qtrue);
+#else
         FS_Restart(checksumFeed);
+#endif
 
         // Clean out any user and VM created cvars
         Cvar_Restart(true);
@@ -2453,6 +2473,16 @@ Expose possibility to change current running mod to the user
 
 void Com_GameRestart_f(void)
 {
+#ifdef NEW_FILESYSTEM
+	// This will get sanitized in fs_set_mod_dir during the restart
+	Cvar_Set("fs_game", Cmd_Argv(1));
+
+#ifndef DEDICATED
+	// Make sure the specified fs_game doesn't get overriden by cl_oldGame
+	extern bool cl_oldGameSet;
+	cl_oldGameSet = false;
+#endif
+#else
     if(!FS_FilenameCompare(Cmd_Argv(1), BASEGAME))
     {
         // This is the standard base game. Servers and clients should
@@ -2463,6 +2493,7 @@ void Com_GameRestart_f(void)
     }
     else
         Cvar_Set("fs_game", Cmd_Argv(1));
+#endif
 
     Com_GameRestart(0, true);
 }
@@ -2587,7 +2618,11 @@ void Com_Init( char *commandLine )
 
     com_homepath = Cvar_Get("com_homepath", "", CVAR_INIT);
 
+#ifdef NEW_FILESYSTEM
+	fs_startup();
+#else
     FS_InitFilesystem ();
+#endif
 
     Com_InitJournaling();
 
@@ -2608,6 +2643,10 @@ void Com_Init( char *commandLine )
 
     // override anything from the config files with command line args
     Com_StartupVariable( NULL );
+
+#ifdef NEW_FILESYSTEM
+	fs_cache_initialize();
+#endif
 
     // get dedicated here for proper hunk megs initialization
 #ifdef DEDICATED
@@ -2658,6 +2697,11 @@ void Com_Init( char *commandLine )
     com_version = Cvar_Get ("version", PRODUCT_NAME, CVAR_ROM | CVAR_SERVERINFO );
     Cvar_Get ("protocol", va("%i", PROTOCOL_VERSION), CVAR_SERVERINFO | CVAR_ROM);
     com_gamename = Cvar_Get("com_gamename", GAMENAME_FOR_MASTER, CVAR_SERVERINFO | CVAR_INIT);
+
+#ifdef NEW_FILESYSTEM
+	// Pid file init goes here if pid file support was present
+	// Sys_InitPIDFile( fs_pid_file_directory() );
+#endif
 
     Sys_Init();
 
@@ -2767,7 +2811,14 @@ void Com_WriteConfigToFile( const char *filename )
 {
     fileHandle_t f;
 
+#ifdef NEW_FILESYSTEM
+	if(!Q_stricmp(filename, Q3CONFIG_CFG)) {
+		f = fs_open_settings_file_write(Q3CONFIG_CFG); }
+	else {
+		f = FS_FOpenFileWrite( filename ); }
+#else
     f = FS_FOpenFileWrite( filename );
+#endif
     if ( !f )
     {
         Com_Printf("Couldn't write %s.\n", filename );

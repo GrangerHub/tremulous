@@ -186,8 +186,10 @@ struct client_t {
     int ping;
     int rate;  // bytes / second
     int snapshotMsec;  // requests a snapshot every snapshotMsec unless rate choked
+#ifndef NEW_FILESYSTEM
     int pureAuthentic;
     bool gotCP;  // TTimo - additional flag to distinguish between a bad pure checksum, and no cp command at all
+#endif
     netchan_t netchan;
     // TTimo
     // queuing outgoing fragmented messages to send them properly, without udp packet bursts

@@ -102,7 +102,7 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
 
 	// Check mod dir for case mismatched current or basegame directory
 	if((!Q_stricmp(resource_mod_dir, FS_GetCurrentGameDir()) && strcmp(resource_mod_dir, FS_GetCurrentGameDir()))
-			|| (!Q_stricmp(resource_mod_dir, com_basegame->string) && strcmp(resource_mod_dir, com_basegame->string))) {
+			|| (!Q_stricmp(resource_mod_dir, fs_basegame->string) && strcmp(resource_mod_dir, fs_basegame->string))) {
 		resource->flags |= RESFLAG_CASE_MISMATCH; }
 
 	// Handle settings (e.g. q3config.cfg or autoexec.cfg) query

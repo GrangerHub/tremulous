@@ -50,6 +50,8 @@ cvar_t *fs_debug_lookup;
 cvar_t *fs_debug_references;
 cvar_t *fs_debug_filelist;
 
+cvar_t *fs_basegame;
+
 fs_source_directory_t fs_sourcedirs[FS_SOURCEDIR_COUNT];
 qboolean fs_read_only;	// If false, fs_sourcedirs[0] is write directory
 
@@ -75,11 +77,11 @@ const char *FS_GetCurrentGameDir(void) {
 	// Note: Potentially the usage in SV_RehashBans_f and SV_WriteBans could be changed
 	//    to just use the non-SV file opening functions instead
 	if(*current_mod_dir) return current_mod_dir;
-	return com_basegame->string; }
+	return fs_basegame->string; }
 
 const char *fs_pid_file_directory(void) {
 	if(fs_mod_settings->integer) return FS_GetCurrentGameDir();
-	return com_basegame->string; }
+	return fs_basegame->string; }
 
 qboolean FS_Initialized( void ) {
 	// This might not be being used anywhere it could actually be false. Consider removing this
@@ -137,14 +139,14 @@ void fs_disconnect_cleanup(void) {
 		"\n   > connected_server_sv_pure set to 0\n   > connected_server_pk3_list cleared\n"); }
 
 static void convert_mod_dir(const char *source, char *target) {
-	// Sanitizes mod dir, and replaces com_basegame with empty string
+	// Sanitizes mod dir, and replaces fs_basegame with empty string
 	// Target should be size FSC_MAX_MODDIR
 	char buffer[FSC_MAX_MODDIR];
 	Q_strncpyz(buffer, source, sizeof(buffer));
 	if(!fs_generate_path(buffer, 0, 0, 0, 0, 0, target, FSC_MAX_MODDIR)) *target = 0;
 	else if(COM_CompareExtension(target, ".app")) *target = 0;	// Don't allow mac app bundles
 	else if(!Q_stricmp(target, "basemod")) *target = 0;
-	else if(!Q_stricmp(target, com_basegame->string)) *target = 0; }
+	else if(!Q_stricmp(target, fs_basegame->string)) *target = 0; }
 
 static qboolean matches_current_mod_dir(const char *mod_dir) {
 	char converted_mod_dir[FSC_MAX_MODDIR];
@@ -163,10 +165,12 @@ void fs_set_mod_dir(const char *value, qboolean move_pid) {
 	// Set current_mod_dir
 	convert_mod_dir(value, current_mod_dir);
 
+/*
 	// Move pid file to new mod dir if necessary
 	if(move_pid && strcmp(old_pid_dir, fs_pid_file_directory())) {
 		Sys_RemovePIDFile(old_pid_dir);
 		Sys_InitPIDFile(fs_pid_file_directory()); }
+*/
 
 	// Read CD keys
 #ifndef STANDALONE
@@ -254,9 +258,7 @@ void fs_initialize_sourcedirs(void) {
 	char *token;
 	temp_source_directory_t temp_dirs[FS_SOURCEDIR_COUNT] = {
 		{"homepath",  Cvar_Get("fs_homepath", fs_default_homepath(), CVAR_INIT|CVAR_PROTECTED), 0, qfalse},
-		{"basepath", Cvar_Get("fs_basepath", Sys_DefaultInstallPath(), CVAR_INIT|CVAR_PROTECTED), 0, qfalse},
-		{"steampath", Cvar_Get("fs_steampath", Sys_SteamPath(), CVAR_INIT|CVAR_PROTECTED), 0, qfalse},
-		{"gogpath", Cvar_Get("fs_gogpath", Sys_GogPath(), CVAR_INIT|CVAR_PROTECTED), 0, qfalse} };
+		{"basepath", Cvar_Get("fs_basepath", Sys_DefaultInstallPath(), CVAR_INIT|CVAR_PROTECTED), 0, qfalse} };
 
 	// Configure temp_dirs based on fs_dirs entries
 	fs_dirs_ptr = fs_dirs->string;
@@ -426,7 +428,7 @@ void fs_startup(void) {
 	// Initial startup, should only be called once
 	Com_Printf("\n----- fs_startup -----\n");
 
-	fs_dirs = Cvar_Get("fs_dirs", "*homepath basepath steampath gogpath", CVAR_INIT|CVAR_PROTECTED);
+	fs_dirs = Cvar_Get("fs_dirs", "*homepath basepath", CVAR_INIT|CVAR_PROTECTED);
 	fs_mod_settings = Cvar_Get("fs_mod_settings", "0", CVAR_INIT);
 	fs_index_cache = Cvar_Get("fs_index_cache", "1", CVAR_INIT);
 	fs_search_inactive_mods = Cvar_Get("fs_search_inactive_mods", "2", CVAR_ARCHIVE);
@@ -445,6 +447,8 @@ void fs_startup(void) {
 	fs_debug_lookup = Cvar_Get("fs_debug_lookup", "0", 0);
 	fs_debug_references = Cvar_Get("fs_debug_references", "0", 0);
 	fs_debug_filelist = Cvar_Get("fs_debug_filelist", "0", 0);
+
+	fs_basegame = Cvar_Get("fs_basegame", BASEGAME, CVAR_INIT);
 
 	Cvar_Get("new_filesystem", "1", CVAR_ROM);	// Enables new filesystem calls in renderer
 

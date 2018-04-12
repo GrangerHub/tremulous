@@ -21,9 +21,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
+#include "qcommon/q_shared.h"
+
 /* ******************************************************************************** */
 // Common Definitions
 /* ******************************************************************************** */
+
+#define BASEGAME "gpp"
+
+#define qboolean bool
+typedef FS_Origin fsOrigin_t;
+typedef FS_Mode fsMode_t;
 
 #define DEF_PUBLIC(f) f;
 #ifdef FSLOCAL
@@ -47,9 +55,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 #ifdef DEDICATED
-#	define Q3CONFIG_CFG "q3config_server.cfg"
+#define Q3CONFIG_CFG "autogen_server.cfg"
 #else
-#	define Q3CONFIG_CFG "q3config.cfg"
+#define Q3CONFIG_CFG "autogen.cfg"
 #endif
 
 #ifdef WIN32
@@ -127,6 +135,8 @@ DEF_LOCAL( extern cvar_t *fs_debug_lookup )
 DEF_LOCAL( extern cvar_t *fs_debug_references )
 DEF_LOCAL( extern cvar_t *fs_debug_filelist )
 
+DEF_LOCAL( extern cvar_t *fs_basegame )
+
 #ifdef FSLOCAL
 #define FS_SOURCEDIR_COUNT 4
 #endif
@@ -194,6 +204,7 @@ DEF_LOCAL( char **FS_ListFilteredFiles(const char *path, const char *extension, 
 		int *numfiles_out, qboolean allowNonPureFilesOnDisk) )
 DEF_PUBLIC( char **FS_ListFiles( const char *path, const char *extension, int *numfiles ) )
 DEF_PUBLIC( int	FS_GetFileList(  const char *path, const char *extension, char *listbuf, int bufsize ) )
+DEF_PUBLIC( int	FS_GetFilteredFiles( const char *path, const char *extension, const char *filter, char *listbuf, int bufsize ) )
 
 /* ******************************************************************************** */
 // File IO
@@ -282,6 +293,7 @@ DEF_PUBLIC( int FS_Seek(fileHandle_t f, long offset, int origin) )
 DEF_PUBLIC( int FS_FTell(fileHandle_t f) )
 DEF_PUBLIC( void FS_Flush(fileHandle_t f) )
 DEF_PUBLIC( void FS_ForceFlush(fileHandle_t f) )
+DEF_PUBLIC( void FS_SV_Rename(const char *from, const char *to, qboolean safe) )
 DEF_PUBLIC( void FS_WriteFile( const char *qpath, const void *buffer, int size ) )
 
 /* ******************************************************************************** */
@@ -405,3 +417,5 @@ DEF_LOCAL( void fs_check_system_paks(void) )
 /* ******************************************************************************** */
 
 DEF_LOCAL( qboolean fs_check_trusted_vm_hash(unsigned char *hash) )
+
+#undef qboolean

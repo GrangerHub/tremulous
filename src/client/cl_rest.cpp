@@ -36,11 +36,16 @@ bool MakeDir(std::string destdir, std::string basegame)
         destpath += basegame;
     }
 
+#ifdef NEW_FILESYSTEM
+	char buffer[FS_MAX_PATH];
+	fs_generate_path(destpath.c_str(), 0, 0, FS_NO_SANITIZE|FS_CREATE_DIRECTORIES, 0, 0, buffer, sizeof(buffer));
+#else
     if ( *destpath.rbegin() != '/' )
         destpath += '/'; // XXX FS_CreatePath requires a trailing slash. 
         // Maybe the assumption is that a file listing might be included?
 
     FS_CreatePath(destpath.c_str());
+#endif
     return true;
 }
 

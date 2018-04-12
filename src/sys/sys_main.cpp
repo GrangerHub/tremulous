@@ -191,6 +191,12 @@ Sys_PIDFileName
 */
 static std::string Sys_PIDFileName( void )
 {
+#ifdef NEW_FILESYSTEM
+	char buffer[FS_MAX_PATH];
+	if(fs_generate_path_writedir(PID_FILENAME, 0, 0, 0,
+			buffer, sizeof(buffer))) return buffer;
+	return "";
+#else
     const char *homePath = Cvar_VariableString( "fs_homepath" );
     std::string pidfile;
 
@@ -202,6 +208,7 @@ static std::string Sys_PIDFileName( void )
     }
 
     return pidfile;
+#endif
 }
 
 /*
@@ -478,6 +485,37 @@ from executable path, then fs_basepath.
 */
 void *Sys_LoadDll(const char *name, bool useSystemLib)
 {
+#ifdef NEW_FILESYSTEM
+	void *dllhandle = 0;
+	char path[FS_MAX_PATH];
+
+	// Extra sanity check - this check shouldn't be security critical because it shouldn't be possible
+	//    to get an arbitrary file written to the dll search locations, regardless of extension
+	if(!Sys_DllExtension(name)) {
+		Com_Printf("Refusing to attempt to load library \"%s\": Extension not allowed.\n", name);
+		return NULL; }
+
+	if(useSystemLib) {
+		Com_Printf("Trying to load \"%s\"...\n", name);
+		if(fs_generate_path(name, 0, 0, FS_ALLOW_DLL, 0, 0, path, sizeof(path)))
+			dllhandle = Sys_LoadLibrary(path); }
+
+	if(!dllhandle) {
+		const char *topDir = Sys_BinaryPath();
+		if(!*topDir) topDir = ".";
+		Com_Printf("Trying to load \"%s\" from \"%s\"...\n", name, topDir);
+		if(fs_generate_path(topDir, name, 0, FS_NO_SANITIZE, FS_ALLOW_DLL, 0, path, sizeof(path)))
+			dllhandle = Sys_LoadLibrary(path); }
+
+	if(!dllhandle) {
+		const char *basePath = Cvar_VariableString("fs_basepath");
+		if(!basePath || !*basePath) basePath = ".";
+		Com_Printf("Trying to load \"%s\" from \"%s\"...\n", name, basePath);
+		if(fs_generate_path(basePath, name, 0, FS_NO_SANITIZE, FS_ALLOW_DLL, 0, path, sizeof(path)))
+			dllhandle = Sys_LoadLibrary(path); }
+
+	if(!dllhandle) Com_Printf("Loading \"%s\" failed\n", name);
+#else
     void *dllhandle;
 
     if (!Sys_DllExtension(name))
@@ -538,6 +576,7 @@ void *Sys_LoadDll(const char *name, bool useSystemLib)
                 Com_Printf("Loading \"%s\" failed\n", name);
         }
     }
+#endif
 
     return dllhandle;
 }

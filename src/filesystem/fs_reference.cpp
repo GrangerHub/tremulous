@@ -113,14 +113,14 @@ static void sort_reference_list(reference_list_t *reference_list, qboolean use_p
 /* ******************************************************************************** */
 
 static void reference_name_string(fsc_file_direct_t *pak, fsc_stream_t *stream) {
-	const char *mod_dir = pak->qp_mod_ptr ? (const char *)STACKPTR(pak->qp_mod_ptr) : com_basegame->string;
+	const char *mod_dir = pak->qp_mod_ptr ? (const char *)STACKPTR(pak->qp_mod_ptr) : fs_basegame->string;
 
 	// Replace basemod with com_basegame to avoid issues
 	// Servers should avoid using basemod for download-enabled paks if possible
-	if(!Q_stricmp(mod_dir, "basemod")) mod_dir = com_basegame->string;
+	if(!Q_stricmp(mod_dir, "basemod")) mod_dir = fs_basegame->string;
 
 	// Patch mod dir capitalization
-	if(!Q_stricmp(mod_dir, com_basegame->string)) mod_dir = com_basegame->string;
+	if(!Q_stricmp(mod_dir, fs_basegame->string)) mod_dir = fs_basegame->string;
 	if(!Q_stricmp(mod_dir, FS_GetCurrentGameDir())) mod_dir = FS_GetCurrentGameDir();
 
 	fsc_stream_append_string(stream, mod_dir);
@@ -370,7 +370,7 @@ static qboolean is_pak_downloadable(reference_set_work_t *ref_work, fsc_file_dir
 
 	// Print warning if pak is from an inactive mod dir
 	mod_dir = fsc_get_mod_dir((fsc_file_t *)pak, &fs);
-	if(Q_stricmp(mod_dir, com_basegame->string) && Q_stricmp(mod_dir, current_mod_dir) &&
+	if(Q_stricmp(mod_dir, fs_basegame->string) && Q_stricmp(mod_dir, current_mod_dir) &&
 			Q_stricmp(mod_dir, "basemod")) {
 		PAK_NAME(pak);
 		Com_Printf("WARNING: Download list file %s from rule %s is from an inactive mod dir."

@@ -159,7 +159,7 @@ int fs_get_mod_dir_state(const char *mod_dir) {
 	// Returns 3 for current mod, 2 for basemod, 1 for basegame, 0 for inactive mod
 	if(*current_mod_dir && !Q_stricmp(mod_dir, current_mod_dir)) return 3;
 	else if(!Q_stricmp(mod_dir, "basemod")) return 2;
-	else if(!Q_stricmp(mod_dir, com_basegame->string)) return 1;
+	else if(!Q_stricmp(mod_dir, fs_basegame->string)) return 1;
 	return 0; }
 
 void fs_file_to_stream(const fsc_file_t *file, fsc_stream_t *stream, qboolean include_source_dir,

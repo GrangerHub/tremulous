@@ -52,7 +52,11 @@ void LAN_LoadCachedServers(void)
     fileHandle_t fileIn;
     cls.numglobalservers = cls.numfavoriteservers = 0;
     cls.numGlobalServerAddresses = 0;
+#ifdef NEW_FILESYSTEM
+	if (FS_SV_FOpenFileRead("servercache.dat", &fileIn) > 0)
+#else
     if (FS_SV_FOpenFileRead("servercache.dat", &fileIn))
+#endif
     {
         FS_Read(&cls.numglobalservers, sizeof(int), fileIn);
         FS_Read(&cls.numfavoriteservers, sizeof(int), fileIn);
@@ -888,17 +892,30 @@ intptr_t CL_UISystemCalls(intptr_t *args)
             return 0;
 
         case UI_FS_FOPENFILE:
+#ifdef NEW_FILESYSTEM
+			return FS_FOpenFileByModeOwner((const char *)VMA(1), (fileHandle_t *)VMA(2), (FS_Mode)args[3], FS_HANDLEOWNER_UI);
+#else
             return FS_FOpenFileByMode((const char *)VMA(1), (fileHandle_t *)VMA(2), (FS_Mode)args[3]);
+#endif
 
         case UI_FS_READ:
+#ifdef NEW_FILESYSTEM
+			if(fs_handle_get_owner(args[3]) != FS_HANDLEOWNER_UI) return 0;
+#endif
             FS_Read(VMA(1), args[2], args[3]);
             return 0;
 
         case UI_FS_WRITE:
+#ifdef NEW_FILESYSTEM
+			if(fs_handle_get_owner(args[3]) != FS_HANDLEOWNER_UI) return 0;
+#endif
             FS_Write(VMA(1), args[2], args[3]);
             return 0;
 
         case UI_FS_FCLOSEFILE:
+#ifdef NEW_FILESYSTEM
+			if(fs_handle_get_owner(args[1]) != FS_HANDLEOWNER_UI) return 0;
+#endif
             FS_FCloseFile(args[1]);
             return 0;
 
@@ -906,6 +923,9 @@ intptr_t CL_UISystemCalls(intptr_t *args)
             return FS_GetFileList((const char *)VMA(1), (const char *)VMA(2), (char *)VMA(3), args[4]);
 
         case UI_FS_SEEK:
+#ifdef NEW_FILESYSTEM
+			if(fs_handle_get_owner(args[1]) != FS_HANDLEOWNER_UI) return 0;
+#endif
             return FS_Seek((fileHandle_t)args[1], args[2], (FS_Origin)args[3]);
 
         case UI_R_REGISTERMODEL:
@@ -1187,6 +1207,9 @@ void CL_ShutdownUI(void)
         return;
     }
     VM_Call(cls.ui, UI_SHUTDOWN);
+#ifdef NEW_FILESYSTEM
+	fs_close_owner_handles(FS_HANDLEOWNER_UI);
+#endif
     VM_Free(cls.ui);
     cls.ui = NULL;
 }
@@ -1200,11 +1223,13 @@ void CL_InitUI(void)
 {
     // load the dll or bytecode
     vmInterpret_t interpret = (vmInterpret_t)Cvar_VariableValue("vm_ui");
+#ifndef NEW_FILESYSTEM
     if (cl_connectedToPureServer)
     {
         // if sv_pure is set we only allow qvms to be loaded
         if (interpret != VMI_COMPILED && interpret != VMI_BYTECODE) interpret = VMI_COMPILED;
     }
+#endif
 
     cls.ui = VM_Create("ui", CL_UISystemCalls, interpret);
     if (!cls.ui)

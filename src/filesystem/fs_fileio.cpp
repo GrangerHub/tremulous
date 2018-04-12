@@ -1107,7 +1107,7 @@ fileHandle_t fs_open_settings_file_write(const char *filename) {
 	if(fs_mod_settings->integer) {
 		mod_dir = FS_GetCurrentGameDir(); }
 	else {
-		mod_dir = com_basegame->string; }
+		mod_dir = fs_basegame->string; }
 
 	if(!fs_generate_path_writedir(mod_dir, filename, FS_CREATE_DIRECTORIES, FS_ALLOW_SPECIAL_CFG,
 			path, sizeof(path))) return 0;
@@ -1282,6 +1282,15 @@ void FS_Flush(fileHandle_t f) {
 
 void FS_ForceFlush(fileHandle_t f) {
 	fs_write_handle_flush(f, qtrue); }
+
+void FS_SV_Rename(const char *from, const char *to, qboolean safe) {
+	char source_path[FS_MAX_PATH];
+	char target_path[FS_MAX_PATH];
+
+	if(!fs_generate_path_writedir(from, 0, FS_ALLOW_SLASH, 0, source_path, sizeof(source_path))) return;
+	if(!fs_generate_path_writedir(to, 0, FS_ALLOW_SLASH|FS_CREATE_DIRECTORIES_FOR_FILE, 0,
+			target_path, sizeof(target_path))) return;
+	fs_rename_file(source_path, target_path); }
 
 /* ******************************************************************************** */
 // Misc Data Operations

@@ -1099,6 +1099,11 @@ void CL_PlayDemo_f(void)
         return;
     }
 
+#ifdef NEW_FILESYSTEM
+	// Refresh here in case a demo was just recorded or manually added
+	fs_auto_refresh();
+#endif
+
     // make sure a local server is killed
     // 2 means don't force disconnect of local client
     Cvar_Set("sv_killserver", "2");
@@ -1401,9 +1406,15 @@ void CL_Disconnect(bool showMainMenu)
         CL_WritePacket();
     }
 
+#ifdef NEW_FILESYSTEM
+	fs_disconnect_cleanup();
+	if(!clc.cURLReconnecting) fs_clear_attempted_downloads();
+	clc.cURLReconnecting = qfalse;
+#else
     // Remove pure paks
     FS_PureServerSetLoadedPaks("", "");
     FS_PureServerSetReferencedPaks("", "");
+#endif
 
     CL_ClearState();
 
@@ -1417,8 +1428,10 @@ void CL_Disconnect(bool showMainMenu)
     // allow cheats locally
     Cvar_Set("sv_cheats", "1");
 
+#ifndef NEW_FILESYSTEM
     // not connected to a pure server anymore
     cl_connectedToPureServer = false;
+#endif
 
 #ifdef USE_VOIP
     // not connected to voip server anymore.
@@ -1807,6 +1820,7 @@ static void CL_Snd_Shutdown(void)
     S_Shutdown();
     cls.soundStarted = false;
 }
+#ifndef NEW_FILESYSTEM
 /*
 ==================
 CL_PK3List_f
@@ -1820,6 +1834,7 @@ CL_PureList_f
 ==================
 */
 static void CL_ReferencedPK3List_f(void) { Com_Printf("Referenced PK3 Names: %s\n", FS_ReferencedPakNames(false)); }
+#endif
 
 /*
 ==================
@@ -1883,23 +1898,32 @@ static void CL_DownloadsComplete(void)
         CL_cURL_Shutdown();
         if (clc.cURLDisconnected)
         {
+#ifdef NEW_FILESYSTEM
+			clc.downloadRestart = qfalse;
+			clc.cURLReconnecting = qtrue;	// Don't reset attempted downloads
+#else
             if (clc.downloadRestart)
             {
                 if (!clc.activeCURLNotGameRelated) FS_Restart(clc.checksumFeed);
                 clc.downloadRestart = false;
             }
+#endif
             clc.cURLDisconnected = false;
             if (!clc.activeCURLNotGameRelated) CL_Reconnect_f();
             return;
         }
     }
 
+#ifndef NEW_FILESYSTEM
     // if we downloaded files we need to restart the file system
+#endif
     if (clc.downloadRestart)
     {
         clc.downloadRestart = false;
 
+#ifndef NEW_FILESYSTEM
         FS_Restart(clc.checksumFeed);  // We possibly downloaded a pak, restart the file system to load it
+#endif
 
         // inform the server so we get new gamestate info
         CL_AddReliableCommand("donedl", false);
@@ -1933,7 +1957,11 @@ static void CL_DownloadsComplete(void)
     // this will also (re)load the UI
     // if this is a local client then only the client part of the hunk
     // will be cleared, note that this is done after the hunk mark has been set
+#ifdef NEW_FILESYSTEM
+	if(!FS_ConditionalRestart(clc.checksumFeed, false)) CL_FlushMemory();
+#else
     CL_FlushMemory();
+#endif
 
     // initialize the CGame
     cls.cgameStarted = true;
@@ -1965,7 +1993,11 @@ static void CL_BeginDownload(const char *localName, const char *remoteName)
         localName, remoteName);
 
     Q_strncpyz(clc.downloadName, localName, sizeof(clc.downloadName));
+#ifdef NEW_FILESYSTEM
+	Com_sprintf(clc.downloadTempName, sizeof(clc.downloadTempName), "download.temp");
+#else
     Com_sprintf(clc.downloadTempName, sizeof(clc.downloadTempName), "%s.tmp", localName);
+#endif
 
     // Set so UI gets access to it
     Cvar_Set("cl_downloadName", remoteName);
@@ -1991,6 +2023,82 @@ A download completed or failed
 */
 void CL_NextDownload(void)
 {
+#ifdef NEW_FILESYSTEM
+	// Attempts to initiate a download, or calls CL_DownloadsComplete if no more downloads are available
+	*clc.downloadTempName = *clc.downloadName = 0;
+	Cvar_Set("cl_downloadName", "");
+
+	while(1) {
+		char *remoteName, *localName;
+		bool curl_already_attempted = false;
+
+		// Get next potential download
+		fs_advance_next_needed_download(clc.cURLDisconnected);
+		if(!fs_get_current_download_info(&localName, &remoteName, &curl_already_attempted)) {
+			CL_DownloadsComplete();
+			return; }
+
+		// Check some skip conditions
+		if(!(cl_allowDownload->integer & DLF_ENABLE)) {
+			Com_Printf("WARNING: Skipping download '%s' because all downloads are disabled "
+				"on your client (cl_allowDownload is %d)\n", localName, cl_allowDownload->integer);
+			fs_advance_download();
+			continue; }
+		if(!Q_stricmp(clc.servername, "localhost")) {
+			// Don't do any downloads when connected to a local game
+			// Otherwise the game could try to download from itself under certain circumstances
+			Com_Printf("WARNING: Skipping download '%s' because the game appears to be local.\n", localName);
+			fs_advance_download();
+			continue; }
+
+		// Attempt cURL download
+		if(curl_already_attempted) {
+			Com_Printf("NOTE: Attempting UDP download for '%s' because a cURL download appears"
+				" to have been unsuccessful.\n", localName); }
+
+		else if(!(cl_allowDownload->integer & DLF_NO_REDIRECT)) {
+			// cURL download enabled in client
+			if(!*clc.sv_dlURL) {
+				Com_Printf("NOTE: cURL download not available because server did not set sv_dlURL\n"); }
+			else if(clc.sv_allowDownload & DLF_NO_REDIRECT) {
+				Com_Printf("NOTE: cURL download not available due to server setting"
+					" (sv_allowDownload is %d)\n", clc.sv_allowDownload); }
+			else if(!CL_cURL_Init()) {
+				Com_Printf("NOTE: could not load cURL library\n"); }
+			else {
+				// Begin cURL Download
+				fs_register_current_download_attempt(qtrue);
+				// Using remoteName instead of localName for UI purposes
+				CL_cURL_BeginDownload(remoteName, va("%s/%s", clc.sv_dlURL, remoteName));
+				if(!clc.cURLDisconnected) clc.downloadRestart = qtrue;
+				return; } }
+
+		else if(!(clc.sv_allowDownload & DLF_NO_REDIRECT) && *clc.sv_dlURL) {
+			// cURL download not enabled in client, but enabled on server
+			Com_Printf("NOTE: cURL download not available due to client setting"
+				" (cl_allowDownload is %d)\n", cl_allowDownload->integer); }
+
+		// Attempt UDP download
+		if((cl_allowDownload->integer & DLF_NO_UDP)) {
+			Com_Printf("WARNING: Skipping download '%s' because UDP downloads are disabled"
+				" on your client (cl_allowDownload is %d)\n",
+				localName, cl_allowDownload->integer);
+			fs_advance_download();
+			continue; }
+		else if(!(clc.sv_allowDownload & DLF_ENABLE) || (clc.sv_allowDownload & DLF_NO_UDP)) {
+			Com_Printf("WARNING: Skipping download '%s' because UDP downloads appear to be disabled"
+				" on the server (sv_allowDownload is %d)\n",
+				localName, clc.sv_allowDownload);
+			fs_advance_download();
+			continue; }
+		else {
+			// Begin UDP Download
+			Com_Printf("Starting UDP download for '%s'\n", localName);
+			fs_register_current_download_attempt(qfalse);
+			CL_BeginDownload( localName, remoteName );
+			clc.downloadRestart = qtrue;
+			return; } }
+#else
     char *s;
     char *remoteName, *localName;
     bool useCURL = false;
@@ -2197,6 +2305,7 @@ void CL_NextDownload(void)
     }
 
     CL_DownloadsComplete();
+#endif
 }
 
 /*
@@ -2209,6 +2318,19 @@ and determine if we need to download them
 */
 void CL_InitDownloads(void)
 {
+#ifdef NEW_FILESYSTEM
+	clc.state = CA_CONNECTED;
+
+	*clc.downloadTempName = *clc.downloadName = 0;
+	Cvar_Set( "cl_downloadName", "" );
+	if(clc.download) {
+		FS_FCloseFile(clc.download);
+		clc.download = 0; }
+
+	fs_print_download_list();
+
+	CL_NextDownload();
+#else
     if (FS_ComparePaks(clc.downloadList, sizeof(clc.downloadList), true))
     {
         Com_Printf("Need paks: %s\n", clc.downloadList);
@@ -2225,6 +2347,7 @@ void CL_InitDownloads(void)
         }
     }
     CL_DownloadsComplete();
+#endif
 }
 
 /*
@@ -3177,6 +3300,9 @@ Also called by Com_Error
 */
 void CL_FlushMemory(void)
 {
+#ifdef NEW_FILESYSTEM
+	fs_advance_cache_stage();
+#endif
     CL_ClearMemory(false);
     CL_StartHunkUsers(false);
 }
@@ -3226,8 +3352,15 @@ static void CL_Vid_Restart_f(void)
         CL_ShutdownRef();
         // client is no longer pure untill new checksums are sent
         CL_ResetPureClientAtServer();
+#ifdef NEW_FILESYSTEM
+		// Refresh in case files have been manually changed
+		fs_auto_refresh();
+
+		// New filesystem currently doesn't store ui and cgame references
+#else
         // clear pak references
         FS_ClearPakReferences(FS_UI_REF | FS_CGAME_REF);
+#endif
         // reinitialize the filesystem if the game directory or checksum has changed
 
         cls.rendererStarted = false;
@@ -4727,7 +4860,13 @@ static void CL_InitRef(void)
     ri.FS_WriteFile = FS_WriteFile;
     ri.FS_FreeFileList = FS_FreeFileList;
     ri.FS_ListFiles = FS_ListFiles;
+#ifdef NEW_FILESYSTEM
+	// This function is not implemented in the new filesystem, and it does
+	// not appear to actually be used in the renderer.
+	ri.FS_FileIsInPAK = 0;
+#else
     ri.FS_FileIsInPAK = FS_FileIsInPAK;
+#endif
     ri.FS_FileExists = FS_FileExists;
     ri.Cvar_Get = Cvar_Get;
     ri.Cvar_Set = Cvar_Set;
@@ -4751,6 +4890,15 @@ static void CL_InitRef(void)
     ri.Sys_GLimpSafeInit = Sys_GLimpSafeInit;
     ri.Sys_GLimpInit = Sys_GLimpInit;
     ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
+
+#ifdef NEW_FILESYSTEM
+	ri.fs_general_lookup = fs_general_lookup;
+	ri.fs_image_lookup = fs_image_lookup;
+	ri.fs_shader_lookup = fs_shader_lookup;
+	ri.fs_read_shader = fs_read_shader;
+	ri.fs_file_extension = fs_file_extension;
+	ri.fs_files_from_same_pk3 = fs_files_from_same_pk3;
+#endif
 
     ret = GetRefAPI(REF_API_VERSION, &ri);
 
@@ -4968,8 +5116,10 @@ void CL_Init(void)
     Cmd_AddCommand("ping", CL_Ping_f);
     Cmd_AddCommand("serverstatus", CL_ServerStatus_f);
     Cmd_AddCommand("showip", CL_ShowIP_f);
+#ifndef NEW_FILESYSTEM
     Cmd_AddCommand("fs_openedList", CL_OpenedPK3List_f);
     Cmd_AddCommand("fs_referencedList", CL_ReferencedPK3List_f);
+#endif
     Cmd_AddCommand("model", CL_SetModel_f);
     Cmd_AddCommand("video", CL_Video_f);
     Cmd_AddCommand("stopvideo", CL_StopVideo_f);

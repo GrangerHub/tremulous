@@ -21,9 +21,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
-// Enable the internal filesystem defs in fspublic.h when it gets included via qcommon.h
+// Enable the internal filesystem defs in fspublic.h when it gets included via files.h
 #define FSLOCAL
+#define STANDALONE
 
 #include "fscore/fscore.h"
+#include "qcommon/cmd.h"
+#include "qcommon/cvar.h"
+#include "qcommon/files.h"
+#include "sys/sys_shared.h"
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
+
+#define qboolean bool

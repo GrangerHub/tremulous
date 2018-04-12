@@ -21,6 +21,7 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#ifndef NEW_FILESYSTEM
 #include "files.h"
 
 #ifdef _WIN32
@@ -3915,3 +3916,4 @@ const char *FS_GetCurrentGameDir(void)
     if (fs_gamedirvar->string[0]) return fs_gamedirvar->string;
     return BASEGAME;
 }
+#endif

@@ -191,7 +191,7 @@ static download_entry_t *create_download_entry(const char *name, unsigned int ha
 	if(!fs_generate_path(temp_filename, 0, 0, 0, 0, 0, filename, sizeof(filename))) return 0;
 
 	// Patch mod dir capitalization
-	if(!Q_stricmp(mod_dir, com_basegame->string)) Q_strncpyz(mod_dir, com_basegame->string, sizeof(mod_dir));
+	if(!Q_stricmp(mod_dir, fs_basegame->string)) Q_strncpyz(mod_dir, fs_basegame->string, sizeof(mod_dir));
 	if(!Q_stricmp(mod_dir, FS_GetCurrentGameDir())) Q_strncpyz(mod_dir, FS_GetCurrentGameDir(), sizeof(mod_dir));
 
 	// Set the download entry strings

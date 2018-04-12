@@ -764,7 +764,11 @@ void		R_Modellist_f (void);
 
 //====================================================
 
+#ifdef NEW_FILESYSTEM
+#define	MAX_DRAWIMAGES			5000	// Increased limit to support large UI map selection menus
+#else
 #define	MAX_DRAWIMAGES			2048
+#endif
 #define	MAX_SKINS				1024
 
 
@@ -870,6 +874,10 @@ typedef struct {
 */
 typedef struct {
 	bool				registered;		// cleared at shutdown, set at beginRegistration
+
+#ifdef NEW_FILESYSTEM
+	bool				new_filesystem;		// use new filesystem calls
+#endif
 
 	int						visCount;		// incremented every time a new vis cluster is entered
 	int						frameCount;		// incremented every frame
