@@ -1124,10 +1124,14 @@ static long open_index_read_handle(const char *filename, fileHandle_t *handle, i
 
 	// Get the file
 	fscfile = fs_general_lookup(filename, lookup_flags, qfalse);
+	if(!handle) {
+		// Size check only; modify size as per original FS_FOpenFileReadDir
+		if(!fscfile || (long)(fscfile->filesize) < 0) return 0;
+		if((long)(fscfile->filesize) == 0) return 1;
+		return (long)(fscfile->filesize); }
 	if(!fscfile || (long)(fscfile->filesize) <= 0) {
-		if(handle) *handle = 0;
+		*handle = 0;
 		return -1; }
-	if(!handle) return (long)(fscfile->filesize);
 
 	// Get the handle
 	if(allow_direct_handle && fscfile->sourcetype == FSC_SOURCETYPE_PK3 && fscfile->filesize > 65536) {
@@ -1247,8 +1251,10 @@ int FS_FOpenFileByModeOwner(const char *qpath, fileHandle_t *f, fsMode_t mode, f
 		else {
 			return -1; } }
 	else {
-		// Size check only
+		// Size check only; modify size as per original FS_FOpenFileReadDir
 		if(handle) fs_free_handle(handle);
+		if(size < 0) return 0;
+		if(size == 0) return 1;
 		return size; } }
 
 int FS_FOpenFileByMode(const char *qpath, fileHandle_t *f, fsMode_t mode) {
