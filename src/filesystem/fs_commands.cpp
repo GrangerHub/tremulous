@@ -172,7 +172,7 @@ static void FS_Path_f( void ) {
 	int sourceid;
 	int i;
 
-	for(sourceid=0; sourceid<FS_SOURCEDIR_COUNT; ++sourceid) {
+	for(sourceid=0; sourceid<FS_MAX_SOURCEDIRS; ++sourceid) {
 		if(!fs_sourcedirs[sourceid].active) continue;
 		Com_Printf("Looking in %s (%s)\n", fs_sourcedirs[sourceid].name, fs_sourcedirs[sourceid].path_cvar->string);
 

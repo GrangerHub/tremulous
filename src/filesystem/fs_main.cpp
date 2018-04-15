@@ -52,7 +52,7 @@ cvar_t *fs_debug_filelist;
 
 cvar_t *fs_basegame;
 
-fs_source_directory_t fs_sourcedirs[FS_SOURCEDIR_COUNT];
+fs_source_directory_t fs_sourcedirs[FS_MAX_SOURCEDIRS];
 qboolean fs_read_only;	// If false, fs_sourcedirs[0] is write directory
 
 fsc_filesystem_t fs;
@@ -256,7 +256,7 @@ void fs_initialize_sourcedirs(void) {
 	int current_position = 0;
 	char *fs_dirs_ptr;
 	char *token;
-	temp_source_directory_t temp_dirs[FS_SOURCEDIR_COUNT] = {
+	temp_source_directory_t temp_dirs[] = {
 		{"homepath",  Cvar_Get("fs_homepath", fs_default_homepath(), CVAR_INIT|CVAR_PROTECTED), 0, qfalse},
 		{"basepath", Cvar_Get("fs_basepath", Sys_DefaultInstallPath(), CVAR_INIT|CVAR_PROTECTED), 0, qfalse} };
 
@@ -272,8 +272,8 @@ void fs_initialize_sourcedirs(void) {
 			write_dir = qtrue;
 			++token; }
 
-		for(i=0; i<FS_SOURCEDIR_COUNT; ++i) if(!Q_stricmp(token, temp_dirs[i].name)) break;
-		if(i >= FS_SOURCEDIR_COUNT) continue;	// Invalid source dir name
+		for(i=0; i<ARRAY_LEN(temp_dirs); ++i) if(!Q_stricmp(token, temp_dirs[i].name)) break;
+		if(i >= ARRAY_LEN(temp_dirs)) continue;	// Invalid source dir name
 		if(!*temp_dirs[i].path_cvar->string) continue;	// No path set
 		if(temp_dirs[i].fs_dirs_position) continue;		// Source dir already initialized
 
@@ -289,7 +289,7 @@ void fs_initialize_sourcedirs(void) {
 				Com_Printf("Not writable due to failed write test.\n"); } } }
 
 	// Sort temp_dirs
-	qsort(temp_dirs, FS_SOURCEDIR_COUNT, sizeof(*temp_dirs), compare_temp_source_dirs_qsort);
+	qsort(temp_dirs, ARRAY_LEN(temp_dirs), sizeof(*temp_dirs), compare_temp_source_dirs_qsort);
 
 	// Check for read-only mode
 	if(temp_dirs[0].write_dir) {
@@ -300,12 +300,15 @@ void fs_initialize_sourcedirs(void) {
 		Com_Printf("WARNING: No write directory selected. Filesystem in read-only mode.\n"); }
 
 	// Transfer data from temp_dirs to fs_sourcedirs
-	for(i=0; i<FS_SOURCEDIR_COUNT; ++i) {
+	Com_Memset(fs_sourcedirs, 0, sizeof(fs_sourcedirs));
+	for(i=0; i<FS_MAX_SOURCEDIRS; ++i) {
+		if(i >= ARRAY_LEN(temp_dirs) || !temp_dirs[i].fs_dirs_position) continue;
+
 		fs_sourcedirs[i].name = temp_dirs[i].name;
 		fs_sourcedirs[i].path_cvar = temp_dirs[i].path_cvar;
-		fs_sourcedirs[i].active = temp_dirs[i].fs_dirs_position ? qtrue : qfalse;
+		fs_sourcedirs[i].active = qtrue;
 
-		if(fs_sourcedirs[i].active) Com_Printf("Source directory %i: %s (%s)\n", i+1, fs_sourcedirs[i].name,
+		Com_Printf("Source directory %i: %s (%s)\n", i+1, fs_sourcedirs[i].name,
 				fs_sourcedirs[i].path_cvar->string); } }
 
 /* ******************************************************************************** */
@@ -356,7 +359,7 @@ void fs_refresh(qboolean quiet) {
 
 	fsc_filesystem_reset(&fs);
 
-	for(i=0; i<FS_SOURCEDIR_COUNT; ++i) {
+	for(i=0; i<FS_MAX_SOURCEDIRS; ++i) {
 		if(!fs_sourcedirs[i].active) continue;
 		if(!quiet) Com_Printf("Indexing %s...\n", fs_sourcedirs[i].name);
 		index_directory(fs_sourcedirs[i].path_cvar->string, i, quiet); }

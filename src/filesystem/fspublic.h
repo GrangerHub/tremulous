@@ -138,10 +138,10 @@ DEF_LOCAL( extern cvar_t *fs_debug_filelist )
 DEF_LOCAL( extern cvar_t *fs_basegame )
 
 #ifdef FSLOCAL
-#define FS_SOURCEDIR_COUNT 4
+#define FS_MAX_SOURCEDIRS 8
 #endif
 
-DEF_LOCAL( extern fs_source_directory_t fs_sourcedirs[FS_SOURCEDIR_COUNT] )
+DEF_LOCAL( extern fs_source_directory_t fs_sourcedirs[FS_MAX_SOURCEDIRS] )
 DEF_LOCAL( extern qboolean fs_read_only )
 
 DEF_LOCAL( extern fsc_filesystem_t fs )

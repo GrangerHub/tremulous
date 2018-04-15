@@ -152,7 +152,7 @@ int fs_get_source_dir_id(const fsc_file_t *file) {
 
 const char *fs_get_source_dir_string(const fsc_file_t *file) {
 	int id = fs_get_source_dir_id(file);
-	if(id >= 0 && id < FS_SOURCEDIR_COUNT) return fs_sourcedirs[id].name;
+	if(id >= 0 && id < FS_MAX_SOURCEDIRS && fs_sourcedirs[id].active) return fs_sourcedirs[id].name;
 	return "unknown"; }
 
 int fs_get_mod_dir_state(const char *mod_dir) {

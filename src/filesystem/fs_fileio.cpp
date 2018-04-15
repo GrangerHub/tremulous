@@ -1156,7 +1156,7 @@ long FS_SV_FOpenFileRead(const char *filename, fileHandle_t *fp) {
 	unsigned int size = -1;
 	*fp = 0;
 
-	for(i=0; i<FS_SOURCEDIR_COUNT; ++i) {
+	for(i=0; i<FS_MAX_SOURCEDIRS; ++i) {
 		if(fs_generate_path_sourcedir(i, filename, 0, FS_ALLOW_SLASH, 0, path, sizeof(path))) {
 			*fp = fs_cache_read_handle_open(0, path, &size);
 			if(*fp) break; } }
