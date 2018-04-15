@@ -830,7 +830,7 @@ ifneq ($(BUILD_DATA_PK3),0)
     $(B)/$(BASEGAME)/data-$(VERSION).pk3
 endif
 
-ifeq ($(NEW_FILESYSTEM),1)
+ifneq ($(NEW_FILESYSTEM),0)
   BASE_CFLAGS += -DNEW_FILESYSTEM
 endif
 
