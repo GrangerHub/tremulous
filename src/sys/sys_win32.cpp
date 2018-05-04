@@ -266,12 +266,14 @@ Opens a path with the default application
 */
 bool Sys_OpenWithDefault( const char *path )
 {
-	HINSTANCE err;
+	HINSTANCE hInst = ShellExecute(0, "open", path, 0, 0 , SW_SHOWNORMAL );
+	int err = (int)hInst;
 
-	err = ShellExecute(0, "open", path, 0, 0 , SW_SHOWNORMAL );
-
-	if( ( (int)err ) > 32 )
+	if( err > 32 )
+	{
+		Com_Printf( "^7Sys_OpenWithDefault: opening %s .....\n", path );
 		return true;
+	}
 
 	switch ( err )
 	{
