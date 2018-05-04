@@ -261,6 +261,54 @@ FILE *Sys_Mkfifo( const char *ospath )
 }
 
 /*
+==============
+Sys_OpenWithDefault
+
+Opens a path with the default application
+==============
+*/
+bool Sys_OpenWithDefault( const char *path )
+{
+	if (fork() == 0)
+	{
+		int  status;
+		char *argv[3];
+		char tempPath[MAX_OSPATH];
+		char openCmd[MAX_OSPATH];
+
+		::memset( tempPath, 0, sizeof( tempPath ) );
+		::memset( openCmd, 0, sizeof( openCmd ) );
+
+		Q_strcat( tempPath, sizeof(tempPath), path );
+
+		argv[1] = tempPath;
+		argv[2] = NULL;
+
+#ifdef __APPLE__
+		Q_strcat( openCmd, sizeof(openCmd), "open");
+#else
+		Q_strcat( openCmd, sizeof(openCmd), "xdg-open");
+#endif
+
+		argv[0] = openCmd;
+
+		if( execvp( argv[0], argv ) )
+		{
+			Com_Printf( "^1Sys_OpenWithDefault: failed to open path.^7\n" );
+			return false;
+		}
+
+		Com_Printf( "^7Sys_OpenWithDefault: opening %s .....\n", path );
+		wait( &status );
+
+		return true;
+	}
+
+	Com_Printf( "^1Sys_OpenWithDefault: failed to start child process.^7\n" );
+	return false;
+}
+
+/*
 ==================
 Sys_Cwd
 ==================

@@ -398,6 +398,30 @@ char *FS_BuildOSPath(const char *base, const char *game, const char *qpath)
 
 /*
 ============
+FS_BrowseHomepath
+
+Opens the homepath in the default file manager
+============
+*/
+bool FS_BrowseHomepath( void )
+{
+  const char *homePath = Sys_DefaultHomePath( );
+
+  if (!homePath || !homePath[0])
+  {
+      homePath = fs_basepath->string;
+  }
+
+  if( Sys_OpenWithDefault( homePath ) )
+    return true;
+
+  Com_Printf( "^1FS_BrowseHomepath: failed to open the homepath with the default file manager.\n" );
+  return false;
+
+}
+
+/*
+============
 FS_CreatePath
 
 Creates any directories needed to store the given filename

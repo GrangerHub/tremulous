@@ -178,6 +178,8 @@ static void CL_InstallUpdate_f()
 
 static void CL_CheckForUpdate_f() { CL_GetLatestRelease(); }
 
+static void CL_BrowseHomepath_f() { FS_BrowseHomepath(); }
+
 #ifdef USE_MUMBLE
 static void CL_UpdateMumble(void)
 {
@@ -4976,6 +4978,7 @@ void CL_Init(void)
     Cmd_AddCommand("downloadUpdate", CL_DownloadUpdate_f);
     Cmd_AddCommand("installUpdate", CL_InstallUpdate_f);
     Cmd_AddCommand("checkForUpdate", CL_CheckForUpdate_f);
+    Cmd_AddCommand("browseHomepath", CL_BrowseHomepath_f);
 
     CL_InitRef();
 

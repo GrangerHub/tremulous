@@ -19,4 +19,5 @@
   loadMenu { "ui/quitcredit.menu" }
   loadMenu { "ui/createfavorite.menu" }
   loadMenu { "ui/install_update.menu" }
+  loadMenu { "ui/folders.menu" }
 }
