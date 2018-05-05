@@ -267,7 +267,7 @@ Opens a path with the default application
 bool Sys_OpenWithDefault( const char *path )
 {
 	HINSTANCE hInst = ShellExecute(0, "open", path, 0, 0 , SW_SHOWNORMAL );
-	int err = (int)hInst;
+	uint64_t err = (uint64_t)hInst;
 
 	if( err > 32 )
 	{
@@ -317,20 +317,12 @@ bool Sys_OpenWithDefault( const char *path )
 			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: The specified DLL was not found.\n", "warning" );
 			break;
 
-		case SE_ERR_FNF:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: The specified file was not found.\n", "warning" );
-			break;
-
 		case SE_ERR_NOASSOC:
 			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: There is no application associated with the given file name extension. This error will also be returned if you attempt to print a file that is not printable.\n", "warning" );
 			break;
 
 		case SE_ERR_OOM:
 			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: There was not enough memory to complete the operation.\n", "warning" );
-			break;
-
-		case SE_ERR_PNF:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: The specified path was not found.\n", "warning" );
 			break;
 
 		case SE_ERR_SHARE:
