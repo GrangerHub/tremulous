@@ -89,7 +89,7 @@ Sys_Milliseconds
 int sys_timeBase;
 int Sys_Milliseconds (void)
 {
-	int						 sys_curtime;
+	int					sys_curtime;
 	static bool initialized = false;
 
 	if (!initialized) {
@@ -266,75 +266,108 @@ Opens a path with the default application
 */
 bool Sys_OpenWithDefault( const char *path )
 {
-	HINSTANCE hInst = ShellExecute(0, "open", path, 0, 0 , SW_SHOWNORMAL );
-	uint64_t err = (uint64_t)hInst;
+    HINSTANCE hInst;
+    uint64_t err = (uint64_t)hInst;
 
-	if( err > 32 )
-	{
-		Com_Printf( "^7Sys_OpenWithDefault: opening %s .....\n", path );
-		return true;
-	}
+    Com_Printf( S_COLOR_WHITE "Sys_OpenWithDefault: opening %s .....\n", path );
 
-	switch ( err )
-	{
-		case 0:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: The operating system is out of memory or resources.\n", "warning" );
-			break;
+    hInst = ShellExecute(0, "open", path, 0, 0 , SW_SHOWNORMAL );
 
-		case ERROR_FILE_NOT_FOUND:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: The specified file was not found.\n", "warning" );
-			break;
+    if( err > 32 )
+    {
+        //success
+        return true;
+    }
 
-		case ERROR_PATH_NOT_FOUND:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: The specified path was not found.\n", "warning" );
-			break;
+    // failure
+    switch ( err )
+    {
+        case 0:
+            Sys_Dialog( DT_WARNING,
+                        "Sys_OpenWithDefault: The operating system is out of memory or resources.\n",
+                        "warning" );
+            break;
 
-		case ERROR_BAD_FORMAT:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: The .exe file is invalid (non-Win32 .exe or error in .exe image).\n", "warning" );
-			break;
+        case ERROR_FILE_NOT_FOUND:
+            Sys_Dialog( DT_WARNING,
+                        "Sys_OpenWithDefault: The specified file was not found.\n",
+                        "warning" );
+            break;
 
-		case SE_ERR_ACCESSDENIED:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: The operating system denied access to the specified file.\n", "warning" );
-			break;
+        case ERROR_PATH_NOT_FOUND:
+            Sys_Dialog( DT_WARNING,
+                        "Sys_OpenWithDefault: The specified path was not found.\n",
+                        "warning" );
+            break;
 
-		case SE_ERR_ASSOCINCOMPLETE:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: The file name association is incomplete or invalid.\n", "warning" );
-			break;
+        case ERROR_BAD_FORMAT:
+            Sys_Dialog( DT_WARNING,
+                        "Sys_OpenWithDefault: The .exe file is invalid (non-Win32 .exe or error in .exe image).\n",
+                        "warning" );
+            break;
 
-		case SE_ERR_DDEBUSY:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: The DDE transaction could not be completed because other DDE transactions were being processed.\n", "warning" );
-			break;
+        case SE_ERR_ACCESSDENIED:
+            Sys_Dialog( DT_WARNING,
+                        "Sys_OpenWithDefault: The operating system denied access to the specified file.\n",
+                        "warning" );
+            break;
 
-		case SE_ERR_DDEFAIL:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: The DDE transaction failed.\n", "warning" );
-			break;
+        case SE_ERR_ASSOCINCOMPLETE:
+            Sys_Dialog( DT_WARNING,
+                        "Sys_OpenWithDefault: The file name association is incomplete or invalid.\n",
+                        "warning" );
+            break;
 
-		case SE_ERR_DDETIMEOUT:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: The DDE transaction could not be completed because the request timed out.\n", "warning" );
-			break;
+        case SE_ERR_DDEBUSY:
+            Sys_Dialog( DT_WARNING,
+                        "Sys_OpenWithDefault: The DDE transaction could not be completed because other DDE transactions were being processed.\n",
+                        "warning" );
+            break;
 
-		case SE_ERR_DLLNOTFOUND:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: The specified DLL was not found.\n", "warning" );
-			break;
+        case SE_ERR_DDEFAIL:
+            Sys_Dialog( DT_WARNING,
+                        "Sys_OpenWithDefault: The DDE transaction failed.\n",
+                        "warning" );
+            break;
 
-		case SE_ERR_NOASSOC:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: There is no application associated with the given file name extension. This error will also be returned if you attempt to print a file that is not printable.\n", "warning" );
-			break;
+        case SE_ERR_DDETIMEOUT:
+            Sys_Dialog( DT_WARNING,
+                        "Sys_OpenWithDefault: The DDE transaction could not be completed because the request timed out.\n",
+                        "warning" );
+            break;
 
-		case SE_ERR_OOM:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: There was not enough memory to complete the operation.\n", "warning" );
-			break;
+        case SE_ERR_DLLNOTFOUND:
+            Sys_Dialog( DT_WARNING,
+                        "Sys_OpenWithDefault: The specified DLL was not found.\n",
+                        "warning" );
+            break;
 
-		case SE_ERR_SHARE:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: A sharing violation occurred.\n", "warning" );
-			break;
+        case SE_ERR_NOASSOC:
+            Sys_Dialog( DT_WARNING,
+                        "Sys_OpenWithDefault: There is no application associated with the given file name extension. This error will also be returned if you attempt to print a file that is not printable.\n",
+                        "warning" );
+            break;
 
-		default:
-			Sys_Dialog( DT_WARNING, "Sys_OpenWithDefault: Failed to open path.\n", "warning" );
-			break;
-	}
+        case SE_ERR_OOM:
+            Sys_Dialog( DT_WARNING, 
+                        "Sys_OpenWithDefault: There was not enough memory to complete the operation.\n",
+                        "warning" );
+            break;
 
-	return false;
+        case SE_ERR_SHARE:
+            Sys_Dialog( DT_WARNING, 
+                        "Sys_OpenWithDefault: A sharing violation occurred.\n",
+                        "warning" );
+            break;
+
+        default:
+            Sys_Dialog( DT_WARNING, 
+                        "Sys_OpenWithDefault: Failed to open path.\n",
+                        "warning" );
+            break;
+    }
+
+    return false;
 }
 
 /*

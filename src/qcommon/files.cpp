@@ -398,6 +398,25 @@ char *FS_BuildOSPath(const char *base, const char *game, const char *qpath)
 
 /*
 ============
+FS_OpenWithDefault
+
+Wrapper for Sys_OpenWithDefault()
+============
+*/
+static bool FS_OpenWithDefault( const char *path )
+{
+    if( Sys_OpenWithDefault( path ) )
+    {
+        // minimize the client's window
+        Cmd_ExecuteString( "minimize" );
+        return true;
+    }
+
+    return false;
+}
+
+/*
+============
 FS_BrowseHomepath
 
 Opens the homepath in the default file manager
@@ -405,19 +424,68 @@ Opens the homepath in the default file manager
 */
 bool FS_BrowseHomepath( void )
 {
-  const char *homePath = Sys_DefaultHomePath( );
+    const char *homePath = Sys_DefaultHomePath( );
 
-  if (!homePath || !homePath[0])
-  {
-      homePath = fs_basepath->string;
-  }
+    if (!homePath || !homePath[0])
+    {
+        homePath = fs_basepath->string;
+    }
 
-  if( Sys_OpenWithDefault( homePath ) )
-    return true;
+    if( FS_OpenWithDefault( homePath ) )
+        return true;
 
-  Com_Printf( "^1FS_BrowseHomepath: failed to open the homepath with the default file manager.\n" );
-  return false;
+    Com_Printf( S_COLOR_RED "FS_BrowseHomepath: failed to open the homepath with the default file manager.\n" S_COLOR_WHITE );
+    return false;
+}
 
+/*
+============
+FS_OpenBaseGamePath
+
+Opens the given path for the base game
+============
+*/
+static bool FS_OpenBaseGamePath( const char *baseGamePath )
+{
+    const char *homePath = Sys_DefaultHomePath( );
+    const char *path;
+
+    if (!homePath || !homePath[0])
+    {
+        homePath = fs_basepath->string;
+    }
+
+    path = FS_BuildOSPath( homePath, fs_basegame->string, baseGamePath);
+
+    if( FS_OpenWithDefault( path ) )
+        return true;
+
+    Com_Printf( S_COLOR_RED "FS_BrowseHomepath: failed to open the homepath with the default file manager.\n" S_COLOR_WHITE );
+    return false;
+}
+
+/*
+============
+FS_BrowseDemos
+
+Opens the demos folder in the default file manager
+============
+*/
+bool FS_BrowseDemos( void )
+{
+    FS_OpenBaseGamePath( "demos/" );
+}
+
+/*
+============
+FS_BrowseScreesnShots
+
+Opens the screenshots folder in the default file manager
+============
+*/
+bool FS_BrowseScreesnShots( void )
+{
+    FS_OpenBaseGamePath( "screenshots/" );
 }
 
 /*

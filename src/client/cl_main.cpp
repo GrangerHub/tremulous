@@ -180,6 +180,10 @@ static void CL_CheckForUpdate_f() { CL_GetLatestRelease(); }
 
 static void CL_BrowseHomepath_f() { FS_BrowseHomepath(); }
 
+static void CL_BrowseDemos_f() { FS_BrowseDemos(); }
+
+static void CL_BrowseScreenShots_f() { FS_BrowseScreesnShots(); }
+
 #ifdef USE_MUMBLE
 static void CL_UpdateMumble(void)
 {
@@ -4979,6 +4983,8 @@ void CL_Init(void)
     Cmd_AddCommand("installUpdate", CL_InstallUpdate_f);
     Cmd_AddCommand("checkForUpdate", CL_CheckForUpdate_f);
     Cmd_AddCommand("browseHomepath", CL_BrowseHomepath_f);
+    Cmd_AddCommand("browseDemos", CL_BrowseDemos_f);
+    Cmd_AddCommand("browseScreenShots", CL_BrowseScreenShots_f);
 
     CL_InitRef();
 
