@@ -442,10 +442,11 @@ bool FS_BrowseHomepath( void )
 ============
 FS_OpenBaseGamePath
 
-Opens the given path for the base game
+Opens the given path for the
+base game in the default file manager
 ============
 */
-static bool FS_OpenBaseGamePath( const char *baseGamePath )
+bool FS_OpenBaseGamePath( const char *baseGamePath )
 {
     const char *homePath = Sys_DefaultHomePath( );
     const char *path;
