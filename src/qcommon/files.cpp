@@ -467,30 +467,6 @@ bool FS_OpenBaseGamePath( const char *baseGamePath )
 
 /*
 ============
-FS_BrowseDemos
-
-Opens the demos folder in the default file manager
-============
-*/
-bool FS_BrowseDemos( void )
-{
-    FS_OpenBaseGamePath( "demos/" );
-}
-
-/*
-============
-FS_BrowseScreesnShots
-
-Opens the screenshots folder in the default file manager
-============
-*/
-bool FS_BrowseScreesnShots( void )
-{
-    FS_OpenBaseGamePath( "screenshots/" );
-}
-
-/*
-============
 FS_CreatePath
 
 Creates any directories needed to store the given filename
