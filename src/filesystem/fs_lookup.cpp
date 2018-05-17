@@ -107,8 +107,8 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
     }
 
     // Check mod dir for case mismatched current or basegame directory
-    for (const char *name : {BASEGAME_1_1, BASEGAME_GPP, BASEGAME_1_3, BASEGAME_OVERRIDE, BASEGAME,
-             (const char *)fs_basegame->string, (const char *)current_mod_dir})
+    for (const char *name : std::vector<const char *>{BASEGAME_1_1, BASEGAME_GPP, BASEGAME_1_3, BASEGAME_OVERRIDE,
+             BASEGAME, (const char *)fs_basegame->string, (const char *)current_mod_dir})
     {
         if (!Q_stricmp(resource_mod_dir, name) && strcmp(resource_mod_dir, name))
             resource->flags |= RESFLAG_CASE_MISMATCH;
@@ -502,7 +502,7 @@ PC_COMPARE(mod_dir_priority)
 
 PC_DEBUG(mod_dir_priority)
 {
-    ADD_STRING(va("Resource %i was selected because it is from a higher priority mod directory", high_num, low_num));
+    ADD_STRING(va("Resource %i was selected because it is from a higher priority mod directory", high_num));
 }
 
 PC_COMPARE(downloads_folder)
