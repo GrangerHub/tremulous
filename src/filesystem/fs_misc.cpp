@@ -143,35 +143,98 @@ int pk3_list_lookup(const pk3_list_t *pk3_list, unsigned int hash, qboolean reve
 void pk3_list_free(pk3_list_t *pk3_list) { fs_hashtable_free(&pk3_list->ht, 0); }
 
 /* ******************************************************************************** */
-// System pk3 checks
+// Pk3 precedence functions
 /* ******************************************************************************** */
 
-// These are used to rank paks according to the definitions in fspublic.h
+#define BASE_PAKS                                  \
+    -1286840555, /* vms-1.1.0.pk3 */               \
+        1428306337, /* data-1.1.0.pk3 */           \
+        -537036296, /* map-uncreation-1.1.0.pk3 */ \
+        -1768007739, /* map-tremor-1.1.0.pk3 */    \
+        -2044057604, /* map-transit-1.1.0.pk3 */   \
+        2047591756, /* map-niveus-1.1.0.pk3 */     \
+        -2034645069, /* map-nexus6-1.1.0.pk3 */    \
+        1167370113, /* map-karith-1.1.0.pk3 */     \
+        -2177599, /* map-atcs-1.1.0.pk3 */         \
+        -1985258489 /* map-arachnid2-1.1.0.pk3 */
 
-#define PROCESS_PAKS(paks)                      \
+#define GPP_PAKS                    \
+    -1154612609, /* vms-gpp1.pk3 */ \
+        -1688908842 /* data-gpp1.pk3 */
+
+#define BASE13_PAKS                             \
+    -294027093, /* vms-v1.3.0-alpha.0.13.pk3 */ \
+        1646107670 /* data-v1.3.0-alpha.0.13.pk3 */
+
+#define PROCESS_PAKS(hashes)                    \
+    for (int i = 0; i < ARRAY_LEN(hashes); ++i) \
     {                                           \
-        int i;                                  \
-        unsigned int hashes[] = paks;           \
-        for (i = 0; i < ARRAY_LEN(hashes); ++i) \
-        {                                       \
-            if (hash == hashes[i])              \
-                return i + 1;                   \
-        }                                       \
+        if (hash == (unsigned int)hashes[i])    \
+            return ARRAY_LEN(hashes) - i;       \
     }
 
 int system_pk3_position(unsigned int hash)
 {
-#ifdef FS_SYSTEM_PAKS_TEAMARENA
-    if (!Q_stricmp(FS_GetCurrentGameDir(), BASETA))
+    static const int hashes_default[] = {BASE13_PAKS, GPP_PAKS, BASE_PAKS};
+    static const int hashes_1_1[] = {BASE_PAKS, GPP_PAKS, BASE13_PAKS};
+    static const int hashes_gpp[] = {GPP_PAKS, BASE_PAKS, BASE13_PAKS};
+
+    switch (fs_profile)
     {
-        PROCESS_PAKS(FS_SYSTEM_PAKS_TEAMARENA)
-        return 0;
+        case FS_PROFILE_DEFAULT:
+            PROCESS_PAKS(hashes_default);
+            break;
+
+        case FS_PROFILE_1_1:
+            PROCESS_PAKS(hashes_1_1);
+            break;
+
+        case FS_PROFILE_GPP:
+            PROCESS_PAKS(hashes_gpp);
+            break;
     }
-#endif
-#ifdef FS_SYSTEM_PAKS
-    PROCESS_PAKS(FS_SYSTEM_PAKS)
-#endif
+
     return 0;
+}
+
+FS_ModState fs_get_mod_dir_state(const char *mod_dir)
+{
+    if (*current_mod_dir && !Q_stricmp(mod_dir, current_mod_dir))
+        return MODSTATE_CURRENT_MOD;
+    if (!Q_stricmp(mod_dir, BASEGAME_OVERRIDE))
+        return MODSTATE_OVERRIDE_DIRECTORY;
+
+    switch (fs_profile)
+    {
+        case FS_PROFILE_DEFAULT:
+            if (!Q_stricmp(mod_dir, BASEGAME_1_3))
+                return MODSTATE_BASE1;
+            if (!Q_stricmp(mod_dir, BASEGAME_GPP))
+                return MODSTATE_BASE2;
+            if (!Q_stricmp(mod_dir, BASEGAME_1_1))
+                return MODSTATE_BASE3;
+            break;
+
+        case FS_PROFILE_1_1:
+            if (!Q_stricmp(mod_dir, BASEGAME_1_1))
+                return MODSTATE_BASE1;
+            if (!Q_stricmp(mod_dir, BASEGAME_GPP))
+                return MODSTATE_BASE2;
+            if (!Q_stricmp(mod_dir, BASEGAME_1_3))
+                return MODSTATE_BASE3;
+            break;
+
+        case FS_PROFILE_GPP:
+            if (!Q_stricmp(mod_dir, BASEGAME_GPP))
+                return MODSTATE_BASE1;
+            if (!Q_stricmp(mod_dir, BASEGAME_1_1))
+                return MODSTATE_BASE2;
+            if (!Q_stricmp(mod_dir, BASEGAME_1_3))
+                return MODSTATE_BASE3;
+            break;
+    }
+
+    return MODSTATE_INACTIVE;
 }
 
 /* ******************************************************************************** */
@@ -210,18 +273,6 @@ const char *fs_get_source_dir_string(const fsc_file_t *file)
     if (id >= 0 && id < FS_MAX_SOURCEDIRS && fs_sourcedirs[id].active)
         return fs_sourcedirs[id].name;
     return "unknown";
-}
-
-int fs_get_mod_dir_state(const char *mod_dir)
-{
-    // Returns 3 for current mod, 2 for basemod, 1 for basegame, 0 for inactive mod
-    if (*current_mod_dir && !Q_stricmp(mod_dir, current_mod_dir))
-        return 3;
-    else if (!Q_stricmp(mod_dir, "basemod"))
-        return 2;
-    else if (!Q_stricmp(mod_dir, fs_basegame->string))
-        return 1;
-    return 0;
 }
 
 void fs_file_to_stream(const fsc_file_t *file, fsc_stream_t *stream, qboolean include_source_dir, qboolean include_mod,

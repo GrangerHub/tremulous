@@ -68,6 +68,9 @@ int checksum_feed;
 int connected_server_sv_pure;
 pk3_list_t connected_server_pk3_list;
 
+// Current version profile used to prioritize file lookups
+FS_Profile fs_profile;
+
 /* ******************************************************************************** */
 // Filesystem State Accessors
 /* ******************************************************************************** */

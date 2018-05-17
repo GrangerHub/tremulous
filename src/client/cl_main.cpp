@@ -3634,7 +3634,11 @@ static void CL_SetServerInfo(serverInfo_t *server, const char *info, int ping)
             server->minPing = atoi(Info_ValueForKey(info, "minping"));
             server->maxPing = atoi(Info_ValueForKey(info, "maxping"));
             const char *game = Info_ValueForKey(info, "game");
+#ifdef NEW_FILESYSTEM
+            Q_strncpyz(server->game, (game[0]) ? game : "base", MAX_NAME_LENGTH);
+#else
             Q_strncpyz(server->game, (game[0]) ? game : BASEGAME, MAX_NAME_LENGTH);
+#endif
         }
         server->ping = ping;
     }

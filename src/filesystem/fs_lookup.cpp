@@ -58,7 +58,7 @@ typedef struct {
     int system_pak_priority;
     int server_pak_position;
     int extension_position;
-    int mod_dir_match;  // 3 = current mod dir, 2 = 'basemod' dir, 1 = base dir, 0 = no match
+    FS_ModState mod_dir_state;
     int flags;
 
     // Can be set to an error explanation to disable the resource during selection but still
@@ -85,7 +85,7 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
 {
     // Determine mod dir match level
     const char *resource_mod_dir = fsc_get_mod_dir(resource->file, &fs);
-    resource->mod_dir_match = fs_get_mod_dir_state(resource_mod_dir);
+    resource->mod_dir_state = fs_get_mod_dir_state(resource_mod_dir);
 
     // Configure pk3-specific properties
     if (resource->file->sourcetype == FSC_SOURCETYPE_PK3)
@@ -97,9 +97,9 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
         if (source_pk3->f.flags & FSC_FILEFLAG_DLPK3)
             resource->flags |= RESFLAG_IN_DOWNLOAD_PK3;
 
-        if (resource->mod_dir_match <= 1)
+        if (resource->mod_dir_state < MODSTATE_OVERRIDE_DIRECTORY)
         {
-            // Don't sort system paks or the current map pak specially if they are part of a mod
+            // Sort system paks or the current map pak specially unless they are mixed into an active mod directory
             resource->system_pak_priority = system_pk3_position(source_pk3->pk3_hash);
             if (!(query->lookup_flags & LOOKUPFLAG_IGNORE_CURRENT_MAP) && source_pk3 == current_map_pk3)
                 resource->flags |= RESFLAG_IN_CURRENT_MAP_PAK;
@@ -107,10 +107,11 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
     }
 
     // Check mod dir for case mismatched current or basegame directory
-    if ((!Q_stricmp(resource_mod_dir, FS_GetCurrentGameDir()) && strcmp(resource_mod_dir, FS_GetCurrentGameDir())) ||
-        (!Q_stricmp(resource_mod_dir, fs_basegame->string) && strcmp(resource_mod_dir, fs_basegame->string)))
+    for (const char *name : {BASEGAME_1_1, BASEGAME_GPP, BASEGAME_1_3, BASEGAME_OVERRIDE, BASEGAME,
+             (const char *)fs_basegame->string, (const char *)current_mod_dir})
     {
-        resource->flags |= RESFLAG_CASE_MISMATCH;
+        if (!Q_stricmp(resource_mod_dir, name) && strcmp(resource_mod_dir, name))
+            resource->flags |= RESFLAG_CASE_MISMATCH;
     }
 
     // Handle settings (e.g. q3config.cfg or autoexec.cfg) query
@@ -120,13 +121,9 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
         {
             resource->disabled = "settings config file can't be loaded from pk3";
         }
-        if (fs_mod_settings->integer && resource->mod_dir_match != 1 && resource->mod_dir_match != 3)
+        if (Q_stricmp(resource_mod_dir, fs_basegame->string))
         {
-            resource->disabled = "settings config file can only be loaded from com_basegame or current mod dir";
-        }
-        if (!fs_mod_settings->integer && resource->mod_dir_match != 1)
-        {
-            resource->disabled = "settings config file can only be loaded from com_basegame dir";
+            resource->disabled = "settings config file can only be loaded from fs_basegame directory";
         }
     }
 
@@ -385,10 +382,14 @@ PC_DEBUG(resource_disabled)
 
 PC_COMPARE(special_shaders)
 {
-    qboolean r1_special =
-        (r1->shader && (r1->mod_dir_match > 1 || r1->system_pak_priority || r1->server_pak_position)) ? qtrue : qfalse;
-    qboolean r2_special =
-        (r2->shader && (r2->mod_dir_match > 1 || r2->system_pak_priority || r2->server_pak_position)) ? qtrue : qfalse;
+    qboolean r1_special = (r1->shader && (r1->mod_dir_state >= MODSTATE_OVERRIDE_DIRECTORY || r1->system_pak_priority ||
+                                             r1->server_pak_position))
+                              ? qtrue
+                              : qfalse;
+    qboolean r2_special = (r2->shader && (r2->mod_dir_state >= MODSTATE_OVERRIDE_DIRECTORY || r2->system_pak_priority ||
+                                             r2->server_pak_position))
+                              ? qtrue
+                              : qfalse;
 
     if (r1_special && !r2_special)
         return -1;
@@ -436,11 +437,11 @@ PC_DEBUG(server_pak_position)
 
 PC_COMPARE(basemod_or_current_mod_dir)
 {
-    if (r1->mod_dir_match >= 2 || r2->mod_dir_match >= 2)
+    if (r1->mod_dir_state >= MODSTATE_OVERRIDE_DIRECTORY || r2->mod_dir_state >= MODSTATE_OVERRIDE_DIRECTORY)
     {
-        if (r1->mod_dir_match > r2->mod_dir_match)
+        if (r1->mod_dir_state > r2->mod_dir_state)
             return -1;
-        if (r2->mod_dir_match > r1->mod_dir_match)
+        if (r2->mod_dir_state > r1->mod_dir_state)
             return 1;
     }
     return 0;
@@ -449,7 +450,7 @@ PC_COMPARE(basemod_or_current_mod_dir)
 PC_DEBUG(basemod_or_current_mod_dir)
 {
     ADD_STRING(va("Resource %i was selected because it is from ", high_num));
-    if (high->mod_dir_match == 3)
+    if (high->mod_dir_state == MODSTATE_CURRENT_MOD)
     {
         ADD_STRING(va("the current mod directory (%s)", fsc_get_mod_dir(high->file, &fs)));
     }
@@ -490,21 +491,18 @@ PC_DEBUG(current_map_pak)
         high_num, low_num));
 }
 
-PC_COMPARE(inactive_mod_dir)
+PC_COMPARE(mod_dir_priority)
 {
-    if (r1->mod_dir_match && !r2->mod_dir_match)
+    if (r1->mod_dir_state > r2->mod_dir_state)
         return -1;
-    if (r2->mod_dir_match && !r1->mod_dir_match)
+    if (r2->mod_dir_state > r1->mod_dir_state)
         return 1;
     return 0;
 }
 
-PC_DEBUG(inactive_mod_dir)
+PC_DEBUG(mod_dir_priority)
 {
-    ADD_STRING(
-        va("Resource %i was selected because resource %i is from an inactive mod directory "
-           "(not basegame, basemod, or current mod).",
-            high_num, low_num));
+    ADD_STRING(va("Resource %i was selected because it is from a higher priority mod directory", high_num, low_num));
 }
 
 PC_COMPARE(downloads_folder)
@@ -682,7 +680,7 @@ typedef struct {
     }
 static const precedence_check_t precedence_checks[] = {ADD_CHECK(resource_disabled), ADD_CHECK(special_shaders),
     ADD_CHECK(server_pak_position), ADD_CHECK(basemod_or_current_mod_dir), ADD_CHECK(system_paks),
-    ADD_CHECK(current_map_pak), ADD_CHECK(inactive_mod_dir), ADD_CHECK(downloads_folder), ADD_CHECK(shader_over_image),
+    ADD_CHECK(current_map_pak), ADD_CHECK(mod_dir_priority), ADD_CHECK(downloads_folder), ADD_CHECK(shader_over_image),
     ADD_CHECK(dll_over_qvm), ADD_CHECK(direct_over_pk3), ADD_CHECK(pk3_name_precedence),
     ADD_CHECK(extension_precedence), ADD_CHECK(source_dir_precedence), ADD_CHECK(intra_pk3_position),
     ADD_CHECK(intra_shaderfile_position), ADD_CHECK(case_match)};

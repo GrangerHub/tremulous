@@ -27,8 +27,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // Common Definitions
 /* ******************************************************************************** */
 
-#define BASEGAME "gpp"
-
 #define qboolean bool
 typedef FS_Origin fsOrigin_t;
 typedef FS_Mode fsMode_t;
@@ -38,20 +36,6 @@ typedef FS_Mode fsMode_t;
 #define DEF_LOCAL(f) f;
 #else
 #define DEF_LOCAL(f)
-#endif
-
-#ifndef STANDALONE
-// These paks get special precedence. Can be non-defined to disable.
-#define FS_SYSTEM_PAKS {2430342401u, 511014160u, 2662638993u, 1438664554u, \
-		1566731103u, 298122907u, 412165236u, 2991495316u, 1197932710u, \
-		4087071573u, 3709064859u, 908855077u, 977125798u}
-#define FS_SYSTEM_PAKS_TEAMARENA {1566731103u, 298122907u, 412165236u, 2991495316u, \
-		1197932710u, 4087071573u, 3709064859u, 908855077u, 977125798u, \
-		2430342401u, 511014160u, 2662638993u, 1438664554u}
-
-// This has to do with blocking certain files from being auto-downloaded.
-#define FS_NODOWNLOAD_PAKS 9
-#define FS_NODOWNLOAD_PAKS_TEAMARENA 4
 #endif
 
 #ifdef DEDICATED
@@ -76,6 +60,23 @@ typedef enum {
 } fs_config_type_t;
 
 #ifdef FSLOCAL
+// Versioned pk3 search locations
+#define BASEGAME_1_1 "base"
+#define BASEGAME_GPP "gpp"
+#define BASEGAME_1_3 "base_1.3"
+
+// User mod directory; overrides the regular search locations
+#define BASEGAME_OVERRIDE "basemod"
+
+// Store location for saved demos, screenshots, configs, condumps, etc.
+#define BASEGAME "base_1.3"
+
+enum FS_Profile {
+	FS_PROFILE_DEFAULT,
+	FS_PROFILE_1_1,
+	FS_PROFILE_GPP
+};
+
 typedef struct {
 	const char *name;
 	cvar_t *path_cvar;
@@ -153,6 +154,7 @@ DEF_LOCAL( extern int checksum_feed )
 
 DEF_LOCAL( extern int connected_server_sv_pure )
 DEF_LOCAL( extern pk3_list_t connected_server_pk3_list )
+DEF_LOCAL( extern FS_Profile fs_profile )
 
 // State Accessors
 DEF_PUBLIC( const char *FS_GetCurrentGameDir(void) )
@@ -353,8 +355,19 @@ DEF_LOCAL( void pk3_list_insert(pk3_list_t *pk3_list, unsigned int hash) )
 DEF_LOCAL( int pk3_list_lookup(const pk3_list_t *pk3_list, unsigned int hash, qboolean reverse) )
 DEF_LOCAL( void pk3_list_free(pk3_list_t *pk3_list) )
 
-// System pk3 checks
+// Pk3 precedence functions
+#ifdef FSLOCAL
+enum FS_ModState {
+	MODSTATE_INACTIVE,
+	MODSTATE_BASE3,
+	MODSTATE_BASE2,
+	MODSTATE_BASE1,
+	MODSTATE_OVERRIDE_DIRECTORY,
+	MODSTATE_CURRENT_MOD
+};
+#endif
 DEF_LOCAL( int system_pk3_position(unsigned int hash) )
+DEF_LOCAL( FS_ModState fs_get_mod_dir_state(const char *mod_dir) )
 
 // File helper functions
 #ifdef FSLOCAL
@@ -365,7 +378,6 @@ DEF_PUBLIC( const char *fs_file_extension(const fsc_file_t *file) )
 DEF_PUBLIC( qboolean fs_files_from_same_pk3(const fsc_file_t *file1, const fsc_file_t *file2) )
 DEF_LOCAL( int fs_get_source_dir_id(const fsc_file_t *file) )
 DEF_LOCAL( const char *fs_get_source_dir_string(const fsc_file_t *file) )
-DEF_LOCAL( int fs_get_mod_dir_state(const char *mod_dir) )
 DEF_LOCAL( void fs_file_to_stream(const fsc_file_t *file, fsc_stream_t *stream, qboolean include_source_dir,
 			qboolean include_mod, qboolean include_pk3_origin, qboolean include_size) )
 DEF_LOCAL( void fs_file_to_buffer(const fsc_file_t *file, char *buffer, unsigned int buffer_size, qboolean include_source_dir,
