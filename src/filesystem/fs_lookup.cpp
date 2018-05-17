@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifdef NEW_FILESYSTEM
 #include "fslocal.h"
+#include <initializer_list>
 
 #define ADD_STRING(string) fsc_stream_append_string(stream, string)
 #define ADD_STRINGL(string) fsc_stream_append_string(&stream, string)
@@ -107,8 +108,8 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
     }
 
     // Check mod dir for case mismatched current or basegame directory
-    for (const char *name : std::vector<const char *>{BASEGAME_1_1, BASEGAME_GPP, BASEGAME_1_3, BASEGAME_OVERRIDE,
-             BASEGAME, (const char *)fs_basegame->string, (const char *)current_mod_dir})
+    for (const char *name : {BASEGAME_1_1, BASEGAME_GPP, BASEGAME_1_3, BASEGAME_OVERRIDE, BASEGAME,
+             (const char *)fs_basegame->string, (const char *)current_mod_dir})
     {
         if (!Q_stricmp(resource_mod_dir, name) && strcmp(resource_mod_dir, name))
             resource->flags |= RESFLAG_CASE_MISMATCH;
