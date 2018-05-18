@@ -515,10 +515,10 @@ typedef enum { PAKCATEGORY_ACTIVE_MOD, PAKCATEGORY_BASEGAME, PAKCATEGORY_INACTIV
 
 static pakcategory_t get_pak_category(const fsc_file_direct_t *pak)
 {
-    int mod_dir_state = fs_get_mod_dir_state(fsc_get_mod_dir((fsc_file_t *)pak, &fs));
-    if (mod_dir_state == 3)
+    int mod_type = fs_get_mod_type(fsc_get_mod_dir((fsc_file_t *)pak, &fs));
+    if (mod_type >= MODTYPE_OVERRIDE_DIRECTORY)
         return PAKCATEGORY_ACTIVE_MOD;
-    if (mod_dir_state >= 1)
+    if (mod_type > MODTYPE_INACTIVE)
         return PAKCATEGORY_BASEGAME;
     return PAKCATEGORY_INACTIVE_MOD;
 }

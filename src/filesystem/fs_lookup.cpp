@@ -59,7 +59,7 @@ typedef struct {
     int system_pak_priority;
     int server_pak_position;
     int extension_position;
-    FS_ModState mod_dir_state;
+    FS_ModType mod_type;
     int flags;
 
     // Can be set to an error explanation to disable the resource during selection but still
@@ -86,7 +86,7 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
 {
     // Determine mod dir match level
     const char *resource_mod_dir = fsc_get_mod_dir(resource->file, &fs);
-    resource->mod_dir_state = fs_get_mod_dir_state(resource_mod_dir);
+    resource->mod_type = fs_get_mod_type(resource_mod_dir);
 
     // Configure pk3-specific properties
     if (resource->file->sourcetype == FSC_SOURCETYPE_PK3)
@@ -98,7 +98,7 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
         if (source_pk3->f.flags & FSC_FILEFLAG_DLPK3)
             resource->flags |= RESFLAG_IN_DOWNLOAD_PK3;
 
-        if (resource->mod_dir_state < MODSTATE_OVERRIDE_DIRECTORY)
+        if (resource->mod_type < MODTYPE_OVERRIDE_DIRECTORY)
         {
             // Sort system paks or the current map pak specially unless they are mixed into an active mod directory
             resource->system_pak_priority = system_pk3_position(source_pk3->pk3_hash);
@@ -383,11 +383,11 @@ PC_DEBUG(resource_disabled)
 
 PC_COMPARE(special_shaders)
 {
-    qboolean r1_special = (r1->shader && (r1->mod_dir_state >= MODSTATE_OVERRIDE_DIRECTORY || r1->system_pak_priority ||
+    qboolean r1_special = (r1->shader && (r1->mod_type >= MODTYPE_OVERRIDE_DIRECTORY || r1->system_pak_priority ||
                                              r1->server_pak_position))
                               ? qtrue
                               : qfalse;
-    qboolean r2_special = (r2->shader && (r2->mod_dir_state >= MODSTATE_OVERRIDE_DIRECTORY || r2->system_pak_priority ||
+    qboolean r2_special = (r2->shader && (r2->mod_type >= MODTYPE_OVERRIDE_DIRECTORY || r2->system_pak_priority ||
                                              r2->server_pak_position))
                               ? qtrue
                               : qfalse;
@@ -438,11 +438,11 @@ PC_DEBUG(server_pak_position)
 
 PC_COMPARE(basemod_or_current_mod_dir)
 {
-    if (r1->mod_dir_state >= MODSTATE_OVERRIDE_DIRECTORY || r2->mod_dir_state >= MODSTATE_OVERRIDE_DIRECTORY)
+    if (r1->mod_type >= MODTYPE_OVERRIDE_DIRECTORY || r2->mod_type >= MODTYPE_OVERRIDE_DIRECTORY)
     {
-        if (r1->mod_dir_state > r2->mod_dir_state)
+        if (r1->mod_type > r2->mod_type)
             return -1;
-        if (r2->mod_dir_state > r1->mod_dir_state)
+        if (r2->mod_type > r1->mod_type)
             return 1;
     }
     return 0;
@@ -451,7 +451,7 @@ PC_COMPARE(basemod_or_current_mod_dir)
 PC_DEBUG(basemod_or_current_mod_dir)
 {
     ADD_STRING(va("Resource %i was selected because it is from ", high_num));
-    if (high->mod_dir_state == MODSTATE_CURRENT_MOD)
+    if (high->mod_type == MODTYPE_CURRENT_MOD)
     {
         ADD_STRING(va("the current mod directory (%s)", fsc_get_mod_dir(high->file, &fs)));
     }
@@ -494,9 +494,9 @@ PC_DEBUG(current_map_pak)
 
 PC_COMPARE(mod_dir_priority)
 {
-    if (r1->mod_dir_state > r2->mod_dir_state)
+    if (r1->mod_type > r2->mod_type)
         return -1;
-    if (r2->mod_dir_state > r1->mod_dir_state)
+    if (r2->mod_type > r1->mod_type)
         return 1;
     return 0;
 }

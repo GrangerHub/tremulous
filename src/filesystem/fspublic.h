@@ -357,17 +357,17 @@ DEF_LOCAL( void pk3_list_free(pk3_list_t *pk3_list) )
 
 // Pk3 precedence functions
 #ifdef FSLOCAL
-enum FS_ModState {
-	MODSTATE_INACTIVE,
-	MODSTATE_BASE3,
-	MODSTATE_BASE2,
-	MODSTATE_BASE1,
-	MODSTATE_OVERRIDE_DIRECTORY,
-	MODSTATE_CURRENT_MOD
+enum FS_ModType {
+	MODTYPE_INACTIVE,
+	MODTYPE_BASE3,
+	MODTYPE_BASE2,
+	MODTYPE_BASE1,
+	MODTYPE_OVERRIDE_DIRECTORY,
+	MODTYPE_CURRENT_MOD
 };
 #endif
 DEF_LOCAL( int system_pk3_position(unsigned int hash) )
-DEF_LOCAL( FS_ModState fs_get_mod_dir_state(const char *mod_dir) )
+DEF_LOCAL( FS_ModType fs_get_mod_type(const char *mod_dir) )
 
 // File helper functions
 #ifdef FSLOCAL

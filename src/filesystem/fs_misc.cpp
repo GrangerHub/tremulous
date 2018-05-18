@@ -197,44 +197,44 @@ int system_pk3_position(unsigned int hash)
     return 0;
 }
 
-FS_ModState fs_get_mod_dir_state(const char *mod_dir)
+FS_ModType fs_get_mod_type(const char *mod_dir)
 {
     if (*current_mod_dir && !Q_stricmp(mod_dir, current_mod_dir))
-        return MODSTATE_CURRENT_MOD;
+        return MODTYPE_CURRENT_MOD;
     if (!Q_stricmp(mod_dir, BASEGAME_OVERRIDE))
-        return MODSTATE_OVERRIDE_DIRECTORY;
+        return MODTYPE_OVERRIDE_DIRECTORY;
 
     switch (fs_profile)
     {
         case FS_PROFILE_DEFAULT:
             if (!Q_stricmp(mod_dir, BASEGAME_1_3))
-                return MODSTATE_BASE1;
+                return MODTYPE_BASE1;
             if (!Q_stricmp(mod_dir, BASEGAME_GPP))
-                return MODSTATE_BASE2;
+                return MODTYPE_BASE2;
             if (!Q_stricmp(mod_dir, BASEGAME_1_1))
-                return MODSTATE_BASE3;
+                return MODTYPE_BASE3;
             break;
 
         case FS_PROFILE_1_1:
             if (!Q_stricmp(mod_dir, BASEGAME_1_1))
-                return MODSTATE_BASE1;
+                return MODTYPE_BASE1;
             if (!Q_stricmp(mod_dir, BASEGAME_GPP))
-                return MODSTATE_BASE2;
+                return MODTYPE_BASE2;
             if (!Q_stricmp(mod_dir, BASEGAME_1_3))
-                return MODSTATE_BASE3;
+                return MODTYPE_BASE3;
             break;
 
         case FS_PROFILE_GPP:
             if (!Q_stricmp(mod_dir, BASEGAME_GPP))
-                return MODSTATE_BASE1;
+                return MODTYPE_BASE1;
             if (!Q_stricmp(mod_dir, BASEGAME_1_1))
-                return MODSTATE_BASE2;
+                return MODTYPE_BASE2;
             if (!Q_stricmp(mod_dir, BASEGAME_1_3))
-                return MODSTATE_BASE3;
+                return MODTYPE_BASE3;
             break;
     }
 
-    return MODSTATE_INACTIVE;
+    return MODTYPE_INACTIVE;
 }
 
 /* ******************************************************************************** */
@@ -330,7 +330,7 @@ static qboolean inactive_mod_file_disabled(const fsc_file_t *file, int level)
     if (level < 2)
     {
         // Look for active mod or basegame match
-        if (fs_get_mod_dir_state(fsc_get_mod_dir(file, &fs)) >= 1)
+        if (fs_get_mod_type(fsc_get_mod_dir(file, &fs)) > MODTYPE_INACTIVE)
             return qfalse;
 
         if (level == 1)
@@ -422,16 +422,16 @@ static unsigned int server_pak_precedence(const fsc_file_t *file)
     return 0;
 }
 
-static unsigned int mod_dir_precedence(int mod_dir_state)
+static unsigned int mod_dir_precedence(FS_ModType mod_type)
 {
-    if (mod_dir_state >= 2)
-        return mod_dir_state;
+    if (mod_type >= MODTYPE_OVERRIDE_DIRECTORY)
+        return (unsigned int)mod_type;
     return 0;
 }
 
-static unsigned int system_pak_precedence(const fsc_file_t *file, int mod_dir_state)
+static unsigned int system_pak_precedence(const fsc_file_t *file, FS_ModType mod_type)
 {
-    if (mod_dir_state <= 1)
+    if (mod_type < MODTYPE_OVERRIDE_DIRECTORY)
     {
         if (file->sourcetype == FSC_SOURCETYPE_PK3)
         {
@@ -446,11 +446,9 @@ static unsigned int system_pak_precedence(const fsc_file_t *file, int mod_dir_st
     return 0;
 }
 
-static unsigned int basegame_dir_precedence(int mod_dir_state)
+static unsigned int basegame_dir_precedence(FS_ModType mod_type)
 {
-    if (mod_dir_state == 1)
-        return 1;
-    return 0;
+    return (unsigned int)mod_type;
 }
 
 static void write_sort_string(const char *string, fsc_stream_t *output)
@@ -506,12 +504,12 @@ static void write_sort_value(unsigned int value, fsc_stream_t *output)
 void fs_generate_file_sort_key(const fsc_file_t *file, fsc_stream_t *output, qboolean use_server_pak_list)
 {
     // This is a rough version of the lookup precedence for reference and file listing purposes
-    int mod_dir_state = fs_get_mod_dir_state(fsc_get_mod_dir(file, &fs));
+    FS_ModType mod_type = fs_get_mod_type(fsc_get_mod_dir(file, &fs));
     if (use_server_pak_list)
         write_sort_value(server_pak_precedence(file), output);
-    write_sort_value(mod_dir_precedence(mod_dir_state), output);
-    write_sort_value(system_pak_precedence(file, mod_dir_state), output);
-    write_sort_value(basegame_dir_precedence(mod_dir_state), output);
+    write_sort_value(mod_dir_precedence(mod_type), output);
+    write_sort_value(system_pak_precedence(file, mod_type), output);
+    write_sort_value(basegame_dir_precedence(mod_type), output);
     if (file->sourcetype == FSC_SOURCETYPE_PK3 ||
         (file->sourcetype == FSC_SOURCETYPE_DIRECT && ((fsc_file_direct_t *)file)->pk3dir_ptr))
     {
