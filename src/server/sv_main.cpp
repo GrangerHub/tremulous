@@ -788,7 +788,7 @@ static void SV_ConnectionlessPacket( netadr_t from, msg_t *msg )
     }
 
     char *s = MSG_ReadBigString( msg );
-    Cmd_TokenizeString( s );
+    Cmd_TokenizeString2( s, false );
 
     const std::string c { Cmd_Argv(0) };
 
