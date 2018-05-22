@@ -31,8 +31,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <climits>
 
+#include "qcommon/autocomplete.h"
 #include "sys/sys_loadlib.h"
 #include "sys/sys_local.h"
+#include "sys/sys_shared.h"
 
 #include "cl_updates.h"
 #ifdef USE_MUMBLE
@@ -3296,6 +3298,11 @@ static void CL_InitRenderer(void)
     g_consoleField.widthInChars = g_console_field_width;
 }
 
+refexport_t *CL_GetRenderer(void)
+{
+    return &re;
+}
+
 /*
 ============================
 CL_StartHunkUsers
@@ -3553,7 +3560,7 @@ static void CL_ServerInfoPacket(netadr_t from, msg_t *msg)
     char info[MAX_INFO_STRING];
     char *infoString;
     int prot;
-    char *gamename;
+    const char *gamename;
     bool gameMismatch;
 
     infoString = MSG_ReadString(msg);
@@ -4054,7 +4061,7 @@ static serverStatus_t *CL_GetServerStatus(netadr_t from)
 CL_ServerStatus
 ===================
 */
-bool CL_ServerStatus(char *serverAddress, char *serverStatusString, int maxLen)
+bool CL_ServerStatus(const char *serverAddress, char *serverStatusString, int maxLen)
 {
     int i;
     netadr_t to;
