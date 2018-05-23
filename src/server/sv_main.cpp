@@ -31,6 +31,9 @@ cvar_t *sv_voip;
 cvar_t *sv_voipProtocol;
 #endif
 
+#define PERS_SCORE 0  // !!! MUST NOT CHANGE, SERVER AND GAME BOTH REFERENCE !!!
+
+
 serverStatic_t	svs;				// persistant server info
 server_t sv {};					    // local server
 
@@ -787,8 +790,8 @@ static void SV_ConnectionlessPacket( netadr_t from, msg_t *msg )
         Huff_Decompress(msg, 12);
     }
 
-    char *s = MSG_ReadBigString( msg );
-    Cmd_TokenizeString( s );
+    const char *s = MSG_ReadBigString( msg );
+    Cmd_TokenizeString2( s, false );
 
     const std::string c { Cmd_Argv(0) };
 
@@ -1129,7 +1132,7 @@ void SV_Frame( int msec ) {
 		sv.time += frameMsec;
 
 		// let everything in the world think and move
-		VM_Call (sv.gvm, GAME_RUN_FRAME, sv.time);
+		sv.gvm->Call(GAME_RUN_FRAME, sv.time);
 	}
 
 	if ( com_speeds->integer ) {

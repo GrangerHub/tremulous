@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 // cl_cgame.c  -- client system interaction with client game
 
+#include "qcommon/autocomplete.h"
+#include "qcommon/parse.h"
 #include "client.h"
 
 #ifdef USE_MUMBLE
@@ -36,7 +38,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 CL_GetGameState
 ====================
 */
-static void CL_GetGameState( gameState_t *gs )
+void CL_GetGameState( gameState_t *gs )
 {
 	*gs = cl.gameState;
 }
@@ -46,7 +48,7 @@ static void CL_GetGameState( gameState_t *gs )
 CL_GetGlconfig
 ====================
 */
-static void CL_GetGlconfig( glconfig_t *glconfig )
+void CL_GetGlconfig( glconfig_t *glconfig )
 {
 	*glconfig = cls.glconfig;
 }
@@ -57,7 +59,7 @@ static void CL_GetGlconfig( glconfig_t *glconfig )
 CL_GetUserCmd
 ====================
 */
-static bool CL_GetUserCmd( int cmdNumber, usercmd_t *ucmd )
+bool CL_GetUserCmd( int cmdNumber, usercmd_t *ucmd )
 {
 	// cmds[cmdNumber] is the last properly generated command
 
@@ -75,7 +77,7 @@ static bool CL_GetUserCmd( int cmdNumber, usercmd_t *ucmd )
 	return true;
 }
 
-static int CL_GetCurrentCmdNumber( void )
+int CL_GetCurrentCmdNumber( void )
 {
 	return cl.cmdNumber;
 }
@@ -85,7 +87,7 @@ static int CL_GetCurrentCmdNumber( void )
 CL_GetCurrentSnapshotNumber
 ====================
 */
-static void CL_GetCurrentSnapshotNumber( int *snapshotNumber, int *serverTime )
+void CL_GetCurrentSnapshotNumber( int *snapshotNumber, int *serverTime )
 {
 	*snapshotNumber = cl.snap.messageNum;
 	*serverTime = cl.snap.serverTime;
@@ -174,15 +176,6 @@ void CL_SetUserCmdValue( int userCmdValue, float sensitivityScale ) {
 
 /*
 =====================
-CL_AddCgameCommand
-=====================
-*/
-void CL_AddCgameCommand( const char *cmdName ) {
-	Cmd_AddCommand( cmdName, NULL );
-}
-
-/*
-=====================
 CL_ConfigstringModified
 =====================
 */
@@ -242,7 +235,7 @@ CL_GetServerCommand
 Set up argc/argv for the given command
 ===================
 */
-static bool CL_GetServerCommand( int serverCommandNumber )
+bool CL_GetServerCommand( int serverCommandNumber )
 {
 	const char *s;
 	const char *cmd;
@@ -273,7 +266,7 @@ static bool CL_GetServerCommand( int serverCommandNumber )
 	Com_DPrintf( "serverCommand: %i : %s\n", serverCommandNumber, s );
 
 rescan:
-	Cmd_TokenizeString( s );
+	Cmd_TokenizeString2(s, false);
 	cmd = Cmd_Argv(0);
 	argc = Cmd_Argc();
 
@@ -319,7 +312,7 @@ rescan:
 		CL_ConfigstringModified();
         // reparse the string, because CL_ConfigstringModified may have done
         // another Cmd_TokenizeString()
-		Cmd_TokenizeString( s );
+		Cmd_TokenizeString2(s, false);
 		return true;
 	}
 
@@ -330,7 +323,7 @@ rescan:
 		Con_ClearNotify();
         // reparse the string, because Con_ClearNotify() may have done another
         // Cmd_TokenizeString()
-		Cmd_TokenizeString( s );
+		Cmd_TokenizeString2(s, false);
 		::memset( cl.cmds, 0, sizeof( cl.cmds ) );
 		return true;
 	}
@@ -383,9 +376,9 @@ void CL_ShutdownCGame( void ) {
 	if ( !cls.cgame ) {
 		return;
 	}
-	VM_Call( cls.cgame, CG_SHUTDOWN );
-	VM_Free( cls.cgame );
-	cls.cgame = NULL;
+	cls.cgame->Call( CG_SHUTDOWN );
+	delete cls.cgame;
+	cls.cgame = nullptr;
 }
 
 static int	FloatAsInt( float f ) {
@@ -403,6 +396,7 @@ CL_CgameSystemCalls
 The cgame module is making a system call
 ====================
 */
+#define VMA(x) cls.ui->ArgPtr(args[x])
 intptr_t CL_CgameSystemCalls( intptr_t *args )
 {
 	if( cls.cgInterface == 2 && args[0] >= CG_R_SETCLIPREGION && args[0] < CG_MEMSET )
@@ -458,6 +452,7 @@ intptr_t CL_CgameSystemCalls( intptr_t *args )
         case CG_LITERAL_ARGS:
             Cmd_LiteralArgsBuffer( (char*)VMA(1), args[2] );
             return 0;
+
         case CG_FS_FOPENFILE:
             return FS_FOpenFileByMode( (const char*)VMA(1), (fileHandle_t*)VMA(2), (FS_Mode)args[3] );
         case CG_FS_READ:
@@ -473,11 +468,12 @@ intptr_t CL_CgameSystemCalls( intptr_t *args )
             return FS_Seek( (fileHandle_t)args[1], args[2], (FS_Origin)args[3] );
         case CG_FS_GETFILELIST:
             return FS_GetFileList( (const char*)VMA(1), (const char*)VMA(2), (char*)VMA(3), args[4] );
+
         case CG_SENDCONSOLECOMMAND:
             Cbuf_AddText( (const char*)VMA(1) );
             return 0;
         case CG_ADDCOMMAND:
-            CL_AddCgameCommand( (const char*)VMA(1) );
+	        Cmd_AddCommand( (const char*)VMA(1), NULL );
             return 0;
         case CG_REMOVECOMMAND:
             Cmd_RemoveCommandSafe( (const char*)VMA(1) );
@@ -754,6 +750,7 @@ intptr_t CL_CgameSystemCalls( intptr_t *args )
 
         case CG_GET_ENTITY_TOKEN:
             return re.GetEntityToken( (char*)VMA(1), args[2] );
+
         case CG_R_INPVS:
             return re.inPVS( (const float*)VMA(1), (const float*)VMA(2) );
 
@@ -777,7 +774,6 @@ void CL_InitCGame( void ) {
 	const char			*mapname;
 	int					t1, t2;
 	char				backup[ MAX_STRING_CHARS ];
-	vmInterpret_t		interpret;
 
 	t1 = Sys_Milliseconds();
 
@@ -787,7 +783,7 @@ void CL_InitCGame( void ) {
 	Com_sprintf( cl.mapname, sizeof( cl.mapname ), "maps/%s.bsp", mapname );
 
 	// load the dll or bytecode
-	interpret = (vmInterpret_t)Cvar_VariableValue("vm_cgame");
+	VMType interpret = (VMType)Cvar_VariableValue("vm_cgame");
 	if(cl_connectedToPureServer)
 	{
 		// if sv_pure is set we only allow qvms to be loaded
@@ -795,10 +791,12 @@ void CL_InitCGame( void ) {
 			interpret = VMI_COMPILED;
 	}
 
-	cls.cgame = VM_Create( "cgame", CL_CgameSystemCalls, interpret );
-	if ( !cls.cgame ) {
+	cls.cgame = VMFactory::createVM(interpret, "cgame", CL_CgameSystemCalls);
+	if ( !cls.cgame )
+    {
 		Com_Error( ERR_DROP, "VM_Create on cgame failed" );
 	}
+
 	clc.state = CA_LOADING;
 
 	Cvar_VariableStringBuffer( "cl_voipSendTarget", backup, sizeof( backup ) );
@@ -807,7 +805,7 @@ void CL_InitCGame( void ) {
     // Probe 1.1 or gpp cgame
 	cls.cgInterface = 0;
 	probingCG = true;
-    VM_Call( cls.cgame, CG_VOIP_STRING );
+    cls.cgame->Call( CG_VOIP_STRING );
 	probingCG = false;
 
 	Cvar_Set( "cl_voipSendTarget", backup );
@@ -822,7 +820,7 @@ void CL_InitCGame( void ) {
 	// init for this gamestate
 	// use the lastExecutedServerCommand instead of the serverCommandSequence
 	// otherwise server commands sent just before a gamestate are dropped
-	VM_Call( cls.cgame, CG_INIT, clc.serverMessageSequence, clc.lastExecutedServerCommand, clc.clientNum );
+	cls.cgame->Call( CG_INIT, clc.serverMessageSequence, clc.lastExecutedServerCommand, clc.clientNum );
 
 	// reset any CVAR_CHEAT cvars registered by cgame
 	if ( !clc.demoplaying && !cl_connectedToCheatServer )
@@ -864,7 +862,7 @@ bool CL_GameCommand( void )
 	if ( !cls.cgame )
 		return false;
 
-	return (bool)VM_Call( cls.cgame, CG_CONSOLE_COMMAND );
+	return (bool)cls.cgame->Call( CG_CONSOLE_COMMAND );
 }
 
 /*
@@ -877,7 +875,7 @@ void CL_GameConsoleText( void )
 	if ( !cls.cgame )
 		return;
 
-	VM_Call( cls.cgame, CG_CONSOLE_TEXT );
+	cls.cgame->Call( CG_CONSOLE_TEXT );
 }
 
 /*
@@ -887,7 +885,7 @@ CL_CGameRendering
 */
 void CL_CGameRendering( stereoFrame_t stereo )
 {
-	VM_Call( cls.cgame, CG_DRAW_ACTIVE_FRAME, cl.serverTime, stereo, clc.demoplaying );
+	cls.cgame->Call( CG_DRAW_ACTIVE_FRAME, cl.serverTime, stereo, clc.demoplaying );
 	VM_Debug( 0 );
 }
 

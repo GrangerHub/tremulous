@@ -126,7 +126,7 @@ static bool IN_IsConsoleKey( keyNum_t key, int character )
 	{
 		char *text_p, *token;
 
-		cl_consoleKeys->modified = qfalse;
+		cl_consoleKeys->modified = false;
 		text_p = cl_consoleKeys->string;
 		numConsoleKeys = 0;
 
@@ -347,7 +347,7 @@ static void IN_GetUIMousePosition( int *x, int *y )
 {
 	if( cls.ui )
 	{
-		int pos = VM_Call( cls.ui, UI_MOUSE_POSITION );
+		int pos = cls.ui->Call(UI_MOUSE_POSITION);
 		*x = pos & 0xFFFF;
 		*y = ( pos >> 16 ) & 0xFFFF;
 
@@ -372,7 +372,7 @@ static void IN_SetUIMousePosition( int x, int y )
 	{
 		x = x * 640 / cls.glconfig.vidWidth;
 		y = y * 480 / cls.glconfig.vidHeight;
-		VM_Call( cls.ui, UI_SET_MOUSE_POSITION, x, y );
+		cls.ui->Call(UI_SET_MOUSE_POSITION, x, y);
 	}
 }
 
@@ -409,7 +409,7 @@ static void IN_ActivateMouse( void )
                 SDL_SetRelativeMouseMode( SDL_TRUE  );
                 SDL_SetWindowGrab( SDL_window, SDL_TRUE );
             }
-			in_nograb->modified = qfalse;
+			in_nograb->modified = false;
 		}
 	}
 

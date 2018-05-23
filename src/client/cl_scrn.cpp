@@ -464,7 +464,7 @@ void SCR_DrawScreenField(stereoFrame_t stereoFrame)
 
     re.BeginFrame(stereoFrame);
 
-    uiFullscreen = (cls.ui && VM_Call(cls.ui, UI_IS_FULLSCREEN - (cls.uiInterface == 2 ? 2 : 0)));
+    uiFullscreen = (cls.ui && cls.ui->Call(UI_IS_FULLSCREEN - (cls.uiInterface == 2 ? 2 : 0)));
 
     // wide aspect ratio screens need to have the sides cleared
     // unless they are displaying game renderings
@@ -493,15 +493,15 @@ void SCR_DrawScreenField(stereoFrame_t stereoFrame)
             case CA_DISCONNECTED:
                 // force menu up
                 S_StopAllSounds();
-                VM_Call(cls.ui, UI_SET_ACTIVE_MENU - (cls.uiInterface == 2 ? 2 : 0), UIMENU_MAIN);
+                cls.ui->Call(UI_SET_ACTIVE_MENU - (cls.uiInterface == 2 ? 2 : 0), UIMENU_MAIN);
                 break;
             case CA_CONNECTING:
             case CA_CHALLENGING:
             case CA_CONNECTED:
                 // connecting clients will only show the connection dialog
                 // refresh to update the time
-                VM_Call(cls.ui, UI_REFRESH - (cls.uiInterface == 2 ? 2 : 0), cls.realtime);
-                VM_Call(cls.ui, UI_DRAW_CONNECT_SCREEN - (cls.uiInterface == 2 ? 2 : 0), false);
+                cls.ui->Call(UI_REFRESH - (cls.uiInterface == 2 ? 2 : 0), cls.realtime);
+                cls.ui->Call(UI_DRAW_CONNECT_SCREEN - (cls.uiInterface == 2 ? 2 : 0), false);
                 break;
             case CA_LOADING:
             case CA_PRIMED:
@@ -521,7 +521,7 @@ void SCR_DrawScreenField(stereoFrame_t stereoFrame)
     // the menu draws next
     if (Key_GetCatcher() & KEYCATCH_UI && cls.ui)
     {
-        VM_Call(cls.ui, UI_REFRESH - (cls.uiInterface == 2 ? 2 : 0), cls.realtime);
+        cls.ui->Call(UI_REFRESH - (cls.uiInterface == 2 ? 2 : 0), cls.realtime);
     }
 
     // console draws next

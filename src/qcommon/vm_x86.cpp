@@ -2,7 +2,6 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
-Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -24,7 +23,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // vm_x86.c -- load time compiler and execution environment for x86
 
 #include "vm.h"
-#include "vm_local.h"
 
 #ifdef _WIN32
   #include <windows.h>
@@ -410,6 +408,7 @@ int *vm_opStackBase;
 uint8_t vm_opStackOfs;
 intptr_t vm_arg;
 
+__attribute__((no_sanitize_address))
 static void DoSyscall(void)
 {
 	vm_t *savedVM;
@@ -422,18 +421,18 @@ static void DoSyscall(void)
 	if(vm_syscallNum < 0)
 	{
 		int *data, *ret;
-#if idx64
-		int index;
-		intptr_t args[MAX_VMSYSCALL_ARGS];
-#endif
 		
 		data = (int *) (savedVM->dataBase + vm_programStack + 4);
 		ret = &vm_opStackBase[vm_opStackOfs + 1];
 
 #if idx64
+		intptr_t args[MAX_VMSYSCALL_ARGS];
 		args[0] = ~vm_syscallNum;
-		for(index = 1; index < ARRAY_LEN(args); index++)
-			args[index] = data[index];
+
+		for(int i = 1; i < ARRAY_LEN(args); i++)
+        {
+			args[i] = data[i];
+        }
 			
 		*ret = savedVM->systemCall(args);
 #else

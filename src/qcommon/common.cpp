@@ -36,12 +36,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "sys/sys_shared.h"
 
+#include "autocomplete.h"
 #include "cmd.h"
 #include "crypto.h"
 #include "cvar.h"
 #include "files.h"
-#define JSON_IMPLEMENTATION
-#include "json.h"
+//#define JSON_IMPLEMENTATION
+//#include "json.h"
 #include "msg.h"
 #include "q_shared.h"
 #include "vm.h"
@@ -108,10 +109,6 @@ cvar_t *com_basegame;
 cvar_t *com_homepath;
 cvar_t *com_busyWait;
 
-#if id386
-void (QDECL *Q_SnapVector)(vec3_t vec);
-#endif
-
 // com_speeds times
 int time_game;
 int time_frontend; // renderer frontend time
@@ -166,7 +163,7 @@ to the apropriate place.
 A raw string should NEVER be passed as fmt, because of "%f" type crashers.
 =============
 */
-void QDECL Com_Printf( const char *fmt, ... )
+void Com_Printf( const char *fmt, ... )
 {
     va_list argptr;
     char msg[MAXPRINTMSG];
@@ -312,11 +309,9 @@ void QDECL Com_Error( int code, const char *fmt, ... )
 
     if (code == ERR_DISCONNECT || code == ERR_SERVERDISCONNECT)
     {
-        VM_Forced_Unload_Start();
         SV_Shutdown( "Server disconnected" );
         CL_Disconnect( true );
         CL_FlushMemory( );
-        VM_Forced_Unload_Done();
         // make sure we can get at our local stuff
         FS_PureServerSetLoadedPaks("", "");
         com_errorEntered = false;
@@ -325,11 +320,9 @@ void QDECL Com_Error( int code, const char *fmt, ... )
     else if (code == ERR_DROP || code == ERR_RECONNECT)
     {
         Com_Printf ("********************\nERROR: %s\n********************\n", com_errorMessage);
-        VM_Forced_Unload_Start();
         SV_Shutdown(va("Server crashed: %s",  com_errorMessage));
         CL_Disconnect( true );
         CL_FlushMemory( );
-        VM_Forced_Unload_Done();
         FS_PureServerSetLoadedPaks("", "");
         com_errorEntered = false;
 
@@ -348,10 +341,8 @@ void QDECL Com_Error( int code, const char *fmt, ... )
     }
     else
     {
-        VM_Forced_Unload_Start();
         CL_Shutdown(va("Client fatal crashed: %s", com_errorMessage), true, true);
         SV_Shutdown(va("Server fatal crashed: %s", com_errorMessage));
-        VM_Forced_Unload_Done();
     }
 
     Com_Shutdown();
@@ -376,10 +367,8 @@ void Engine_Exit(const char* p )
         // which would trigger an unload of active VM error.
         // Sys_Quit will kill this process anyways, so
         // a corrupt call stack makes no difference
-        VM_Forced_Unload_Start();
         SV_Shutdown(p[0] ? p : "Server quit");
         CL_Shutdown(p[0] ? p : "Client quit", true, true);
-        VM_Forced_Unload_Done();
         Com_Shutdown();
         FS_Shutdown(true);
     }
@@ -1712,7 +1701,6 @@ void Hunk_Clear( void )
     hunk_temp = &hunk_high;
 
     Com_Printf( "Hunk_Clear: reset the hunk ok\n" );
-    VM_Clear();
 #ifdef HUNK_DEBUG
     hunkblocks = NULL;
 #endif
@@ -2496,6 +2484,7 @@ Find out whether we have SSE support
 #if id386 || idx64
 static void Com_DetectSSE(void)
 {
+#if 0
 #if !idx64
     cpuFeatures_t feat = Sys_GetProcessorFeatures();
     if(feat & CF_SSE)
@@ -2514,6 +2503,7 @@ static void Com_DetectSSE(void)
 
         Com_Printf("No SSE support on this machine\n");
     }
+#endif
 #endif
 }
 
@@ -2646,7 +2636,7 @@ void Com_Init( char *commandLine )
     com_sv_running = Cvar_Get ("sv_running", "0", CVAR_ROM);
     com_cl_running = Cvar_Get ("cl_running", "0", CVAR_ROM);
     com_buildScript = Cvar_Get( "com_buildScript", "0", 0 );
-    com_ansiColor = Cvar_Get( "com_ansiColor", "0", CVAR_ARCHIVE );
+    com_ansiColor = Cvar_Get( "com_ansiColor", "1", CVAR_ARCHIVE );
 
     com_unfocused = Cvar_Get( "com_unfocused", "0", CVAR_ROM );
     com_maxfpsUnfocused = Cvar_Get( "com_maxfpsUnfocused", "0", CVAR_ARCHIVE );
@@ -2914,7 +2904,6 @@ Com_Frame
 */
 void Com_Frame( void )
 {
-
     int msec, minMsec;
     int timeVal, timeValSV;
     static int lastTime = 0, bias = 0;
@@ -3151,7 +3140,7 @@ command line completion
 Field_Clear
 ==================
 */
-void Field_Clear( field_t *edit )
+void Field_Clear( field_t* edit )
 {
     memset(edit->buffer, 0, MAX_EDIT_LINE);
     edit->cursor = 0;
@@ -3309,6 +3298,7 @@ Field_ListCompletion
 */
 void Field_ListCompletion( char *listJson, void(*callback)(const char *s) )
 {
+#if 0
     char item[ 256 ];
     const char *arrayPtr;
     const char *listEnd = listJson + strlen( listJson );
@@ -3321,6 +3311,7 @@ void Field_ListCompletion( char *listJson, void(*callback)(const char *s) )
         JSON_ValueGetString( arrayPtr, listEnd, item, 256 );
         callback( item );
     }
+#endif
 }
 
 /*
