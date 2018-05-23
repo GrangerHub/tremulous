@@ -33,6 +33,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  *****************************************************************************/
 
+#include "cl_cin.h"
+
 #include "client.h"
 #include "snd_local.h"
 
@@ -1658,7 +1660,7 @@ int CIN_PlayCinematic(const char *arg, int x, int y, int w, int h, int systemBit
         // close the menu
         if (cls.ui)
         {
-            VM_Call(cls.ui, UI_SET_ACTIVE_MENU - cls.uiInterface == 2 ? 2 : 0, UIMENU_NONE);
+            cls.ui->Call(UI_SET_ACTIVE_MENU - cls.uiInterface == 2 ? 2 : 0, UIMENU_NONE);
         }
     }
     else

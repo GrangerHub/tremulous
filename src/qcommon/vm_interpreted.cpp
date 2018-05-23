@@ -2,7 +2,6 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
-Copyright (C) 2015-2018 GrangerHub
 
 This file is part of Tremulous.
 
@@ -22,7 +21,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 #include "vm.h"
-#include "vm_local.h"
 
 //#define	DEBUG_VM
 #ifdef DEBUG_VM
@@ -157,7 +155,7 @@ void VM_StackTrace( vm_t *vm, int programCounter, int programStack ) {
 
 	count = 0;
 	do {
-		Com_Printf( "%s\n", VM_ValueToSymbol( vm, programCounter ) );
+		//Com_Printf( "%s\n", vm->ValueToSymbol(programCounter ) );
 		programStack =  *(int *)&vm->dataBase[programStack+4];
 		programCounter = *(int *)&vm->dataBase[programStack];
 	} while ( programCounter != -1 && ++count < 32 );
@@ -170,7 +168,8 @@ void VM_StackTrace( vm_t *vm, int programCounter, int programStack ) {
 VM_PrepareInterpreter
 ====================
 */
-void VM_PrepareInterpreter( vm_t *vm, vmHeader_t *header ) {
+void VM_PrepareInterpreter( vm_t *vm, vmHeader_t *header )
+{
 	int		op;
 	int		byte_pc;
 	int		int_pc;
@@ -341,7 +340,7 @@ int	VM_CallInterpreted( vm_t *vm, int *args ) {
 	programStack = stackOnEntry = vm->programStack;
 
 #ifdef DEBUG_VM
-	profileSymbol = VM_ValueToFunctionSymbol( vm, 0 );
+	profileSymbol = vm->ValueToFunctionSymbol( 0 );
 	// uncomment this for debugging breakpoints
 	vm->breakFunction = 0;
 #endif
@@ -531,7 +530,7 @@ nextInstruction2:
 //				vm->callLevel = temp;
 #ifdef DEBUG_VM
 				if ( vm_debugLevel ) {
-					Com_Printf( "%s<--- %s\n", DEBUGSTR, VM_ValueToSymbol( vm, programCounter ) );
+					Com_Printf( "%s<--- %s\n", DEBUGSTR, vm->ValueToSymbol( programCounter ) );
 				}
 #endif
 			} else if ( (unsigned)programCounter >= vm->instructionCount ) {
@@ -552,7 +551,7 @@ nextInstruction2:
 
 		case OP_ENTER:
 #ifdef DEBUG_VM
-			profileSymbol = VM_ValueToFunctionSymbol( vm, programCounter );
+			profileSymbol = vm->ValueToFunctionSymbol( programCounter );
 #endif
 			// get size of stack frame
 			v1 = r2;
@@ -563,7 +562,7 @@ nextInstruction2:
 			// save old stack frame for debugging traces
 			*(int *)&image[programStack+4] = programStack + v1;
 			if ( vm_debugLevel ) {
-				Com_Printf( "%s---> %s\n", DEBUGSTR, VM_ValueToSymbol( vm, programCounter - 5 ) );
+				Com_Printf( "%s---> %s\n", DEBUGSTR, vm->ValueToSymbol( programCounter - 5 ) );
 				if ( vm->breakFunction && programCounter - 5 == vm->breakFunction ) {
 					// this is to allow setting breakpoints here in the debugger
 					vm->breakCount++;
@@ -583,10 +582,10 @@ nextInstruction2:
 			// grab the saved program counter
 			programCounter = *(int *)&image[ programStack ];
 #ifdef DEBUG_VM
-			profileSymbol = VM_ValueToFunctionSymbol( vm, programCounter );
+			profileSymbol = vm->ValueToFunctionSymbol( programCounter );
 			if ( vm_debugLevel ) {
 //				vm->callLevel--;
-				Com_Printf( "%s<--- %s\n", DEBUGSTR, VM_ValueToSymbol( vm, programCounter ) );
+				Com_Printf( "%s<--- %s\n", DEBUGSTR, vm->ValueToSymbol( programCounter ) );
 			}
 #endif
 			// check for leaving the VM

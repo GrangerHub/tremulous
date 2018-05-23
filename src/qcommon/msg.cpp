@@ -47,7 +47,7 @@ Handles uint8_t ordering and avoids alignment errors
 
 int oldsize = 0;
 
-void MSG_initHuffman(void);
+static void MSG_initHuffman(void);
 
 void MSG_Init(msg_t *buf, uint8_t *data, int length)
 {
@@ -378,7 +378,7 @@ void MSG_WriteFloat(msg_t *sb, float f)
     MSG_WriteBits(sb, dat.i, 32);
 }
 
-static void MSG_WriteString2(msg_t *sb, const char *s, int maxsize)
+void MSG_WriteString2(msg_t *sb, const char *s, int maxsize)
 {
     int size = strlen(s) + 1;
 
@@ -392,10 +392,26 @@ static void MSG_WriteString2(msg_t *sb, const char *s, int maxsize)
     MSG_WriteData(sb, s, size);
 }
 
-void MSG_WriteString(msg_t *sb, const char *s) { MSG_WriteString2(sb, s, MAX_STRING_CHARS); }
-void MSG_WriteBigString(msg_t *sb, const char *s) { MSG_WriteString2(sb, s, BIG_INFO_STRING); }
-void MSG_WriteAngle(msg_t *sb, float f) { MSG_WriteByte(sb, (int)(f * 256 / 360) & 255); }
-void MSG_WriteAngle16(msg_t *sb, float f) { MSG_WriteShort(sb, ANGLE2SHORT(f)); }
+void MSG_WriteString(msg_t *sb, const char *s)
+{
+    MSG_WriteString2(sb, s, MAX_STRING_CHARS);
+}
+
+void MSG_WriteBigString(msg_t *sb, const char *s)
+{
+    MSG_WriteString2(sb, s, BIG_INFO_STRING);
+}
+
+void MSG_WriteAngle(msg_t *sb, float f)
+{
+    MSG_WriteByte(sb, (int)(f * 256 / 360) & 255);
+}
+
+void MSG_WriteAngle16(msg_t *sb, float f)
+{
+    MSG_WriteShort(sb, ANGLE2SHORT(f));
+}
+
 //============================================================
 
 //
@@ -403,19 +419,6 @@ void MSG_WriteAngle16(msg_t *sb, float f) { MSG_WriteShort(sb, ANGLE2SHORT(f)); 
 //
 
 // returns -1 if no more characters are available
-int MSG_ReadChar(msg_t *msg)
-{
-    int c;
-
-    c = (signed char)MSG_ReadBits(msg, 8);
-    if (msg->readcount > msg->cursize)
-    {
-        c = -1;
-    }
-
-    return c;
-}
-
 int MSG_ReadByte(msg_t *msg)
 {
     int c;
@@ -426,6 +429,11 @@ int MSG_ReadByte(msg_t *msg)
         c = -1;
     }
     return c;
+}
+
+int MSG_ReadChar(msg_t *msg)
+{
+    return MSG_ReadByte(msg);
 }
 
 int MSG_LookaheadByte(msg_t *msg)
@@ -479,66 +487,66 @@ float MSG_ReadFloat(msg_t *msg)
     return dat.f;
 }
 
-char *MSG_ReadString(msg_t *msg)
+const char *MSG_ReadString(msg_t *msg)
 {
     static char string[MAX_STRING_CHARS];
 
     size_t l = 0;
-    do
+    for (;;) 
     {
         int c = MSG_ReadByte(msg);  // use ReadByte so -1 is out of bounds
         if (c == -1 || c == 0)
-        {
             break;
-        }
 
-        string[l] = c;
-        l++;
-    } while (l < sizeof(string) - 1);
+        if (l >= sizeof(string)-1)
+            break;
 
-    string[l] = 0;
+        string[l++] = c;
+    }
+
+    string[l] = '\0';
 
     return string;
 }
 
-char *MSG_ReadBigString(msg_t *msg)
+const char *MSG_ReadBigString(msg_t *msg)
 {
     static char string[BIG_INFO_STRING];
 
     size_t l = 0;
-    do
+    for (;;)
     {
         int c = MSG_ReadByte(msg);  // use ReadByte so -1 is out of bounds
         if (c == -1 || c == 0)
-        {
             break;
-        }
 
-        string[l] = c;
-        l++;
-    } while (l < sizeof(string) - 1);
+        if (l >= sizeof(string)-1)
+            break;
+
+        string[l++] = c;
+    }
 
     string[l] = 0;
 
     return string;
 }
 
-char *MSG_ReadStringLine(msg_t *msg)
+const char *MSG_ReadStringLine(msg_t *msg)
 {
     static char string[MAX_STRING_CHARS];
 
     size_t l = 0;
-    do
+    for (;;)
     {
         int c = MSG_ReadByte(msg);  // use ReadByte so -1 is out of bounds
         if (c == -1 || c == 0 || c == '\n')
-        {
             break;
-        }
 
-        string[l] = c;
-        l++;
-    } while (l < sizeof(string) - 1);
+        if (l >= sizeof(string)-1)
+            break;
+
+        string[l++] = c;
+    }
 
     string[l] = 0;
 
@@ -815,11 +823,11 @@ void MSG_ReportChangeVectors_f(void)
     }
 }
 
-typedef struct {
+struct netField_t {
     const char *name;
     size_t offset;
     int bits;  // 0 = float
-} netField_t;
+};
 
 // using the stringizing operator to save typing...
 #define NETF(x) #x, (size_t) & ((entityState_t *) 0)->x
@@ -895,7 +903,7 @@ If force is not set, then nothing at all will be generated if the entity is
 identical, under the assumption that the in-order delta code will catch it.
 ==================
 */
-void MSG_WriteDeltaEntity(int alternateProtocol, msg_t *msg, struct entityState_s *from, struct entityState_s *to, bool force)
+void MSG_WriteDeltaEntity(int alternateProtocol, msg_t *msg, entityState_t *from, entityState_t *to, bool force)
 {
     int i, lc;
     int numFields;
@@ -1347,7 +1355,7 @@ MSG_WriteDeltaPlayerstate
 
 =============
 */
-void MSG_WriteDeltaPlayerstate(int alternateProtocol, msg_t *msg, struct playerState_s *from, struct playerState_s *to)
+void MSG_WriteDeltaPlayerstate(int alternateProtocol, msg_t *msg, playerState_t *from, playerState_t *to)
 {
     int i;
     playerState_t dummy;
@@ -2194,7 +2202,7 @@ int msg_hData[256] = {
     13504,  // 255
 };
 
-void MSG_initHuffman(void)
+static void MSG_initHuffman(void)
 {
     int i, j;
 

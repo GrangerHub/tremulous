@@ -31,8 +31,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <climits>
 
+#include "qcommon/autocomplete.h"
 #include "sys/sys_loadlib.h"
 #include "sys/sys_local.h"
+#include "sys/sys_shared.h"
 
 #include "cl_updates.h"
 #ifdef USE_MUMBLE
@@ -393,12 +395,12 @@ static void CL_VoipParseTargets(void)
             {
                 if (!Q_stricmpn(target, "attacker", 8))
                 {
-                    val = VM_Call(cls.cgame, CG_LAST_ATTACKER);
+                    val = cls.cgame->Call(CG_LAST_ATTACKER);
                     target += 8;
                 }
                 else if (!Q_stricmpn(target, "crosshair", 9))
                 {
-                    val = VM_Call(cls.cgame, CG_CROSSHAIR_PLAYER);
+                    val = cls.cgame->Call(CG_CROSSHAIR_PLAYER);
                     target += 9;
                 }
                 else
@@ -1391,7 +1393,7 @@ void CL_Disconnect(bool showMainMenu)
 
     if (cls.ui && showMainMenu)
     {
-        VM_Call(cls.ui, UI_SET_ACTIVE_MENU - (cls.uiInterface == 2 ? 2 : 0), UIMENU_NONE);
+        cls.ui->Call(UI_SET_ACTIVE_MENU - (cls.uiInterface == 2 ? 2 : 0), UIMENU_NONE);
     }
 
     SCR_StopCinematic();
@@ -1590,7 +1592,7 @@ CL_Connect_f
 */
 void CL_Connect_f(void)
 {
-    const char *server;
+    char server[MAX_OSPATH];
     int alternateProtocol;
     const char *serverString;
     int argc = Cmd_Argc();
@@ -1603,26 +1605,28 @@ void CL_Connect_f(void)
     }
 
     alternateProtocol = 0;
-    if (argc == 2)
+    if (argc > 2)
     {
-    }
-    else if (!strcmp(Cmd_Argv(argc - 1), "-g"))
-    {
-        alternateProtocol = 1;
-        --argc;
-    }
-    else if (!strcmp(Cmd_Argv(argc - 1), "-1"))
-    {
-        alternateProtocol = 2;
-        --argc;
-    }
-    else if (argc == 4)
-    {
-        --argc;
+        if (!strcmp(Cmd_Argv(argc - 1), "-g"))
+        {
+            alternateProtocol = 1;
+            --argc;
+        }
+        else if (!strcmp(Cmd_Argv(argc - 1), "-1"))
+        {
+            alternateProtocol = 2;
+            --argc;
+        }
+        else if (argc == 4)
+        {
+            --argc;
+        }
     }
 
     if (argc == 2)
-        server = Cmd_Argv(1);
+    {
+        Q_strncpyz(server, Cmd_Argv(1), sizeof(server));
+    }
     else
     {
         if (!strcmp(Cmd_Argv(1), "-4"))
@@ -1632,7 +1636,7 @@ void CL_Connect_f(void)
         else
             Com_Printf("warning: only -4 or -6 as address type understood.\n");
 
-        server = Cmd_Argv(2);
+        Q_strncpyz(server, Cmd_Argv(2), sizeof(server));
     }
 
     // save arguments for reconnect
@@ -2959,7 +2963,7 @@ void CL_Frame(int msec)
     {
         // if disconnected, bring up the menu
         S_StopAllSounds();
-        VM_Call(cls.ui, UI_SET_ACTIVE_MENU - (cls.uiInterface == 2 ? 2 : 0), UIMENU_MAIN);
+        cls.ui->Call(UI_SET_ACTIVE_MENU - (cls.uiInterface == 2 ? 2 : 0), UIMENU_MAIN);
     }
 
     // if recording an avi, lock to a fixed fps
@@ -3296,6 +3300,11 @@ static void CL_InitRenderer(void)
     g_consoleField.widthInChars = g_console_field_width;
 }
 
+refexport_t *CL_GetRenderer(void)
+{
+    return &re;
+}
+
 /*
 ============================
 CL_StartHunkUsers
@@ -3551,9 +3560,9 @@ static void CL_ServerInfoPacket(netadr_t from, msg_t *msg)
 {
     int i, type;
     char info[MAX_INFO_STRING];
-    char *infoString;
+    const char *infoString;
     int prot;
-    char *gamename;
+    const char *gamename;
     bool gameMismatch;
 
     infoString = MSG_ReadString(msg);
@@ -3775,7 +3784,7 @@ static void CL_ConnectionlessPacket(netadr_t from, msg_t *msg)
 
     const char *s = MSG_ReadStringLine(msg);
 
-    Cmd_TokenizeString(s);
+    Cmd_TokenizeString2(s, false);
 
     const char *c = Cmd_Argv(0);
 
@@ -4054,7 +4063,7 @@ static serverStatus_t *CL_GetServerStatus(netadr_t from)
 CL_ServerStatus
 ===================
 */
-bool CL_ServerStatus(char *serverAddress, char *serverStatusString, int maxLen)
+bool CL_ServerStatus(const char *serverAddress, char *serverStatusString, int maxLen)
 {
     int i;
     netadr_t to;
@@ -4205,7 +4214,7 @@ static void CL_GlobalServers_f(void)
 
             for ( int i = 1; i <= MAX_MASTER_SERVERS; i++ )
             {
-                sprintf(command, "sv_master%d", i);
+                Com_sprintf(command, sizeof(command), "sv_master%d", i);
                 masteraddress = Cvar_VariableString(command);
 
                 if(!*masteraddress)
@@ -4223,7 +4232,8 @@ static void CL_GlobalServers_f(void)
             return;
         }
 
-        sprintf(command, "sv_%smaster%d", (a == 0 ? "" : a == 1 ? "alt1" : "alt2"), masterNum);
+        Com_sprintf(command, sizeof(command), "sv_%smaster%d",
+                (a == 0 ? "" : a == 1 ? "alt1" : "alt2"), masterNum);
         masteraddress = Cvar_VariableString(command);
 
         if (!*masteraddress)
@@ -4266,10 +4276,10 @@ static void CL_GlobalServers_f(void)
         {
             Q_strcat(command, sizeof(command), " ");
             Q_strcat(command, sizeof(command), Cmd_Argv(i));
+            Com_DPrintf(S_COLOR_GREEN "%s: command: %s\n", __func__, command);
         }
 
         NET_OutOfBandPrint(NS_SERVER, to, "%s", command);
-        // outdent
     }
     CL_RequestMotd();
 }

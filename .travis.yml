@@ -1,22 +1,16 @@
 language: cpp
 sudo: required
 dist: trusty
-
 services:
 - docker
-
 git:
   depth: 5
-
 notifications:
   slack:
     secure: bEWPwOoefNXdXqQM1dUUmkBx4MWNJfYMNZPXWDlqxqJCTWoy00SkeH4mTlJSqVPMuQJzqQZ66Q6GK04YEZTLQhobN4tR3Qk9XpzmmE+65TVi4HrGNFJqxGCsPFr5CP4frCiH8rpsyNgwjf76z2a+9XnPYiVWvt0ECZHTeNkdqfHTaJr+TU1URi6iJXQD8C7mCxaYgNcEFfmUb8td17JIvh0dVlYjhh19nRwOxTbJ9QivyHl2MEFMD13CPMUKL1NxOK54Xi1d4cxPVtpJJvYfkRgf+TxJHF2I8BeSmIbE4K8MubbDnotBuipaVEkuZRTFt2wwh7l95u8zIvUbpLUyWHPoS6wKT0wqWe48z68YNf23Lb5TIuVXRtBKmDCNeGLQ4q2Blx8FLX921ugUf7DoquIBJgjeOpiuIPc0l07o3lXp5x6au/mUePfi+iOcXeQRcYN60GDs/Q+zNOOZbfATtg0DTTcPv3rPr1l8MeWlYf4FBCBfVBxzbzjCQEY8CfqajC/5Lc7agEwb3AKh8v3GmSShaZ4WB1vdFtvB9fk5biiAv9dY1U1UEzdK9HLC8+J5OaXdTtwjm4nT7D/Sj8nFqE7opens8WHNVfdzbjP/y7ux7N4O69MEPGumNRSWL4T4JGuShULPt86pzGqh22oUxDtMDbhffnOdlv9Ko6NgtKE=
-  irc:
-    - "ircs://chat.freenode.net:7070#grangerhub"
   email:
     on_success: change
     on_failure: change
-
 matrix:
   include:
   - os: linux
@@ -49,15 +43,14 @@ matrix:
     - brew install freetype --universal
     - rm -rf build
     script:
-    - ./misc/travis-ci-build.sh
-
+    - "./misc/travis-ci-build.sh"
 deploy:
   provider: releases
-  skip_cleanup: true
   api_key:
-    secure: euPVnsrXbfQN095snEmxb+52vWsEg5bcmJY6fP9k7/J4uz8r/QMYxIknPueFGnPLd2iP2IHwu933iT2k5oc/acCuib7kiy6kUdeC29epik+Nql3BnSEi820GjlQoYBcsWm5a26pGOSRR/yqCJXrY5w2CBFOqV7t4n6iFcl2Ks/rPrNmkfGdq1WBq6JHXGwBUU+UwUDwiaBwmMUBYdKMHmxvjWcGiyeQNxwaC3+IwEOzNx/B8u4o8qwksdwHRkMyUAnxcxY1TwpjV1b/4YmxL6F10zOyJQxJ8alXvgNzzEmJfxKSG27Zma48++4kfSq4ReB2ZwuCj7rqEKnQ/htE0jbwEcjKEt3Ii4bVReSNVGD5BWPL7Qkm1dx5lvL1zRaqyOnJQs3CJAOnX0L5LHrP12Dw1cCXHSSDdBMy+dRA1owVKvO3osoAVJUqZCxl6PYxVfSxNu9FlP4fxypSpgPl5458NwK8r1wjZfTprFNV4dlXsQrdc8B/EttwX9n9O9JLzrrjV7K9IvyA7ArYz5IDiSagOb4wOktDfepfHJioaFZIWgYQ4hGXXQJm/qDa4J/KSYME74knHbHkqx3eAo3T9/ofMDLyrK5CCIAmoGI0pcPgbuvLvNCVrVzGyaH7j8WxIBG0AN16I1MAs5+cJ4gCFgEsCvf30O++zqYIaOujpZ70=
-  file_glob: true
+    secure: LzNlDb1xEZlzPhznSCoZapSTeAJpo78oe+uzb//G2oy0KM0QxQ59cjLcojVp/hOxQ1Z5dok/WqtSi5ofEAY7VgLcldKLn46Il49mUmvEV6WDyGlRfax7sUo3x3PGK7vJA8+PO4QLjo9Iwp+2qOjj0wuWPlihnl4GpYwUhWEyCbFeBHQ21PKSy0KO+NaQyLGPntpbShbg4H0qeK6l/wUoBPk8i5cE6MyuaGT9tr52N21o8NnRu0dlj20f1cDgbV/YSI/r8tvPeAmZvefieUL4wB9LRTT2dULddKx65N3yTwPj1i1I3vGbuD6/Fs1Qzm3FffopDHvryJnIhKyaiXBbPxDT89J0Pmn2Sd/nnz8NQimira4uqTeGRjdald7SY/iy+SHQBjwpr8Mpz676Y08vejILKlmIPnwTgQqwUixzl3W5N7xgl0HYSXvJUvCoUiY10obz4Si+RmJyVZh5YP/A6JaH8HeZL0XMBknxW+OSAEIGkKiInFJ9JH4KOWm0zU1MAWset//9fclOuM/d/KTT3V5AhUTtf33PFVnoUUEoVFvJCmt+BuhtR+tqOVOI8gxkXngyj2IUM8EefrD36C4Gzn92g2DepyGAYv3WZUoe6gap1ycHW54W8kzNAvMGdCunDZZm/CcWZ0GKSuppl/DIfu8wCbnXW79iUgrWKHF76eY=
   file: build/*.zip
+  file_glob: true
+  skip_cleanup: true
   on:
-    repo: GrangerHub/tremulous
+    repo: wtfbbqhax/tremulous
     tags: true
