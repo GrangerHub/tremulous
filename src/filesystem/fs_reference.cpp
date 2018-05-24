@@ -22,183 +22,168 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #ifdef NEW_FILESYSTEM
+#include <initializer_list>
 #include "fslocal.h"
 
 #define MAX_REFERENCE_SET_ENTRIES 2048
 #define MAX_PURE_CHECKSUM_CACHE 256
 
 /* ******************************************************************************** */
-// Reference Set
+// Referenced Pak Tracking
 /* ******************************************************************************** */
+
+// The "reference_tracker" set is filled by logging game references to pk3 files
+// It currently serves two purposes:
+// 1) To generate the pure validation string when fs_full_pure_validation is 1
+//		(Although I have never seen any server that requires this to connect)
+// 2) As a component of the download pak list creation
+//		(Although in most cases it is redundant to other selector rules)
+// Basically this section could probably be removed with no noticable effects in most
+// situations, but is kept for now just to be on the safe side for compatibility purposes
 
 typedef struct {
     fs_hashtable_entry_t hte;
     fsc_file_direct_t *pak;
-    int position;  // lower = higher priority
-} reference_set_entry_t;
+} reference_tracker_entry_t;
 
-typedef fs_hashtable_t reference_set_t;
+static fs_hashtable_t reference_tracker;
 
-static qboolean reference_set_add(reference_set_t *reference_set, fsc_file_direct_t *pak, int position)
+static qboolean reference_tracker_add(fsc_file_direct_t *pak)
 {
     // Returns qtrue on success, qfalse if already inserted or maximum hit
-    // This function should be called in lowest-to-highest position order
-    fs_hashtable_iterator_t it = fs_hashtable_iterate(reference_set, pak->pk3_hash, qfalse);
-    reference_set_entry_t *entry;
+    fs_hashtable_iterator_t it = fs_hashtable_iterate(&reference_tracker, pak->pk3_hash, qfalse);
+    reference_tracker_entry_t *entry;
 
-    if (reference_set->element_count >= MAX_REFERENCE_SET_ENTRIES)
+    if (reference_tracker.element_count >= MAX_REFERENCE_SET_ENTRIES)
         return qfalse;
 
-    while ((entry = (reference_set_entry_t *)fs_hashtable_next(&it)))
+    while ((entry = (reference_tracker_entry_t *)fs_hashtable_next(&it)))
     {
         if (entry->pak->pk3_hash == pak->pk3_hash)
         {
-            // File with same hash - only keep the higher precedence file
-            if (entry->pak != pak && position == entry->position &&
-                fs_compare_file((fsc_file_t *)entry->pak, (fsc_file_t *)pak, qfalse) > 0)
-                entry->pak = pak;
             return qfalse;
         }
     }
 
-    entry = (reference_set_entry_t *)S_Malloc(sizeof(reference_set_entry_t));
+    entry = (reference_tracker_entry_t *)S_Malloc(sizeof(reference_tracker_entry_t));
     entry->pak = pak;
-    entry->position = position;
-    fs_hashtable_insert(reference_set, (fs_hashtable_entry_t *)entry, pak->pk3_hash);
+    fs_hashtable_insert(&reference_tracker, (fs_hashtable_entry_t *)entry, pak->pk3_hash);
     return qtrue;
 }
 
-/* ******************************************************************************** */
-// Reference List
-/* ******************************************************************************** */
-
-typedef struct {
-    fsc_file_direct_t *pak;
-    int position;
-} reference_list_entry_t;
-
-typedef struct {
-    reference_list_entry_t *entries;
-    int entry_count;
-} reference_list_t;
-
-static void reference_set_to_reference_list(fs_hashtable_t *reference_set, reference_list_t *reference_list)
+void fs_register_reference(const fsc_file_t *file)
 {
-    fs_hashtable_iterator_t it = fs_hashtable_iterate(reference_set, 0, qtrue);
-    reference_set_entry_t *entry;
-    int count = 0;
+    // Adds the source pk3 of the given file to the current referenced paks set
+    if (file->sourcetype != FSC_SOURCETYPE_PK3)
+        return;
 
-    reference_list->entry_count = reference_set->element_count;
-    reference_list->entries =
-        (reference_list_entry_t *)Z_Malloc(reference_list->entry_count * sizeof(*reference_list->entries));
-
-    while ((entry = (reference_set_entry_t *)fs_hashtable_next(&it)))
+    // Don't register references for certain extensions
+    if (file->qp_ext_ptr)
     {
-        if (count >= reference_list->entry_count)
-            Com_Error(ERR_FATAL, "reference_set_to_reference_list overflow");
-        reference_list->entries[count].position = entry->position;
-        reference_list->entries[count].pak = entry->pak;
+        int i;
+        static const char *special_extensions[] = {"shader", "txt", "cfg", "config", "bot", "arena", "menu"};
+        const char *extension = (const char *)STACKPTR(file->qp_ext_ptr);
+        for (i = 0; i < ARRAY_LEN(special_extensions); ++i)
+        {
+            if (!Q_stricmp(extension, special_extensions[i]))
+                return;
+        }
+    }
+
+    // Don't register reference in certain special cases
+    if (!Q_stricmp((const char *)STACKPTR(file->qp_name_ptr), "qagame") && file->qp_ext_ptr &&
+        !Q_stricmp((const char *)STACKPTR(file->qp_ext_ptr), "qvm") && file->qp_dir_ptr &&
+        !Q_stricmp((const char *)STACKPTR(file->qp_dir_ptr), "vm"))
+        return;
+    if (file->qp_dir_ptr && !Q_stricmp((const char *)STACKPTR(file->qp_dir_ptr), "levelshots"))
+        return;
+
+    // Initialize reference_tracker if it isn't already
+    if (!reference_tracker.bucket_count)
+    {
+        fs_hashtable_initialize(&reference_tracker, 32);
+    }
+
+    // Add the reference
+    if (reference_tracker_add((fsc_file_direct_t *)STACKPTR(((fsc_file_frompk3_t *)file)->source_pk3)))
+    {
+        if (fs_debug_references->integer)
+        {
+            char temp[FS_FILE_BUFFER_SIZE];
+            fs_file_to_buffer(file, temp, sizeof(temp), qtrue, qtrue, qtrue, qfalse);
+            Com_Printf("recording reference: %s\n", temp);
+        }
+    }
+}
+
+void FS_ClearPakReferences(int flags)
+{
+    if (fs_debug_references->integer)
+        Com_Printf("clearing referenced paks\n");
+    fs_hashtable_reset(&reference_tracker, 0);
+}
+
+static int referenced_pak_qsort(const void *e1, const void *e2)
+{
+    return fs_compare_file(*(const fsc_file_t **)e1, *(const fsc_file_t **)e2, qtrue);
+}
+
+static fsc_file_direct_t **generate_referenced_pak_list(int *count_out)
+{
+    // Result must be freed by Z_Free
+    // Result will not be valid if reference_tracker is reset
+    int count = 0;
+    fs_hashtable_iterator_t it = fs_hashtable_iterate(&reference_tracker, 0, qtrue);
+    const reference_tracker_entry_t *entry;
+    fsc_file_direct_t **reference_list =
+        (fsc_file_direct_t **)Z_Malloc(sizeof(*reference_list) * reference_tracker.element_count);
+
+    // Generate reference list
+    while ((entry = (reference_tracker_entry_t *)fs_hashtable_next(&it)))
+    {
+        if (count >= reference_tracker.element_count)
+            Com_Error(ERR_FATAL, "generate_referenced_pak_list list overflow");
+        reference_list[count] = entry->pak;
         ++count;
     }
-    if (count != reference_list->entry_count)
-        Com_Error(ERR_FATAL, "reference_set_to_reference_list underflow");
+    if (count != reference_tracker.element_count)
+        Com_Error(ERR_FATAL, "generate_referenced_pak_list list underflow");
+
+    // Sort reference list
+    qsort(reference_list, count, sizeof(*reference_list), referenced_pak_qsort);
+
+    if (count_out)
+        *count_out = count;
+    return reference_list;
 }
 
-static void free_reference_list(reference_list_t *reference_list) { Z_Free(reference_list->entries); }
-
-static int compare_reference_entry(
-    const reference_list_entry_t *entry1, const reference_list_entry_t *entry2, qboolean use_pure_list)
+const char *FS_ReferencedPakNames(void)
 {
-    if (entry1->position < entry2->position)
-        return -1;
-    if (entry2->position < entry1->position)
-        return 1;
-    return fs_compare_file((fsc_file_t *)entry1->pak, (fsc_file_t *)entry2->pak, use_pure_list);
-}
-
-static int compare_reference_entry_qsort_pure(const void *entry1, const void *entry2)
-{
-    return compare_reference_entry(
-        (const reference_list_entry_t *)entry1, (const reference_list_entry_t *)entry2, qtrue);
-}
-
-static int compare_reference_entry_qsort_nonpure(const void *entry1, const void *entry2)
-{
-    return compare_reference_entry(
-        (const reference_list_entry_t *)entry1, (const reference_list_entry_t *)entry2, qfalse);
-}
-
-static void sort_reference_list(reference_list_t *reference_list, qboolean use_pure_list)
-{
-    qsort(reference_list->entries, reference_list->entry_count, sizeof(*reference_list->entries),
-        use_pure_list ? compare_reference_entry_qsort_pure : compare_reference_entry_qsort_nonpure);
-}
-
-/* ******************************************************************************** */
-// Reference String Building
-/* ******************************************************************************** */
-
-static void reference_name_string(fsc_file_direct_t *pak, fsc_stream_t *stream)
-{
-    const char *mod_dir = pak->qp_mod_ptr ? (const char *)STACKPTR(pak->qp_mod_ptr) : fs_basegame->string;
-
-    // Replace basemod with com_basegame to avoid issues
-    // Servers should avoid using basemod for download-enabled paks if possible
-    if (!Q_stricmp(mod_dir, "basemod"))
-        mod_dir = fs_basegame->string;
-
-    // Patch mod dir capitalization
-    if (!Q_stricmp(mod_dir, fs_basegame->string))
-        mod_dir = fs_basegame->string;
-    if (!Q_stricmp(mod_dir, FS_GetCurrentGameDir()))
-        mod_dir = FS_GetCurrentGameDir();
-
-    fsc_stream_append_string(stream, mod_dir);
-    fsc_stream_append_string(stream, "/");
-    fsc_stream_append_string(stream, (const char *)STACKPTR(pak->f.qp_name_ptr));
-}
-
-static void reference_hash_string(fsc_file_direct_t *pak, fsc_stream_t *stream)
-{
-    char buffer[20];
-    Com_sprintf(buffer, sizeof(buffer), "%i", pak->pk3_hash);
-    fsc_stream_append_string(stream, buffer);
-}
-
-static void reference_list_to_stream(reference_list_t *reference_list, fsc_stream_t *stream,
-    void(data_function)(fsc_file_direct_t *pak, fsc_stream_t *stream))
-{
+    // This is just used for a certain debug command now
+    static char buffer[1000];
+    fsc_stream_t stream = {buffer, 0, sizeof(buffer), 0};
     int i;
-    for (i = 0; i < reference_list->entry_count; ++i)
-    {
-        if (stream->position)
-            fsc_stream_append_string(stream, " ");
-        data_function(reference_list->entries[i].pak, stream);
-        if (stream->overflowed)
-            break;
-    }
-}
+    int count = 0;
+    fsc_file_direct_t **reference_list = generate_referenced_pak_list(&count);
 
-static qboolean reference_list_to_buffer(reference_list_t *reference_list, char *output, unsigned int output_size,
-    void(data_function)(fsc_file_direct_t *pak, fsc_stream_t *stream))
-{
-    // Returns qtrue on success, qfalse on overflow
-    fsc_stream_t stream = {output, 0, output_size, 0};
-    *output = 0;  // In case there are 0 references
-    reference_list_to_stream(reference_list, &stream, data_function);
-    if (stream.overflowed)
+    *buffer = 0;
+    for (i = 0; i < count; ++i)
     {
-        *output = 0;
-        return qfalse;
+        if (stream.position)
+            fsc_stream_append_string(&stream, " ");
+        fs_file_to_stream((const fsc_file_t *)reference_list[i], &stream, qfalse, qfalse, qfalse, qfalse);
     }
-    return qtrue;
+
+    Z_Free(reference_list);
+    return buffer;
 }
 
 /* ******************************************************************************** */
 // Pure Validation
 /* ******************************************************************************** */
 
-// Pure checksum entry handling
+// This section is used to generate a pure validation string to pass the SV_VerifyPaks_f
+// check when connecting to legacy pure servers.
 
 typedef struct {
     const fsc_file_direct_t *pk3;
@@ -300,27 +285,23 @@ static int get_pure_checksum_for_file(const fsc_file_t *file, int checksum_feed)
         (const fsc_file_direct_t *)STACKPTR(((fsc_file_frompk3_t *)file)->source_pk3), checksum_feed);
 }
 
-// Pure validation string building
-
-static void add_referenced_pure_pk3s(fsc_stream_t *stream, fs_hashtable_t *referenced_paks)
+static void add_referenced_pure_pk3s(fsc_stream_t *stream, fs_hashtable_t *reference_tracker)
 {
     int i;
-    reference_list_t reference_list;
+    int count = 0;
+    fsc_file_direct_t **reference_list = generate_referenced_pak_list(&count);
     char buffer[20];
     int lump_checksum = 0;
 
-    reference_set_to_reference_list(referenced_paks, &reference_list);
-    sort_reference_list(&reference_list, qtrue);
-
-    for (i = 0; i < reference_list.entry_count; ++i)
+    // Process entries
+    for (i = 0; i < count; ++i)
     {
-        int pure_checksum = get_pure_checksum_for_pk3(reference_list.entries[i].pak, checksum_feed);
+        int pure_checksum = get_pure_checksum_for_pk3(reference_list[i], checksum_feed);
 
         if (fs_debug_references->integer)
         {
             char temp[FS_FILE_BUFFER_SIZE];
-            fs_file_to_buffer(
-                (fsc_file_t *)reference_list.entries[i].pak, temp, sizeof(temp), qtrue, qtrue, qtrue, qtrue);
+            fs_file_to_buffer((fsc_file_t *)reference_list[i], temp, sizeof(temp), qtrue, qtrue, qtrue, qfalse);
             Com_Printf("adding pak to pure validation list: %s\n", temp);
         }
 
@@ -329,13 +310,14 @@ static void add_referenced_pure_pk3s(fsc_stream_t *stream, fs_hashtable_t *refer
         fsc_stream_append_string(stream, buffer);
     }
 
-    Com_sprintf(buffer, sizeof(buffer), " %i ", checksum_feed ^ lump_checksum ^ reference_list.entry_count);
+    // Write final checksum
+    Com_sprintf(buffer, sizeof(buffer), " %i ", checksum_feed ^ lump_checksum ^ count);
     fsc_stream_append_string(stream, buffer);
 
-    free_reference_list(&reference_list);
+    Z_Free(reference_list);
 }
 
-static void build_pure_validation_string(char *output, unsigned int output_size, fs_hashtable_t *referenced_paks)
+static void build_pure_validation_string(char *output, unsigned int output_size, fs_hashtable_t *reference_tracker)
 {
     fsc_stream_t stream = {output, 0, output_size, 0};
     char buffer[50];
@@ -349,7 +331,7 @@ static void build_pure_validation_string(char *output, unsigned int output_size,
 
     if (fs_full_pure_validation->integer && connected_server_sv_pure != 2)
     {
-        add_referenced_pure_pk3s(&stream, referenced_paks);
+        add_referenced_pure_pk3s(&stream, reference_tracker);
     }
     else
     {
@@ -358,157 +340,242 @@ static void build_pure_validation_string(char *output, unsigned int output_size,
     }
 }
 
-/* ******************************************************************************** */
-// Referenced Paks
-/* ******************************************************************************** */
-
-// The "referenced_paks" set is filled by logging game references to pk3 files
-// It currently serves two purposes:
-// 1) To generate the pure validation string when fs_full_pure_validation is 1
-//		(Although I have never seen any server that requires this to connect)
-// 2) As a component of the download pak list creation
-//		(Although in virtually all cases it is redundant to just using the current map)
-// Basically this section could probably be deprecated with no noticable effects,
-// but is kept for now just to be on the safe side for compatibility purposes
-
-static reference_set_t referenced_paks;
-
-void fs_register_reference(const fsc_file_t *file)
-{
-    // Adds the source pk3 of the given file to the current referenced paks set
-    if (file->sourcetype != FSC_SOURCETYPE_PK3)
-        return;
-
-    // Don't register references for certain extensions
-    if (file->qp_ext_ptr)
-    {
-        int i;
-        static const char *special_extensions[] = {"shader", "txt", "cfg", "config", "bot", "arena", "menu"};
-        const char *extension = (const char *)STACKPTR(file->qp_ext_ptr);
-        for (i = 0; i < ARRAY_LEN(special_extensions); ++i)
-        {
-            if (!Q_stricmp(extension, special_extensions[i]))
-                return;
-        }
-    }
-
-    // Don't register reference in certain special cases
-    if (!Q_stricmp((const char *)STACKPTR(file->qp_name_ptr), "qagame") && file->qp_ext_ptr &&
-        !Q_stricmp((const char *)STACKPTR(file->qp_ext_ptr), "qvm") && file->qp_dir_ptr &&
-        !Q_stricmp((const char *)STACKPTR(file->qp_dir_ptr), "vm"))
-        return;
-    if (file->qp_dir_ptr && !Q_stricmp((const char *)STACKPTR(file->qp_dir_ptr), "levelshots"))
-        return;
-
-    // Initialize referenced_paks if it isn't already
-    if (!referenced_paks.bucket_count)
-    {
-        fs_hashtable_initialize(&referenced_paks, 32);
-    }
-
-    // Add the reference
-    if (reference_set_add(&referenced_paks, (fsc_file_direct_t *)STACKPTR(((fsc_file_frompk3_t *)file)->source_pk3), 0))
-    {
-        if (fs_debug_references->integer)
-        {
-            char temp[FS_FILE_BUFFER_SIZE];
-            fs_file_to_buffer(file, temp, sizeof(temp), qtrue, qtrue, qtrue, qfalse);
-            Com_Printf("recording reference: %s\n", temp);
-        }
-    }
-}
-
-void FS_ClearPakReferences(int flags)
-{
-    if (fs_debug_references->integer)
-        Com_Printf("clearing referenced paks\n");
-    fs_hashtable_reset(&referenced_paks, 0);
-}
-
-const char *FS_ReferencedPakNames(void)
-{
-    // This is just used for a certain debug command now
-    static char buffer[1000];
-    reference_list_t reference_list;
-    reference_set_to_reference_list(&referenced_paks, &reference_list);
-    sort_reference_list(&reference_list, qfalse);
-    reference_list_to_buffer(&reference_list, buffer, sizeof(buffer), reference_name_string);
-    free_reference_list(&reference_list);
-    return buffer;
-}
-
 const char *FS_ReferencedPakPureChecksums(void)
 {
     // Returns a space separated string containing the pure checksums of all referenced pk3 files.
     // Servers with sv_pure set will get this string back from clients for pure validation
     // The string has a specific order, "cgame ui @ ref1 ref2 ref3 ..."
     static char buffer[1000];
-    build_pure_validation_string(buffer, sizeof(buffer), &referenced_paks);
+    build_pure_validation_string(buffer, sizeof(buffer), &reference_tracker);
     return buffer;
 }
 
 /* ******************************************************************************** */
-// Download / Pure list building
+// Manifest processing
 /* ******************************************************************************** */
 
+// This section is used to convert a download/pure manifest into a reference set,
+// which can be converted into download and pure lists.
+
+typedef fs_hashtable_t reference_set_t;
+
 typedef struct {
-    reference_set_t *target;
-    int position;
-    qboolean download;
-    const char *rule_name;
+    fs_hashtable_entry_t hte;
+
+    // Primary characteristics
+    char mod_dir[FSC_MAX_MODDIR];
+    char name[FSC_MAX_QPATH];
+    unsigned int hash;
+    const fsc_file_direct_t *pak;  // Optional (if null, will attempt to determine later)
+
+    // Command characteristics
+    char command_name[64];  // Name of the selector command that created this entry, for debug prints
+    unsigned int cluster;  // Indicates dash separated cluster (lower value is higher priority)
+
+    // For debug print purposes
+    int entry_id;
+
+    // How closely the specified mod dir/name match the ones in the pak reference
+    // 0 = no pak, 1 = no name match, 2 = case insensitive match, 3 = case sensitive match
+    unsigned int name_match;
+
+    // Sorting
+    char sort_key[FSC_MAX_MODDIR + FSC_MAX_QPATH + 32];
+    unsigned int sort_key_length;
+} reference_set_entry_t;
+
+typedef struct {
+    // General state
+    reference_set_t *reference_set;
+    pk3_list_t exclude_set;
+    int cluster;
+
+    // For debug prints
+    int entry_id_counter;
+    int duplicates;
+
+    // Current command
+    char command_name[64];
+    qboolean exclude_mode;
 } reference_set_work_t;
 
-#define PAK_NAME(pak)                   \
-    char pak_name[FS_FILE_BUFFER_SIZE]; \
-    fs_file_to_buffer((fsc_file_t *)pak, pak_name, sizeof(pak_name), qtrue, qtrue, qtrue, qfalse)
-
-static qboolean is_pak_downloadable(reference_set_work_t *ref_work, fsc_file_direct_t *pak)
+static void generate_reference_set_entry(reference_set_work_t *rsw, const char *mod_dir, const char *name,
+    unsigned int hash, const fsc_file_direct_t *pak, reference_set_entry_t *target)
 {
-    const char *mod_dir;
-    char pak_name[FSC_MAX_QPATH];
-    fsc_stream_t stream = {pak_name, 0, sizeof(pak_name), 0};
-    reference_name_string(pak, &stream);
+    // pak can be null; other parameters are required
+    fsc_stream_t sort_stream = {target->sort_key, 0, sizeof(target->sort_key), 0};
 
-// Don't put paks that fail the id pak check in download list because clients won't download
-// them anyway and may throw an error
-#ifndef STANDALONE
-    if (FS_idPak(pak_name, BASEGAME, FS_NODOWNLOAD_PAKS) || FS_idPak(pak_name, BASETA, FS_NODOWNLOAD_PAKS_TEAMARENA))
-    {
-        if (fs_debug_references->integer)
-        {
-            Com_Printf("NOTE: Skipping pak reference due to ID pak name\n");
-        }
-        return qfalse;
-    }
-#endif
+    Com_Memset(target, 0, sizeof(*target));
+    Q_strncpyz(target->mod_dir, mod_dir, sizeof(target->mod_dir));
+    Q_strncpyz(target->name, name, sizeof(target->name));
+    target->hash = hash;
+    target->pak = pak;
+    target->cluster = rsw->cluster;
+    target->entry_id = rsw->entry_id_counter++;
 
-    // Print warning if pak is from an inactive mod dir
-    mod_dir = fsc_get_mod_dir((fsc_file_t *)pak, &fs);
-    if (Q_stricmp(mod_dir, fs_basegame->string) && Q_stricmp(mod_dir, current_mod_dir) && Q_stricmp(mod_dir, "basemod"))
+    Q_strncpyz(target->command_name, rsw->command_name, sizeof(target->command_name));
+    if (strlen(rsw->command_name) >= sizeof(target->command_name))
     {
-        PAK_NAME(pak);
-        Com_Printf(
-            "WARNING: Download list file %s from rule %s is from an inactive mod dir."
-            " This will cause problems for original filesystem clients."
-            " Consider moving this file or changing the active mod to include it.\n",
-            pak_name, ref_work->rule_name);
+        strcpy(target->command_name + sizeof(target->command_name) - 4, "...");
     }
 
-    return qtrue;
+    if (pak)
+    {
+        const char *pak_mod = (const char *)STACKPTR(pak->qp_mod_ptr);
+        const char *pak_name = (const char *)STACKPTR(pak->f.qp_name_ptr);
+        if (!strcmp(mod_dir, pak_mod) && !strcmp(name, pak_name))
+            target->name_match = 3;
+        else if (!Q_stricmp(mod_dir, pak_mod) && !Q_stricmp(name, pak_name))
+            target->name_match = 2;
+        else
+            target->name_match = 1;
+    }
+
+    {
+        FS_ModType mod_type = fs_get_mod_type(target->mod_dir);
+        unsigned int system_pak_priority =
+            mod_type < MODTYPE_OVERRIDE_DIRECTORY ? (unsigned int)system_pk3_position(hash) : 0;
+
+        fs_write_sort_value(~target->cluster, &sort_stream);
+        fs_write_sort_value(mod_type >= MODTYPE_OVERRIDE_DIRECTORY ? (unsigned int)mod_type : 0, &sort_stream);
+        fs_write_sort_value(system_pak_priority, &sort_stream);
+        fs_write_sort_value((unsigned int)mod_type, &sort_stream);
+        fs_write_sort_string(target->mod_dir, &sort_stream);
+        fs_write_sort_string(target->name, &sort_stream);
+        fs_write_sort_value(target->name_match, &sort_stream);
+        target->sort_key_length = sort_stream.position;
+    }
 }
 
-static void reference_set_work_add(reference_set_work_t *ref_work, fsc_file_direct_t *pk3)
+static int compare_reference_set_entry(const reference_set_entry_t *e1, const reference_set_entry_t *e2)
 {
+    // Returns < 0 if e1 is higher precedence, > 0 if e2 is higher precedence
+    return fsc_memcmp(e1->sort_key, e2->sort_key,
+        e1->sort_key_length < e2->sort_key_length ? e1->sort_key_length : e2->sort_key_length);
+}
+
+static void reference_set_insert_entry(
+    reference_set_work_t *rsw, const char *mod_dir, const char *name, unsigned int hash, const fsc_file_direct_t *pak)
+{
+    // Inserts or updates reference entry into output reference set
+    reference_set_entry_t new_entry;
+    fs_hashtable_iterator_t it = fs_hashtable_iterate(rsw->reference_set, hash, qfalse);
+    reference_set_entry_t *target_entry = 0;
+
+    // Generate new entry
+    generate_reference_set_entry(rsw, mod_dir, name, hash, pak, &new_entry);
+
+    // Print entry contents
     if (fs_debug_references->integer)
     {
-        PAK_NAME(pk3);
-        Com_Printf("********** %s list reference **********\n", ref_work->download ? "download" : "pure");
-        Com_Printf("rule: %s\nposition: %i\npak: %s\nhash: %i\n", ref_work->rule_name, ref_work->position, pak_name,
-            (int)pk3->pk3_hash);
+        Com_Printf("********** reference set entry **********\n");
+        Com_Printf("entry id: %i\n", new_entry.entry_id);
+        Com_Printf("source rule: %s\n", new_entry.command_name);
+        Com_Printf("path: %s/%s\n", new_entry.mod_dir, new_entry.name);
+        Com_Printf("hash: %i\n", (int)new_entry.hash);
+        if (new_entry.pak)
+        {
+            char buffer[FS_FILE_BUFFER_SIZE];
+            fs_file_to_buffer((const fsc_file_t *)new_entry.pak, buffer, sizeof(buffer), qtrue, qtrue, qtrue, qfalse);
+            Com_Printf("physical file: %s\n", buffer);
+        }
+        else
+        {
+            Com_Printf("physical file: <none>\n");
+        }
+        Com_Printf("cluster: %i\n", new_entry.cluster);
     }
-    if (ref_work->download && !is_pak_downloadable(ref_work, pk3))
+
+    // Process exclude command
+    if (rsw->exclude_mode)
+    {
+        if (pk3_list_lookup(&rsw->exclude_set, hash, qfalse))
+        {
+            if (fs_debug_references->integer)
+                Com_Printf("result: Hash already in exclude set\n");
+        }
+        else
+        {
+            if (fs_debug_references->integer)
+                Com_Printf("result: Hash added to exclude set\n");
+            pk3_list_insert(&rsw->exclude_set, hash);
+        }
         return;
-    reference_set_add(ref_work->target, pk3, ref_work->position);
+    }
+
+    // Check if hash is excluded
+    if (pk3_list_lookup(&rsw->exclude_set, hash, qfalse))
+    {
+        if (fs_debug_references->integer)
+            Com_Printf("result: Skipping entry due to hash in exclude set\n");
+        return;
+    }
+
+    // Look for existing entry with same hash
+    while ((target_entry = (reference_set_entry_t *)fs_hashtable_next(&it)))
+    {
+        if (new_entry.hash == target_entry->hash)
+        {
+            // Found entry; check if new entry is higher priority
+            int compare_result = compare_reference_set_entry(&new_entry, target_entry);
+            if (fs_debug_references->integer)
+            {
+                if (compare_result >= 0)
+                    Com_Printf("result: Skipping entry due to existing %s precedence entry id %i\n",
+                        compare_result > 0 ? "higher" : "equal", target_entry->entry_id);
+                else
+                    Com_Printf("result: Overwriting existing lower precedence entry id %i\n", target_entry->entry_id);
+            }
+            ++rsw->duplicates;
+            if (compare_result < 0)
+                *target_entry = new_entry;
+            return;
+        }
+    }
+
+    // Check for excess element count
+    if (rsw->reference_set->element_count >= MAX_REFERENCE_SET_ENTRIES)
+    {
+        if (fs_debug_references->integer)
+            Com_Printf("result: Skipping entry due to MAX_REFERENCE_SET_ENTRIES hit\n");
+        return;
+    }
+
+    // Create new entry
+    if (fs_debug_references->integer)
+        Com_Printf("result: Added entry to reference set\n");
+    target_entry = (reference_set_entry_t *)Z_Malloc(sizeof(*target_entry));
+    *target_entry = new_entry;
+    fs_hashtable_insert(rsw->reference_set, (fs_hashtable_entry_t *)target_entry, target_entry->hash);
+}
+
+static void reference_set_insert_pak(reference_set_work_t *rsw, const fsc_file_direct_t *pak)
+{
+    reference_set_insert_entry(
+        rsw, (const char *)STACKPTR(pak->qp_mod_ptr), (const char *)STACKPTR(pak->f.qp_name_ptr), pak->pk3_hash, pak);
+}
+
+static void add_referenced_paks(reference_set_work_t *rsw)
+{
+    // Add all current referenced paks to the reference set
+    fs_hashtable_iterator_t it = fs_hashtable_iterate(&reference_tracker, 0, qtrue);
+    reference_tracker_entry_t *entry;
+    while ((entry = (reference_tracker_entry_t *)fs_hashtable_next(&it)))
+    {
+        reference_set_insert_pak(rsw, entry->pak);
+    }
+}
+
+static void add_pak_containing_file(reference_set_work_t *rsw, const char *name)
+{
+    // Add the pak containing the specified file to the reference set
+    const fsc_file_t *file =
+        fs_general_lookup(name, LOOKUPFLAG_IGNORE_CURRENT_MAP | LOOKUPFLAG_PK3_SOURCE_ONLY, qfalse);
+    if (!file || file->sourcetype != FSC_SOURCETYPE_PK3)
+    {
+        return;
+    }
+    reference_set_insert_pak(rsw, (fsc_file_direct_t *)STACKPTR(((fsc_file_frompk3_t *)file)->source_pk3));
 }
 
 typedef enum { PAKCATEGORY_ACTIVE_MOD, PAKCATEGORY_BASEGAME, PAKCATEGORY_INACTIVE_MOD } pakcategory_t;
@@ -516,16 +583,16 @@ typedef enum { PAKCATEGORY_ACTIVE_MOD, PAKCATEGORY_BASEGAME, PAKCATEGORY_INACTIV
 static pakcategory_t get_pak_category(const fsc_file_direct_t *pak)
 {
     int mod_type = fs_get_mod_type(fsc_get_mod_dir((fsc_file_t *)pak, &fs));
-    if (mod_type >= MODTYPE_OVERRIDE_DIRECTORY)
+    if (mod_type >= MODTYPE_CURRENT_MOD)
         return PAKCATEGORY_ACTIVE_MOD;
     if (mod_type > MODTYPE_INACTIVE)
         return PAKCATEGORY_BASEGAME;
     return PAKCATEGORY_INACTIVE_MOD;
 }
 
-static void add_paks_by_category(reference_set_work_t *ref_work, pakcategory_t category)
+static void add_paks_by_category(reference_set_work_t *rsw, pakcategory_t category)
 {
-    // Add all loaded paks in specified category to the reference set
+    // Add all loaded paks in specified category to the pak set
     int i;
     fsc_hashtable_iterator_t hti;
     fsc_pk3_hash_map_entry_t *hash_entry;
@@ -540,263 +607,456 @@ static void add_paks_by_category(reference_set_work_t *ref_work, pakcategory_t c
                 continue;
             if (get_pak_category(pk3) != category)
                 continue;
-            reference_set_work_add(ref_work, pk3);
+            reference_set_insert_pak(rsw, pk3);
         }
     }
 }
 
-static void add_referenced_paks(reference_set_work_t *ref_work)
+static unsigned int string_to_hash(const char *string)
 {
-    // Add all current referenced paks to the reference set
-    fs_hashtable_iterator_t it = fs_hashtable_iterate(&referenced_paks, 0, qtrue);
-    reference_set_entry_t *entry;
-    while ((entry = (reference_set_entry_t *)fs_hashtable_next(&it)))
+    // Converts a user-specified string (signed or unsigned) to hash value
+    // Returns 0 on error, hash otherwise
+    char test_buffer[16];
+    if (*string == '-')
     {
-        reference_set_work_add(ref_work, entry->pak);
-    }
-}
-
-static void add_pak_containing_file(reference_set_work_t *ref_work, const char *name)
-{
-    // Add the pak containing the specified file to the reference set
-    const fsc_file_t *file =
-        fs_general_lookup(name, LOOKUPFLAG_IGNORE_CURRENT_MAP | LOOKUPFLAG_PK3_SOURCE_ONLY, qfalse);
-    if (!file || file->sourcetype != FSC_SOURCETYPE_PK3)
-    {
-        Com_Printf("WARNING: %s list rule %s failed to locate pk3\n", ref_work->download ? "Download" : "Pure",
-            ref_work->rule_name);
-        return;
-    }
-    reference_set_work_add(ref_work, (fsc_file_direct_t *)STACKPTR(((fsc_file_frompk3_t *)file)->source_pk3));
-}
-
-static void add_pak_by_name(reference_set_work_t *ref_work, const char *name)
-{
-    // Add all paks matching the specified filename to the reference set
-    int count = 0;
-    fsc_hashtable_iterator_t hti;
-    const fsc_file_t *file;
-    char mod_dir[FSC_MAX_MODDIR];
-    char filename[FSC_MAX_QPATH];
-    const char *remainder = 0;
-
-    fsc_get_leading_directory(name, mod_dir, sizeof(mod_dir), &remainder);
-    if (remainder)
-    {
-        if (!fs_generate_path(remainder, 0, 0, 0, 0, 0, filename, sizeof(filename)))
-            return;
+        unsigned int hash = (unsigned int)atoi(string);
+        Com_sprintf(test_buffer, sizeof(test_buffer), "%i", (int)hash);
+        if (strcmp(string, test_buffer))
+            return 0;
+        return hash;
     }
     else
     {
-        *mod_dir = 0;
-        if (!fs_generate_path(name, 0, 0, 0, 0, 0, filename, sizeof(filename)))
+        unsigned int hash = strtoul(string, 0, 10);
+        Com_sprintf(test_buffer, sizeof(test_buffer), "%u", hash);
+        if (strcmp(string, test_buffer))
+            return 0;
+        return hash;
+    }
+}
+
+static void add_pak_by_name(reference_set_work_t *rsw, const char *string)
+{
+    // Add all paks matching the specified filename to the reference set
+    char buffer[FSC_MAX_MODDIR + FSC_MAX_QPATH + 32];
+    char *name_ptr = 0;
+    char *hash_ptr = 0;
+    char mod_dir[FSC_MAX_MODDIR];
+    char name[FSC_MAX_QPATH];
+    unsigned int hash = 0;
+    int count = 0;
+
+    // Determine mod_dir, name, and hash
+    Q_strncpyz(buffer, string, sizeof(buffer));
+    name_ptr = strchr(buffer, '/');
+    if (name_ptr)
+        *(name_ptr++) = 0;
+    if (!name_ptr || !*name_ptr || strchr(name_ptr, '/'))
+    {
+        Com_Printf("WARNING: Error reading name for rule '%s'\n", rsw->command_name);
+        return;
+    }
+    hash_ptr = strchr(name_ptr, ':');
+    if (hash_ptr)
+    {
+        *(hash_ptr++) = 0;
+        hash = string_to_hash(hash_ptr);
+        if (!hash)
+        {
+            Com_Printf("WARNING: Error reading hash for rule '%s'\n", rsw->command_name);
             return;
+        }
+    }
+    fs_generate_path(buffer, 0, 0, 0, 0, 0, mod_dir, sizeof(mod_dir));
+    fs_generate_path(name_ptr, 0, 0, 0, 0, 0, name, sizeof(name));
+
+    if (hash)
+    {
+        // Look for paks matching hash
+        fsc_hashtable_iterator_t hti;
+        fsc_pk3_hash_map_entry_t *entry;
+        fsc_hashtable_open(&fs.pk3_hash_lookup, hash, &hti);
+        while ((entry = (fsc_pk3_hash_map_entry_t *)STACKPTR(fsc_hashtable_next(&hti))))
+        {
+            const fsc_file_direct_t *file = (const fsc_file_direct_t *)STACKPTR(entry->pk3);
+            if (fs_file_disabled((fsc_file_t *)file, 0))
+                continue;
+            if (file->pk3_hash != hash)
+                continue;
+            reference_set_insert_entry(rsw, mod_dir, name, hash, file);
+            ++count;
+        }
+
+        // If no actual pak was found, create a hash-only entry
+        if (!count)
+        {
+            reference_set_insert_entry(rsw, mod_dir, name, hash, 0);
+            ++count;
+        }
     }
 
-    fsc_hashtable_open(&fs.files, fsc_string_hash(filename, 0), &hti);
-    while ((file = (const fsc_file_t *)STACKPTR(fsc_hashtable_next(&hti))))
+    else
     {
-        if (file->sourcetype != FSC_SOURCETYPE_DIRECT)
-            continue;
-        if (!((fsc_file_direct_t *)file)->pk3_hash)
-            continue;
-        if (fs_file_disabled(file, 0))
-            continue;
-
-        if (file->qp_dir_ptr)
-            continue;
-        if (!file->qp_ext_ptr || Q_stricmp((const char *)STACKPTR(file->qp_ext_ptr), "pk3"))
-            continue;
-        if (Q_stricmp((const char *)STACKPTR(file->qp_name_ptr), filename))
-            continue;
-        if (*mod_dir && Q_stricmp(fsc_get_mod_dir(file, &fs), mod_dir))
-            continue;
-
-        reference_set_work_add(ref_work, (fsc_file_direct_t *)file);
-        ++count;
+        // No user-specified hash, so add paks matching name instead
+        fsc_hashtable_iterator_t hti;
+        const fsc_file_direct_t *file;
+        fsc_hashtable_open(&fs.files, fsc_string_hash(name, 0), &hti);
+        while ((file = (const fsc_file_direct_t *)STACKPTR(fsc_hashtable_next(&hti))))
+        {
+            if (file->f.sourcetype != FSC_SOURCETYPE_DIRECT)
+                continue;
+            if (!file->pk3_hash)
+                continue;
+            if (fs_file_disabled((const fsc_file_t *)file, 0))
+                continue;
+            if (Q_stricmp((const char *)STACKPTR(file->f.qp_name_ptr), name))
+                continue;
+            if (Q_stricmp(fsc_get_mod_dir((const fsc_file_t *)file, &fs), mod_dir))
+                continue;
+            reference_set_insert_entry(rsw, mod_dir, name, file->pk3_hash, file);
+            ++count;
+        }
     }
 
     if (count != 1)
-        Com_Printf("WARNING: %s list rule %s %s\n", ref_work->download ? "Download" : "Pure", ref_work->rule_name,
-            count ? "found multiple pk3s" : "failed to locate pk3");
+        Com_Printf(
+            "WARNING: Command %s %s\n", rsw->command_name, count ? "found multiple pk3s" : "failed to locate pk3");
 }
 
-static void add_paks_from_manifest_string(reference_set_t *target, const char *string, qboolean download)
+static void generate_reference_set(const char *manifest, fs_hashtable_t *output, int *duplicates_out)
 {
-    reference_set_work_t ref_work = {target, 0, download, 0};
+    // Provide initialized hashtable for output
+    reference_set_work_t rsw;
+    Com_Memset(&rsw, 0, sizeof(rsw));
+    rsw.reference_set = output;
+    pk3_list_initialize(&rsw.exclude_set, 64);
 
     while (1)
     {
-        char *token = COM_ParseExt((char **)&string, qfalse);
+        char *token = COM_ParseExt((char **)&manifest, qfalse);
         if (!*token)
             break;
 
-        ref_work.rule_name = token;
+        // Concatenate command name to include modifiers like "&exclude" in debug prints
+        if (*rsw.command_name)
+            Q_strcat(rsw.command_name, sizeof(rsw.command_name), " ");
+        Q_strcat(rsw.command_name, sizeof(rsw.command_name), token);
 
-        if (!Q_stricmp(token, "-"))
+        // Process command
+        if (!Q_stricmp(token, "&exclude"))
         {
-            ++ref_work.position;
+            rsw.exclude_mode = qtrue;
+            continue;
+        }
+        if (!Q_stricmp(token, "&exclude_reset"))
+        {
+            if (fs_debug_references->integer)
+                Com_Printf("Resetting excluded hash set.\n");
+            pk3_list_free(&rsw.exclude_set);
+            pk3_list_initialize(&rsw.exclude_set, 64);
+        }
+        else if (!Q_stricmp(token, "-"))
+        {
+            ++rsw.cluster;
         }
         else if (!Q_stricmp(token, "*mod_paks"))
         {
-            add_paks_by_category(&ref_work, PAKCATEGORY_ACTIVE_MOD);
+            add_paks_by_category(&rsw, PAKCATEGORY_ACTIVE_MOD);
         }
         else if (!Q_stricmp(token, "*base_paks"))
         {
-            add_paks_by_category(&ref_work, PAKCATEGORY_BASEGAME);
+            add_paks_by_category(&rsw, PAKCATEGORY_BASEGAME);
         }
         else if (!Q_stricmp(token, "*inactivemod_paks"))
         {
-            add_paks_by_category(&ref_work, PAKCATEGORY_INACTIVE_MOD);
+            add_paks_by_category(&rsw, PAKCATEGORY_INACTIVE_MOD);
         }
         else if (!Q_stricmp(token, "*referenced_paks"))
         {
-            add_referenced_paks(&ref_work);
+            add_referenced_paks(&rsw);
         }
         else if (!Q_stricmp(token, "*currentmap_pak"))
         {
-            add_pak_containing_file(&ref_work, va("maps/%s.bsp", Cvar_VariableString("mapname")));
+            add_pak_containing_file(&rsw, va("maps/%s.bsp", Cvar_VariableString("mapname")));
         }
         else if (!Q_stricmp(token, "*cgame_pak"))
         {
-            add_pak_containing_file(&ref_work, "vm/cgame.qvm");
+            add_pak_containing_file(&rsw, "vm/cgame.qvm");
         }
         else if (!Q_stricmp(token, "*ui_pak"))
         {
-            add_pak_containing_file(&ref_work, "vm/ui.qvm");
+            add_pak_containing_file(&rsw, "vm/ui.qvm");
         }
         else
         {
-            add_pak_by_name(&ref_work, token);
+            add_pak_by_name(&rsw, token);
         }
+
+        // Reset modifiers
+        *rsw.command_name = 0;
+        rsw.exclude_mode = qfalse;
     }
+
+    if (duplicates_out)
+        *duplicates_out = rsw.duplicates;
+    pk3_list_free(&rsw.exclude_set);
 }
 
 /* ******************************************************************************** */
-// Server Download List Handling
+// Download Map Handling
 /* ******************************************************************************** */
 
-static reference_set_t download_paks;
+// The download map is used to match client download requests to the actual file
+// on the server, since the download list name may not match the server filename
 
-void fs_set_download_list(void)
+typedef fs_hashtable_t fs_download_map_t;
+
+typedef struct {
+    fs_hashtable_entry_t hte;
+    char *name;
+    const fsc_file_direct_t *pak;
+} download_map_entry_t;
+
+static void free_download_map_entry(fs_hashtable_entry_t *entry)
 {
-    // Called by server to set "sv_referencedPaks" and "sv_referencedPakNames"
-    // Also updates the download_paks structure above which is used to match
-    //    path string from the client to the actual pk3 path
-
-    // Clear out old download set
-    if (download_paks.bucket_count)
-        fs_hashtable_reset(&download_paks, 0);
-    else
-        fs_hashtable_initialize(&download_paks, 32);
-
-    // Add new download paks
-    add_paks_from_manifest_string(&download_paks, fs_download_manifest->string, qtrue);
-
-    // Generate and set the reference strings
-    {
-        reference_list_t reference_list;
-        char reference_hashes[1000];
-        char reference_names[1000];
-        qboolean overflow = qfalse;
-
-        reference_set_to_reference_list(&download_paks, &reference_list);
-        sort_reference_list(&reference_list, qfalse);
-        if (!reference_list_to_buffer(
-                &reference_list, reference_hashes, sizeof(reference_hashes), reference_hash_string))
-            overflow = qtrue;
-        if (!reference_list_to_buffer(&reference_list, reference_names, sizeof(reference_names), reference_name_string))
-            overflow = qtrue;
-        free_reference_list(&reference_list);
-
-        if (overflow)
-        {
-            Com_Printf("WARNING: Download list overflowed\n");
-            Cvar_Set("sv_referencedPaks", "");
-            Cvar_Set("sv_referencedPakNames", "");
-        }
-        else
-        {
-            Cvar_Set("sv_referencedPaks", reference_hashes);
-            Cvar_Set("sv_referencedPakNames", reference_names);
-        }
-    }
+    Z_Free(((download_map_entry_t *)entry)->name);
+    Z_Free(entry);
 }
 
-fileHandle_t fs_open_download_pak(const char *path, unsigned int *size_out)
+static void fs_free_download_map(fs_download_map_t *dlmap)
 {
-    // Used by the server UDP download system to open paks instead of the regular
-    //    read functions, because the download path may not correspond exactly
-    //    to the filesystem path for various reasons
-    // Also uses a direct read handle instead of the normal read method to avoid
-    //    lagging the server by reading a big pk3 all at once
-    char buffer[FSC_MAX_QPATH];
-    fs_hashtable_iterator_t it = fs_hashtable_iterate(&download_paks, 0, qtrue);
-    reference_set_entry_t *entry;
+    fs_hashtable_free(dlmap, free_download_map_entry);
+    Z_Free(dlmap);
+}
 
-    // Search all the current referenced paks to find one with a matching path
-    while ((entry = (reference_set_entry_t *)fs_hashtable_next(&it)))
+static fs_download_map_t *create_download_map(void)
+{
+    fs_download_map_t *dlmap = (fs_download_map_t *)Z_Malloc(sizeof(*dlmap));
+    fs_hashtable_initialize(dlmap, 16);
+    return dlmap;
+}
+
+static void add_download_map_entry(fs_download_map_t *dlmap, const char *path, const fsc_file_direct_t *pak)
+{
+    download_map_entry_t *entry = (download_map_entry_t *)Z_Malloc(sizeof(*entry));
+    entry->name = CopyString(path);
+    entry->pak = pak;
+    fs_hashtable_insert(dlmap, (fs_hashtable_entry_t *)entry, fsc_string_hash(path, 0));
+}
+
+static fileHandle_t open_download_pak_by_map(fs_download_map_t *dlmap, const char *path, unsigned int *size_out)
+{
+    fs_hashtable_iterator_t it = fs_hashtable_iterate(dlmap, fsc_string_hash(path, 0), qfalse);
+    download_map_entry_t *entry;
+
+    while ((entry = (download_map_entry_t *)fs_hashtable_next(&it)))
     {
-        fsc_stream_t stream = {buffer, 0, sizeof(buffer), 0};
-        reference_name_string(entry->pak, &stream);
-        fsc_stream_append_string(&stream, ".pk3");
-        if (!Q_stricmp(stream.data, path))
-        {
-            // Found match
+        if (!Q_stricmp(entry->name, path))
             return fs_direct_read_handle_open((fsc_file_t *)entry->pak, 0, size_out);
-        }
     }
 
     return 0;
 }
 
 /* ******************************************************************************** */
-// Server Pure List Handling
+// Reference string generation
 /* ******************************************************************************** */
 
-#define SYSTEMINFO_RESERVED_SIZE 256
-static void fs_set_pure_list2(reference_list_t *pure_list)
+// This section is used to generate the name/hash strings for the download and pure
+// lists, as well as the download map corresponding to the download list
+
+static int reference_set_entry_qsort(const void *e1, const void *e2)
 {
-    char hash_string[BIG_INFO_STRING];
-    char name_string[BIG_INFO_STRING];
-    int systeminfo_base_length;
-
-    if (!reference_list_to_buffer(pure_list, hash_string, sizeof(hash_string), reference_hash_string))
-    {
-        Com_Printf(
-            "WARNING: Setting sv_pure to 0 due to pure list overflow. Remove some"
-            " paks from the server or adjust the pure manifest if you want to use sv_pure.\n");
-        Cvar_Set("sv_pure", 0);
-        return;
-    }
-
-    if (!*hash_string)
-    {
-        Com_Printf("WARNING: Setting sv_pure to 0 due to empty pure list.\n");
-        Cvar_Set("sv_pure", "0");
-        return;
-    }
-
-    systeminfo_base_length = strlen(Cvar_InfoString_Big(CVAR_SYSTEMINFO));
-    if (systeminfo_base_length + strlen(hash_string) + SYSTEMINFO_RESERVED_SIZE >= BIG_INFO_STRING)
-    {
-        Com_Printf(
-            "WARNING: Setting sv_pure to 0 due to systeminfo overflow. Remove some"
-            " paks from the server or adjust the pure manifest if you want to use sv_pure.\n");
-        Cvar_Set("sv_pure", "0");
-        return;
-    }
-
-    Cvar_Set("sv_paks", hash_string);
-
-    // It should be fine to leave sv_pakNames empty if it overflowed since it is normally
-    // only used for informational purposes anyway
-    if (reference_list_to_buffer(pure_list, name_string, sizeof(name_string), reference_name_string) &&
-        systeminfo_base_length + strlen(hash_string) + strlen(name_string) + SYSTEMINFO_RESERVED_SIZE < BIG_INFO_STRING)
-    {
-        Cvar_Set("sv_pakNames", name_string);
-    }
+    return -compare_reference_set_entry(*(const reference_set_entry_t **)e1, *(const reference_set_entry_t **)e2);
 }
+
+static void generate_reference_strings(const char *manifest, fsc_stream_t *hash_output, fsc_stream_t *name_output,
+    fs_download_map_t *download_map_output, qboolean download)
+{
+    int i;
+    char buffer[512];
+    fs_hashtable_t reference_set;
+    reference_set_entry_t **reference_list;
+    int count = 0;
+    int duplicates = 0;
+    int allowDownload = Cvar_VariableIntegerValue("sv_allowDownload");
+
+    if (fs_debug_references->integer)
+        Com_Printf("processing manifest: \"%s\"\n", manifest);
+
+    // Make sure outputs are null terminated in case there are 0 references
+    if (hash_output)
+        *hash_output->data = 0;
+    if (name_output)
+        *name_output->data = 0;
+
+    // Generate reference set
+    fs_hashtable_initialize(&reference_set, MAX_REFERENCE_SET_ENTRIES);
+    generate_reference_set(manifest, &reference_set, &duplicates);
+
+    // Generate reference list
+    {
+        reference_set_entry_t *entry;
+        fs_hashtable_iterator_t it = fs_hashtable_iterate(&reference_set, 0, qtrue);
+        reference_list = (reference_set_entry_t **)Z_Malloc(sizeof(*reference_list) * reference_set.element_count);
+        while ((entry = (reference_set_entry_t *)fs_hashtable_next(&it)))
+        {
+            if (count >= reference_set.element_count)
+                Com_Error(ERR_FATAL, "generate_reference_strings list overflow");
+            reference_list[count] = entry;
+            ++count;
+        }
+        if (count != reference_set.element_count)
+            Com_Error(ERR_FATAL, "generate_reference_strings list underflow");
+    }
+
+    // Sort reference list
+    qsort(reference_list, count, sizeof(*reference_list), reference_set_entry_qsort);
+
+    // Process reference list
+    for (i = 0; i < count; ++i)
+    {
+        const reference_set_entry_t *entry = reference_list[i];
+        const char *mod_dir = entry->mod_dir;
+        const char *name = entry->name;
+
+        if (fs_debug_references->integer)
+        {
+            Com_Printf("processing entry: entry(%i) hash(%i) path(%s/%s)\n", entry->entry_id, (int)entry->hash,
+                entry->mod_dir, entry->name);
+        }
+
+        if (download)
+        {
+            // Replace basemod with fs_basegame since downloads aren't supposed
+            // to go directly into basemod and clients may block it or have errors
+            if (!Q_stricmp(mod_dir, "basemod"))
+                mod_dir = fs_basegame->string;
+
+            // Patch mod dir capitalization
+            for (const char *mod_def : {BASEGAME_1_1, BASEGAME_GPP, BASEGAME_1_3, BASEGAME_OVERRIDE, BASEGAME,
+                     (const char *)fs_basegame->string, (const char *)current_mod_dir})
+            {
+                if (!Q_stricmp(mod_dir, mod_def))
+                    mod_dir = mod_def;
+            }
+
+#ifndef STANDALONE
+            // Don't put paks that fail the id pak check in download list because clients won't download
+            // them anyway and may throw an error
+            {
+                Com_sprintf(buffer, sizeof(buffer), "%s/%s", mod_dir, name);
+                if (FS_idPak(buffer, BASEGAME, FS_NODOWNLOAD_PAKS) ||
+                    FS_idPak(buffer, BASETA, FS_NODOWNLOAD_PAKS_TEAMARENA))
+                {
+                    if (fs_debug_references->integer)
+                    {
+                        Com_Printf("NOTE: Skipping download list entry %i due to ID pak name\n", entry->entry_id);
+                    }
+                    continue;
+                }
+            }
+#endif
+
+            // Print warning if file is physically unavailable
+            if (!entry->pak && allowDownload && !(allowDownload & DLF_NO_UDP))
+            {
+                Com_Printf(
+                    "WARNING: Download list file %s/%s from command %s was not found on the server."
+                    " Attempts to download this file via UDP will result in an error.\n",
+                    mod_dir, name, entry->command_name);
+            }
+
+            // Print warning if pak is from an inactive mod dir
+            if (fs_get_mod_type(mod_dir) <= MODTYPE_INACTIVE)
+            {
+                Com_Printf(
+                    "WARNING: Download list file %s/%s from command %s is from an inactive mod dir."
+                    " This can cause problems for some clients. Consider moving this file or changing the"
+                    " active mod to include it.\n",
+                    mod_dir, name, entry->command_name);
+            }
+        }
+
+        if (hash_output)
+        {
+            Com_sprintf(buffer, sizeof(buffer), "%i", (int)entry->hash);
+            if (hash_output->position)
+                fsc_stream_append_string(hash_output, " ");
+            fsc_stream_append_string(hash_output, buffer);
+        }
+
+        if (name_output)
+        {
+            Com_sprintf(buffer, sizeof(buffer), "%s/%s", mod_dir, name);
+            if (name_output->position)
+                fsc_stream_append_string(name_output, " ");
+            fsc_stream_append_string(name_output, buffer);
+        }
+
+        if (download_map_output)
+        {
+            if (entry->pak)
+            {
+                Com_sprintf(buffer, sizeof(buffer), "%s/%s.pk3", mod_dir, name);
+                add_download_map_entry(download_map_output, buffer, entry->pak);
+            }
+        }
+    }
+
+    fs_hashtable_free(&reference_set, 0);
+    Z_Free(reference_list);
+
+    Com_Printf("Got %i unique paks with %i duplications\n", count, duplicates);
+}
+
+/* ******************************************************************************** */
+// General functions
+/* ******************************************************************************** */
+
+static fs_download_map_t *download_map;
+
+void fs_set_download_list(void)
+{
+    // Called by server to set "sv_referencedPaks" and "sv_referencedPakNames"
+    // Also updates the download_map structure above which is used to match
+    //    path string from the client to the actual pk3 path
+    char hash_buffer[2048];
+    fsc_stream_t hash_stream = {hash_buffer, 0, sizeof(hash_buffer), 0};
+    char name_buffer[2048];
+    fsc_stream_t name_stream = {name_buffer, 0, sizeof(name_buffer), 0};
+
+    // Reset download map
+    if (download_map)
+        fs_free_download_map(download_map);
+    download_map = create_download_map();
+
+    // Generate strings and download map
+    Com_Printf("Generating download list...\n");
+    generate_reference_strings(fs_download_manifest->string, &hash_stream, &name_stream, download_map, qtrue);
+
+    // Check for overflow
+    if (hash_stream.overflowed || name_stream.overflowed)
+    {
+        Com_Printf("WARNING: Download list overflowed\n");
+        Cvar_Set("sv_referencedPaks", "");
+        Cvar_Set("sv_referencedPakNames", "");
+        fs_free_download_map(download_map);
+        download_map = 0;
+    }
+
+    Cvar_Set("sv_referencedPaks", hash_buffer);
+    Cvar_Set("sv_referencedPakNames", name_buffer);
+}
+
+fileHandle_t fs_open_download_pak(const char *path, unsigned int *size_out)
+{
+    if (download_map)
+        return open_download_pak_by_map(download_map, path, size_out);
+    return 0;
+}
+
+#define SYSTEMINFO_RESERVED_SIZE 256
 
 void fs_set_pure_list(void)
 {
@@ -805,15 +1065,54 @@ void fs_set_pure_list(void)
 
     if (Cvar_VariableIntegerValue("sv_pure"))
     {
-        fs_hashtable_t pure_list_set;
-        reference_list_t pure_list;
-        fs_hashtable_initialize(&pure_list_set, 2048);
-        add_paks_from_manifest_string(&pure_list_set, fs_pure_manifest->string, qfalse);
-        reference_set_to_reference_list(&pure_list_set, &pure_list);
-        fs_hashtable_free(&pure_list_set, 0);
-        sort_reference_list(&pure_list, qfalse);
-        fs_set_pure_list2(&pure_list);
-        free_reference_list(&pure_list);
+        char hash_buffer[BIG_INFO_STRING];
+        fsc_stream_t hash_stream = {hash_buffer, 0, sizeof(hash_buffer), 0};
+        char name_buffer[BIG_INFO_STRING];
+        fsc_stream_t name_stream = {name_buffer, 0, sizeof(name_buffer), 0};
+        int systeminfo_base_length;
+
+        // Generate strings
+        Com_Printf("Generating pure list...\n");
+        generate_reference_strings(fs_pure_manifest->string, &hash_stream, &name_stream, 0, qfalse);
+
+        // Check for error conditions
+        if (!*hash_buffer)
+        {
+            Com_Printf("WARNING: Setting sv_pure to 0 due to empty pure list.\n");
+            Cvar_Set("sv_pure", "0");
+            return;
+        }
+
+        if (hash_stream.overflowed)
+        {
+            Com_Printf(
+                "WARNING: Setting sv_pure to 0 due to pure list overflow. Remove some"
+                " paks from the server or adjust the pure manifest if you want to use sv_pure.\n");
+            Cvar_Set("sv_pure", "0");
+            return;
+        }
+
+        systeminfo_base_length = strlen(Cvar_InfoString_Big(CVAR_SYSTEMINFO));
+        if (systeminfo_base_length + hash_stream.position + SYSTEMINFO_RESERVED_SIZE >= BIG_INFO_STRING)
+        {
+            Com_Printf(
+                "WARNING: Setting sv_pure to 0 due to systeminfo overflow. Remove some"
+                " paks from the server or adjust the pure manifest if you want to use sv_pure.\n");
+            Cvar_Set("sv_pure", "0");
+            return;
+        }
+
+        // Set main pure list value
+        Cvar_Set("sv_paks", hash_buffer);
+
+        // Only set names if it doesn't overflow
+        // It is normally only used for informational purposes, so it's okay to leave it empty
+        if (!name_stream.overflowed &&
+            systeminfo_base_length + hash_stream.position + name_stream.position + SYSTEMINFO_RESERVED_SIZE <
+                BIG_INFO_STRING)
+        {
+            Cvar_Set("sv_pakNames", name_buffer);
+        }
     }
 }
 

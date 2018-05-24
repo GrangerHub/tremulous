@@ -451,7 +451,7 @@ static unsigned int basegame_dir_precedence(FS_ModType mod_type)
     return (unsigned int)mod_type;
 }
 
-static void write_sort_string(const char *string, fsc_stream_t *output)
+void fs_write_sort_string(const char *string, fsc_stream_t *output)
 {
     const unsigned char *sort_table = get_string_sort_table();
     while (*string && output->position < output->size)
@@ -467,7 +467,7 @@ static void write_sort_filename(const fsc_file_t *file, fsc_stream_t *output)
     // Write sort key of the file itself
     char buffer[FS_FILE_BUFFER_SIZE];
     fs_file_to_buffer(file, buffer, sizeof(buffer), qfalse, qfalse, qfalse, qfalse);
-    write_sort_string(buffer, output);
+    fs_write_sort_string(buffer, output);
 }
 
 static void write_sort_pk3_source_filename(const fsc_file_t *file, fsc_stream_t *output)
@@ -475,18 +475,18 @@ static void write_sort_pk3_source_filename(const fsc_file_t *file, fsc_stream_t 
     // Write sort key of the pk3 file or pk3dir the file came from
     if (file->sourcetype == FSC_SOURCETYPE_DIRECT && ((fsc_file_direct_t *)file)->pk3dir_ptr)
     {
-        write_sort_string((const char *)STACKPTR(((fsc_file_direct_t *)file)->pk3dir_ptr), output);
+        fs_write_sort_string((const char *)STACKPTR(((fsc_file_direct_t *)file)->pk3dir_ptr), output);
     }
     else if (file->sourcetype == FSC_SOURCETYPE_PK3)
     {
         fsc_file_direct_t *source_pk3 = (fsc_file_direct_t *)STACKPTR(((fsc_file_frompk3_t *)file)->source_pk3);
-        write_sort_string((const char *)STACKPTR(source_pk3->f.qp_name_ptr), output);
+        fs_write_sort_string((const char *)STACKPTR(source_pk3->f.qp_name_ptr), output);
     }
     else
-        write_sort_string("", output);
+        fs_write_sort_string("", output);
 }
 
-static void write_sort_value(unsigned int value, fsc_stream_t *output)
+void fs_write_sort_value(unsigned int value, fsc_stream_t *output)
 {
     static volatile int test = 1;
     if (*(char *)&test)
@@ -506,26 +506,26 @@ void fs_generate_file_sort_key(const fsc_file_t *file, fsc_stream_t *output, qbo
     // This is a rough version of the lookup precedence for reference and file listing purposes
     FS_ModType mod_type = fs_get_mod_type(fsc_get_mod_dir(file, &fs));
     if (use_server_pak_list)
-        write_sort_value(server_pak_precedence(file), output);
-    write_sort_value(mod_dir_precedence(mod_type), output);
-    write_sort_value(system_pak_precedence(file, mod_type), output);
-    write_sort_value(basegame_dir_precedence(mod_type), output);
+        fs_write_sort_value(server_pak_precedence(file), output);
+    fs_write_sort_value(mod_dir_precedence(mod_type), output);
+    fs_write_sort_value(system_pak_precedence(file, mod_type), output);
+    fs_write_sort_value(basegame_dir_precedence(mod_type), output);
     if (file->sourcetype == FSC_SOURCETYPE_PK3 ||
         (file->sourcetype == FSC_SOURCETYPE_DIRECT && ((fsc_file_direct_t *)file)->pk3dir_ptr))
     {
-        write_sort_value((file->flags & FSC_FILEFLAG_DLPK3) ? 0 : 1, output);
-        write_sort_value(0, output);
+        fs_write_sort_value((file->flags & FSC_FILEFLAG_DLPK3) ? 0 : 1, output);
+        fs_write_sort_value(0, output);
         write_sort_pk3_source_filename(file, output);
-        write_sort_value(
+        fs_write_sort_value(
             (file->sourcetype == FSC_SOURCETYPE_PK3) ? ~((fsc_file_frompk3_t *)file)->header_position : ~0u, output);
     }
     else
     {
-        write_sort_value((file->flags & FSC_FILEFLAG_DLPK3) ? 0 : 1, output);
-        write_sort_value(1, output);
+        fs_write_sort_value((file->flags & FSC_FILEFLAG_DLPK3) ? 0 : 1, output);
+        fs_write_sort_value(1, output);
     }
     write_sort_filename(file, output);
-    write_sort_value(fs_get_source_dir_id(file), output);
+    fs_write_sort_value(fs_get_source_dir_id(file), output);
 }
 
 int fs_compare_file(const fsc_file_t *file1, const fsc_file_t *file2, qboolean use_server_pak_list)
