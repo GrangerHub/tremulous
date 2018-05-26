@@ -476,14 +476,14 @@ static void write_sort_pk3_source_filename(const fsc_file_t *file, fsc_stream_t 
     if (file->sourcetype == FSC_SOURCETYPE_DIRECT && ((fsc_file_direct_t *)file)->pk3dir_ptr)
     {
         fs_write_sort_string((const char *)STACKPTR(((fsc_file_direct_t *)file)->pk3dir_ptr), output);
+        fs_write_sort_value(1, output);
     }
     else if (file->sourcetype == FSC_SOURCETYPE_PK3)
     {
         fsc_file_direct_t *source_pk3 = (fsc_file_direct_t *)STACKPTR(((fsc_file_frompk3_t *)file)->source_pk3);
         fs_write_sort_string((const char *)STACKPTR(source_pk3->f.qp_name_ptr), output);
+        fs_write_sort_value(0, output);
     }
-    else
-        fs_write_sort_string("", output);
 }
 
 void fs_write_sort_value(unsigned int value, fsc_stream_t *output)
