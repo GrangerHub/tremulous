@@ -366,7 +366,7 @@ enum FS_ModType {
 	MODTYPE_CURRENT_MOD
 };
 #endif
-DEF_LOCAL( int system_pk3_position(unsigned int hash) )
+DEF_LOCAL( int default_pk3_position(unsigned int hash) )
 DEF_LOCAL( FS_ModType fs_get_mod_type(const char *mod_dir) )
 
 // File helper functions
@@ -423,8 +423,8 @@ DEF_LOCAL( qboolean calculate_file_sha256(const fsc_file_t *file, unsigned char 
 DEF_LOCAL( qboolean fs_check_trusted_vm_file(const fsc_file_t *file) )
 DEF_LOCAL( void sha256_to_stream(unsigned char *sha, fsc_stream_t *output) )
 
-// System Pak Verification
-DEF_LOCAL( void fs_check_system_paks(void) )
+// Default Pak Verification
+DEF_LOCAL( void fs_check_default_paks(void) )
 
 /* ******************************************************************************** */
 // Trusted VMs

@@ -411,7 +411,7 @@ void fs_finalize_download(void)
 
     if (actual_hash != current_download->hash)
     {
-        // Wrong hash - this could be a malicious attempt to spoof a system pak or maybe a corrupt
+        // Wrong hash - this could be a malicious attempt to spoof a default pak or maybe a corrupt
         //    download, but probably is just a server configuration issue mixing up pak versions.
         //    Run the file needed check with the new hash to see if it still passes.
         if (!fs_is_valid_download(current_download, actual_hash, qfalse))

@@ -56,7 +56,7 @@ typedef struct {
     // finishes, since it gets saved for debug queries
     const fsc_file_t *file;
     const fsc_shader_t *shader;
-    int system_pak_priority;
+    int default_pak_priority;
     int server_pak_position;
     int extension_position;
     FS_ModType mod_type;
@@ -100,8 +100,8 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
 
         if (resource->mod_type < MODTYPE_OVERRIDE_DIRECTORY)
         {
-            // Sort system paks or the current map pak specially unless they are mixed into an active mod directory
-            resource->system_pak_priority = system_pk3_position(source_pk3->pk3_hash);
+            // Sort default paks or the current map pak specially unless they are mixed into an active mod directory
+            resource->default_pak_priority = default_pk3_position(source_pk3->pk3_hash);
             if (!(query->lookup_flags & LOOKUPFLAG_IGNORE_CURRENT_MAP) && source_pk3 == current_map_pk3)
                 resource->flags |= RESFLAG_IN_CURRENT_MAP_PAK;
         }
@@ -383,11 +383,11 @@ PC_DEBUG(resource_disabled)
 
 PC_COMPARE(special_shaders)
 {
-    qboolean r1_special = (r1->shader && (r1->mod_type >= MODTYPE_OVERRIDE_DIRECTORY || r1->system_pak_priority ||
+    qboolean r1_special = (r1->shader && (r1->mod_type >= MODTYPE_OVERRIDE_DIRECTORY || r1->default_pak_priority ||
                                              r1->server_pak_position))
                               ? qtrue
                               : qfalse;
-    qboolean r2_special = (r2->shader && (r2->mod_type >= MODTYPE_OVERRIDE_DIRECTORY || r2->system_pak_priority ||
+    qboolean r2_special = (r2->shader && (r2->mod_type >= MODTYPE_OVERRIDE_DIRECTORY || r2->default_pak_priority ||
                                              r2->server_pak_position))
                               ? qtrue
                               : qfalse;
@@ -403,7 +403,7 @@ PC_COMPARE(special_shaders)
 PC_DEBUG(special_shaders)
 {
     ADD_STRING(va(
-        "Resource %i was selected because it is classified as a special shader (from a system pak, the server pak list,"
+        "Resource %i was selected because it is classified as a special shader (from a default pak, the server pak list,"
         " the current mod dir, or the basemod dir) and resource %i is not.",
         high_num, low_num));
 }
@@ -462,19 +462,19 @@ PC_DEBUG(basemod_or_current_mod_dir)
     ADD_STRING(va(" and resource %i is not. ", low_num));
 }
 
-PC_COMPARE(system_paks)
+PC_COMPARE(default_paks)
 {
-    if (r1->system_pak_priority > r2->system_pak_priority)
+    if (r1->default_pak_priority > r2->default_pak_priority)
         return -1;
-    if (r2->system_pak_priority > r1->system_pak_priority)
+    if (r2->default_pak_priority > r1->default_pak_priority)
         return 1;
     return 0;
 }
 
-PC_DEBUG(system_paks)
+PC_DEBUG(default_paks)
 {
     ADD_STRING(
-        va("Resource %i was selected because it has a higher system pak rank than resource %i.", high_num, low_num));
+        va("Resource %i was selected because it has a higher default pak rank than resource %i.", high_num, low_num));
 }
 
 PC_COMPARE(current_map_pak)
@@ -680,7 +680,7 @@ typedef struct {
         #check, pc_cmp_##check, pc_dbg_##check \
     }
 static const precedence_check_t precedence_checks[] = {ADD_CHECK(resource_disabled), ADD_CHECK(special_shaders),
-    ADD_CHECK(server_pak_position), ADD_CHECK(basemod_or_current_mod_dir), ADD_CHECK(system_paks),
+    ADD_CHECK(server_pak_position), ADD_CHECK(basemod_or_current_mod_dir), ADD_CHECK(default_paks),
     ADD_CHECK(current_map_pak), ADD_CHECK(mod_dir_priority), ADD_CHECK(downloads_folder), ADD_CHECK(shader_over_image),
     ADD_CHECK(dll_over_qvm), ADD_CHECK(direct_over_pk3), ADD_CHECK(pk3_name_precedence),
     ADD_CHECK(extension_precedence), ADD_CHECK(source_dir_precedence), ADD_CHECK(intra_pk3_position),

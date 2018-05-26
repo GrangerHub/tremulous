@@ -433,12 +433,12 @@ static void generate_reference_set_entry(reference_set_work_t *rsw, const char *
 
     {
         FS_ModType mod_type = fs_get_mod_type(target->mod_dir);
-        unsigned int system_pak_priority =
-            mod_type < MODTYPE_OVERRIDE_DIRECTORY ? (unsigned int)system_pk3_position(hash) : 0;
+        unsigned int default_pak_priority =
+            mod_type < MODTYPE_OVERRIDE_DIRECTORY ? (unsigned int)default_pk3_position(hash) : 0;
 
         fs_write_sort_value(~target->cluster, &sort_stream);
         fs_write_sort_value(mod_type >= MODTYPE_OVERRIDE_DIRECTORY ? (unsigned int)mod_type : 0, &sort_stream);
-        fs_write_sort_value(system_pak_priority, &sort_stream);
+        fs_write_sort_value(default_pak_priority, &sort_stream);
         fs_write_sort_value((unsigned int)mod_type, &sort_stream);
         fs_write_sort_string(target->mod_dir, &sort_stream);
         fs_write_sort_string(target->name, &sort_stream);
