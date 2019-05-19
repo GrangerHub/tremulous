@@ -3074,6 +3074,10 @@ static void UI_RunMenuScript(char **args)
         {
             trap_Cvar_Set("com_errorMessage", "");
         }
+        else if (Q_stricmp(name, "clearDemoError") == 0)
+        {
+            trap_Cvar_Set("com_demoErrorMessage", "");
+        }
         else if (Q_stricmp(name, "downloadIgnore") == 0)
         {
             trap_Cvar_Set("com_downloadPrompt", va("%d", DLP_IGNORE));
@@ -3240,7 +3244,15 @@ static void UI_RunMenuScript(char **args)
             trap_Cmd_ExecuteText(EXEC_APPEND, "vid_restart\n");
         }
         else if (Q_stricmp(name, "RunDemo") == 0)
-            trap_Cmd_ExecuteText(EXEC_APPEND, va("demo \"%s\"\n", uiInfo.demoList[uiInfo.demoIndex]));
+        {
+            if(uiInfo.demoList[uiInfo.demoIndex])
+            {
+                trap_Cmd_ExecuteText(EXEC_APPEND, va("demo \"%s\"\n", uiInfo.demoList[uiInfo.demoIndex]));
+            } else {
+                trap_Cvar_Set("com_demoErrorMessage", "No demo selected.");
+                Menus_ActivateByName("demo_error_popmenu");
+            }
+        }
         else if (Q_stricmp(name, "Tremulous") == 0)
         {
             trap_Cvar_Set("fs_game", "");

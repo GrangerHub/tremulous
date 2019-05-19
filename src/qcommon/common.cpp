@@ -2654,6 +2654,7 @@ void Com_Init( char *commandLine )
     com_maxfpsMinimized = Cvar_Get( "com_maxfpsMinimized", "0", CVAR_ARCHIVE );
     com_busyWait = Cvar_Get("com_busyWait", "0", CVAR_ARCHIVE);
     Cvar_Get("com_errorMessage", "", CVAR_ROM | CVAR_NORESTART);
+    Cvar_Get("com_demoErrorMessage", "", CVAR_ROM | CVAR_NORESTART);
 
     com_version = Cvar_Get ("version", PRODUCT_NAME, CVAR_ROM | CVAR_SERVERINFO );
     Cvar_Get ("protocol", va("%i", PROTOCOL_VERSION), CVAR_SERVERINFO | CVAR_ROM);
