@@ -86,7 +86,7 @@ git clone -c core.eol=lf ...
 To build the Tremulous binaries do:
 
 ```bash
-docker run -t -i -v $(pwd):/usr/src wtfbbqhax/tremulous:v2 make USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 PLATFORM=mingw32
+docker run -t -i -v $(pwd):/usr/src grangerhub/tremulous13:latest make USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 PLATFORM=mingw32
 ```
 
 On Windows, make sure in the Docker Desktop settings that the drive you have the source 
@@ -105,7 +105,7 @@ cd build/release-mingw32-x86_64/
 Optionally, you can build the Docker image from scratch:
 
 ```bash
-docker build -t wtfbbqhax/tremulous:v2 .
+docker build -t grangerhub/tremulous13:latest .
 ```
 
 # Where do I get the assets?
