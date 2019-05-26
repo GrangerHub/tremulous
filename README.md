@@ -86,27 +86,30 @@ git clone -c core.eol=lf ...
 To build the Tremulous binaries do:
 
 ```bash
-docker run -t -i -v $(pwd):/usr/src grangerhub/tremulous13:latest make USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 PLATFORM=mingw32
+docker run -t -i -e PLATFORM=mingw32 -v $(pwd):/usr/src grangerhub/tremulous13:latest ./misc/docker-build.sh
 ```
 
 On Windows, make sure in the Docker Desktop settings that the drive you have the source 
 code is selected under "Shared Drives". Then replace `$(pwd)` with the actual folder where the 
-source resides (e.g. `"C:\Users\...\Documents\tremulous"`).
+source resides (e.g. `"C:\Users\...\tremulous"`).
 
 To run:
 
 ```bash
 cd build/release-mingw32-x86_64/
-./tremulous.exe +set fs_basepath .
+./tremulous.exe
 ```
 
 (use backslashes `\` if you are using Command Prompt).
 
-Optionally, you can build the Docker image from scratch:
+## Troubleshooting issues with running on Windows 
 
-```bash
-docker build -t grangerhub/tremulous13:latest .
-```
+- If you cannot select the high-resolution display modes inside the game, check Windows 
+Compatibility Settings under the Properties menu when you right-click the 
+Tremulous executable. Select "Change high DPI  settings" and check the
+"Override high DPI scaling behavior. Scaling performed by: Application".
+- If your FPS is low, make sure you are running the game when plugged into 
+power (as opposed to laptop battery).
 
 # Where do I get the assets?
 
