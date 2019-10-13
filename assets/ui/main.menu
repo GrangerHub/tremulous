@@ -44,11 +44,12 @@
         itemDef
         {
             name splashmodel
-            rect 0 0 640 480
+            rect -320 0 1280 480        // Enlarge and centering view
             type ITEM_TYPE_MODEL
             style WINDOW_STYLE_EMPTY
+            aspectBias ALIGN_CENTER        // Allow our HD model to be responsive
             asset_model "models/splash/splash_screen.md3"
-            model_fovx 32.0
+            model_fovx 64.0        // Enlarge view
             model_fovy 24.0
             model_angle 180
             visible MENU_TRUE
@@ -121,12 +122,32 @@
 
         itemDef
         {
+            name mainmenu
+            text "Demos"
+            type ITEM_TYPE_BUTTON
+            style WINDOW_STYLE_EMPTY
+            textstyle ITEM_TEXTSTYLE_NORMAL
+            textscale .416
+            rect X (Y+(3*ELEM_H)) W ELEM_H
+            textalign ALIGN_RIGHT
+            backcolor 0 0 0 0
+            forecolor 1 1 1 1
+            visible MENU_TRUE
+            action
+            {
+                play "sound/misc/menu1.wav";
+                open demo
+            }
+        }
+
+        itemDef
+        {
             name browse_for_folders
             text "Browse Folders"
             type ITEM_TYPE_BUTTON
             style WINDOW_STYLE_EMPTY
             textstyle ITEM_TEXTSTYLE_NORMAL
-            rect X (Y+(3*ELEM_H)) W ELEM_H
+            rect X (Y+(4*ELEM_H)) W ELEM_H
             textscale .416
             textalign ALIGN_RIGHT
             forecolor 1 1 1 1
@@ -145,7 +166,7 @@
             type ITEM_TYPE_BUTTON
             style WINDOW_STYLE_EMPTY
             textstyle ITEM_TEXTSTYLE_NORMAL
-            rect X (Y+(4*ELEM_H)) W ELEM_H
+            rect X (Y+(5*ELEM_H)) W ELEM_H
             textscale .416
             textalign ALIGN_RIGHT
             forecolor 1 1 1 1
@@ -164,7 +185,7 @@
             type ITEM_TYPE_BUTTON
             style WINDOW_STYLE_EMPTY
             textstyle ITEM_TEXTSTYLE_NORMAL
-            rect X (Y+(5*ELEM_H)) W ELEM_H
+            rect X (Y+(6*ELEM_H)) W ELEM_H
             textscale .416
             textalign ALIGN_RIGHT
             forecolor 1 1 1 1
@@ -180,7 +201,7 @@
         {
             name copyright
             type ITEM_TYPE_TEXT
-            text "Copyright (C) 2015-2018 GrangerHub"
+            text "Copyright (C) 2015-2019 GrangerHub"
             style WINDOW_STYLE_EMPTY
             textstyle ITEM_TEXTSTYLE_NORMAL
             textscale .30
