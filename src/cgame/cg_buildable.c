@@ -96,6 +96,7 @@ void CG_HumanBuildableExplosion( vec3_t origin, vec3_t dir )
 
 #define CREEP_SIZE            64.0f
 #define CREEP_DISTANCE        64.0f
+#define CREEP_FRAMES          550
 
 /*
 ==================
@@ -105,11 +106,11 @@ CG_Creep
 static void CG_Creep( centity_t *cent )
 {
   int           msec;
-  float         size, frac;
+  float         frac;
   trace_t       tr;
   vec3_t        temp, origin;
   int           scaleUpTime = BG_Buildable( cent->currentState.modelindex )->buildTime;
-  int           time;
+  int           time, frame;
 
   time = cent->currentState.time;
 
@@ -139,11 +140,11 @@ static void CG_Creep( centity_t *cent )
 
   VectorCopy( tr.endpos, origin );
 
-  size = CREEP_SIZE * frac;
+  frame = (int)((float)(CREEP_FRAMES - 1) * frac);
 
-  if( size > 0.0f && tr.fraction < 1.0f )
-    CG_ImpactMark( cgs.media.creepShader, origin, cent->currentState.origin2,
-                   0.0f, 1.0f, 1.0f, 1.0f, 1.0f, qfalse, size, qtrue );
+  if( frac > 0.0f && tr.fraction < 1.0f )
+    CG_ImpactMark( cgs.media.creepAnimationShader[ frame ], origin, cent->currentState.origin2,
+                   0.0f, 1.0f, 1.0f, 1.0f, 1.0f, qfalse, CREEP_SIZE, qtrue );
 }
 
 /*

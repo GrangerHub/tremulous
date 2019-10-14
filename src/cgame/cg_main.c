@@ -351,7 +351,7 @@ static cvarTable_t cvarTable[ ] =
   { &cg_painBlendMax, "cg_painBlendMax", "0.7", 0 },
   { &cg_painBlendScale, "cg_painBlendScale", "7.0", 0 },
   { &cg_painBlendZoom, "cg_painBlendZoom", "0.65", 0 },
-  
+
   { &cg_debugVoices, "cg_debugVoices", "0", 0 },
 
   // communication cvars set by the cgame to be read by ui
@@ -364,7 +364,7 @@ static cvarTable_t cvarTable[ ] =
   { &ui_alienTeamVoteActive, "ui_alienTeamVoteActive", "0", CVAR_ROM },
 
   { &cg_debugRandom, "cg_debugRandom", "0", 0 },
-  
+
   { &cg_optimizePrediction, "cg_optimizePrediction", "1", CVAR_ARCHIVE },
   { &cg_projectileNudge, "cg_projectileNudge", "1", CVAR_ARCHIVE },
 
@@ -383,7 +383,7 @@ static cvarTable_t cvarTable[ ] =
   { &pmove_fixed, "pmove_fixed", "0", 0},
   { &pmove_msec, "pmove_msec", "8", 0},
   { &cg_noTaunt, "cg_noTaunt", "0", CVAR_ARCHIVE},
-  
+
   { &cg_voice, "voice", "default", CVAR_USERINFO|CVAR_ARCHIVE},
 
   { &cg_emoticons, "cg_emoticons", "1", CVAR_LATCH|CVAR_ARCHIVE},
@@ -497,7 +497,7 @@ static void CG_SetPVars( void )
     trap_Cvar_Set( "team_stage", va( "%d", cgs.humanStage+1 ) );
     break;
     }
-    
+
     trap_Cvar_Set( "player_credits", va( "%d", cg.snap->ps.persistant[ PERS_CREDIT ] ) );
     trap_Cvar_Set( "player_score", va( "%d", cg.snap->ps.persistant[ PERS_SCORE ] ) );
 
@@ -852,6 +852,9 @@ static void CG_RegisterGraphics( void )
 
   cgs.media.creepShader               = trap_R_RegisterShader( "creep" );
 
+  for( i = 0; i < 550; i++ )
+    cgs.media.creepAnimationShader[ i ] = trap_R_RegisterShader( va( "creep%d", i ) );
+
   cgs.media.scannerBlipShader         = trap_R_RegisterShader( "gfx/2d/blip" );
   cgs.media.scannerLineShader         = trap_R_RegisterShader( "gfx/2d/stalk" );
 
@@ -876,9 +879,9 @@ static void CG_RegisterGraphics( void )
   cgs.media.healthCross3X             = trap_R_RegisterShader( "ui/assets/neutral/cross3.tga" );
   cgs.media.healthCrossMedkit         = trap_R_RegisterShader( "ui/assets/neutral/cross_medkit.tga" );
   cgs.media.healthCrossPoisoned       = trap_R_RegisterShader( "ui/assets/neutral/cross_poison.tga" );
-  
+
   cgs.media.upgradeClassIconShader    = trap_R_RegisterShader( "icons/icona_upgrade.tga" );
-  
+
   cgs.media.balloonShader             = trap_R_RegisterShader( "gfx/sprites/chatballoon" );
 
   cgs.media.disconnectPS              = CG_RegisterParticleSystem( "disconnectPS" );
@@ -905,7 +908,7 @@ static void CG_RegisterGraphics( void )
   cgs.media.humanBuildableDestroyedPS = CG_RegisterParticleSystem( "humanBuildableDestroyedPS" );
   cgs.media.alienBuildableDestroyedPS = CG_RegisterParticleSystem( "alienBuildableDestroyedPS" );
 
-  cgs.media.humanBuildableBleedPS     = CG_RegisterParticleSystem( "humanBuildableBleedPS");  
+  cgs.media.humanBuildableBleedPS     = CG_RegisterParticleSystem( "humanBuildableBleedPS");
   cgs.media.alienBuildableBleedPS     = CG_RegisterParticleSystem( "alienBuildableBleedPS" );
 
   cgs.media.alienBleedPS              = CG_RegisterParticleSystem( "alienBleedPS" );
@@ -930,7 +933,7 @@ static void CG_RegisterGraphics( void )
 
   CG_BuildableStatusParse( "ui/assets/human/buildstat.cfg", &cgs.humanBuildStat );
   CG_BuildableStatusParse( "ui/assets/alien/buildstat.cfg", &cgs.alienBuildStat );
- 
+
   // register the inline models
   cgs.numInlineModels = trap_CM_NumInlineModels( );
 
@@ -1942,7 +1945,7 @@ void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum )
   CG_UpdateMediaFraction( 1.0f );
 
   CG_InitBuildables( );
- 
+
   cgs.voices = BG_VoiceInit( );
   BG_PrintVoices( cgs.voices, cg_debugVoices.integer );
 

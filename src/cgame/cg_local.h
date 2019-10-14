@@ -321,7 +321,7 @@ typedef struct baseParticle_s
   qboolean        overdrawProtection;
   qboolean        realLight;
   qboolean        cullOnStartSolid;
-  
+
   float           scaleWithCharge;
 } baseParticle_t;
 
@@ -367,7 +367,7 @@ typedef struct particleSystem_s
   //for PMT_LAST_NORMAL and PMT_OPPORTUNISTIC_NORMAL
   qboolean              lastNormalIsCurrent;
   vec3_t                lastNormal;
-  
+
   int                   charge;
 } particleSystem_t;
 
@@ -476,7 +476,7 @@ typedef struct baseTrailBeam_s
 
   // the time it takes for a beam to fade out (double attached only)
   int                     fadeOutTime;
-  
+
   char                    shaderName[ MAX_QPATH ];
   qhandle_t               shader;
 
@@ -694,7 +694,7 @@ typedef struct centity_s
   int                   muzzleTSDeathTime;
 
   qboolean              valid;
-  qboolean              oldValid;  
+  qboolean              oldValid;
   struct centity_s      *nextLocation;
 } centity_t;
 
@@ -742,7 +742,7 @@ typedef struct
   int         score;                      // updated by score servercmds
   int         location;                   // location index for team mode
   int         health;                     // you only get this info about your teammates
-  int         upgrade; 
+  int         upgrade;
   int         curWeaponClass;             // sends current weapon for H, current class for A
 
   // when clientinfo is changed, the loading of models/skins/sounds
@@ -1156,13 +1156,13 @@ typedef struct
   playerState_t savedPmoveStates[ NUM_SAVED_STATES ];
   int           stateHead, stateTail;
   int           ping;
-  
+
   float         chargeMeterAlpha;
   float         chargeMeterValue;
   qhandle_t     lastHealthCross;
   float         healthCrossFade;
   int           nearUsableBuildable;
-  
+
   int           nextWeaponClickTime;
   // binary shaders - by /dev/humancontroller
   int           numBinaryShadersUsed;
@@ -1186,6 +1186,8 @@ typedef struct
   qhandle_t   backTileShader;
 
   qhandle_t   creepShader;
+
+  qhandle_t   creepAnimationShader[550];
 
   qhandle_t   scannerShader;
   qhandle_t   scannerBlipShader;
