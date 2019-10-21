@@ -1000,8 +1000,8 @@ static void Window_Paint(Window *w, float fadeAmount, float fadeClamp, float fad
     {
         fillRect.x += w->borderSize;
         fillRect.y += w->borderSize;
-        fillRect.w -= w->borderSize + 1;
-        fillRect.h -= w->borderSize + 1;
+        fillRect.w -= w->borderSize * 2;
+        fillRect.h -= w->borderSize * 2;
     }
 
     if (w->style == WINDOW_STYLE_FILLED)
@@ -1015,6 +1015,8 @@ static void Window_Paint(Window *w, float fadeAmount, float fadeClamp, float fad
             DC->drawHandlePic(fillRect.x, fillRect.y, fillRect.w, fillRect.h, w->background);
             DC->setColor(NULL);
         }
+        else if( w->border == WINDOW_BORDER_ROUNDED )
+            DC->fillRoundedRect( fillRect.x, fillRect.y, fillRect.w, fillRect.h, w->borderSize, w->borderStyle, w->backColor );
         else
             DC->fillRect(fillRect.x, fillRect.y, fillRect.w, fillRect.h, w->backColor);
     }
@@ -1081,6 +1083,11 @@ static void Border_Paint(Window *w)
         GradientBar_Paint(&r, w->borderColor);
         r.y = w->rect.y + w->rect.h - 1;
         GradientBar_Paint(&r, w->borderColor);
+    }
+    else if( w->border == WINDOW_BORDER_ROUNDED )
+    {
+        // rounded, style depending of borderStyle
+        DC->drawRoundedRect( w->rect.x, w->rect.y, w->rect.w, w->rect.h, w->borderSize, w->borderStyle, w->borderColor );
     }
 }
 
@@ -6651,6 +6658,22 @@ qboolean ItemParse_bordercolor(itemDef_t *item, int handle)
     return qtrue;
 }
 
+qboolean ItemParse_borderstyle(itemDef_t *item, int handle)
+{
+    int i;
+    float f;
+
+    for (i = 0; i < 4; i++)
+    {
+        if (!PC_Float_Parse(handle, &f))
+            return qfalse;
+
+        item->window.borderStyle[i] = f;
+    }
+
+    return qtrue;
+}
+
 qboolean ItemParse_outlinecolor(itemDef_t *item, int handle)
 {
     if (!PC_Color_Parse(handle, &item->window.outlineColor))
@@ -7010,7 +7033,8 @@ keywordHash_t itemParseKeywords[] = {{"name", ItemParse_name, TYPE_ANY, NULL}, {
     {"textalignx", ItemParse_textalignx, TYPE_ANY, NULL}, {"textaligny", ItemParse_textaligny, TYPE_ANY, NULL},
     {"textscale", ItemParse_textscale, TYPE_ANY, NULL}, {"textstyle", ItemParse_textstyle, TYPE_ANY, NULL},
     {"backcolor", ItemParse_backcolor, TYPE_ANY, NULL}, {"forecolor", ItemParse_forecolor, TYPE_ANY, NULL},
-    {"bordercolor", ItemParse_bordercolor, TYPE_ANY, NULL}, {"outlinecolor", ItemParse_outlinecolor, TYPE_ANY, NULL},
+    {"bordercolor", ItemParse_bordercolor, TYPE_ANY, NULL}, {"borderstyle", ItemParse_borderstyle, TYPE_ANY, NULL},
+    {"outlinecolor", ItemParse_outlinecolor, TYPE_ANY, NULL},
     {"background", ItemParse_background, TYPE_ANY, NULL}, {"onFocus", ItemParse_onFocus, TYPE_ANY, NULL},
     {"leaveFocus", ItemParse_leaveFocus, TYPE_ANY, NULL}, {"mouseEnter", ItemParse_mouseEnter, TYPE_ANY, NULL},
     {"mouseExit", ItemParse_mouseExit, TYPE_ANY, NULL}, {"mouseEnterText", ItemParse_mouseEnterText, TYPE_ANY, NULL},
@@ -7319,6 +7343,23 @@ qboolean MenuParse_bordercolor(itemDef_t *item, int handle)
     return qtrue;
 }
 
+qboolean MenuParse_borderstyle(itemDef_t *item, int handle)
+{
+    int i;
+    float f;
+    menuDef_t *menu = (menuDef_t *)item;
+
+    for (i = 0; i < 4; i++)
+    {
+        if (!PC_Float_Parse(handle, &f))
+            return qfalse;
+
+        menu->window.borderStyle[i] = f;
+    }
+
+    return qtrue;
+}
+
 qboolean MenuParse_focuscolor(itemDef_t *item, int handle)
 {
     int i;
@@ -7499,6 +7540,7 @@ keywordHash_t menuParseKeywords[] = {{"font", MenuParse_font, 0, NULL}, {"name",
     {"onClose", MenuParse_onClose, 0, NULL}, {"onESC", MenuParse_onESC, 0, NULL}, {"border", MenuParse_border, 0, NULL},
     {"borderSize", MenuParse_borderSize, 0, NULL}, {"backcolor", MenuParse_backcolor, 0, NULL},
     {"forecolor", MenuParse_forecolor, 0, NULL}, {"bordercolor", MenuParse_bordercolor, 0, NULL},
+    {"borderstyle", MenuParse_borderstyle, 0, NULL},
     {"focuscolor", MenuParse_focuscolor, 0, NULL}, {"disablecolor", MenuParse_disablecolor, 0, NULL},
     {"outlinecolor", MenuParse_outlinecolor, 0, NULL}, {"background", MenuParse_background, 0, NULL},
     {"ownerdraw", MenuParse_ownerdraw, 0, NULL}, {"ownerdrawFlag", MenuParse_ownerdrawFlag, 0, NULL},

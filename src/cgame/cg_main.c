@@ -1760,7 +1760,9 @@ void CG_LoadHudMenu( void )
   cgDC.registerModel        = &trap_R_RegisterModel;
   cgDC.modelBounds          = &trap_R_ModelBounds;
   cgDC.fillRect             = &CG_FillRect;
+  cgDC.fillRoundedRect      = &CG_FillRoundedRect;
   cgDC.drawRect             = &CG_DrawRect;
+  cgDC.drawRoundedRect      = &CG_DrawRoundedRect;
   cgDC.drawSides            = &CG_DrawSides;
   cgDC.drawTopBottom        = &CG_DrawTopBottom;
   cgDC.clearScene           = &trap_R_ClearScene;
@@ -1825,6 +1827,13 @@ void CG_AssetCache( void )
   cgDC.Assets.scrollBarThumb      = trap_R_RegisterShaderNoMip( ASSET_SCROLL_THUMB );
   cgDC.Assets.sliderBar           = trap_R_RegisterShaderNoMip( ASSET_SLIDER_BAR );
   cgDC.Assets.sliderThumb         = trap_R_RegisterShaderNoMip( ASSET_SLIDER_THUMB );
+
+  cgDC.Assets.cornerIn[BORDER_SQUARE]         = trap_R_RegisterShaderNoMip( ASSET_CORNERIN_SQUARE );
+  cgDC.Assets.cornerOut[BORDER_SQUARE]        = trap_R_RegisterShaderNoMip( ASSET_CORNEROUT_SQUARE );
+  cgDC.Assets.cornerIn[BORDER_ROUNDED]        = trap_R_RegisterShaderNoMip( ASSET_CORNERIN_ROUNDED );
+  cgDC.Assets.cornerOut[BORDER_ROUNDED]       = trap_R_RegisterShaderNoMip( ASSET_CORNEROUT_ROUNDED );
+  cgDC.Assets.cornerIn[BORDER_FOLD]           = trap_R_RegisterShaderNoMip( ASSET_CORNERIN_FOLD );
+  cgDC.Assets.cornerOut[BORDER_FOLD]          = trap_R_RegisterShaderNoMip( ASSET_CORNEROUT_FOLD );
 
   if( cg_emoticons.integer )
   {

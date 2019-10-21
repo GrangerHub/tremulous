@@ -1345,7 +1345,7 @@ int BG_ClassCanEvolveFromTo( class_t fclass,
     for( j = 0; j < 3; j++ )
     {
       int thruClass, evolveCost;
-      
+
       thruClass = bg_classList[ i ].children[ j ];
       if( thruClass == PCL_NONE || !BG_ClassAllowedInStage( thruClass, stage ) ||
           !BG_ClassIsAllowed( thruClass ) )
@@ -2959,7 +2959,7 @@ void BG_PlayerStateToEntityState( playerState_t *ps, entityState_t *s, qboolean 
   if( s->generic1 <= WPM_NONE || s->generic1 >= WPM_NUM_WEAPONMODES )
     s->generic1 = WPM_PRIMARY;
 
-  s->otherEntityNum = ps->otherEntityNum;  
+  s->otherEntityNum = ps->otherEntityNum;
 }
 
 
@@ -3401,7 +3401,7 @@ int BG_PlayerPoisonCloudTime( playerState_t *ps )
     time -= HELMET_PCLOUD_PROTECTION;
   if( BG_InventoryContainsUpgrade( UP_LIGHTARMOUR, ps->stats ) )
     time -= LIGHTARMOUR_PCLOUD_PROTECTION;
-    
+
   return time;
 }
 

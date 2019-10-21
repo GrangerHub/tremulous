@@ -302,6 +302,7 @@ void UI_AdjustFrom640(float *x, float *y, float *w, float *h);
 void UI_Refresh(int time);
 void UI_DrawHandlePic(float x, float y, float w, float h, qhandle_t hShader);
 void UI_FillRect(float x, float y, float width, float height, const float *color);
+void UI_FillRoundedRect( float x, float y, float width, float height, float size, const float *style, const float *color );
 
 //
 // ui_syscalls.c

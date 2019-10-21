@@ -1649,6 +1649,7 @@ void        CG_OffsetShoulderView( void );
 void        CG_DrawPlane( vec3_t origin, vec3_t down, vec3_t right, qhandle_t shader );
 void        CG_AdjustFrom640( float *x, float *y, float *w, float *h );
 void        CG_FillRect( float x, float y, float width, float height, const float *color );
+void        CG_FillRoundedRect( float x, float y, float width, float height, float size, const float *style, const float *color );
 void        CG_DrawPic( float x, float y, float width, float height, qhandle_t hShader );
 void        CG_DrawFadePic( float x, float y, float width, float height, vec4_t fcolor,
                             vec4_t tcolor, float amount, qhandle_t hShader );
@@ -1661,6 +1662,7 @@ float       *CG_FadeColor( int startMsec, int totalMsec );
 void        CG_TileClear( void );
 void        CG_ColorForHealth( vec4_t hcolor );
 void        CG_DrawRect( float x, float y, float width, float height, float size, const float *color );
+void        CG_DrawRoundedRect( float x, float y, float width, float height, float size, const float *style, const float *color );
 void        CG_DrawSides(float x, float y, float w, float h, float size);
 void        CG_DrawTopBottom(float x, float y, float w, float h, float size);
 qboolean    CG_WorldToScreen( vec3_t point, float *x, float *y );

@@ -51,11 +51,19 @@ enum
 
 enum
 {
-  WINDOW_BORDER_NONE,      // no border
-  WINDOW_BORDER_FULL,      // full border based on border color (single pixel)
-  WINDOW_BORDER_HORZ,      // horizontal borders only
-  WINDOW_BORDER_VERT,      // vertical borders only
-  WINDOW_BORDER_KCGRADIENT // horizontal border using the gradient bars
+  WINDOW_BORDER_NONE,       // no border
+  WINDOW_BORDER_FULL,       // full border based on border color (single pixel)
+  WINDOW_BORDER_HORZ,       // horizontal borders only
+  WINDOW_BORDER_VERT,       // vertical borders only
+  WINDOW_BORDER_KCGRADIENT, // horizontal border using the gradient bars
+  WINDOW_BORDER_ROUNDED     // full rounded
+};
+
+enum
+{
+  BORDER_SQUARE,          // as WINDOW_BORDER_FULL
+  BORDER_ROUNDED,         // rounded
+  BORDER_FOLD             // fold paper
 };
 
 enum
@@ -112,7 +120,7 @@ enum
   FEEDER_HELP_LIST,            // help topics
   FEEDER_RESOLUTIONS,           // display resolutions
   FEEDER_TREMVOICECMD,      // voice commands
-  FEEDER_GITHUB_RELEASE           // latest update info 
+  FEEDER_GITHUB_RELEASE           // latest update info
 };
 
 // display flags
@@ -221,5 +229,31 @@ enum
 
   UI_VOICECMDINFOPANE
 };
+
+#define BORDER_STYLE_FULL_ROUNDED BORDER_ROUNDED BORDER_ROUNDED BORDER_ROUNDED BORDER_ROUNDED
+#define BORDER_STYLE_FULL_FOLD BORDER_FOLD BORDER_FOLD BORDER_FOLD BORDER_FOLD
+#define WINDOW_OPACITY .85
+#define WINDOW_BACKCOLOR 0 0 0 WINDOW_OPACITY
+#define WINDOW_BORDER 0.5 0.5 0.5 WINDOW_OPACITY/2
+#define WINDOW_BORDER_STYLE BORDER_STYLE_FULL_ROUNDED
+#define BORDER_STYLE BORDER_ROUNDED
+
+#define ALIENS_WINDOW_BACKCOLOR .05 0 0 WINDOW_OPACITY
+#define ALIENS_WINDOW_BORDER 0.6 0.5 0.5 WINDOW_OPACITY/2
+#define ALIENS_WINDOW_BORDER_STYLE BORDER_STYLE_FULL_ROUNDED
+#define ALIENS_BORDER_STYLE BORDER_ROUNDED
+#define ALIENS_TEXT_COLOR 1 .2 .2 1
+#define ALIENS_TEXT_SECONDARY_COLOR .8 .3 .3 .8
+#define ALIENS_BACKGROUND_COLOR .1 0 0
+#define ALIENS_BORDER_COLOR .6 .45 .45
+
+#define HUMANS_WINDOW_BACKCOLOR 0 .025 .05 WINDOW_OPACITY
+#define HUMANS_WINDOW_BORDER 0.5 0.55 0.6 WINDOW_OPACITY/2
+#define HUMANS_WINDOW_BORDER_STYLE BORDER_STYLE_FULL_FOLD
+#define HUMANS_BORDER_STYLE BORDER_FOLD
+#define HUMANS_TEXT_COLOR .2 .6 1 1
+#define HUMANS_TEXT_SECONDARY_COLOR .3 .55 .8 .8
+#define HUMANS_BACKGROUND_COLOR 0 .05 .1
+#define HUMANS_BORDER_COLOR .45 .525 .6
 
 #endif

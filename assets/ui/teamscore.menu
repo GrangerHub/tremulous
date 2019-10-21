@@ -32,7 +32,7 @@
       name teamNameWindow
       rect 0 0 W BAR_H
       style WINDOW_STYLE_FILLED
-      border WINDOW_BORDER_FULL
+      border WINDOW_BORDER_KCGRADIENT
       borderSize 1.0
       bordercolor .5 .5 .5 1
       forecolor 1 1 1 1
@@ -49,7 +49,7 @@
       textalignx TOFF
       textscale 0.4
       rect 0 0 (W/3) BAR_H
-      forecolor 1 1 1 1
+      forecolor ALIENS_TEXT_COLOR
       decoration
       visible MENU_TRUE
       ownerdraw CG_ALIENS_SCORE_LABEL
@@ -76,7 +76,7 @@
       textalignx -TOFF
       textscale 0.4
       rect ((2*W)/3) 0 (W/3) BAR_H
-      forecolor 1 1 1 1
+      forecolor HUMANS_TEXT_COLOR
       decoration
       visible MENU_TRUE
       ownerdraw CG_HUMANS_SCORE_LABEL
@@ -86,26 +86,12 @@
 
     itemDef
     {
-      name leftteambar
-      rect 0 (BAR_H+BORDER) (W/2) BAR_H
+      name teambar
+      rect 0 (BAR_H+BORDER) W BAR_H
       style WINDOW_STYLE_FILLED
-      border WINDOW_BORDER_FULL
+      border WINDOW_BORDER_KCGRADIENT
       borderSize 1.0
-      bordercolor .5 .5 .5 1
-      forecolor 1 1 1 1
-      backcolor 0 0 0 .8
-      visible MENU_TRUE
-      decoration
-    }
-
-    itemDef
-    {
-      name rightteambar
-      rect (W/2) (BAR_H+BORDER) (W/2) BAR_H
-      style WINDOW_STYLE_FILLED
-      border WINDOW_BORDER_FULL
-      borderSize 1.0
-      bordercolor .5 .5 .5 1
+      bordercolor .5 .5 .5 .5
       forecolor 1 1 1 1
       backcolor 0 0 0 .8
       visible MENU_TRUE
@@ -125,7 +111,7 @@
       textalign ALIGN_LEFT
       textvalign VALIGN_CENTER
       backcolor 0 0 0 0
-      forecolor 1 .75 0 1
+      forecolor ALIENS_TEXT_SECONDARY_COLOR
       decoration
       visible MENU_TRUE
     }
@@ -140,7 +126,7 @@
       textalign ALIGN_LEFT
       textvalign VALIGN_CENTER
       backcolor 0 0 0 0
-      forecolor 1 .75 0 1
+      forecolor ALIENS_TEXT_SECONDARY_COLOR
       decoration
       visible MENU_TRUE
     }
@@ -155,7 +141,7 @@
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       backcolor 0 0 0 0
-      forecolor 1 .75 0 1
+      forecolor ALIENS_TEXT_SECONDARY_COLOR
       decoration
       visible MENU_TRUE
     }
@@ -170,7 +156,7 @@
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       backcolor 0 0 0 0
-      forecolor 1 .75 0 1
+      forecolor ALIENS_TEXT_SECONDARY_COLOR
       decoration
       visible MENU_TRUE
     }
@@ -185,7 +171,7 @@
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       backcolor 0 0 0 0
-      forecolor 1 .75 0 1
+      forecolor ALIENS_TEXT_SECONDARY_COLOR
       decoration
       visible MENU_TRUE
     }
@@ -200,7 +186,7 @@
       textalign ALIGN_LEFT
       textvalign VALIGN_CENTER
       backcolor 0 0 0 0
-      forecolor 1 .75 0 1
+      forecolor HUMANS_TEXT_SECONDARY_COLOR
       decoration
       visible MENU_TRUE
     }
@@ -215,7 +201,7 @@
       textalign ALIGN_LEFT
       textvalign VALIGN_CENTER
       backcolor 0 0 0 0
-      forecolor 1 .75 0 1
+      forecolor HUMANS_TEXT_SECONDARY_COLOR
       decoration
       visible MENU_TRUE
     }
@@ -230,7 +216,7 @@
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       backcolor 0 0 0 0
-      forecolor 1 .75 0 1
+      forecolor HUMANS_TEXT_SECONDARY_COLOR
       decoration
       visible MENU_TRUE
     }
@@ -245,7 +231,7 @@
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       backcolor 0 0 0 0
-      forecolor 1 .75 0 1
+      forecolor HUMANS_TEXT_SECONDARY_COLOR
       decoration
       visible MENU_TRUE
     }
@@ -260,7 +246,7 @@
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       backcolor 0 0 0 0
-      forecolor 1 .75 0 1
+      forecolor HUMANS_TEXT_SECONDARY_COLOR
       decoration
       visible MENU_TRUE
     }
@@ -270,10 +256,11 @@
       name leftlist
       rect 0 ((2*BAR_H)+BORDER) (W/2) (H-((3*BAR_H)+(2*BORDER)))
       style WINDOW_STYLE_FILLED
-      backcolor 0 0 0 .6
-      border WINDOW_BORDER_FULL
+      backcolor ALIENS_BACKGROUND_COLOR .6
+      border WINDOW_BORDER_ROUNDED
       borderSize 1.0
-      bordercolor .5 .5 .5 1
+      bordercolor ALIENS_BORDER_COLOR 0
+      borderStyle BORDER_SQUARE BORDER_SQUARE BORDER_SQUARE ALIENS_BORDER_STYLE
       forecolor .75 .75 .75 1
       visible MENU_TRUE
       type ITEM_TYPE_LISTBOX
@@ -299,10 +286,11 @@
       name rightlist
       rect (W/2) ((2*BAR_H)+BORDER) (W/2) (H-((3*BAR_H)+(2*BORDER)))
       style WINDOW_STYLE_FILLED
-      backcolor 0 0 0 .6
-      border WINDOW_BORDER_FULL
+      backcolor HUMANS_BACKGROUND_COLOR .6
+      border WINDOW_BORDER_ROUNDED
       borderSize 1.0
-      bordercolor .5 .5 .5 1
+      bordercolor HUMANS_BORDER_COLOR 0
+      borderStyle BORDER_SQUARE BORDER_SQUARE HUMANS_BORDER_STYLE BORDER_SQUARE
       forecolor .75 .75 .75 1
       visible MENU_TRUE
       type ITEM_TYPE_LISTBOX
@@ -330,7 +318,7 @@
       name window
       rect 0 (H-BAR_H) W BAR_H
       style WINDOW_STYLE_FILLED
-      border WINDOW_BORDER_FULL
+      border WINDOW_BORDER_KCGRADIENT
       borderSize 1.0
       bordercolor .5 .5 .5 1
       backcolor 0 0 0 .8

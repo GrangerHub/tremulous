@@ -202,6 +202,13 @@ void AssetCache(void)
     uiInfo.uiDC.Assets.sliderBar = trap_R_RegisterShaderNoMip(ASSET_SLIDER_BAR);
     uiInfo.uiDC.Assets.sliderThumb = trap_R_RegisterShaderNoMip(ASSET_SLIDER_THUMB);
 
+    uiInfo.uiDC.Assets.cornerIn[BORDER_SQUARE]         = trap_R_RegisterShaderNoMip( ASSET_CORNERIN_SQUARE );
+    uiInfo.uiDC.Assets.cornerOut[BORDER_SQUARE]        = trap_R_RegisterShaderNoMip( ASSET_CORNEROUT_SQUARE );
+    uiInfo.uiDC.Assets.cornerIn[BORDER_ROUNDED]        = trap_R_RegisterShaderNoMip( ASSET_CORNERIN_ROUNDED );
+    uiInfo.uiDC.Assets.cornerOut[BORDER_ROUNDED]       = trap_R_RegisterShaderNoMip( ASSET_CORNEROUT_ROUNDED );
+    uiInfo.uiDC.Assets.cornerIn[BORDER_FOLD]           = trap_R_RegisterShaderNoMip( ASSET_CORNERIN_FOLD );
+    uiInfo.uiDC.Assets.cornerOut[BORDER_FOLD]          = trap_R_RegisterShaderNoMip( ASSET_CORNEROUT_FOLD );
+
     if (ui_emoticons.integer)
     {
         uiInfo.uiDC.Assets.emoticonCount = BG_LoadEmoticons(uiInfo.uiDC.Assets.emoticons, MAX_EMOTICONS);
@@ -218,14 +225,11 @@ void AssetCache(void)
 
 void UI_DrawSides(float x, float y, float w, float h, float size)
 {
-    float sizeY;
-
     UI_AdjustFrom640(&x, &y, &w, &h);
-    sizeY = size * uiInfo.uiDC.yscale;
     size *= uiInfo.uiDC.xscale;
 
-    trap_R_DrawStretchPic(x, y + sizeY, size, h - (sizeY * 2.0f), 0, 0, 0, 0, uiInfo.uiDC.whiteShader);
-    trap_R_DrawStretchPic(x + w - size, y + sizeY, size, h - (sizeY * 2.0f), 0, 0, 0, 0, uiInfo.uiDC.whiteShader);
+    trap_R_DrawStretchPic(x, y, size, h, 0, 0, 0, 0, uiInfo.uiDC.whiteShader);
+    trap_R_DrawStretchPic(x + w - size, y, size, h, 0, 0, 0, 0, uiInfo.uiDC.whiteShader);
 }
 
 void UI_DrawTopBottom(float x, float y, float w, float h, float size)
@@ -236,6 +240,19 @@ void UI_DrawTopBottom(float x, float y, float w, float h, float size)
     trap_R_DrawStretchPic(x, y + h - size, w, size, 0, 0, 0, 0, uiInfo.uiDC.whiteShader);
 }
 
+static void UI_DrawCorners( float x, float y, float w, float h, float size, const float *style, qhandle_t *pic )
+{
+  float hs, vs;
+  UI_AdjustFrom640( &x, &y, &w, &h );
+  hs = size * uiInfo.uiDC.xscale;
+  vs = size * uiInfo.uiDC.yscale;
+
+  trap_R_DrawStretchPic( x, y, hs, vs, 0, 0, 0.5, 0.5, pic[(int)(style[0])] );
+  trap_R_DrawStretchPic( x + w - hs, y, hs, vs, 0.5, 0, 1, 0.5, pic[(int)(style[1])] );
+  trap_R_DrawStretchPic( x + w - hs, y + h - vs, hs, vs, 0.5, 0.5, 1, 1, pic[(int)(style[2])] );
+  trap_R_DrawStretchPic( x, y + h - vs, hs, vs, 0, 0.5, 0.5, 1, pic[(int)(style[3])] );
+}
+
 /*
 ================
 UI_DrawRect
@@ -243,14 +260,41 @@ UI_DrawRect
 Coordinates are 640*480 virtual values
 =================
 */
-void UI_DrawRect(float x, float y, float width, float height, float size, const float *color)
+void UI_DrawRect(float x, float y, float w, float h, float size, const float *color)
 {
+    float sizeY, sizeX;
+
+    UI_AdjustFrom640(&x, &y, &w, &h);
+    sizeY = size * uiInfo.uiDC.yscale;
+    sizeX = size * uiInfo.uiDC.xscale;
+
     trap_R_SetColor(color);
 
-    UI_DrawTopBottom(x, y, width, height, size);
-    UI_DrawSides(x, y, width, height, size);
+    trap_R_DrawStretchPic(x, y, w, sizeY, 0, 0, 0, 0, uiInfo.uiDC.whiteShader);
+    trap_R_DrawStretchPic(x, y + h - sizeY, w, sizeY, 0, 0, 0, 0, uiInfo.uiDC.whiteShader);
+
+    trap_R_DrawStretchPic(x, y + sizeY, sizeX, h - (sizeY * 2.0f), 0, 0, 0, 0, uiInfo.uiDC.whiteShader);
+    trap_R_DrawStretchPic(x + w - sizeX, y + sizeY, sizeX, h - (sizeY * 2.0f), 0, 0, 0, 0, uiInfo.uiDC.whiteShader);
 
     trap_R_SetColor(NULL);
+}
+
+/*
+================
+UI_DrawRoundedRect
+
+Coordinates are 640*480 virtual values
+=================
+*/
+void UI_DrawRoundedRect( float x, float y, float width, float height, float size, const float *style, const float *color )
+{
+  trap_R_SetColor( color );
+
+  UI_DrawTopBottom( x + size * 4, y, width - size * 8, height, size );
+  UI_DrawSides( x, y + size * 4, width, height - size * 8, size );
+  UI_DrawCorners( x, y, width, height, size * 4, style, uiInfo.uiDC.Assets.cornerOut );
+
+  trap_R_SetColor( NULL );
 }
 
 /*
@@ -4231,7 +4275,9 @@ void UI_Init(qboolean inGameLoad)
     uiInfo.uiDC.registerModel = &trap_R_RegisterModel;
     uiInfo.uiDC.modelBounds = &trap_R_ModelBounds;
     uiInfo.uiDC.fillRect = &UI_FillRect;
+    uiInfo.uiDC.fillRoundedRect = &UI_FillRoundedRect;
     uiInfo.uiDC.drawRect = &UI_DrawRect;
+    uiInfo.uiDC.drawRoundedRect = &UI_DrawRoundedRect;
     uiInfo.uiDC.drawSides = &UI_DrawSides;
     uiInfo.uiDC.drawTopBottom = &UI_DrawTopBottom;
     uiInfo.uiDC.clearScene = &trap_R_ClearScene;

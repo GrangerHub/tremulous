@@ -46,13 +46,14 @@
       name window
       rect 0 0 W H
       style WINDOW_STYLE_FILLED
-      backcolor 0 0 0 1
+      backcolor HUMANS_WINDOW_BACKCOLOR
       visible MENU_TRUE
       decoration
 
-      border WINDOW_BORDER_FULL
+      border WINDOW_BORDER_ROUNDED
       borderSize 1.0
-      borderColor 0.5 0.5 0.5 1
+      borderColor HUMANS_WINDOW_BORDER
+      borderStyle HUMANS_WINDOW_BORDER_STYLE
     }
 
     itemDef
@@ -66,8 +67,9 @@
       textscale .33
       elementtype LISTBOX_TEXT
       feeder FEEDER_TREMHUMANARMOURYBUY
-      border WINDOW_BORDER_FULL
+      border WINDOW_BORDER_ROUNDED
       bordercolor   0.5 0.5 0.5 0.5
+      borderStyle HUMANS_BORDER_STYLE BORDER_SQUARE BORDER_SQUARE HUMANS_BORDER_STYLE
       forecolor     1   1   1   1
       backcolor     0.2 0.2 0.2 1
       outlinecolor  0.1 0.1 0.1 0.5
@@ -91,8 +93,9 @@
       textscale .33
       elementtype LISTBOX_TEXT
       feeder FEEDER_TREMHUMANARMOURYSELL
-      border WINDOW_BORDER_FULL
+      border WINDOW_BORDER_ROUNDED
       bordercolor   0.5 0.5 0.5 0.5
+      borderStyle BORDER_SQUARE HUMANS_BORDER_STYLE HUMANS_BORDER_STYLE BORDER_SQUARE
       forecolor     1   1   1   1
       backcolor     0.2 0.2 0.2 1
       outlinecolor  0.1 0.1 0.1 0.5

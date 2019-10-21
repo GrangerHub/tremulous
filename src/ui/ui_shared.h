@@ -99,6 +99,12 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #define ASSET_SCROLL_THUMB "ui/assets/scrollbar_thumb.tga"
 #define ASSET_SLIDER_BAR "ui/assets/slider2.tga"
 #define ASSET_SLIDER_THUMB "ui/assets/sliderbutt_1.tga"
+#define ASSET_CORNERIN_SQUARE "ui/assets/cornerIn_square"
+#define ASSET_CORNEROUT_SQUARE "ui/assets/cornerOut_square"
+#define ASSET_CORNERIN_ROUNDED "ui/assets/cornerIn_rounded"
+#define ASSET_CORNEROUT_ROUNDED "ui/assets/cornerOut_rounded"
+#define ASSET_CORNERIN_FOLD "ui/assets/cornerIn_fold"
+#define ASSET_CORNEROUT_FOLD "ui/assets/cornerOut_fold"
 
 #define SCROLLBAR_ARROW_SIZE 16.0f
 #define SCROLLBAR_ARROW_WIDTH (SCROLLBAR_ARROW_SIZE * DC->aspectScale)
@@ -155,6 +161,7 @@ typedef struct {
     vec4_t foreColor;  // text color
     vec4_t backColor;  // border color
     vec4_t borderColor;  // border color
+    vec4_t borderStyle;  // border style, for rounded border style (Top left, top right, bottom right, bottom left)
     vec4_t outlineColor;  // border color
     qhandle_t background;  // background asset
 } Window;
@@ -327,6 +334,8 @@ typedef struct {
     qhandle_t solidBox;
     qhandle_t sliderBar;
     qhandle_t sliderThumb;
+    qhandle_t cornerOut[16];
+    qhandle_t cornerIn[16];
     sfxHandle_t menuEnterSound;
     sfxHandle_t menuExitSound;
     sfxHandle_t menuBuzzSound;
@@ -358,6 +367,8 @@ typedef struct {
     void (*modelBounds)(qhandle_t model, vec3_t min, vec3_t max);
     void (*fillRect)(float x, float y, float w, float h, const vec4_t color);
     void (*drawRect)(float x, float y, float w, float h, float size, const vec4_t color);
+    void (*drawRoundedRect) (float x, float y, float w, float h, float size, const vec4_t style, const vec4_t color);
+    void (*fillRoundedRect) (float x, float y, float w, float h, float size, const vec4_t style, const vec4_t color);
     void (*drawSides)(float x, float y, float w, float h, float size);
     void (*drawTopBottom)(float x, float y, float w, float h, float size);
     void (*clearScene)(void);
