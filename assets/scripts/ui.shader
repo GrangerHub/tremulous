@@ -40,7 +40,7 @@ ui/assets/cornerIn_square
 
 ui/assets/cornerOut_rounded
 {
-  nomipmaps
+  nopicmip
 	{
 		map ui/assets/corner_rounded.tga
 		blendfunc	blend
@@ -50,7 +50,7 @@ ui/assets/cornerOut_rounded
 
 ui/assets/cornerIn_rounded
 {
-  nomipmaps
+  nopicmip
 	{
 		map ui/assets/cornerinv_rounded.tga
 		blendfunc	blend
@@ -60,7 +60,7 @@ ui/assets/cornerIn_rounded
 
 ui/assets/cornerOut_fold
 {
-  nomipmaps
+  nopicmip
 	{
 		map ui/assets/corner_fold.tga
 		blendfunc	blend
@@ -70,7 +70,7 @@ ui/assets/cornerOut_fold
 
 ui/assets/cornerIn_fold
 {
-  nomipmaps
+  nopicmip
 	{
 		map ui/assets/cornerinv_fold.tga
 		blendfunc	blend
