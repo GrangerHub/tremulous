@@ -37,7 +37,7 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #define MAX_MENUDEFFILE 4096
 #define MAX_MENUFILE 32768
 #define MAX_MENUS 256
-#define MAX_MENUITEMS 128
+#define MAX_MENUITEMS 256
 #define MAX_COLOR_RANGES 10
 #define MAX_OPEN_MENUS 16
 
