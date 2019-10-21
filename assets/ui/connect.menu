@@ -14,7 +14,7 @@
     itemDef
     {
       name splashmodel
-      rect -320 0 1280 480        // Enlarge and centering view
+      rect -460 0 1520 480        // Enlarge and centering view. It should be -320 0 1280 480 but current parameters seem "perfect" for aspect ratio
       type ITEM_TYPE_MODEL
       style WINDOW_STYLE_EMPTY
       aspectBias ALIGN_CENTER        // Allow our HD model to be responsive
