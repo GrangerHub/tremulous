@@ -6,6 +6,7 @@
 #define W         500
 #define H         338
 #define BORDER    10
+#define SPACE     1
 
 #define TOFF      10
 #define SPEC_W    75
@@ -254,7 +255,7 @@
     itemDef
     {
       name leftlist
-      rect 0 ((2*BAR_H)+BORDER) (W/2) (H-((3*BAR_H)+(2*BORDER)))
+      rect 0 ((2*BAR_H)+BORDER+SPACE) (W/2) (H-((3*BAR_H)+(2*BORDER)+SPACE))
       style WINDOW_STYLE_FILLED
       backcolor ALIENS_BACKGROUND_COLOR .6
       border WINDOW_BORDER_ROUNDED
@@ -284,7 +285,7 @@
     itemDef
     {
       name rightlist
-      rect (W/2) ((2*BAR_H)+BORDER) (W/2) (H-((3*BAR_H)+(2*BORDER)))
+      rect (W/2) ((2*BAR_H)+BORDER+SPACE) (W/2) (H-((3*BAR_H)+(2*BORDER)+SPACE))
       style WINDOW_STYLE_FILLED
       backcolor HUMANS_BACKGROUND_COLOR .6
       border WINDOW_BORDER_ROUNDED
