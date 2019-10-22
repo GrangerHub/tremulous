@@ -300,7 +300,9 @@ char *UI_Cvar_VariableString(const char *var_name);
 void UI_SetColor(const float *rgba);
 void UI_AdjustFrom640(float *x, float *y, float *w, float *h);
 void UI_Refresh(int time);
+void UI_DrawCorners( float x, float y, float w, float h, float size, const float *style, qhandle_t *pic );
 void UI_DrawHandlePic(float x, float y, float w, float h, qhandle_t hShader);
+void UI_DrawTopBottom(float x, float y, float w, float h, float size);
 void UI_FillRect(float x, float y, float width, float height, const float *color);
 void UI_FillRoundedRect( float x, float y, float width, float height, float size, const float *style, const float *color );
 

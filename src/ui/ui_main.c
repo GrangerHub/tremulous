@@ -240,7 +240,7 @@ void UI_DrawTopBottom(float x, float y, float w, float h, float size)
     trap_R_DrawStretchPic(x, y + h - size, w, size, 0, 0, 0, 0, uiInfo.uiDC.whiteShader);
 }
 
-static void UI_DrawCorners( float x, float y, float w, float h, float size, const float *style, qhandle_t *pic )
+void UI_DrawCorners( float x, float y, float w, float h, float size, const float *style, qhandle_t *pic )
 {
   float hs, vs;
   UI_AdjustFrom640( &x, &y, &w, &h );
