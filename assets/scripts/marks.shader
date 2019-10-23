@@ -63,6 +63,17 @@ gfx/marks/plasma_mrk
   }
 }
 
+gfx/sprites/green_acid_mark
+{
+  polygonOffset
+  {
+    map gfx/sprites/green_acid
+    blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+    rgbGen    vertex
+    alphaGen  vertex
+  }
+}
+
 creep
 {
   nopicmip
