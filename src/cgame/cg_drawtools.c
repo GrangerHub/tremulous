@@ -207,7 +207,7 @@ void CG_DrawRoundedRect( float x, float y, float width, float height, float size
   trap_R_SetColor( color );
 
   CG_DrawTopBottom( x + size * 4, y, width - size * 8, height, size );
-  CG_DrawSides( x, y + size * 4, width, height - size * 8, size );
+  CG_DrawSides( x, y + size * 3, width, height - size * 6, size );
   CG_DrawCorners( x, y, width, height, size * 4, style, cgDC.Assets.cornerOut);
 
   trap_R_SetColor( NULL );
