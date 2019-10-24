@@ -5404,7 +5404,7 @@ void Item_ComboBox_Paint(itemDef_t *item)
     h = item->window.rect.h - 2.0f;
 
     // Down arrow
-    DC->drawHandlePic(x, y, SCROLLBAR_ARROW_WIDTH, h, DC->Assets.scrollBarArrowDown);
+    DC->drawHandlePic(x, y, SCROLLBAR_ARROW_WIDTH, h, DC->Assets.showMoreArrow);
     Item_ListBoxRow_Paint(item, item->cursorPos, 0, qfalse, qtrue);
     if (g_comboBoxItem != NULL)
     {

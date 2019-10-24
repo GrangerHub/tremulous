@@ -97,6 +97,7 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #define ASSET_SCROLLBAR_ARROWLEFT "ui/assets/scrollbar_arrow_left.tga"
 #define ASSET_SCROLLBAR_ARROWRIGHT "ui/assets/scrollbar_arrow_right.tga"
 #define ASSET_SCROLL_THUMB "ui/assets/scrollbar_thumb.tga"
+#define ASSET_SHOWMORE_ARROW "ui/assets/showmore_arrow.tga"
 #define ASSET_SLIDER_BAR "ui/assets/slider2.tga"
 #define ASSET_SLIDER_THUMB "ui/assets/sliderbutt_1.tga"
 #define ASSET_CORNERIN_SQUARE "ui/assets/cornerIn_square"
@@ -329,6 +330,7 @@ typedef struct {
     qhandle_t scrollBarArrowRight;
     qhandle_t scrollBar;
     qhandle_t scrollBarThumb;
+    qhandle_t showMoreArrow;
     qhandle_t buttonMiddle;
     qhandle_t buttonInside;
     qhandle_t solidBox;
