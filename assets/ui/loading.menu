@@ -33,7 +33,7 @@
 
   assetGlobalDef
   {
-    cursor "ui/assets/3_cursor3"      // cursor
+    cursor "ui/assets/cursor"      // cursor
     gradientBar "ui/assets/gradientbar2.tga"  // gradient bar
     fadeClamp 1.0         // sets the fadeup alpha
     fadeCycle 1         // how often fade happens in milliseconds
@@ -120,6 +120,7 @@
       visible MENU_TRUE
       decoration
       forecolor 0.0 0.8 1 1
+      backcolor 0.0 0.8 1 0.5
       ownerdraw CG_LOAD_MEDIA
       textalign ALIGN_CENTER
       textstyle ITEM_TEXTSTYLE_NEON
@@ -149,6 +150,7 @@
       visible MENU_TRUE
       decoration
       forecolor 0.0 0.8 1 1
+      backcolor 0.0 0.8 1 0.5
       ownerdraw CG_LOAD_BUILDABLES
       textalign ALIGN_CENTER
       textstyle ITEM_TEXTSTYLE_NEON
@@ -177,6 +179,7 @@
       visible MENU_TRUE
       decoration
       forecolor 0.0 0.8 1 1
+      backcolor 0.0 0.8 1 0.5
       ownerdraw CG_LOAD_CHARMODEL
       textalign ALIGN_CENTER
       textstyle ITEM_TEXTSTYLE_NEON
@@ -205,6 +208,7 @@
       visible MENU_TRUE
       decoration
       forecolor 0.0 0.8 1 1
+      backcolor 0.0 0.8 1 0.5
       ownerdraw CG_LOAD_OVERALL
       textalign ALIGN_CENTER
       textstyle ITEM_TEXTSTYLE_NEON

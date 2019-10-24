@@ -385,7 +385,7 @@
     {
       name back
       style WINDOW_STYLE_SHADER
-      background "ui/assets/backarrow.tga"
+      background "ui/assets/backarrow.png"
       rect BC_X BC_Y ARROW_H ARROW_W
       aspectBias ALIGN_LEFT
       visible MENU_TRUE
@@ -406,7 +406,7 @@
     {
       name back_alt
       style WINDOW_STYLE_SHADER
-      background "ui/assets/backarrow_alt.tga"
+      background "ui/assets/backarrow_alt.png"
       rect BC_X BC_Y ARROW_H ARROW_W
       aspectBias ALIGN_LEFT
       backcolor 0 0 0 0
@@ -442,7 +442,7 @@
       style WINDOW_STYLE_SHADER
       rect ((BC_X+BC_W)-ARROW_W) BC_Y ARROW_H ARROW_W
       aspectBias ALIGN_RIGHT
-      background "ui/assets/forwardarrow.tga"
+      background "ui/assets/forwardarrow.png"
       backcolor 0 0 0 0
       forecolor 1 1 1 1
       visible MENU_TRUE
@@ -465,7 +465,7 @@
       style WINDOW_STYLE_SHADER
       rect ((BC_X+BC_W)-ARROW_W) BC_Y ARROW_H ARROW_W
       aspectBias ALIGN_RIGHT
-      background "ui/assets/forwardarrow_alt.tga"
+      background "ui/assets/forwardarrow_alt.png"
       backcolor 0 0 0 0
       type ITEM_TYPE_BUTTON
       forecolor 1 1 1 1
