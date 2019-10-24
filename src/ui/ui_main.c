@@ -3983,7 +3983,10 @@ static const char *UI_FeederItemText(int feederID, int index, int column, qhandl
             w = uiInfo.resolutions[index].w;
             h = uiInfo.resolutions[index].h;
 
-            Com_sprintf(resolution, sizeof(resolution), "%dx%d (%s)", w, h, UI_DisplayAspectString(w, h));
+            if (w == 0 && h == 0)
+              Com_sprintf(resolution, sizeof(resolution), "Automatic");
+            else
+              Com_sprintf(resolution, sizeof(resolution), "%dx%d (%s)", w, h, UI_DisplayAspectString(w, h));
 
             return resolution;
         }
