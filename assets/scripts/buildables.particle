@@ -367,7 +367,8 @@ alienAcidTubePS
       alpha  0 1.0 0.0
       rotation 0 ~360 -
       bounce 0.2
-      bounceMark 3 16 gfx/sprites/green_acid_mark
+      // should add child particle system to get better "acid" effect with sound
+      // Marks limit is reached easily with only one acid tube
 
       lifeTime 1000~100%
     }
