@@ -2954,6 +2954,10 @@ qboolean Item_YesNo_HandleKey(itemDef_t *item, int key)
             DC->setCVar(item->cvar, va("%i", !DC->getCVarValue(item->cvar)));
             return qtrue;
         }
+        else if (key == K_BACKSPACE || key == K_DEL)
+        {
+            DC->resetCVar(item->cvar);
+        }
     }
 
     return qfalse;
@@ -3086,6 +3090,10 @@ qboolean Item_Multi_HandleKey(itemDef_t *item, int key)
             {
                 current = (Item_Multi_FindCvarByValue(item) + max - 1) % max;
                 changed = qtrue;
+            }
+            else if (key == K_BACKSPACE || key == K_DEL)
+            {
+                DC->resetCVar(item->cvar);
             }
 
             if (changed)
