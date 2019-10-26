@@ -386,6 +386,7 @@ typedef struct {
     void (*getCVarString)(const char *cvar, char *buffer, int bufsize);
     float (*getCVarValue)(const char *cvar);
     void (*setCVar)(const char *cvar, const char *value);
+    void (*resetCVar)(const char *cvar);
     void (*drawTextWithCursor)(float x, float y, float scale, vec4_t color, const char *text, int cursorPos,
         char cursor, int limit, int style);
     void (*setOverstrikeMode)(qboolean b);

@@ -4293,6 +4293,7 @@ void UI_Init(qboolean inGameLoad)
     uiInfo.uiDC.ownerDrawVisible = &UI_OwnerDrawVisible;
     uiInfo.uiDC.runScript = &UI_RunMenuScript;
     uiInfo.uiDC.setCVar = trap_Cvar_Set;
+    uiInfo.uiDC.resetCVar = trap_Cvar_Reset;
     uiInfo.uiDC.getCVarString = trap_Cvar_VariableStringBuffer;
     uiInfo.uiDC.getCVarValue = trap_Cvar_VariableValue;
     uiInfo.uiDC.setOverstrikeMode = &trap_Key_SetOverstrikeMode;

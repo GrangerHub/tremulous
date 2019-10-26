@@ -3499,28 +3499,35 @@ qboolean Item_Slider_HandleKey(itemDef_t *item, int key, qboolean down)
     if (item->window.flags & WINDOW_HASFOCUS && item->cvar &&
         Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory))
     {
-        if (item->typeData.edit && (key == K_ENTER || key == K_MOUSE1 || key == K_MOUSE2 || key == K_MOUSE3))
+        if (item->typeData.edit)
         {
-            rectDef_t testRect;
-            width = SLIDER_WIDTH;
-
-            if (item->text)
-                x = item->textRect.x + item->textRect.w + ITEM_VALUE_OFFSET;
-            else
-                x = item->window.rect.x;
-
-            testRect = item->window.rect;
-            value = (float)SLIDER_THUMB_WIDTH / 2;
-            testRect.x = x - value;
-            testRect.w = SLIDER_WIDTH + value;
-
-            if (Rect_ContainsPoint(&testRect, DC->cursorx, DC->cursory))
+            if (key == K_ENTER || key == K_MOUSE1 || key == K_MOUSE2 || key == K_MOUSE3)
             {
-                value = (float)(DC->cursorx - x) / width;
-                value *= (item->typeData.edit->maxVal - item->typeData.edit->minVal);
-                value += item->typeData.edit->minVal;
-                DC->setCVar(item->cvar, va("%f", value));
-                return qtrue;
+                rectDef_t testRect;
+                width = SLIDER_WIDTH;
+
+                if (item->text)
+                    x = item->textRect.x + item->textRect.w + ITEM_VALUE_OFFSET;
+                else
+                    x = item->window.rect.x;
+
+                testRect = item->window.rect;
+                value = (float)SLIDER_THUMB_WIDTH / 2;
+                testRect.x = x - value;
+                testRect.w = SLIDER_WIDTH + value;
+
+                if (Rect_ContainsPoint(&testRect, DC->cursorx, DC->cursory))
+                {
+                    value = (float)(DC->cursorx - x) / width;
+                    value *= (item->typeData.edit->maxVal - item->typeData.edit->minVal);
+                    value += item->typeData.edit->minVal;
+                    DC->setCVar(item->cvar, va("%f", value));
+                    return qtrue;
+                }
+            }
+            else if (key == K_BACKSPACE || key == K_DEL)
+            {
+                DC->resetCVar(item->cvar);
             }
         }
     }
