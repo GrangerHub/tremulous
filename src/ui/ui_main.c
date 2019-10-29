@@ -2952,9 +2952,9 @@ static void UI_LoadAlienBuilds(void)
             uiInfo.alienBuildList[j].type = INFOTYPE_BUILDABLE;
             uiInfo.alienBuildList[j].v.buildable = i;
 
-            uiInfo.alienBuildListModel[j].asset = uiInfo.uiDC.registerModel(va("models/buildables/%s/%s.md3", BG_Buildable(i)->name, BG_Buildable(i)->name)); // Getting model through BG_BuildableConfig( i )->models[ 0 ] return an empty string
-            uiInfo.alienBuildListModel[j].scale = 1;  // Should got info from models
-            uiInfo.alienBuildListModel[j].zOffset = 0;  // When BG_BuildableConfig work
+            uiInfo.alienBuildListModel[j].asset = uiInfo.uiDC.registerModel(BG_BuildableConfig( i )->models[ 0 ]);
+            uiInfo.alienBuildListModel[j].scale = BG_BuildableConfig( i )->modelScale;
+            uiInfo.alienBuildListModel[j].zOffset = BG_BuildableConfig( i )->zOffset;
             uiInfo.alienBuildListModel[j].cameraDist = 100;
             uiInfo.alienBuildListModel[j].frame = 0;
             uiInfo.alienBuildListModel[j].autoAdjust = qtrue;
@@ -2992,12 +2992,9 @@ static void UI_LoadHumanBuilds(void)
             uiInfo.humanBuildList[j].type = INFOTYPE_BUILDABLE;
             uiInfo.humanBuildList[j].v.buildable = i;
 
-            if (i == BA_H_MGTURRET)
-              uiInfo.humanBuildListModel[j].asset = uiInfo.uiDC.registerModel("models/buildables/mgturret/turret_base.md3"); // Don't support mutiple part model for now
-            else
-              uiInfo.humanBuildListModel[j].asset = uiInfo.uiDC.registerModel(va("models/buildables/%s/%s.md3", BG_Buildable(i)->name, BG_Buildable(i)->name)); // Getting model through BG_BuildableConfig( i )->models[ 0 ] return an empty string
-            uiInfo.humanBuildListModel[j].scale = 1;  // Should got info from models
-            uiInfo.humanBuildListModel[j].zOffset = 0;  // When BG_BuildableConfig will work
+            uiInfo.humanBuildListModel[j].asset = uiInfo.uiDC.registerModel(BG_BuildableConfig( i )->models[ 0 ]);
+            uiInfo.humanBuildListModel[j].scale = BG_BuildableConfig( i )->modelScale;
+            uiInfo.humanBuildListModel[j].zOffset = BG_BuildableConfig( i )->zOffset;
             uiInfo.humanBuildListModel[j].cameraDist = 160;
             uiInfo.humanBuildListModel[j].frame = 0;
             uiInfo.humanBuildListModel[j].autoAdjust = qtrue;
@@ -4485,6 +4482,7 @@ UI_Init
 void UI_Init(qboolean inGameLoad)
 {
     BG_InitClassConfigs();
+    BG_InitBuildableConfigs();
     BG_InitAllowedGameElements();
 
     uiInfo.inGameLoad = inGameLoad;
