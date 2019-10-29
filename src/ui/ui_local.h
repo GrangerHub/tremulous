@@ -178,6 +178,17 @@ typedef struct {
 } menuItem_t;
 
 typedef struct {
+    qhandle_t asset;
+    qhandle_t skin;
+    float scale;
+    float zOffset;
+    float cameraDist;
+    int frame;
+    qboolean autoAdjust;
+    qboolean forceCentering;
+} menuItemModel_t;
+
+typedef struct {
     int w;
     int h;
 } resolution_t;
@@ -222,14 +233,17 @@ typedef struct {
     int teamIndex;
 
     menuItem_t alienClassList[3];
+    menuItemModel_t alienClassListModel[3];
     int alienClassCount;
     int alienClassIndex;
 
     menuItem_t humanItemList[3];
+    menuItemModel_t humanItemListModel[3];
     int humanItemCount;
     int humanItemIndex;
 
     menuItem_t humanArmouryBuyList[32];
+    menuItemModel_t humanArmouryBuyListModel[32];
     int humanArmouryBuyCount;
     int humanArmouryBuyIndex;
 
@@ -238,14 +252,17 @@ typedef struct {
     int humanArmourySellIndex;
 
     menuItem_t alienUpgradeList[16];
+    menuItemModel_t alienUpgradeListModel[16];
     int alienUpgradeCount;
     int alienUpgradeIndex;
 
     menuItem_t alienBuildList[32];
+    menuItemModel_t alienBuildListModel[32];
     int alienBuildCount;
     int alienBuildIndex;
 
     menuItem_t humanBuildList[32];
+    menuItemModel_t humanBuildListModel[32];
     int humanBuildCount;
     int humanBuildIndex;
 

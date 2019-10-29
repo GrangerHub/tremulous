@@ -1925,6 +1925,111 @@ static void UI_DrawInfoPane(menuItem_t *item, rectDef_t *rect, float text_x, flo
     UI_DrawTextBlock(rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, s);
 }
 
+static void UI_DrawInfoPaneModel(menuItemModel_t *model, rectDef_t *rect)
+{
+  float x, y, w, h;
+  refdef_t refdef;
+  refEntity_t ent;
+  vec3_t mins, maxs;
+  vec3_t origin;
+  vec3_t angles;
+  float suggestedDist;
+
+  int millisPerDeg = 100;  // 36s = 1 turn
+
+  // setup the refdef
+  memset(&refdef, 0, sizeof(refdef));
+
+  refdef.rdflags = RDF_NOWORLDMODEL;
+
+  AxisClear(refdef.viewaxis);
+
+  x = rect->x;
+  y = rect->y;
+  w = rect->w;
+  h = rect->h;
+
+  UI_AdjustFrom640(&x, &y, &w, &h);
+
+  refdef.x = x;
+  refdef.y = y;
+  refdef.width = w;
+  refdef.height = h;
+
+
+  uiInfo.uiDC.modelBounds(model->asset, mins, maxs);
+
+  origin[1] = 0.5 * (mins[1] + maxs[1]);
+
+  if (model->autoAdjust)
+  {
+    suggestedDist = ((0.5 * (maxs[2]*model->scale - mins[2]*model->scale)) / 0.268); // len / tan( fov/2 )
+    if (model->forceCentering)
+    {
+      origin[0] = suggestedDist * 2.0;
+      origin[2] = -0.5 * (mins[2] + maxs[2]);
+    }
+    else
+    {
+      origin[0] = suggestedDist * 0.5 + model->cameraDist * 0.5;
+      origin[2] = model->zOffset * 0.2 + (-0.5 * (mins[2] + maxs[2])) * 0.8;
+    }
+  }
+  else
+  {
+    origin[0] = model->cameraDist;
+    origin[2] = model->zOffset;
+  }
+
+
+  refdef.fov_x = (int)((float)refdef.width / 640.0f * 90.0f);
+  refdef.fov_y = atan2(
+    refdef.height,
+    refdef.width / tan( refdef.fov_x / 360 * M_PI )
+  );
+  refdef.fov_y *= ( 360 / M_PI );
+
+  refdef.fov_x *= 2;
+  refdef.fov_y *= 2;
+
+  uiInfo.uiDC.clearScene();
+
+  refdef.time = uiInfo.uiDC.realTime;
+
+  // add the model
+
+  memset(&ent, 0, sizeof(ent));
+
+  VectorSet(angles, 0,
+    (
+      (float)(uiInfo.uiDC.realTime % (360 * millisPerDeg)) / (float)(millisPerDeg)
+    ), 0);
+  AnglesToAxis(angles, ent.axis);
+
+  if( model->scale != 1.0f )
+  {
+    VectorScale( ent.axis[ 0 ], model->scale, ent.axis[ 0 ] );
+    VectorScale( ent.axis[ 1 ], model->scale, ent.axis[ 1 ] );
+    VectorScale( ent.axis[ 2 ], model->scale, ent.axis[ 2 ] );
+
+    ent.nonNormalizedAxes = qtrue;
+  }
+  else
+    ent.nonNormalizedAxes = qfalse;
+
+  ent.hModel = model->asset;
+  if (model->skin)
+    ent.customSkin = model->skin;
+  ent.frame = model->frame; // Only static for now
+  VectorCopy(origin, ent.origin);
+  VectorCopy(origin, ent.lightingOrigin);
+  ent.renderfx = RF_LIGHTING_ORIGIN | RF_NOSHADOW;
+  VectorCopy(ent.origin, ent.oldorigin);
+
+  uiInfo.uiDC.addRefEntityToScene(&ent);
+  uiInfo.uiDC.renderScene(&refdef);
+}
+
 static void UI_DrawServerMapPreview(rectDef_t *rect, float scale, vec4_t color)
 {
     if (uiInfo.serverStatus.currentServerCinematic >= 0)
@@ -2159,9 +2264,17 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
                 textvalign, foreColor, textStyle);
             break;
 
+        case UI_ACLASSINFOPANEMODEL:
+            UI_DrawInfoPaneModel(&uiInfo.alienClassListModel[uiInfo.alienClassIndex], &rect);
+            break;
+
         case UI_AUPGRADEINFOPANE:
             UI_DrawInfoPane(&uiInfo.alienUpgradeList[uiInfo.alienUpgradeIndex], &rect, text_x, text_y, scale, textalign,
                 textvalign, foreColor, textStyle);
+            break;
+
+        case UI_AUPGRADEINFOPANEMODEL:
+            UI_DrawInfoPaneModel(&uiInfo.alienUpgradeListModel[uiInfo.alienUpgradeIndex], &rect);
             break;
 
         case UI_HITEMINFOPANE:
@@ -2169,9 +2282,17 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
                 textvalign, foreColor, textStyle);
             break;
 
+        case UI_HITEMINFOPANEMODEL:
+            UI_DrawInfoPaneModel(&uiInfo.humanItemListModel[uiInfo.humanItemIndex], &rect);
+            break;
+
         case UI_HBUYINFOPANE:
             UI_DrawInfoPane(&uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex], &rect, text_x, text_y, scale,
                 textalign, textvalign, foreColor, textStyle);
+            break;
+
+        case UI_HBUYINFOPANEMODEL:
+            UI_DrawInfoPaneModel(&uiInfo.humanArmouryBuyListModel[uiInfo.humanArmouryBuyIndex], &rect);
             break;
 
         case UI_HSELLINFOPANE:
@@ -2184,9 +2305,18 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
                 textvalign, foreColor, textStyle);
             break;
 
+        case UI_ABUILDINFOPANEMODEL:
+            UI_DrawInfoPaneModel(&uiInfo.alienBuildListModel[uiInfo.alienBuildIndex], &rect);
+            break;
+
         case UI_HBUILDINFOPANE:
             UI_DrawInfoPane(&uiInfo.humanBuildList[uiInfo.humanBuildIndex], &rect, text_x, text_y, scale, textalign,
                 textvalign, foreColor, textStyle);
+            break;
+            break;
+
+        case UI_HBUILDINFOPANEMODEL:
+            UI_DrawInfoPaneModel(&uiInfo.humanBuildListModel[uiInfo.humanBuildIndex], &rect);
             break;
 
         case UI_HELPINFOPANE:
@@ -2445,6 +2575,15 @@ static void UI_AddClass(class_t class)
 
     uiInfo.alienClassList[uiInfo.alienClassCount].v.pclass = class;
 
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].asset = uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(class)->modelName));
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].skin = uiInfo.uiDC.registerSkin(va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(class)->modelName, BG_ClassConfig(class)->skinName));
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].scale = BG_ClassConfig(class)->modelScale;
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].zOffset = BG_ClassConfig(class)->zOffset;
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].cameraDist = 100;
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].frame = 0;
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].autoAdjust = qtrue;
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].forceCentering = qfalse;
+
     uiInfo.alienClassCount++;
 }
 
@@ -2478,6 +2617,14 @@ static void UI_AddItem(weapon_t weapon)
     uiInfo.humanItemList[uiInfo.humanItemCount].cmd = String_Alloc(va("cmd class %s\n", BG_Weapon(weapon)->name));
     uiInfo.humanItemList[uiInfo.humanItemCount].type = INFOTYPE_WEAPON;
     uiInfo.humanItemList[uiInfo.humanItemCount].v.weapon = weapon;
+
+    uiInfo.humanItemListModel[uiInfo.humanItemCount].asset = uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(weapon)->name, BG_Weapon(weapon)->name));
+    uiInfo.humanItemListModel[uiInfo.humanItemCount].scale = 1.0;
+    uiInfo.humanItemListModel[uiInfo.humanItemCount].zOffset = 0.0;
+    uiInfo.humanItemListModel[uiInfo.humanItemCount].cameraDist = 0.0;
+    uiInfo.humanItemListModel[uiInfo.humanItemCount].frame = 0;
+    uiInfo.humanItemListModel[uiInfo.humanItemCount].autoAdjust = qtrue;
+    uiInfo.humanItemListModel[uiInfo.humanItemCount].forceCentering = qtrue;
 
     uiInfo.humanItemCount++;
 }
@@ -2591,6 +2738,14 @@ static void UI_LoadHumanArmouryBuys(void)
             uiInfo.humanArmouryBuyList[j].type = INFOTYPE_WEAPON;
             uiInfo.humanArmouryBuyList[j].v.weapon = i;
 
+            uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(i)->name, BG_Weapon(i)->name));
+            uiInfo.humanArmouryBuyListModel[j].scale = 1.0;
+            uiInfo.humanArmouryBuyListModel[j].zOffset = 0.0;
+            uiInfo.humanArmouryBuyListModel[j].cameraDist = 0.0;
+            uiInfo.humanArmouryBuyListModel[j].frame = 0;
+            uiInfo.humanArmouryBuyListModel[j].autoAdjust = qtrue;
+            uiInfo.humanArmouryBuyListModel[j].forceCentering = qtrue;
+
             j++;
 
             uiInfo.humanArmouryBuyCount++;
@@ -2606,6 +2761,57 @@ static void UI_LoadHumanArmouryBuys(void)
             uiInfo.humanArmouryBuyList[j].cmd = String_Alloc(va("cmd buy %s\n", BG_Upgrade(i)->name));
             uiInfo.humanArmouryBuyList[j].type = INFOTYPE_UPGRADE;
             uiInfo.humanArmouryBuyList[j].v.upgrade = i;
+
+            uiInfo.humanArmouryBuyListModel[j].scale = 1.0;
+            uiInfo.humanArmouryBuyListModel[j].frame = 0;
+            uiInfo.humanArmouryBuyListModel[j].zOffset = 0;
+            uiInfo.humanArmouryBuyListModel[j].cameraDist = 0;
+            uiInfo.humanArmouryBuyListModel[j].autoAdjust = qfalse;
+            uiInfo.humanArmouryBuyListModel[j].forceCentering = qfalse;
+            switch (i) {
+              case UP_LIGHTARMOUR:
+                uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
+                uiInfo.humanArmouryBuyListModel[j].skin = uiInfo.uiDC.registerSkin("models/players/human_base/upper_light.skin");
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 18;
+                uiInfo.humanArmouryBuyListModel[j].frame = 151;
+                uiInfo.humanArmouryBuyListModel[j].zOffset = -8;
+                break;
+              case UP_HELMET:
+                uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
+                uiInfo.humanArmouryBuyListModel[j].skin = uiInfo.uiDC.registerSkin("models/players/human_base/head_light.skin");
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 14;
+                uiInfo.humanArmouryBuyListModel[j].zOffset = -3;
+                break;
+              case UP_MEDKIT:
+                // Should get the red cross of medical station
+                break;
+              case UP_BATTPACK:
+                uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/players/human_base/battpack.md3");
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 50;
+                break;
+              case UP_JETPACK:
+                uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/players/human_base/jetpack.md3");
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 50;
+                break;
+              case UP_BATTLESUIT:
+                // Don't work as expected at all !
+                // uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/players/human_bsuit/lower.md3");
+                // uiInfo.humanArmouryBuyListModel[j].skin = uiInfo.uiDC.registerSkin("models/players/human_bsuit/lower_default.skin");
+                // uiInfo.humanArmouryBuyListModel[j].frame = 229;
+                // uiInfo.humanArmouryBuyListModel[j].cameraDist = 25;
+                // uiInfo.humanArmouryBuyListModel[j].zOffset = -8;
+                // uiInfo.humanArmouryBuyListModel[j].autoAdjust = qtrue;
+                // uiInfo.humanArmouryBuyListModel[j].forceCentering = qtrue;
+                break;
+              case UP_GRENADE:
+                uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/weapons/grenade/grenade.md3");
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 15;
+                break;
+              case UP_AMMO:
+                uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/weapons/shells/rifle-shell.md3");
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 15;
+                break;
+            }
 
             j++;
 
@@ -2705,6 +2911,15 @@ static void UI_LoadAlienUpgrades(void)
             uiInfo.alienUpgradeList[j].type = INFOTYPE_CLASS;
             uiInfo.alienUpgradeList[j].v.pclass = i;
 
+            uiInfo.alienUpgradeListModel[j].asset = uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(i)->modelName));
+            uiInfo.alienUpgradeListModel[j].skin = uiInfo.uiDC.registerSkin(va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(i)->modelName, BG_ClassConfig(i)->skinName));
+            uiInfo.alienUpgradeListModel[j].scale = BG_ClassConfig(i)->modelScale;
+            uiInfo.alienUpgradeListModel[j].zOffset = BG_ClassConfig(i)->zOffset;
+            uiInfo.alienUpgradeListModel[j].cameraDist = 100;
+            uiInfo.alienUpgradeListModel[j].frame = 0;
+            uiInfo.alienUpgradeListModel[j].autoAdjust = qtrue;
+            uiInfo.alienUpgradeListModel[j].forceCentering = qfalse;
+
             j++;
 
             uiInfo.alienUpgradeCount++;
@@ -2737,6 +2952,14 @@ static void UI_LoadAlienBuilds(void)
             uiInfo.alienBuildList[j].type = INFOTYPE_BUILDABLE;
             uiInfo.alienBuildList[j].v.buildable = i;
 
+            uiInfo.alienBuildListModel[j].asset = uiInfo.uiDC.registerModel(va("models/buildables/%s/%s.md3", BG_Buildable(i)->name, BG_Buildable(i)->name)); // Getting model through BG_BuildableConfig( i )->models[ 0 ] return an empty string
+            uiInfo.alienBuildListModel[j].scale = 1;  // Should got info from models
+            uiInfo.alienBuildListModel[j].zOffset = 0;  // When BG_BuildableConfig work
+            uiInfo.alienBuildListModel[j].cameraDist = 100;
+            uiInfo.alienBuildListModel[j].frame = 0;
+            uiInfo.alienBuildListModel[j].autoAdjust = qtrue;
+            uiInfo.alienBuildListModel[j].forceCentering = qfalse;
+
             j++;
 
             uiInfo.alienBuildCount++;
@@ -2768,6 +2991,17 @@ static void UI_LoadHumanBuilds(void)
             uiInfo.humanBuildList[j].cmd = String_Alloc(va("cmd build %s\n", BG_Buildable(i)->name));
             uiInfo.humanBuildList[j].type = INFOTYPE_BUILDABLE;
             uiInfo.humanBuildList[j].v.buildable = i;
+
+            if (i == BA_H_MGTURRET)
+              uiInfo.humanBuildListModel[j].asset = uiInfo.uiDC.registerModel("models/buildables/mgturret/turret_base.md3"); // Don't support mutiple part model for now
+            else
+              uiInfo.humanBuildListModel[j].asset = uiInfo.uiDC.registerModel(va("models/buildables/%s/%s.md3", BG_Buildable(i)->name, BG_Buildable(i)->name)); // Getting model through BG_BuildableConfig( i )->models[ 0 ] return an empty string
+            uiInfo.humanBuildListModel[j].scale = 1;  // Should got info from models
+            uiInfo.humanBuildListModel[j].zOffset = 0;  // When BG_BuildableConfig will work
+            uiInfo.humanBuildListModel[j].cameraDist = 160;
+            uiInfo.humanBuildListModel[j].frame = 0;
+            uiInfo.humanBuildListModel[j].autoAdjust = qtrue;
+            uiInfo.humanBuildListModel[j].forceCentering = qfalse;
 
             j++;
 
@@ -4277,6 +4511,7 @@ void UI_Init(qboolean inGameLoad)
     uiInfo.uiDC.drawHandlePic = &UI_DrawHandlePic;
     uiInfo.uiDC.drawStretchPic = &trap_R_DrawStretchPic;
     uiInfo.uiDC.registerModel = &trap_R_RegisterModel;
+    uiInfo.uiDC.registerSkin = &trap_R_RegisterSkin;
     uiInfo.uiDC.modelBounds = &trap_R_ModelBounds;
     uiInfo.uiDC.fillRect = &UI_FillRect;
     uiInfo.uiDC.fillRoundedRect = &UI_FillRoundedRect;

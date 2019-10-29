@@ -366,6 +366,7 @@ typedef struct {
     void (*drawStretchPic)(
         float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader);
     qhandle_t (*registerModel)(const char *p);
+    qhandle_t (*registerSkin)(const char *p);
     void (*modelBounds)(qhandle_t model, vec3_t min, vec3_t max);
     void (*fillRect)(float x, float y, float w, float h, const vec4_t color);
     void (*drawRect)(float x, float y, float w, float h, float size, const vec4_t color);

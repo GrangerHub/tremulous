@@ -20,6 +20,9 @@
 #define INFO_Y    BORDER
 #define INFO_TOFF 6
 
+#define MODEL_W (32*4+2*BORDER)
+#define MODEL_H (24*4)
+
   menuDef
   {
     name "tremulous_alienbuild"
@@ -72,6 +75,17 @@
         uiScript BuildAlienBuildable;
         close tremulous_alienbuild
       }
+    }
+
+    itemDef
+    {
+      name infopane_model
+      ownerdraw UI_ABUILDINFOPANEMODEL
+      rect (INFO_X+INFO_W-MODEL_W+1) (INFO_Y+INFO_H-MODEL_H+1) MODEL_W MODEL_H
+      style WINDOW_STYLE_EMPTY
+      aspectBias ALIGN_CENTER
+      visible MENU_TRUE
+      decoration
     }
 
     itemDef
