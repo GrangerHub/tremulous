@@ -178,12 +178,14 @@ typedef struct {
 } menuItem_t;
 
 typedef struct {
-    qhandle_t asset;
-    qhandle_t skin;
+    qhandle_t asset[4];
+    int assetCount;
+    qhandle_t skin[4];
+    int frame[4];
+    char *parentTagName[3];
     float scale;
     float zOffset;
     float cameraDist;
-    int frame;
     qboolean autoAdjust;
     qboolean forceCentering;
 } menuItemModel_t;

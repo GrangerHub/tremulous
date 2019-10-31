@@ -368,6 +368,7 @@ typedef struct {
     qhandle_t (*registerModel)(const char *p);
     qhandle_t (*registerSkin)(const char *p);
     void (*modelBounds)(qhandle_t model, vec3_t min, vec3_t max);
+    int (*lerpTag)(orientation_t *tag, clipHandle_t mod, int startFrame, int endFrame, float frac, const char *tagName);
     void (*fillRect)(float x, float y, float w, float h, const vec4_t color);
     void (*drawRect)(float x, float y, float w, float h, float size, const vec4_t color);
     void (*drawRoundedRect) (float x, float y, float w, float h, float size, const vec4_t style, const vec4_t color);

@@ -1925,15 +1925,39 @@ static void UI_DrawInfoPane(menuItem_t *item, rectDef_t *rect, float text_x, flo
     UI_DrawTextBlock(rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, s);
 }
 
+static void UI_PositionRotatedEntityOnTag( refEntity_t *entity, const refEntity_t *parent,
+                                    qhandle_t parentModel, char *tagName )  // Imported from cg_ents.c
+{
+  int           i;
+  orientation_t lerped;
+  vec3_t        tempAxis[ 3 ];
+
+//AxisClear( entity->axis );
+  // lerp the tag
+  uiInfo.uiDC.lerpTag( &lerped, parentModel, parent->oldframe, parent->frame,
+                  1.0 - parent->backlerp, tagName );
+
+  // FIXME: allow origin offsets along tag?
+  VectorCopy( parent->origin, entity->origin );
+  for( i = 0; i < 3; i++ )
+    VectorMA( entity->origin, lerped.origin[ i ], parent->axis[ i ], entity->origin );
+
+  // had to cast away the const to avoid compiler problems...
+  MatrixMultiply( entity->axis, lerped.axis, tempAxis );
+  MatrixMultiply( tempAxis, ( (refEntity_t *)parent )->axis, entity->axis );
+}
+
 static void UI_DrawInfoPaneModel(menuItemModel_t *model, rectDef_t *rect)
 {
   float x, y, w, h;
   refdef_t refdef;
-  refEntity_t ent;
+  refEntity_t ent[4];
+  vec3_t tmpMins, tmpMaxs;
   vec3_t mins, maxs;
   vec3_t origin;
   vec3_t angles;
   float suggestedDist;
+  int i;
 
   int millisPerDeg = 100;  // 36s = 1 turn
 
@@ -1956,14 +1980,29 @@ static void UI_DrawInfoPaneModel(menuItemModel_t *model, rectDef_t *rect)
   refdef.width = w;
   refdef.height = h;
 
-
-  uiInfo.uiDC.modelBounds(model->asset, mins, maxs);
-
-  origin[1] = 0.5 * (mins[1] + maxs[1]);
-
   if (model->autoAdjust)
   {
+    uiInfo.uiDC.modelBounds(model->asset[0], mins, maxs);
+    for (i = 1; i < model->assetCount; i++)  // Maybe there are already a function for this ?
+    {
+      uiInfo.uiDC.modelBounds(model->asset[i], tmpMins, tmpMaxs);
+      if (tmpMins[0] < mins[0])
+        mins[0] = tmpMins[0];
+      if (tmpMins[1] < mins[1])
+        mins[1] = tmpMins[1];
+      if (tmpMins[2] < mins[2])
+        mins[2] = tmpMins[2];
+      if (tmpMaxs[0] > maxs[0])
+        maxs[0] = tmpMaxs[0];
+      if (tmpMaxs[1] > maxs[1])
+        maxs[1] = tmpMaxs[1];
+      if (tmpMaxs[2] > maxs[2])
+        maxs[2] = tmpMaxs[2];
+    }
+
+    origin[1] = 0.5 * (mins[1] + maxs[1]);
     suggestedDist = ((0.5 * (maxs[2]*model->scale - mins[2]*model->scale)) / 0.268); // len / tan( fov/2 )
+
     if (model->forceCentering)
     {
       origin[0] = suggestedDist * 2.0;
@@ -1978,6 +2017,7 @@ static void UI_DrawInfoPaneModel(menuItemModel_t *model, rectDef_t *rect)
   else
   {
     origin[0] = model->cameraDist;
+    origin[1] = 0;
     origin[2] = model->zOffset;
   }
 
@@ -1998,35 +2038,47 @@ static void UI_DrawInfoPaneModel(menuItemModel_t *model, rectDef_t *rect)
 
   // add the model
 
-  memset(&ent, 0, sizeof(ent));
-
   VectorSet(angles, 0,
     (
       (float)(uiInfo.uiDC.realTime % (360 * millisPerDeg)) / (float)(millisPerDeg)
     ), 0);
-  AnglesToAxis(angles, ent.axis);
 
-  if( model->scale != 1.0f )
+  for (i = 0; i < model->assetCount; i++)
   {
-    VectorScale( ent.axis[ 0 ], model->scale, ent.axis[ 0 ] );
-    VectorScale( ent.axis[ 1 ], model->scale, ent.axis[ 1 ] );
-    VectorScale( ent.axis[ 2 ], model->scale, ent.axis[ 2 ] );
+    memset(&(ent[i]), 0, sizeof(ent[i]));
 
-    ent.nonNormalizedAxes = qtrue;
+    if( model->scale != 1.0f )
+    {
+      VectorScale( ent[i].axis[ 0 ], model->scale, ent[i].axis[ 0 ] );
+      VectorScale( ent[i].axis[ 1 ], model->scale, ent[i].axis[ 1 ] );
+      VectorScale( ent[i].axis[ 2 ], model->scale, ent[i].axis[ 2 ] );
+
+      ent[i].nonNormalizedAxes = qtrue;
+    }
+    else
+      ent[i].nonNormalizedAxes = qfalse;
+
+    ent[i].hModel = model->asset[i];
+    if (model->skin[i])
+      ent[i].customSkin = model->skin[i];
+    ent[i].frame = model->frame[i]; // Only static for now
+    ent[i].oldframe = model->frame[i]; // Only static for now
+    if (i && strlen(model->parentTagName[i - 1]))
+    {
+      AxisClear(ent[i].axis);
+      UI_PositionRotatedEntityOnTag(&(ent[i]), &(ent[i - 1]), model->asset[i - 1], model->parentTagName[i - 1]);
+    }
+    else
+    {
+      VectorCopy(origin, ent[i].origin);
+      VectorCopy(origin, ent[i].lightingOrigin);
+      VectorCopy(ent[i].origin, ent[i].oldorigin);
+      AnglesToAxis(angles, ent[i].axis);
+    }
+
+    ent[i].renderfx = RF_LIGHTING_ORIGIN | RF_NOSHADOW;
+    uiInfo.uiDC.addRefEntityToScene(&(ent[i]));
   }
-  else
-    ent.nonNormalizedAxes = qfalse;
-
-  ent.hModel = model->asset;
-  if (model->skin)
-    ent.customSkin = model->skin;
-  ent.frame = model->frame; // Only static for now
-  VectorCopy(origin, ent.origin);
-  VectorCopy(origin, ent.lightingOrigin);
-  ent.renderfx = RF_LIGHTING_ORIGIN | RF_NOSHADOW;
-  VectorCopy(ent.origin, ent.oldorigin);
-
-  uiInfo.uiDC.addRefEntityToScene(&ent);
   uiInfo.uiDC.renderScene(&refdef);
 }
 
@@ -2575,12 +2627,13 @@ static void UI_AddClass(class_t class)
 
     uiInfo.alienClassList[uiInfo.alienClassCount].v.pclass = class;
 
-    uiInfo.alienClassListModel[uiInfo.alienClassCount].asset = uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(class)->modelName));
-    uiInfo.alienClassListModel[uiInfo.alienClassCount].skin = uiInfo.uiDC.registerSkin(va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(class)->modelName, BG_ClassConfig(class)->skinName));
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].asset[0] = uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(class)->modelName));
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].assetCount = 1;
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].skin[0] = uiInfo.uiDC.registerSkin(va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(class)->modelName, BG_ClassConfig(class)->skinName));
     uiInfo.alienClassListModel[uiInfo.alienClassCount].scale = BG_ClassConfig(class)->modelScale;
     uiInfo.alienClassListModel[uiInfo.alienClassCount].zOffset = BG_ClassConfig(class)->zOffset;
     uiInfo.alienClassListModel[uiInfo.alienClassCount].cameraDist = 100;
-    uiInfo.alienClassListModel[uiInfo.alienClassCount].frame = 0;
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].frame[0] = 0;
     uiInfo.alienClassListModel[uiInfo.alienClassCount].autoAdjust = qtrue;
     uiInfo.alienClassListModel[uiInfo.alienClassCount].forceCentering = qfalse;
 
@@ -2618,11 +2671,12 @@ static void UI_AddItem(weapon_t weapon)
     uiInfo.humanItemList[uiInfo.humanItemCount].type = INFOTYPE_WEAPON;
     uiInfo.humanItemList[uiInfo.humanItemCount].v.weapon = weapon;
 
-    uiInfo.humanItemListModel[uiInfo.humanItemCount].asset = uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(weapon)->name, BG_Weapon(weapon)->name));
+    uiInfo.humanItemListModel[uiInfo.humanItemCount].asset[0] = uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(weapon)->name, BG_Weapon(weapon)->name));
+    uiInfo.humanItemListModel[uiInfo.humanItemCount].assetCount = 1;
     uiInfo.humanItemListModel[uiInfo.humanItemCount].scale = 1.0;
     uiInfo.humanItemListModel[uiInfo.humanItemCount].zOffset = 0.0;
     uiInfo.humanItemListModel[uiInfo.humanItemCount].cameraDist = 0.0;
-    uiInfo.humanItemListModel[uiInfo.humanItemCount].frame = 0;
+    uiInfo.humanItemListModel[uiInfo.humanItemCount].frame[0] = 0;
     uiInfo.humanItemListModel[uiInfo.humanItemCount].autoAdjust = qtrue;
     uiInfo.humanItemListModel[uiInfo.humanItemCount].forceCentering = qtrue;
 
@@ -2738,11 +2792,12 @@ static void UI_LoadHumanArmouryBuys(void)
             uiInfo.humanArmouryBuyList[j].type = INFOTYPE_WEAPON;
             uiInfo.humanArmouryBuyList[j].v.weapon = i;
 
-            uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(i)->name, BG_Weapon(i)->name));
+            uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(i)->name, BG_Weapon(i)->name));
+            uiInfo.humanArmouryBuyListModel[j].assetCount = 1;
             uiInfo.humanArmouryBuyListModel[j].scale = 1.0;
             uiInfo.humanArmouryBuyListModel[j].zOffset = 0.0;
             uiInfo.humanArmouryBuyListModel[j].cameraDist = 0.0;
-            uiInfo.humanArmouryBuyListModel[j].frame = 0;
+            uiInfo.humanArmouryBuyListModel[j].frame[0] = 0;
             uiInfo.humanArmouryBuyListModel[j].autoAdjust = qtrue;
             uiInfo.humanArmouryBuyListModel[j].forceCentering = qtrue;
 
@@ -2762,53 +2817,81 @@ static void UI_LoadHumanArmouryBuys(void)
             uiInfo.humanArmouryBuyList[j].type = INFOTYPE_UPGRADE;
             uiInfo.humanArmouryBuyList[j].v.upgrade = i;
 
+            uiInfo.humanArmouryBuyListModel[j].assetCount = 1;
             uiInfo.humanArmouryBuyListModel[j].scale = 1.0;
-            uiInfo.humanArmouryBuyListModel[j].frame = 0;
+            uiInfo.humanArmouryBuyListModel[j].frame[0] = 0;
+            uiInfo.humanArmouryBuyListModel[j].frame[1] = 0;
+            uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
             uiInfo.humanArmouryBuyListModel[j].zOffset = 0;
             uiInfo.humanArmouryBuyListModel[j].cameraDist = 0;
             uiInfo.humanArmouryBuyListModel[j].autoAdjust = qfalse;
             uiInfo.humanArmouryBuyListModel[j].forceCentering = qfalse;
             switch (i) {
               case UP_LIGHTARMOUR:
-                uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
-                uiInfo.humanArmouryBuyListModel[j].skin = uiInfo.uiDC.registerSkin("models/players/human_base/upper_light.skin");
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 18;
-                uiInfo.humanArmouryBuyListModel[j].frame = 151;
-                uiInfo.humanArmouryBuyListModel[j].zOffset = -8;
+                uiInfo.humanArmouryBuyListModel[j].assetCount = 3;
+                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[1] = uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[2] = uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
+                uiInfo.humanArmouryBuyListModel[j].skin[0] = uiInfo.uiDC.registerSkin("models/players/human_base/lower_light.skin");
+                uiInfo.humanArmouryBuyListModel[j].skin[1] = uiInfo.uiDC.registerSkin("models/players/human_base/upper_light.skin");
+                uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
+                uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
+                uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
+                uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
+                uiInfo.humanArmouryBuyListModel[j].parentTagName[0] = "tag_torso";
+                uiInfo.humanArmouryBuyListModel[j].parentTagName[1] = "tag_head";
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 50;
+                uiInfo.humanArmouryBuyListModel[j].zOffset = -15;
                 break;
               case UP_HELMET:
-                uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
-                uiInfo.humanArmouryBuyListModel[j].skin = uiInfo.uiDC.registerSkin("models/players/human_base/head_light.skin");
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 14;
-                uiInfo.humanArmouryBuyListModel[j].zOffset = -3;
+                uiInfo.humanArmouryBuyListModel[j].assetCount = 3;
+                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[1] = uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[2] = uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
+                uiInfo.humanArmouryBuyListModel[j].skin[0] = uiInfo.uiDC.registerSkin("models/players/human_base/lower_default.skin");
+                uiInfo.humanArmouryBuyListModel[j].skin[1] = uiInfo.uiDC.registerSkin("models/players/human_base/upper_default.skin");
+                uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_light.skin");
+                uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
+                uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
+                uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
+                uiInfo.humanArmouryBuyListModel[j].parentTagName[0] = "tag_torso";
+                uiInfo.humanArmouryBuyListModel[j].parentTagName[1] = "tag_head";
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 50;
+                uiInfo.humanArmouryBuyListModel[j].zOffset = -20;
                 break;
               case UP_MEDKIT:
                 // Should get the red cross of medical station
                 break;
               case UP_BATTPACK:
-                uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/players/human_base/battpack.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/battpack.md3");
                 uiInfo.humanArmouryBuyListModel[j].cameraDist = 50;
                 break;
               case UP_JETPACK:
-                uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/players/human_base/jetpack.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/jetpack.md3");
                 uiInfo.humanArmouryBuyListModel[j].cameraDist = 50;
                 break;
               case UP_BATTLESUIT:
-                // Don't work as expected at all !
-                // uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/players/human_bsuit/lower.md3");
-                // uiInfo.humanArmouryBuyListModel[j].skin = uiInfo.uiDC.registerSkin("models/players/human_bsuit/lower_default.skin");
-                // uiInfo.humanArmouryBuyListModel[j].frame = 229;
-                // uiInfo.humanArmouryBuyListModel[j].cameraDist = 25;
-                // uiInfo.humanArmouryBuyListModel[j].zOffset = -8;
-                // uiInfo.humanArmouryBuyListModel[j].autoAdjust = qtrue;
-                // uiInfo.humanArmouryBuyListModel[j].forceCentering = qtrue;
+                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_bsuit/lower.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[1] = uiInfo.uiDC.registerModel("models/players/human_bsuit/upper.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[2] = uiInfo.uiDC.registerModel("models/players/human_bsuit/head.md3");
+                uiInfo.humanArmouryBuyListModel[j].assetCount = 3;
+                uiInfo.humanArmouryBuyListModel[j].skin[0] = uiInfo.uiDC.registerSkin("models/players/human_bsuit/lower_default.skin");
+                uiInfo.humanArmouryBuyListModel[j].skin[1] = uiInfo.uiDC.registerSkin("models/players/human_bsuit/upper_default.skin");
+                uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_bsuit/head_default.skin");
+                uiInfo.humanArmouryBuyListModel[j].frame[0] = 166;
+                uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
+                uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
+                uiInfo.humanArmouryBuyListModel[j].parentTagName[0] = "tag_torso";
+                uiInfo.humanArmouryBuyListModel[j].parentTagName[1] = "tag_head";
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 115;
+                uiInfo.humanArmouryBuyListModel[j].zOffset = -15;
                 break;
               case UP_GRENADE:
-                uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/weapons/grenade/grenade.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/weapons/grenade/grenade.md3");
                 uiInfo.humanArmouryBuyListModel[j].cameraDist = 15;
                 break;
               case UP_AMMO:
-                uiInfo.humanArmouryBuyListModel[j].asset = uiInfo.uiDC.registerModel("models/weapons/shells/rifle-shell.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/weapons/shells/rifle-shell.md3");
                 uiInfo.humanArmouryBuyListModel[j].cameraDist = 15;
                 break;
             }
@@ -2911,12 +2994,13 @@ static void UI_LoadAlienUpgrades(void)
             uiInfo.alienUpgradeList[j].type = INFOTYPE_CLASS;
             uiInfo.alienUpgradeList[j].v.pclass = i;
 
-            uiInfo.alienUpgradeListModel[j].asset = uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(i)->modelName));
-            uiInfo.alienUpgradeListModel[j].skin = uiInfo.uiDC.registerSkin(va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(i)->modelName, BG_ClassConfig(i)->skinName));
+            uiInfo.alienUpgradeListModel[j].asset[0] = uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(i)->modelName));
+            uiInfo.alienUpgradeListModel[j].assetCount = 1;
+            uiInfo.alienUpgradeListModel[j].skin[0] = uiInfo.uiDC.registerSkin(va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(i)->modelName, BG_ClassConfig(i)->skinName));
             uiInfo.alienUpgradeListModel[j].scale = BG_ClassConfig(i)->modelScale;
             uiInfo.alienUpgradeListModel[j].zOffset = BG_ClassConfig(i)->zOffset;
             uiInfo.alienUpgradeListModel[j].cameraDist = 100;
-            uiInfo.alienUpgradeListModel[j].frame = 0;
+            uiInfo.alienUpgradeListModel[j].frame[0] = 0;
             uiInfo.alienUpgradeListModel[j].autoAdjust = qtrue;
             uiInfo.alienUpgradeListModel[j].forceCentering = qfalse;
 
@@ -2935,6 +3019,8 @@ UI_LoadAlienBuilds
 static void UI_LoadAlienBuilds(void)
 {
     int i, j = 0;
+    fileHandle_t  h;
+    char *modelFile;
     stage_t stage;
 
     UI_ParseCarriageList();
@@ -2952,11 +3038,20 @@ static void UI_LoadAlienBuilds(void)
             uiInfo.alienBuildList[j].type = INFOTYPE_BUILDABLE;
             uiInfo.alienBuildList[j].v.buildable = i;
 
-            uiInfo.alienBuildListModel[j].asset = uiInfo.uiDC.registerModel(BG_BuildableConfig( i )->models[ 0 ]);
+            uiInfo.alienBuildListModel[j].assetCount = 0;
+            for( h = 0; h < MAX_BUILDABLE_MODELS; h++ )
+            {
+              modelFile = BG_BuildableConfig( i )->models[ h ];
+              if( strlen( modelFile ) > 0 )
+              {
+                uiInfo.alienBuildListModel[j].asset[ uiInfo.alienBuildListModel[j].assetCount++ ]
+                  = uiInfo.uiDC.registerModel( modelFile );
+                  uiInfo.alienBuildListModel[j].frame[h] = 0;
+              }
+            }
             uiInfo.alienBuildListModel[j].scale = BG_BuildableConfig( i )->modelScale;
             uiInfo.alienBuildListModel[j].zOffset = BG_BuildableConfig( i )->zOffset;
             uiInfo.alienBuildListModel[j].cameraDist = 100;
-            uiInfo.alienBuildListModel[j].frame = 0;
             uiInfo.alienBuildListModel[j].autoAdjust = qtrue;
             uiInfo.alienBuildListModel[j].forceCentering = qfalse;
 
@@ -2975,6 +3070,8 @@ UI_LoadHumanBuilds
 static void UI_LoadHumanBuilds(void)
 {
     int i, j = 0;
+    fileHandle_t h;
+    char *modelFile;
     stage_t stage;
 
     UI_ParseCarriageList();
@@ -2992,11 +3089,19 @@ static void UI_LoadHumanBuilds(void)
             uiInfo.humanBuildList[j].type = INFOTYPE_BUILDABLE;
             uiInfo.humanBuildList[j].v.buildable = i;
 
-            uiInfo.humanBuildListModel[j].asset = uiInfo.uiDC.registerModel(BG_BuildableConfig( i )->models[ 0 ]);
+            uiInfo.humanBuildListModel[j].assetCount = 0;
+            for( h = 0; h < MAX_BUILDABLE_MODELS; h++ )
+            {
+              modelFile = BG_BuildableConfig( i )->models[ h ];
+              if( strlen( modelFile ) > 0 ){
+                uiInfo.humanBuildListModel[j].asset[ uiInfo.humanBuildListModel[j].assetCount++ ]
+                  = uiInfo.uiDC.registerModel( modelFile );
+                uiInfo.humanBuildListModel[j].frame[h] = 0;
+              }
+            }
             uiInfo.humanBuildListModel[j].scale = BG_BuildableConfig( i )->modelScale;
             uiInfo.humanBuildListModel[j].zOffset = BG_BuildableConfig( i )->zOffset;
             uiInfo.humanBuildListModel[j].cameraDist = 160;
-            uiInfo.humanBuildListModel[j].frame = 0;
             uiInfo.humanBuildListModel[j].autoAdjust = qtrue;
             uiInfo.humanBuildListModel[j].forceCentering = qfalse;
 
@@ -4511,6 +4616,7 @@ void UI_Init(qboolean inGameLoad)
     uiInfo.uiDC.registerModel = &trap_R_RegisterModel;
     uiInfo.uiDC.registerSkin = &trap_R_RegisterSkin;
     uiInfo.uiDC.modelBounds = &trap_R_ModelBounds;
+    uiInfo.uiDC.lerpTag = &trap_CM_LerpTag;
     uiInfo.uiDC.fillRect = &UI_FillRect;
     uiInfo.uiDC.fillRoundedRect = &UI_FillRoundedRect;
     uiInfo.uiDC.drawRect = &UI_DrawRect;
