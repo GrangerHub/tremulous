@@ -861,37 +861,6 @@ models/weapons/builderupg/impactPS
   {
     particle
     {
-      shader sync gfx/level3upg/barb_splash
-
-      displacement 0 0 0 ~8
-
-      velocityType      normal
-      velocityDir       linear
-      velocityMagnitude 600
-      velocity          0 0 1 ~80
-
-      accelerationType      static
-      accelerationDir       linear
-      accelerationMagnitude 800
-      acceleration          0 0 -1 0
-
-      radius 0 3.0~2.0 0.0
-      alpha  0 1.0 1.0
-      rotation 0 ~360 -
-      bounce 0.4~100%
-
-      lifeTime 275
-    }
-
-    count 8
-    delay 0
-    period 0 - ~0%
-  }
-
-  ejector
-  {
-    particle
-    {
       shader sync gfx/sprites/green_acid
 
       displacement 0 0 0 ~6
