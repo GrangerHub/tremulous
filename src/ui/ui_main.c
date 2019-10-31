@@ -1958,8 +1958,10 @@ static void UI_DrawInfoPaneModel(menuItemModel_t *model, rectDef_t *rect)
   vec3_t angles;
   float suggestedDist;
   int i;
-
   int millisPerDeg = 100;  // 36s = 1 turn
+
+  if (model->assetCount == 0)
+    return;
 
   // setup the refdef
   memset(&refdef, 0, sizeof(refdef));
@@ -2063,10 +2065,10 @@ static void UI_DrawInfoPaneModel(menuItemModel_t *model, rectDef_t *rect)
       ent[i].customSkin = model->skin[i];
     ent[i].frame = model->frame[i]; // Only static for now
     ent[i].oldframe = model->frame[i]; // Only static for now
-    if (i && strlen(model->parentTagName[i - 1]))
+    if (i && strlen(model->parent[i - 1].parentTagName))
     {
       AxisClear(ent[i].axis);
-      UI_PositionRotatedEntityOnTag(&(ent[i]), &(ent[i - 1]), model->asset[i - 1], model->parentTagName[i - 1]);
+      UI_PositionRotatedEntityOnTag(&(ent[i]), &(ent[model->parent[i - 1].parentIndex]), model->asset[model->parent[i - 1].parentIndex], model->parent[i - 1].parentTagName);
     }
     else
     {
@@ -2304,6 +2306,10 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
         case UI_TEAMINFOPANE:
             UI_DrawInfoPane(&uiInfo.teamList[uiInfo.teamIndex], &rect, text_x, text_y, scale, textalign, textvalign,
                 foreColor, textStyle);
+            break;
+
+        case UI_TEAMINFOPANEMODEL:
+            UI_DrawInfoPaneModel(&uiInfo.teamListModel[uiInfo.teamIndex], &rect);
             break;
 
         case UI_VOICECMDINFOPANE:
@@ -2579,6 +2585,8 @@ UI_LoadTeams
 */
 static void UI_LoadTeams(void)
 {
+    class_t alienPreviewClass = PCL_ALIEN_LEVEL0;
+
     uiInfo.teamCount = 4;
 
     uiInfo.teamList[0].text = "Aliens";
@@ -2591,6 +2599,16 @@ static void UI_LoadTeams(void)
         "of abilities including basic melee attacks, movement-"
         "crippling poisons and more.";
 
+    uiInfo.teamListModel[0].asset[0] = uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(alienPreviewClass)->modelName));
+    uiInfo.teamListModel[0].assetCount = 1;
+    uiInfo.teamListModel[0].skin[0] = uiInfo.uiDC.registerSkin(va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(alienPreviewClass)->modelName, BG_ClassConfig(alienPreviewClass)->skinName));
+    uiInfo.teamListModel[0].scale = BG_ClassConfig(alienPreviewClass)->modelScale;
+    uiInfo.teamListModel[0].zOffset = BG_ClassConfig(alienPreviewClass)->zOffset;
+    uiInfo.teamListModel[0].cameraDist = 100;
+    uiInfo.teamListModel[0].frame[0] = 0;
+    uiInfo.teamListModel[0].autoAdjust = qtrue;
+    uiInfo.teamListModel[0].forceCentering = qfalse;
+
     uiInfo.teamList[1].text = "Humans";
     uiInfo.teamList[1].cmd = "cmd team humans\n";
     uiInfo.teamList[1].type = INFOTYPE_TEXT;
@@ -2601,16 +2619,41 @@ static void UI_LoadTeams(void)
         "ensures they stay built. A wide range of upgrades and "
         "weapons are available to the humans, each contributing "
         "to eradicate the alien threat.";
+    uiInfo.teamListModel[1].autoAdjust = qfalse;
+    uiInfo.teamListModel[1].forceCentering = qfalse;
+    uiInfo.teamListModel[1].assetCount = 4;
+    uiInfo.teamListModel[1].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
+    uiInfo.teamListModel[1].asset[1] = uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
+    uiInfo.teamListModel[1].asset[2] = uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
+    uiInfo.teamListModel[1].asset[3] = uiInfo.uiDC.registerModel("models/weapons/rifle/rifle.md3");
+    uiInfo.teamListModel[1].skin[0] = uiInfo.uiDC.registerSkin("models/players/human_base/lower_default.skin");
+    uiInfo.teamListModel[1].skin[1] = uiInfo.uiDC.registerSkin("models/players/human_base/upper_default.skin");
+    uiInfo.teamListModel[1].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
+    uiInfo.teamListModel[1].frame[0] = 157;
+    uiInfo.teamListModel[1].frame[1] = 151;
+    uiInfo.teamListModel[1].frame[2] = 0;
+    uiInfo.teamListModel[1].frame[3] = 0;
+    uiInfo.teamListModel[1].parent[0].parentTagName = "tag_torso";
+    uiInfo.teamListModel[1].parent[0].parentIndex = 0;
+    uiInfo.teamListModel[1].parent[1].parentTagName = "tag_head";
+    uiInfo.teamListModel[1].parent[1].parentIndex = 1;
+    uiInfo.teamListModel[1].parent[2].parentTagName = "tag_weapon";
+    uiInfo.teamListModel[1].parent[2].parentIndex = 1;
+    uiInfo.teamListModel[1].cameraDist = 75;
+    uiInfo.teamListModel[1].zOffset = -16;
+    uiInfo.teamListModel[1].scale = 1.0;
 
     uiInfo.teamList[2].text = "Spectate";
     uiInfo.teamList[2].cmd = "cmd team spectate\n";
     uiInfo.teamList[2].type = INFOTYPE_TEXT;
     uiInfo.teamList[2].v.text = "Watch the game without playing.";
+    uiInfo.teamListModel[2].assetCount = 0;
 
     uiInfo.teamList[3].text = "Auto select";
     uiInfo.teamList[3].cmd = "cmd team auto\n";
     uiInfo.teamList[3].type = INFOTYPE_TEXT;
     uiInfo.teamList[3].v.text = "Join the team with the least players.";
+    uiInfo.teamListModel[3].assetCount = 0;
 }
 
 /*
@@ -2838,9 +2881,11 @@ static void UI_LoadHumanArmouryBuys(void)
                 uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
                 uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
                 uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
-                uiInfo.humanArmouryBuyListModel[j].parentTagName[0] = "tag_torso";
-                uiInfo.humanArmouryBuyListModel[j].parentTagName[1] = "tag_head";
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 50;
+                uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
+                uiInfo.humanArmouryBuyListModel[j].parent[0].parentIndex = 0;
+                uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
+                uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 40;
                 uiInfo.humanArmouryBuyListModel[j].zOffset = -15;
                 break;
               case UP_HELMET:
@@ -2854,37 +2899,77 @@ static void UI_LoadHumanArmouryBuys(void)
                 uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
                 uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
                 uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
-                uiInfo.humanArmouryBuyListModel[j].parentTagName[0] = "tag_torso";
-                uiInfo.humanArmouryBuyListModel[j].parentTagName[1] = "tag_head";
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 50;
-                uiInfo.humanArmouryBuyListModel[j].zOffset = -20;
+                uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
+                uiInfo.humanArmouryBuyListModel[j].parent[0].parentIndex = 0;
+                uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
+                uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 32;
+                uiInfo.humanArmouryBuyListModel[j].zOffset = -28;
                 break;
               case UP_MEDKIT:
                 // Should get the red cross of medical station
                 break;
               case UP_BATTPACK:
-                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/battpack.md3");
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 50;
+                uiInfo.humanArmouryBuyListModel[j].assetCount = 4;
+                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[1] = uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[2] = uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[3] = uiInfo.uiDC.registerModel("models/players/human_base/battpack.md3");
+                uiInfo.humanArmouryBuyListModel[j].skin[0] = uiInfo.uiDC.registerSkin("models/players/human_base/lower_default.skin");
+                uiInfo.humanArmouryBuyListModel[j].skin[1] = uiInfo.uiDC.registerSkin("models/players/human_base/upper_default.skin");
+                uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
+                uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
+                uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
+                uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
+                uiInfo.humanArmouryBuyListModel[j].frame[3] = 0;
+                uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
+                uiInfo.humanArmouryBuyListModel[j].parent[0].parentIndex = 0;
+                uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
+                uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
+                uiInfo.humanArmouryBuyListModel[j].parent[2].parentTagName = "tag_head";
+                uiInfo.humanArmouryBuyListModel[j].parent[2].parentIndex = 1;
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 40;
+                uiInfo.humanArmouryBuyListModel[j].zOffset = -22;
                 break;
               case UP_JETPACK:
-                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/jetpack.md3");
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 50;
+                uiInfo.humanArmouryBuyListModel[j].assetCount = 4;
+                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[1] = uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[2] = uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
+                uiInfo.humanArmouryBuyListModel[j].asset[3] = uiInfo.uiDC.registerModel("models/players/human_base/jetpack.md3");
+                uiInfo.humanArmouryBuyListModel[j].skin[0] = uiInfo.uiDC.registerSkin("models/players/human_base/lower_default.skin");
+                uiInfo.humanArmouryBuyListModel[j].skin[1] = uiInfo.uiDC.registerSkin("models/players/human_base/upper_default.skin");
+                uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
+                uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
+                uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
+                uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
+                uiInfo.humanArmouryBuyListModel[j].frame[3] = 0;
+                uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
+                uiInfo.humanArmouryBuyListModel[j].parent[0].parentIndex = 0;
+                uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
+                uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
+                uiInfo.humanArmouryBuyListModel[j].parent[2].parentTagName = "tag_head";
+                uiInfo.humanArmouryBuyListModel[j].parent[2].parentIndex = 1;
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 40;
+                uiInfo.humanArmouryBuyListModel[j].zOffset = -22;
                 break;
               case UP_BATTLESUIT:
+              uiInfo.humanArmouryBuyListModel[j].assetCount = 3;
                 uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_bsuit/lower.md3");
                 uiInfo.humanArmouryBuyListModel[j].asset[1] = uiInfo.uiDC.registerModel("models/players/human_bsuit/upper.md3");
                 uiInfo.humanArmouryBuyListModel[j].asset[2] = uiInfo.uiDC.registerModel("models/players/human_bsuit/head.md3");
-                uiInfo.humanArmouryBuyListModel[j].assetCount = 3;
                 uiInfo.humanArmouryBuyListModel[j].skin[0] = uiInfo.uiDC.registerSkin("models/players/human_bsuit/lower_default.skin");
                 uiInfo.humanArmouryBuyListModel[j].skin[1] = uiInfo.uiDC.registerSkin("models/players/human_bsuit/upper_default.skin");
                 uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_bsuit/head_default.skin");
                 uiInfo.humanArmouryBuyListModel[j].frame[0] = 166;
                 uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
                 uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
-                uiInfo.humanArmouryBuyListModel[j].parentTagName[0] = "tag_torso";
-                uiInfo.humanArmouryBuyListModel[j].parentTagName[1] = "tag_head";
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 115;
-                uiInfo.humanArmouryBuyListModel[j].zOffset = -15;
+                uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
+                uiInfo.humanArmouryBuyListModel[j].parent[0].parentIndex = 0;
+                uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
+                uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
+                uiInfo.humanArmouryBuyListModel[j].cameraDist = 100;
+                uiInfo.humanArmouryBuyListModel[j].zOffset = -25;
                 break;
               case UP_GRENADE:
                 uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/weapons/grenade/grenade.md3");

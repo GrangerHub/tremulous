@@ -178,11 +178,16 @@ typedef struct {
 } menuItem_t;
 
 typedef struct {
+    char *parentTagName;
+    int parentIndex;
+} menuItemModelParent_t;
+
+typedef struct {
     qhandle_t asset[4];
     int assetCount;
     qhandle_t skin[4];
     int frame[4];
-    char *parentTagName[3];
+    menuItemModelParent_t parent[3];
     float scale;
     float zOffset;
     float cameraDist;
@@ -231,6 +236,7 @@ typedef struct {
     int previewMovie;
 
     menuItem_t teamList[4];
+    menuItemModel_t teamListModel[4];
     int teamCount;
     int teamIndex;
 
