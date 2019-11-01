@@ -129,7 +129,12 @@ models/buildables/reactor/reactor_display
 {
 	{
 		map models/buildables/reactor/reactor_display.tga
-		rgbGen identity
+	}
+	{
+		map models/buildables/mgturret/ref_map.jpg
+		blendFunc GL_DST_COLOR GL_ONE
+		detail
+		tcGen environment
 	}
 }
 

@@ -104,16 +104,20 @@ models/buildables/dcc/comp_top
 	}
 }
 
-models/buildables/dcc/comp_display  // Is this still used ?
+models/buildables/dcc/comp_display
 {
 	{
 		map models/buildables/dcc/comp_grad.tga
-		rgbGen identity
 		tcMod scroll 0 1
 	}
 	{
 		map models/buildables/dcc/comp_display.tga
 		blendfunc gl_one gl_src_alpha
-		rgbGen identity
+	}
+	{
+		map models/buildables/mgturret/ref_map.jpg
+		blendFunc GL_DST_COLOR GL_ONE
+		detail
+		tcGen environment
 	}
 }
