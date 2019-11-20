@@ -218,6 +218,8 @@ vmCvar_t  cg_debugVoices;
 
 vmCvar_t  ui_currentClass;
 vmCvar_t  ui_carriage;
+vmCvar_t  ui_credit;
+vmCvar_t  ui_ammoFull;
 vmCvar_t  ui_stages;
 vmCvar_t  ui_dialog;
 vmCvar_t  ui_voteActive;
@@ -357,6 +359,8 @@ static cvarTable_t cvarTable[ ] =
   // communication cvars set by the cgame to be read by ui
   { &ui_currentClass, "ui_currentClass", "0", CVAR_ROM },
   { &ui_carriage, "ui_carriage", "", CVAR_ROM },
+  { &ui_credit, "ui_credit", "0", CVAR_ROM },
+  { &ui_ammoFull, "ui_ammoFull", "1", CVAR_ROM },
   { &ui_stages, "ui_stages", "0 0", CVAR_ROM },
   { &ui_dialog, "ui_dialog", "Text not set", CVAR_ROM },
   { &ui_voteActive, "ui_voteActive", "0", CVAR_ROM },
@@ -436,10 +440,13 @@ static void CG_SetUIVars( void )
 {
   int   i;
   char  carriageCvar[ MAX_TOKEN_CHARS ];
+  int   credit;
+  playerState_t *ps;
 
   if( !cg.snap )
     return;
 
+  ps = &cg.snap->ps;
   *carriageCvar = 0;
 
   //determine what the player is carrying
@@ -455,6 +462,12 @@ static void CG_SetUIVars( void )
   strcat( carriageCvar, "$" );
 
   trap_Cvar_Set( "ui_carriage", carriageCvar );
+
+  credit = ps->persistant[ PERS_CREDIT ];
+  trap_Cvar_Set( "ui_credit", va( "%d", credit > -1 ? credit : 0 ) );
+
+  trap_Cvar_Set( "ui_ammoFull",
+                  va( "%d" , BG_WeaponIsFull( ps->stats[ STAT_WEAPON ], ps->stats, ps->ammo, ps->clips ) ) );
 
   trap_Cvar_Set( "ui_stages", va( "%d %d", cgs.alienStage, cgs.humanStage ) );
 }
