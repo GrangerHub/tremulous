@@ -2350,7 +2350,11 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_HBUYINFOPANEMODEL:
-            UI_DrawInfoPaneModel(&uiInfo.humanArmouryBuyListModel[uiInfo.humanArmouryBuyIndex], &rect);
+            UI_DrawInfoPaneModel(&uiInfo.humanArmouryBuyListModel[
+                uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].type == INFOTYPE_WEAPON ?
+                  uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].v.weapon :
+                  (uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].v.upgrade + WP_NUM_WEAPONS)
+              ], &rect);
             break;
 
         case UI_HSELLINFOPANE:
@@ -2800,60 +2804,34 @@ static void UI_ParseCarriageList(void)
 
 /*
 ===============
-UI_LoadHumanArmouryBuys
+UI_LoadHumanArmouryModels
 ===============
 */
-static void UI_LoadHumanArmouryBuys(void)
+static void UI_LoadHumanArmouryModels(void)
 {
     int i, j = 0;
-    stage_t stage = UI_GetCurrentHumanStage();
-    int slots = 0;
-
-    UI_ParseCarriageList();
 
     for (i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++)
     {
-        if (uiInfo.weapons & (1 << i))
-            slots |= BG_Weapon(i)->slots;
-    }
-
-    for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
-    {
-        if (uiInfo.upgrades & (1 << i))
-            slots |= BG_Upgrade(i)->slots;
-    }
-
-    uiInfo.humanArmouryBuyCount = 0;
-
-    for (i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++)
-    {
-        if (BG_Weapon(i)->team == TEAM_HUMANS && BG_Weapon(i)->purchasable && BG_WeaponAllowedInStage(i, stage) &&
-            BG_WeaponIsAllowed(i) && !(BG_Weapon(i)->slots & slots) && !(uiInfo.weapons & (1 << i)))
+        uiInfo.humanArmouryBuyListModel[i].assetCount = 0;
+        if (BG_Weapon(i)->team == TEAM_HUMANS && BG_Weapon(i)->purchasable)
         {
-            uiInfo.humanArmouryBuyList[j].text = BG_Weapon(i)->humanName;
-            uiInfo.humanArmouryBuyList[j].cmd = String_Alloc(va("cmd buy %s\n", BG_Weapon(i)->name));
-            uiInfo.humanArmouryBuyList[j].type = INFOTYPE_WEAPON;
-            uiInfo.humanArmouryBuyList[j].v.weapon = i;
-
-            uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(i)->name, BG_Weapon(i)->name));
-            uiInfo.humanArmouryBuyListModel[j].assetCount = 1;
-            uiInfo.humanArmouryBuyListModel[j].scale = 1.0;
-            uiInfo.humanArmouryBuyListModel[j].zOffset = 0.0;
-            uiInfo.humanArmouryBuyListModel[j].cameraDist = 0.0;
-            uiInfo.humanArmouryBuyListModel[j].frame[0] = 0;
-            uiInfo.humanArmouryBuyListModel[j].autoAdjust = qtrue;
-            uiInfo.humanArmouryBuyListModel[j].forceCentering = qtrue;
-
-            j++;
-
-            uiInfo.humanArmouryBuyCount++;
+            uiInfo.humanArmouryBuyListModel[i].asset[0] = uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(i)->name, BG_Weapon(i)->name));
+            uiInfo.humanArmouryBuyListModel[i].assetCount = 1;
+            uiInfo.humanArmouryBuyListModel[i].scale = 1.0;
+            uiInfo.humanArmouryBuyListModel[i].zOffset = 0.0;
+            uiInfo.humanArmouryBuyListModel[i].cameraDist = 0.0;
+            uiInfo.humanArmouryBuyListModel[i].frame[0] = 0;
+            uiInfo.humanArmouryBuyListModel[i].autoAdjust = qtrue;
+            uiInfo.humanArmouryBuyListModel[i].forceCentering = qtrue;
         }
     }
-
     for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
     {
-        if (BG_Upgrade(i)->team == TEAM_HUMANS && BG_Upgrade(i)->purchasable && BG_UpgradeAllowedInStage(i, stage) &&
-            BG_UpgradeIsAllowed(i) && !(BG_Upgrade(i)->slots & slots) && !(uiInfo.upgrades & (1 << i)))
+        j = WP_NUM_WEAPONS + i;
+        uiInfo.humanArmouryBuyListModel[j].assetCount = 0;
+
+        if (BG_Upgrade(i)->team == TEAM_HUMANS && BG_Upgrade(i)->purchasable)
         {
             uiInfo.humanArmouryBuyList[j].text = BG_Upgrade(i)->humanName;
             uiInfo.humanArmouryBuyList[j].cmd = String_Alloc(va("cmd buy %s\n", BG_Upgrade(i)->name));
@@ -2980,9 +2958,64 @@ static void UI_LoadHumanArmouryBuys(void)
                 uiInfo.humanArmouryBuyListModel[j].cameraDist = 15;
                 break;
             }
+        }
+    }
+}
+/*
+===============
+UI_LoadHumanArmouryBuys
+===============
+*/
+static void UI_LoadHumanArmouryBuys(void)
+{
+    int i, j = 0;
+    stage_t stage = UI_GetCurrentHumanStage();
+    int slots = 0;
+
+    UI_ParseCarriageList();
+
+    for (i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++)
+    {
+        if (uiInfo.weapons & (1 << i))
+            slots |= BG_Weapon(i)->slots;
+    }
+
+    for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
+    {
+        if (uiInfo.upgrades & (1 << i))
+            slots |= BG_Upgrade(i)->slots;
+    }
+
+    UI_LoadHumanArmouryModels();
+
+    uiInfo.humanArmouryBuyCount = 0;
+
+    for (i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++)
+    {
+        if (BG_Weapon(i)->team == TEAM_HUMANS && BG_Weapon(i)->purchasable && BG_WeaponAllowedInStage(i, stage) &&
+            BG_WeaponIsAllowed(i) && !(BG_Weapon(i)->slots & slots) && !(uiInfo.weapons & (1 << i)))
+        {
+            uiInfo.humanArmouryBuyList[j].text = BG_Weapon(i)->humanName;
+            uiInfo.humanArmouryBuyList[j].cmd = String_Alloc(va("cmd buy %s\n", BG_Weapon(i)->name));
+            uiInfo.humanArmouryBuyList[j].type = INFOTYPE_WEAPON;
+            uiInfo.humanArmouryBuyList[j].v.weapon = i;
 
             j++;
+            uiInfo.humanArmouryBuyCount++;
+        }
+    }
 
+    for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
+    {
+        if (BG_Upgrade(i)->team == TEAM_HUMANS && BG_Upgrade(i)->purchasable && BG_UpgradeAllowedInStage(i, stage) &&
+            BG_UpgradeIsAllowed(i) && !(BG_Upgrade(i)->slots & slots) && !(uiInfo.upgrades & (1 << i)))
+        {
+            uiInfo.humanArmouryBuyList[j].text = BG_Upgrade(i)->humanName;
+            uiInfo.humanArmouryBuyList[j].cmd = String_Alloc(va("cmd buy %s\n", BG_Upgrade(i)->name));
+            uiInfo.humanArmouryBuyList[j].type = INFOTYPE_UPGRADE;
+            uiInfo.humanArmouryBuyList[j].v.upgrade = i;
+
+            j++;
             uiInfo.humanArmouryBuyCount++;
         }
     }

@@ -251,7 +251,7 @@ typedef struct {
     int humanItemIndex;
 
     menuItem_t humanArmouryBuyList[32];
-    menuItemModel_t humanArmouryBuyListModel[32];
+    menuItemModel_t humanArmouryBuyListModel[WP_NUM_WEAPONS + UP_NUM_UPGRADES];
     int humanArmouryBuyCount;
     int humanArmouryBuyIndex;
 
