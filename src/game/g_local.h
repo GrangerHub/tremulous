@@ -675,7 +675,7 @@ typedef struct
 
   emoticon_t        emoticons[ MAX_EMOTICONS ];
   int               emoticonCount;
-  
+
   char              *playerModel[ MAX_PLAYER_MODEL ];
   int               playerModelCount;
 

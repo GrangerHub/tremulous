@@ -72,7 +72,7 @@ enum
   CS_VOTE_YES         = CS_VOTE_STRING + NUM_TEAMS,
   CS_VOTE_NO          = CS_VOTE_YES + NUM_TEAMS,
   CS_VOTE_CALLER      = CS_VOTE_NO + NUM_TEAMS,
-  
+
   CS_GAME_VERSION     = CS_VOTE_CALLER + NUM_TEAMS,
   CS_LEVEL_START_TIME,      // so the timer only shows the current level
   CS_INTERMISSION,          // when 1, fraglimit/timelimit has been hit and intermission will start in a second or two
@@ -1030,7 +1030,7 @@ typedef struct
   qboolean      dccTest;
   qboolean      transparentTest;
   qboolean      uniqueTest;
-  
+
   int       value;
 } buildableAttributes_t;
 
@@ -1105,6 +1105,8 @@ typedef struct
 
 qboolean  BG_WeaponIsFull( weapon_t weapon, int stats[ ], int ammo, int clips );
 qboolean  BG_InventoryContainsWeapon( int weapon, int stats[ ] );
+void      BG_GetConflictingWithInventory( int refSlots, int stats[ ], int conflictingWP[WP_NUM_WEAPONS - 1],
+                                          int conflictingUP[UP_NUM_UPGRADES - 1] );
 int       BG_SlotsForInventory( int stats[ ] );
 void      BG_AddUpgradeToInventory( int item, int stats[ ] );
 void      BG_RemoveUpgradeFromInventory( int item, int stats[ ] );

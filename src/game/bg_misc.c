@@ -3085,7 +3085,7 @@ qboolean BG_WeaponIsFull( weapon_t weapon, int stats[ ], int ammo, int clips )
   maxAmmo = BG_Weapon( weapon )->maxAmmo;
   maxClips = BG_Weapon( weapon )->maxClips;
 
-  if( BG_InventoryContainsUpgrade( UP_BATTPACK, stats ) )
+  if( BG_InventoryContainsUpgrade( UP_BATTPACK, stats ) && BG_Weapon( weapon )->usesEnergy)
     maxAmmo = (int)( (float)maxAmmo * BATTPACK_MODIFIER );
 
   return ( maxAmmo == ammo ) && ( maxClips == clips );
@@ -3106,6 +3106,33 @@ qboolean BG_InventoryContainsWeapon( int weapon, int stats[ ] )
 
   return ( stats[ STAT_WEAPON ] == weapon );
 }
+
+/*
+========================
+BG_GetConflictingWithInventory
+
+Calculate conflicting's item name slots with sended slots
+========================
+*/
+void  BG_GetConflictingWithInventory( int refSlots, int stats[ ], int conflictingWP[WP_NUM_WEAPONS - 1],
+                                      int conflictingUP[UP_NUM_UPGRADES - 1] )
+{
+  int i, j = 0;
+
+  if ( BG_Weapon( stats[ STAT_WEAPON ] )->slots & refSlots )
+    conflictingWP[j++] = stats[ STAT_WEAPON ];
+  if( stats[ STAT_TEAM ] == TEAM_HUMANS && (BG_Weapon( WP_BLASTER )->slots & refSlots) )
+    conflictingWP[j++] = WP_BLASTER;
+  conflictingWP[j] = 0;
+  j = 0;
+  for( i = UP_NONE; i < UP_NUM_UPGRADES; i++ )
+  {
+    if( BG_InventoryContainsUpgrade( i, stats ) && ( BG_Upgrade( i )->slots & refSlots ) )
+      conflictingUP[j++] = i;
+  }
+  conflictingUP[j] = 0;
+}
+
 
 /*
 ========================

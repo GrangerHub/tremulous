@@ -3030,6 +3030,125 @@ static void UI_LoadHumanArmouryModels(void)
 
 /*
 ===============
+UI_LoadHumanArmouryBuysWeapon
+===============
+*/
+static void UI_LoadHumanArmouryBuysWeapon(int priority, int *j, int stage, int sellingBudget, int credit)
+{
+  int       i = 0;
+  qboolean  addWeapon;
+  char      *prefix;
+
+  for (i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++)
+  {
+      if (BG_Weapon(i)->team == TEAM_HUMANS && BG_Weapon(i)->purchasable &&
+          BG_WeaponIsAllowed(i) && !(uiInfo.weapons & (1 << i)))
+      {
+          addWeapon = qfalse;
+          switch (priority) {
+              case 1:
+                  if (BG_WeaponAllowedInStage(i, stage) && UI_CanUpgradeToWeapon(i, sellingBudget, credit))
+                  {
+                      addWeapon = qtrue;
+                      prefix = UI_IsBetterWeapon(i, sellingBudget) ? "[upgrade] " : "";
+                  }
+                  break;
+              case 2:
+                  if (BG_WeaponAllowedInStage(i, stage) && !UI_CanUpgradeToWeapon(i, sellingBudget, credit))
+                  {
+                      addWeapon = qtrue;
+                      prefix = "^0";
+                  }
+                  break;
+              case 3:
+                  if (!BG_WeaponAllowedInStage(i, stage))
+                  {
+                      addWeapon = qtrue;
+                      prefix = "[locked] ^0";
+                  }
+                  break;
+          }
+
+          if (addWeapon == qtrue)
+          {
+              uiInfo.humanArmouryBuyList[*j].text = String_Alloc(va("%s%s", prefix, BG_Weapon(i)->humanName));
+              uiInfo.humanArmouryBuyList[*j].cmd = String_Alloc(va("cmd buy %s\n", BG_Weapon(i)->name));
+              uiInfo.humanArmouryBuyList[*j].type = INFOTYPE_WEAPON;
+              uiInfo.humanArmouryBuyList[*j].v.weapon = i;
+
+              (*j)++;
+              uiInfo.humanArmouryBuyCount++;
+          }
+      }
+  }
+}
+
+
+/*
+===============
+UI_LoadHumanArmouryBuysUpgrade
+===============
+*/
+static void UI_LoadHumanArmouryBuysUpgrade(int priority, int *j, int stage, int sellingBudget, int credit)
+{
+    int       i = 0;
+    qboolean  addUpgrade;
+    char      *prefix;
+
+    for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
+    {
+        if (BG_Upgrade(i)->team == TEAM_HUMANS && BG_Upgrade(i)->purchasable &&
+            BG_UpgradeIsAllowed(i) && !(uiInfo.upgrades & (1 << i)))
+        {
+            addUpgrade = qfalse;
+            switch (priority) {
+                case 0:
+                    if (i == UP_AMMO && !UI_IsAmmoFull())
+                    {
+                        addUpgrade = qtrue;
+                        prefix = "[!] ";
+                    }
+                    break;
+                case 1:
+                    if (i != UP_AMMO && BG_UpgradeAllowedInStage(i, stage) && UI_CanGotUpgrade(i, credit))
+                    {
+                        addUpgrade = qtrue;
+                        prefix = UI_IsUpgradeBetter(i, sellingBudget) ? "[upgrade] " : "";
+                    }
+                    break;
+                case 2:
+                    if ((BG_UpgradeAllowedInStage(i, stage) && !UI_CanGotUpgrade(i, credit))
+                        || (i == UP_AMMO && UI_IsAmmoFull()))
+                    {
+                        addUpgrade = qtrue;
+                        prefix = "^0";
+                    }
+                    break;
+                case 3:
+                    if (!BG_UpgradeAllowedInStage(i, stage))
+                    {
+                        addUpgrade = qtrue;
+                        prefix = "[locked] ^0";
+                    }
+                    break;
+            }
+
+            if (addUpgrade == qtrue)
+            {
+                uiInfo.humanArmouryBuyList[*j].text = String_Alloc(va("%s%s", prefix, BG_Upgrade(i)->humanName));
+                uiInfo.humanArmouryBuyList[*j].cmd = String_Alloc(va("cmd buy %s\n", BG_Upgrade(i)->name));
+                uiInfo.humanArmouryBuyList[*j].type = INFOTYPE_UPGRADE;
+                uiInfo.humanArmouryBuyList[*j].v.upgrade = i;
+
+                (*j)++;
+                uiInfo.humanArmouryBuyCount++;
+            }
+        }
+    }
+}
+
+/*
+===============
 UI_LoadHumanArmouryBuys
 ===============
 */
@@ -3037,7 +3156,7 @@ static void UI_LoadHumanArmouryBuys(void)
 {
     int i, j = 0;
     stage_t stage = UI_GetCurrentHumanStage();
-    int slots = 0;
+    // int slots = 0;
     int sellingBudget = 0;
     int credit = UI_GetCurrentCredit();
 
@@ -3047,76 +3166,34 @@ static void UI_LoadHumanArmouryBuys(void)
     {
         if (uiInfo.weapons & (1 << i))
         {
-          slots |= BG_Weapon(i)->slots;
+          // slots |= BG_Weapon(i)->slots;
           sellingBudget += BG_Weapon(i)->price;
         }
     }
-
-    for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
-    {
-        if (uiInfo.upgrades & (1 << i))
-            slots |= BG_Upgrade(i)->slots;
-    }
-
-    UI_LoadHumanArmouryModels();
+    //
+    // for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
+    // {
+    //     if (uiInfo.upgrades & (1 << i))
+    //         slots |= BG_Upgrade(i)->slots;
+    // }
 
     uiInfo.humanArmouryBuyCount = 0;
 
-    for (i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++)
-    {
-        if (BG_Weapon(i)->team == TEAM_HUMANS && BG_Weapon(i)->purchasable &&
-            BG_WeaponIsAllowed(i) && !(uiInfo.weapons & (1 << i)))
-        {
-            uiInfo.humanArmouryBuyList[j].text = String_Alloc(va("%s%s",
-              !BG_WeaponAllowedInStage(i, stage) ? "[locked] ^0" :
-              (
-                UI_CanUpgradeToWeapon(i, sellingBudget, credit) ?
-                (
-                  UI_IsBetterWeapon(i, sellingBudget) ? "[upgrade] " : ""
-                )
-                :
-                (
-                  "^0"
-                )
-              ),
-              BG_Weapon(i)->humanName));
-            uiInfo.humanArmouryBuyList[j].cmd = String_Alloc(va("cmd buy %s\n", BG_Weapon(i)->name));
-            uiInfo.humanArmouryBuyList[j].type = INFOTYPE_WEAPON;
-            uiInfo.humanArmouryBuyList[j].v.weapon = i;
+    // Critical (ammo mainly)
+    UI_LoadHumanArmouryBuysUpgrade(0, &j, stage, sellingBudget, credit);
+    // UI_LoadHumanArmouryBuysWeapon(0, &j, stage, sellingBudget, credit);
 
-            j++;
-            uiInfo.humanArmouryBuyCount++;
-        }
-    }
+    // Available to buy
+    UI_LoadHumanArmouryBuysWeapon(1, &j, stage, sellingBudget, credit);
+    UI_LoadHumanArmouryBuysUpgrade(1, &j, stage, sellingBudget, credit);
 
-    for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
-    {
-        if (BG_Upgrade(i)->team == TEAM_HUMANS && BG_Upgrade(i)->purchasable &&
-            BG_UpgradeIsAllowed(i) && !(uiInfo.upgrades & (1 << i)))
-        {
-            uiInfo.humanArmouryBuyList[j].text = String_Alloc(va("%s%s",
-              !BG_UpgradeAllowedInStage(i, stage) ? "[locked] ^0" :
-              (
-                UI_CanGotUpgrade(i, credit) ?
-                (
-                  i == UP_AMMO ?
-                  (UI_IsAmmoFull() ? "^0 " : "[!] ")  :
-                  (UI_IsUpgradeBetter(i, slots) ? "[upgrade] " : "")
-                )
-                :
-                (
-                  "^0"
-                )
-              ),
-              BG_Upgrade(i)->humanName));
-            uiInfo.humanArmouryBuyList[j].cmd = String_Alloc(va("cmd buy %s\n", BG_Upgrade(i)->name));
-            uiInfo.humanArmouryBuyList[j].type = INFOTYPE_UPGRADE;
-            uiInfo.humanArmouryBuyList[j].v.upgrade = i;
+    // Unlocked but no enough funds
+    UI_LoadHumanArmouryBuysWeapon(2, &j, stage, sellingBudget, credit);
+    UI_LoadHumanArmouryBuysUpgrade(2, &j, stage, sellingBudget, credit);
 
-            j++;
-            uiInfo.humanArmouryBuyCount++;
-        }
-    }
+    // Locked
+    UI_LoadHumanArmouryBuysWeapon(3, &j, stage, sellingBudget, credit);
+    UI_LoadHumanArmouryBuysUpgrade(3, &j, stage, sellingBudget, credit);
 }
 
 /*
@@ -3169,6 +3246,7 @@ UI_ArmouryRefreshCb
 */
 static void UI_ArmouryRefreshCb(void *data)
 {
+    static int oldFullAmmo = -1;
     int oldWeapons = uiInfo.weapons;
     int oldUpgrades = uiInfo.upgrades;
 
@@ -3180,6 +3258,11 @@ static void UI_ArmouryRefreshCb(void *data)
         UI_LoadHumanArmourySells();
         UI_RemoveCaptureFunc();
     }
+    else if (UI_IsAmmoFull() != oldFullAmmo)
+    {
+        UI_LoadHumanArmouryBuys();
+    }
+    oldFullAmmo = UI_IsAmmoFull();
 }
 
 /*
@@ -3748,7 +3831,10 @@ static void UI_RunMenuScript(char **args)
                 trap_Cmd_ExecuteText(EXEC_APPEND, cmd);
         }
         else if (Q_stricmp(name, "LoadHumanArmouryBuys") == 0)
+        {
+            UI_LoadHumanArmouryModels();
             UI_LoadHumanArmouryBuys();
+        }
         else if (Q_stricmp(name, "BuyFromArmoury") == 0)
         {
             if ((cmd = uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].cmd))

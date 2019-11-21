@@ -428,6 +428,23 @@ void CG_RegisterCvars( void )
   cgs.localServer = atoi( var );
 }
 
+/*
+===============
+CG_DoNeedAmmo
+===============
+*/
+static qboolean CG_DoNeedAmmo( playerState_t *ps )
+{
+  weapon_t weapon = ps->stats[ STAT_WEAPON ];
+
+  if (weapon == WP_NONE)
+    return (qfalse);
+  if (BG_Weapon( weapon )->infiniteAmmo)
+    return (qfalse);
+  if (BG_WeaponIsFull( weapon, ps->stats, ps->ammo, ps->clips ))
+    return (qfalse);
+  return (qtrue);
+}
 
 /*
 ===============
@@ -466,8 +483,7 @@ static void CG_SetUIVars( void )
   credit = ps->persistant[ PERS_CREDIT ];
   trap_Cvar_Set( "ui_credit", va( "%d", credit > -1 ? credit : 0 ) );
 
-  trap_Cvar_Set( "ui_ammoFull",
-                  va( "%d" , BG_WeaponIsFull( ps->stats[ STAT_WEAPON ], ps->stats, ps->ammo, ps->clips ) ) );
+  trap_Cvar_Set( "ui_ammoFull", va( "%d", !CG_DoNeedAmmo(ps)));
 
   trap_Cvar_Set( "ui_stages", va( "%d %d", cgs.alienStage, cgs.humanStage ) );
 }
