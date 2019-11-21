@@ -2899,11 +2899,6 @@ static void UI_LoadHumanArmouryModels(void)
 
         if (BG_Upgrade(i)->team == TEAM_HUMANS && BG_Upgrade(i)->purchasable)
         {
-            uiInfo.humanArmouryBuyList[j].text = BG_Upgrade(i)->humanName;
-            uiInfo.humanArmouryBuyList[j].cmd = String_Alloc(va("cmd buy %s\n", BG_Upgrade(i)->name));
-            uiInfo.humanArmouryBuyList[j].type = INFOTYPE_UPGRADE;
-            uiInfo.humanArmouryBuyList[j].v.upgrade = i;
-
             uiInfo.humanArmouryBuyListModel[j].assetCount = 1;
             uiInfo.humanArmouryBuyListModel[j].scale = 1.0;
             uiInfo.humanArmouryBuyListModel[j].frame[0] = 0;
