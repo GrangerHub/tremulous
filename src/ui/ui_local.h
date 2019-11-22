@@ -260,7 +260,7 @@ typedef struct {
     int humanArmourySellIndex;
 
     menuItem_t alienUpgradeList[16];
-    menuItemModel_t alienUpgradeListModel[16];
+    menuItemModel_t alienUpgradeListModel[PCL_NUM_CLASSES];
     int alienUpgradeCount;
     int alienUpgradeIndex;
 

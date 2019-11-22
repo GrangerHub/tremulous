@@ -2332,7 +2332,9 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_AUPGRADEINFOPANEMODEL:
-            UI_DrawInfoPaneModel(&uiInfo.alienUpgradeListModel[uiInfo.alienUpgradeIndex], &rect);
+            UI_DrawInfoPaneModel(&uiInfo.alienUpgradeListModel[
+                uiInfo.alienUpgradeList[uiInfo.alienUpgradeIndex].v.pclass
+              ], &rect);
             break;
 
         case UI_HITEMINFOPANE:
@@ -2804,10 +2806,10 @@ static void UI_ParseCarriageList(void)
 
 /*
 ===============
-UI_GetCurrentCredit
+UI_GetCurrentCredits
 ===============
 */
-static int UI_GetCurrentCredit(void)
+static int UI_GetCurrentCredits(void)
 {
   char creditCvar[MAX_TOKEN_CHARS];
 
@@ -2833,9 +2835,9 @@ static qboolean UI_IsAmmoFull(void)
 UI_CanUpgradeToWeapon
 ===============
 */
-static qboolean UI_CanUpgradeToWeapon(weapon_t weapon, int sellingBudget, int credit)
+static qboolean UI_CanUpgradeToWeapon(weapon_t weapon, int sellingBudget, int credits)
 {
-  return (BG_Weapon(weapon)->price <= sellingBudget + credit);
+  return (BG_Weapon(weapon)->price <= sellingBudget + credits);
 }
 
 /*
@@ -2853,9 +2855,9 @@ static qboolean UI_IsBetterWeapon(weapon_t weapon, int sellingBudget)
 UI_CanGotUpgrade
 ===============
 */
-static qboolean UI_CanGotUpgrade(upgrade_t upgrade, int credit)
+static qboolean UI_CanGotUpgrade(upgrade_t upgrade, int credits)
 {
-  return (BG_Upgrade(upgrade)->price <= credit);
+  return (BG_Upgrade(upgrade)->price <= credits);
 }
 
 /*
@@ -3028,7 +3030,7 @@ static void UI_LoadHumanArmouryModels(void)
 UI_LoadHumanArmouryBuysWeapon
 ===============
 */
-static void UI_LoadHumanArmouryBuysWeapon(int priority, int *j, int stage, int sellingBudget, int credit)
+static void UI_LoadHumanArmouryBuysWeapon(int priority, int *j, int stage, int sellingBudget, int credits)
 {
   int       i = 0;
   qboolean  addWeapon;
@@ -3042,14 +3044,14 @@ static void UI_LoadHumanArmouryBuysWeapon(int priority, int *j, int stage, int s
           addWeapon = qfalse;
           switch (priority) {
               case 1:
-                  if (BG_WeaponAllowedInStage(i, stage) && UI_CanUpgradeToWeapon(i, sellingBudget, credit))
+                  if (BG_WeaponAllowedInStage(i, stage) && UI_CanUpgradeToWeapon(i, sellingBudget, credits))
                   {
                       addWeapon = qtrue;
                       prefix = UI_IsBetterWeapon(i, sellingBudget) ? "[upgrade] " : "";
                   }
                   break;
               case 2:
-                  if (BG_WeaponAllowedInStage(i, stage) && !UI_CanUpgradeToWeapon(i, sellingBudget, credit))
+                  if (BG_WeaponAllowedInStage(i, stage) && !UI_CanUpgradeToWeapon(i, sellingBudget, credits))
                   {
                       addWeapon = qtrue;
                       prefix = "^0";
@@ -3084,7 +3086,7 @@ static void UI_LoadHumanArmouryBuysWeapon(int priority, int *j, int stage, int s
 UI_LoadHumanArmouryBuysUpgrade
 ===============
 */
-static void UI_LoadHumanArmouryBuysUpgrade(int priority, int *j, int stage, int sellingBudget, int credit)
+static void UI_LoadHumanArmouryBuysUpgrade(int priority, int *j, int stage, int sellingBudget, int credits)
 {
     int       i = 0;
     qboolean  addUpgrade;
@@ -3105,14 +3107,14 @@ static void UI_LoadHumanArmouryBuysUpgrade(int priority, int *j, int stage, int 
                     }
                     break;
                 case 1:
-                    if (i != UP_AMMO && BG_UpgradeAllowedInStage(i, stage) && UI_CanGotUpgrade(i, credit))
+                    if (i != UP_AMMO && BG_UpgradeAllowedInStage(i, stage) && UI_CanGotUpgrade(i, credits))
                     {
                         addUpgrade = qtrue;
                         prefix = UI_IsUpgradeBetter(i, sellingBudget) ? "[upgrade] " : "";
                     }
                     break;
                 case 2:
-                    if ((BG_UpgradeAllowedInStage(i, stage) && !UI_CanGotUpgrade(i, credit))
+                    if ((BG_UpgradeAllowedInStage(i, stage) && !UI_CanGotUpgrade(i, credits))
                         || (i == UP_AMMO && UI_IsAmmoFull()))
                     {
                         addUpgrade = qtrue;
@@ -3153,7 +3155,7 @@ static void UI_LoadHumanArmouryBuys(void)
     stage_t stage = UI_GetCurrentHumanStage();
     // int slots = 0;
     int sellingBudget = 0;
-    int credit = UI_GetCurrentCredit();
+    int credits = UI_GetCurrentCredits();
 
     UI_ParseCarriageList();
 
@@ -3175,20 +3177,20 @@ static void UI_LoadHumanArmouryBuys(void)
     uiInfo.humanArmouryBuyCount = 0;
 
     // Critical (ammo mainly)
-    UI_LoadHumanArmouryBuysUpgrade(0, &j, stage, sellingBudget, credit);
-    // UI_LoadHumanArmouryBuysWeapon(0, &j, stage, sellingBudget, credit);
+    UI_LoadHumanArmouryBuysUpgrade(0, &j, stage, sellingBudget, credits);
+    // UI_LoadHumanArmouryBuysWeapon(0, &j, stage, sellingBudget, credits);
 
     // Available to buy
-    UI_LoadHumanArmouryBuysWeapon(1, &j, stage, sellingBudget, credit);
-    UI_LoadHumanArmouryBuysUpgrade(1, &j, stage, sellingBudget, credit);
+    UI_LoadHumanArmouryBuysWeapon(1, &j, stage, sellingBudget, credits);
+    UI_LoadHumanArmouryBuysUpgrade(1, &j, stage, sellingBudget, credits);
 
     // Unlocked but no enough funds
-    UI_LoadHumanArmouryBuysWeapon(2, &j, stage, sellingBudget, credit);
-    UI_LoadHumanArmouryBuysUpgrade(2, &j, stage, sellingBudget, credit);
+    UI_LoadHumanArmouryBuysWeapon(2, &j, stage, sellingBudget, credits);
+    UI_LoadHumanArmouryBuysUpgrade(2, &j, stage, sellingBudget, credits);
 
     // Locked
-    UI_LoadHumanArmouryBuysWeapon(3, &j, stage, sellingBudget, credit);
-    UI_LoadHumanArmouryBuysUpgrade(3, &j, stage, sellingBudget, credit);
+    UI_LoadHumanArmouryBuysWeapon(3, &j, stage, sellingBudget, credits);
+    UI_LoadHumanArmouryBuysUpgrade(3, &j, stage, sellingBudget, credits);
 }
 
 /*
@@ -3262,6 +3264,89 @@ static void UI_ArmouryRefreshCb(void *data)
 
 /*
 ===============
+UI_LoadAlienUpgradesModels
+===============
+*/
+static void UI_LoadAlienUpgradesModels(void)
+{
+  int i;
+
+  // No clean way found to determin is class is aliens one
+  for (i = PCL_NONE + 1; i < PCL_HUMAN; i++)
+  {
+    uiInfo.alienUpgradeListModel[i].asset[0] = uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(i)->modelName));
+    uiInfo.alienUpgradeListModel[i].assetCount = 1;
+    uiInfo.alienUpgradeListModel[i].skin[0] = uiInfo.uiDC.registerSkin(va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(i)->modelName, BG_ClassConfig(i)->skinName));
+    uiInfo.alienUpgradeListModel[i].scale = BG_ClassConfig(i)->modelScale;
+    uiInfo.alienUpgradeListModel[i].zOffset = BG_ClassConfig(i)->zOffset;
+    uiInfo.alienUpgradeListModel[i].cameraDist = 100;
+    uiInfo.alienUpgradeListModel[i].frame[0] = 0;
+    uiInfo.alienUpgradeListModel[i].autoAdjust = qtrue;
+    uiInfo.alienUpgradeListModel[i].forceCentering = qfalse;
+  }
+}
+
+/*
+===============
+UI_LoadHumanArmouryBuysUpgrade
+===============
+*/
+static void UI_LoadAlienUpgradesClass(int priority, int *j, int class, int credits, int stage)
+{
+    int       i = 0;
+    qboolean  addClass;
+    char      *prefix;
+
+    // No clean way found to determin is class is aliens one
+    for (i = PCL_NONE + 1; i < PCL_HUMAN; i++)
+    {
+        addClass = qfalse;
+        if (BG_ClassIsAllowed(i))
+        {
+            switch (priority) {
+                case 0:
+                    break;
+                case 1:
+                    if (BG_ClassCanEvolveFromTo(class, i, credits, stage, 0) >= 0)
+                    {
+                        addClass = qtrue;
+                        // Is it stage 1 or is it newer in current stage, or is level0 (cause no adv dretch)
+                        prefix = (!stage || !BG_ClassAllowedInStage( i, 0 )
+                            || i == PCL_ALIEN_LEVEL0) ? "[upgrade] " : "";
+                    }
+                    break;
+                case 2:
+                    if (BG_ClassCanEvolveFromTo(class, i, credits, stage, 0) < 0 && BG_ClassAllowedInStage( i, stage ))
+                    {
+                        addClass = qtrue;
+                        prefix = "^0";
+                    }
+                    break;
+                case 3:
+                    if (BG_ClassCanEvolveFromTo(class, i, credits, stage, 0) < 0 && !BG_ClassAllowedInStage( i, stage ))
+                    {
+                        addClass = qtrue;
+                        prefix = "[locked] ^0";
+                    }
+                    break;
+            }
+        }
+
+        if (addClass == qtrue)
+        {
+            uiInfo.alienUpgradeList[*j].text = String_Alloc(va("%s%s", prefix, BG_ClassConfig(i)->humanName));
+            uiInfo.alienUpgradeList[*j].cmd = String_Alloc(va("cmd class %s\n", BG_Class(i)->name));
+            uiInfo.alienUpgradeList[*j].type = INFOTYPE_CLASS;
+            uiInfo.alienUpgradeList[*j].v.pclass = i;
+
+            (*j)++;
+            uiInfo.alienUpgradeCount++;
+        }
+    }
+}
+
+/*
+===============
 UI_LoadAlienUpgrades
 ===============
 */
@@ -3279,30 +3364,10 @@ static void UI_LoadAlienUpgrades(void)
 
     uiInfo.alienUpgradeCount = 0;
 
-    for (i = PCL_NONE + 1; i < PCL_NUM_CLASSES; i++)
-    {
-        if (BG_ClassCanEvolveFromTo(class, i, credits, stage, 0) >= 0)
-        {
-            uiInfo.alienUpgradeList[j].text = BG_ClassConfig(i)->humanName;
-            uiInfo.alienUpgradeList[j].cmd = String_Alloc(va("cmd class %s\n", BG_Class(i)->name));
-            uiInfo.alienUpgradeList[j].type = INFOTYPE_CLASS;
-            uiInfo.alienUpgradeList[j].v.pclass = i;
-
-            uiInfo.alienUpgradeListModel[j].asset[0] = uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(i)->modelName));
-            uiInfo.alienUpgradeListModel[j].assetCount = 1;
-            uiInfo.alienUpgradeListModel[j].skin[0] = uiInfo.uiDC.registerSkin(va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(i)->modelName, BG_ClassConfig(i)->skinName));
-            uiInfo.alienUpgradeListModel[j].scale = BG_ClassConfig(i)->modelScale;
-            uiInfo.alienUpgradeListModel[j].zOffset = BG_ClassConfig(i)->zOffset;
-            uiInfo.alienUpgradeListModel[j].cameraDist = 100;
-            uiInfo.alienUpgradeListModel[j].frame[0] = 0;
-            uiInfo.alienUpgradeListModel[j].autoAdjust = qtrue;
-            uiInfo.alienUpgradeListModel[j].forceCentering = qfalse;
-
-            j++;
-
-            uiInfo.alienUpgradeCount++;
-        }
-    }
+    // UI_LoadAlienUpgradesClass(0, &j, class, credits, stage);
+    UI_LoadAlienUpgradesClass(1, &j, class, credits, stage);
+    UI_LoadAlienUpgradesClass(2, &j, class, credits, stage);
+    UI_LoadAlienUpgradesClass(3, &j, class, credits, stage);
 }
 
 /*
@@ -3848,6 +3913,7 @@ static void UI_RunMenuScript(char **args)
         }
         else if (Q_stricmp(name, "LoadAlienUpgrades") == 0)
         {
+            UI_LoadAlienUpgradesModels();
             UI_LoadAlienUpgrades();
         }
         else if (Q_stricmp(name, "UpgradeToNewClass") == 0)
