@@ -2370,7 +2370,9 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_ABUILDINFOPANEMODEL:
-            UI_DrawInfoPaneModel(&uiInfo.alienBuildListModel[uiInfo.alienBuildIndex], &rect);
+            UI_DrawInfoPaneModel(&uiInfo.alienBuildListModel[
+                uiInfo.alienBuildList[uiInfo.alienBuildIndex].v.buildable
+              ], &rect);
             break;
 
         case UI_HBUILDINFOPANE:
@@ -2380,7 +2382,9 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_HBUILDINFOPANEMODEL:
-            UI_DrawInfoPaneModel(&uiInfo.humanBuildListModel[uiInfo.humanBuildIndex], &rect);
+            UI_DrawInfoPaneModel(&uiInfo.humanBuildListModel[
+                uiInfo.humanBuildList[uiInfo.humanBuildIndex].v.buildable
+              ], &rect);
             break;
 
         case UI_HELPINFOPANE:
@@ -2826,7 +2830,7 @@ static qboolean UI_IsAmmoFull(void)
 {
   char ammoFullCvar[MAX_TOKEN_CHARS];
 
-  trap_Cvar_VariableStringBuffer("ui_ammoFull", ammoFullCvar, sizeof(ammoFullCvar));
+  trap_Cvar_VariableStringBuffer("ui_isAmmoFull", ammoFullCvar, sizeof(ammoFullCvar));
   return (atoi(ammoFullCvar));
 }
 
@@ -3288,7 +3292,7 @@ static void UI_LoadAlienUpgradesModels(void)
 
 /*
 ===============
-UI_LoadHumanArmouryBuysUpgrade
+UI_LoadAlienUpgradesClass
 ===============
 */
 static void UI_LoadAlienUpgradesClass(int priority, int *j, int class, int credits, int stage)
@@ -3372,14 +3376,115 @@ static void UI_LoadAlienUpgrades(void)
 
 /*
 ===============
+UI_LoadAlienBuildsModels
+===============
+*/
+static void UI_LoadAlienBuildsModels(void)
+{
+  int i;
+  fileHandle_t  h;
+  char *modelFile;
+
+  for (i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++)
+  {
+      if (BG_Buildable(i)->team == TEAM_ALIENS && BG_BuildableIsAllowed(i))
+      {
+          uiInfo.alienBuildListModel[i].assetCount = 0;
+          for( h = 0; h < MAX_BUILDABLE_MODELS; h++ )
+          {
+            modelFile = BG_BuildableConfig( i )->models[ h ];
+            if( strlen( modelFile ) > 0 )
+            {
+              uiInfo.alienBuildListModel[i].asset[ uiInfo.alienBuildListModel[i].assetCount++ ]
+                = uiInfo.uiDC.registerModel( modelFile );
+                uiInfo.alienBuildListModel[i].frame[h] = 0;
+            }
+          }
+          uiInfo.alienBuildListModel[i].scale = BG_BuildableConfig( i )->modelScale;
+          uiInfo.alienBuildListModel[i].zOffset = BG_BuildableConfig( i )->zOffset;
+          uiInfo.alienBuildListModel[i].cameraDist = 100;
+          uiInfo.alienBuildListModel[i].autoAdjust = qtrue;
+          uiInfo.alienBuildListModel[i].forceCentering = qfalse;
+      }
+  }
+}
+
+/*
+===============
+UI_LoadAlienBuildsItems
+===============
+*/
+static void UI_LoadAlienBuildsItems(int priority, int *j, int stage)
+{
+    int       i = 0;
+    qboolean  addItem;
+    char      *prefix;
+    qboolean  needUpgrade;
+    // qboolean  critical;
+
+    for (i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++)
+    {
+        addItem = qfalse;
+        // critical = qfalse;
+        if (BG_Buildable(i)->team == TEAM_ALIENS && BG_BuildableIsAllowed(i))
+        {
+            switch (priority) {
+                case 0:
+                    break;
+                case 1:
+                    if (BG_BuildableAllowedInStage(i, stage))
+                    {
+                        addItem = qtrue;
+                        // if cam booster and no booster / if dc and no dc
+                        // if no spawn // if no om/rc
+                        // => Set critical to true
+                        // Not implanted yet cause CG have no reliable ways to know theses informations
+                        // If need om om to build it
+                        // add [om] to prefix
+                        if (!(BG_Buildable(i)->buildWeapon & uiInfo.weapons)) // Need to upgrade
+                        {
+                          // if (critical)
+                          //   prefix = "[!] [upgrade] ^0";
+                          // else
+                            prefix = "[upgrade][advgranger] ^0";
+                        }
+                        // else if (critical)
+                        //   prefix = "[!] ";
+                        else
+                          prefix = "";
+                    }
+                    break;
+                case 2:
+                    if (!BG_BuildableAllowedInStage(i, stage))
+                    {
+                        addItem = qtrue;
+                        prefix = "[locked] ^0";
+                    }
+                    break;
+            }
+
+            if (addItem == qtrue)
+            {
+                uiInfo.alienBuildList[*j].text = String_Alloc(va("%s%s", prefix, BG_Buildable(i)->humanName));
+                uiInfo.alienBuildList[*j].cmd = String_Alloc(va("cmd build %s\n", BG_Buildable(i)->name));
+                uiInfo.alienBuildList[*j].type = INFOTYPE_BUILDABLE;
+                uiInfo.alienBuildList[*j].v.buildable = i;
+
+                (*j)++;
+                uiInfo.alienBuildCount++;
+            }
+        }
+    }
+}
+
+/*
+===============
 UI_LoadAlienBuilds
 ===============
 */
 static void UI_LoadAlienBuilds(void)
 {
     int i, j = 0;
-    fileHandle_t  h;
-    char *modelFile;
     stage_t stage;
 
     UI_ParseCarriageList();
@@ -3387,36 +3492,109 @@ static void UI_LoadAlienBuilds(void)
 
     uiInfo.alienBuildCount = 0;
 
+    // UI_LoadAlienBuildsItems(0, &j, stage);
+    UI_LoadAlienBuildsItems(1, &j, stage);
+    UI_LoadAlienBuildsItems(2, &j, stage);
+}
+
+/*
+===============
+UI_LoadHumansBuildsModels
+===============
+*/
+static void UI_LoadHumansBuildsModels(void)
+{
+  int i;
+  fileHandle_t  h;
+  char *modelFile;
+
+  for (i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++)
+  {
+      if (BG_Buildable(i)->team == TEAM_HUMANS && BG_BuildableIsAllowed(i))
+      {
+          uiInfo.humanBuildListModel[i].assetCount = 0;
+          for( h = 0; h < MAX_BUILDABLE_MODELS; h++ )
+          {
+            modelFile = BG_BuildableConfig( i )->models[ h ];
+            if( strlen( modelFile ) > 0 ){
+              uiInfo.humanBuildListModel[i].asset[ uiInfo.humanBuildListModel[i].assetCount++ ]
+                = uiInfo.uiDC.registerModel( modelFile );
+              uiInfo.humanBuildListModel[i].frame[h] = 0;
+            }
+          }
+          uiInfo.humanBuildListModel[i].scale = BG_BuildableConfig( i )->modelScale;
+          uiInfo.humanBuildListModel[i].zOffset = BG_BuildableConfig( i )->zOffset;
+          uiInfo.humanBuildListModel[i].cameraDist = 160;
+          uiInfo.humanBuildListModel[i].autoAdjust = qtrue;
+          uiInfo.humanBuildListModel[i].forceCentering = qfalse;
+      }
+  }
+}
+
+/*
+===============
+UI_LoadHumanBuildsItems
+===============
+*/
+static void UI_LoadHumanBuildsItems(int priority, int *j, int stage)
+{
+    int       i = 0;
+    qboolean  addItem;
+    char      *prefix;
+    qboolean  needUpgrade;
+    // qboolean  critical;
+
     for (i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++)
     {
-        if (BG_Buildable(i)->team == TEAM_ALIENS && BG_Buildable(i)->buildWeapon & uiInfo.weapons &&
-            BG_BuildableAllowedInStage(i, stage) && BG_BuildableIsAllowed(i))
+        addItem = qfalse;
+        // critical = qfalse;
+        if (BG_Buildable(i)->team == TEAM_HUMANS && BG_BuildableIsAllowed(i))
         {
-            uiInfo.alienBuildList[j].text = BG_Buildable(i)->humanName;
-            uiInfo.alienBuildList[j].cmd = String_Alloc(va("cmd build %s\n", BG_Buildable(i)->name));
-            uiInfo.alienBuildList[j].type = INFOTYPE_BUILDABLE;
-            uiInfo.alienBuildList[j].v.buildable = i;
-
-            uiInfo.alienBuildListModel[j].assetCount = 0;
-            for( h = 0; h < MAX_BUILDABLE_MODELS; h++ )
-            {
-              modelFile = BG_BuildableConfig( i )->models[ h ];
-              if( strlen( modelFile ) > 0 )
-              {
-                uiInfo.alienBuildListModel[j].asset[ uiInfo.alienBuildListModel[j].assetCount++ ]
-                  = uiInfo.uiDC.registerModel( modelFile );
-                  uiInfo.alienBuildListModel[j].frame[h] = 0;
-              }
+            switch (priority) {
+                case 0:
+                    break;
+                case 1:
+                    if (BG_BuildableAllowedInStage(i, stage))
+                    {
+                        addItem = qtrue;
+                        // if cam booster and no booster / if dc and no dc
+                        // if no spawn // if no om/rc
+                        // => Set critical to true
+                        // Not implanted yet cause CG have no reliable ways to know theses informations
+                        // If need om/rc om to build it
+                        // add [om]/[rc] to prefix
+                        if (!(BG_Buildable(i)->buildWeapon & uiInfo.weapons)) // Need to upgrade
+                        {
+                          // if (critical)
+                          //   prefix = "[!] [upgrade] ^0";
+                          // else
+                            prefix = "[upgrade][ckit] ^0";
+                        }
+                        // else if (critical)
+                        //   prefix = "[!] ";
+                        else
+                          prefix = "";
+                    }
+                    break;
+                case 2:
+                    if (!BG_BuildableAllowedInStage(i, stage))
+                    {
+                        addItem = qtrue;
+                        prefix = "[locked] ^0";
+                    }
+                    break;
             }
-            uiInfo.alienBuildListModel[j].scale = BG_BuildableConfig( i )->modelScale;
-            uiInfo.alienBuildListModel[j].zOffset = BG_BuildableConfig( i )->zOffset;
-            uiInfo.alienBuildListModel[j].cameraDist = 100;
-            uiInfo.alienBuildListModel[j].autoAdjust = qtrue;
-            uiInfo.alienBuildListModel[j].forceCentering = qfalse;
 
-            j++;
+            if (addItem == qtrue)
+            {
+                uiInfo.humanBuildList[*j].text = String_Alloc(va("%s%s", prefix, BG_Buildable(i)->humanName));
+                uiInfo.humanBuildList[*j].cmd = String_Alloc(va("cmd build %s\n", BG_Buildable(i)->name));
+                uiInfo.humanBuildList[*j].type = INFOTYPE_BUILDABLE;
+                uiInfo.humanBuildList[*j].v.buildable = i;
 
-            uiInfo.alienBuildCount++;
+                (*j)++;
+                uiInfo.humanBuildCount++;
+            }
         }
     }
 }
@@ -3438,37 +3616,10 @@ static void UI_LoadHumanBuilds(void)
 
     uiInfo.humanBuildCount = 0;
 
-    for (i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++)
-    {
-        if (BG_Buildable(i)->team == TEAM_HUMANS && BG_Buildable(i)->buildWeapon & uiInfo.weapons &&
-            BG_BuildableAllowedInStage(i, stage) && BG_BuildableIsAllowed(i))
-        {
-            uiInfo.humanBuildList[j].text = BG_Buildable(i)->humanName;
-            uiInfo.humanBuildList[j].cmd = String_Alloc(va("cmd build %s\n", BG_Buildable(i)->name));
-            uiInfo.humanBuildList[j].type = INFOTYPE_BUILDABLE;
-            uiInfo.humanBuildList[j].v.buildable = i;
 
-            uiInfo.humanBuildListModel[j].assetCount = 0;
-            for( h = 0; h < MAX_BUILDABLE_MODELS; h++ )
-            {
-              modelFile = BG_BuildableConfig( i )->models[ h ];
-              if( strlen( modelFile ) > 0 ){
-                uiInfo.humanBuildListModel[j].asset[ uiInfo.humanBuildListModel[j].assetCount++ ]
-                  = uiInfo.uiDC.registerModel( modelFile );
-                uiInfo.humanBuildListModel[j].frame[h] = 0;
-              }
-            }
-            uiInfo.humanBuildListModel[j].scale = BG_BuildableConfig( i )->modelScale;
-            uiInfo.humanBuildListModel[j].zOffset = BG_BuildableConfig( i )->zOffset;
-            uiInfo.humanBuildListModel[j].cameraDist = 160;
-            uiInfo.humanBuildListModel[j].autoAdjust = qtrue;
-            uiInfo.humanBuildListModel[j].forceCentering = qfalse;
-
-            j++;
-
-            uiInfo.humanBuildCount++;
-        }
-    }
+    // UI_LoadHumanBuildsItems(0, &j, stage);
+    UI_LoadHumanBuildsItems(1, &j, stage);
+    UI_LoadHumanBuildsItems(2, &j, stage);
 }
 
 /*
@@ -3922,14 +4073,20 @@ static void UI_RunMenuScript(char **args)
                 trap_Cmd_ExecuteText(EXEC_APPEND, cmd);
         }
         else if (Q_stricmp(name, "LoadAlienBuilds") == 0)
-            UI_LoadAlienBuilds();
+        {
+          UI_LoadAlienBuildsModels();
+          UI_LoadAlienBuilds();
+        }
         else if (Q_stricmp(name, "BuildAlienBuildable") == 0)
         {
             if ((cmd = uiInfo.alienBuildList[uiInfo.alienBuildIndex].cmd))
                 trap_Cmd_ExecuteText(EXEC_APPEND, cmd);
         }
         else if (Q_stricmp(name, "LoadHumanBuilds") == 0)
-            UI_LoadHumanBuilds();
+        {
+          UI_LoadHumansBuildsModels();
+          UI_LoadHumanBuilds();
+        }
         else if (Q_stricmp(name, "BuildHumanBuildable") == 0)
         {
             if ((cmd = uiInfo.humanBuildList[uiInfo.humanBuildIndex].cmd))
