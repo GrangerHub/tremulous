@@ -2378,10 +2378,31 @@
     {
       name gsoftware
       group optionsGrp
+      type ITEM_TYPE_MULTI
+      text "Animated creep tag:"
+      cvar "cg_animatedCreep"
+      cvarFloatList { "No" 0 "Full frame ^0(Need reload)" 1 "Half frame ^0(Need reload)" 2 "1/4 frame ^0(Need reload)" 4}
+      rect SCONTENT_X (SCONTENT_Y+(4*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_TRUE
+      action
+      {
+        play "sound/misc/menu1.wav";
+      }
+    }
+
+    itemDef
+    {
+      name gsoftware
+      group optionsGrp
       type ITEM_TYPE_YESNO
       text "Dynamic Lights:"
       cvar "r_dynamiclight"
-      rect SCONTENT_X (SCONTENT_Y+(4*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(5*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
@@ -2401,7 +2422,7 @@
       type ITEM_TYPE_YESNO
       text "Draw Gun:"
       cvar "cg_drawGun"
-      rect SCONTENT_X (SCONTENT_Y+(5*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(6*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
@@ -2421,7 +2442,7 @@
       type ITEM_TYPE_YESNO
       text "Low Quality Sky:"
       cvar "r_fastsky"
-      rect SCONTENT_X (SCONTENT_Y+(6*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(7*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
@@ -2441,7 +2462,7 @@
       type ITEM_TYPE_YESNO
       text "Sync Every Frame:"
       cvar "r_finish"
-      rect SCONTENT_X (SCONTENT_Y+(7*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(8*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
@@ -2461,7 +2482,7 @@
       type ITEM_TYPE_YESNO
       text "In Game Videos:"
       cvar "r_inGameVideo"
-      rect SCONTENT_X (SCONTENT_Y+(8*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(9*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
@@ -2481,7 +2502,7 @@
       type ITEM_TYPE_YESNO
       text "Depth Sort Particles:"
       cvar "cg_depthSortParticles"
-      rect SCONTENT_X (SCONTENT_Y+(9*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(10*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
@@ -2502,7 +2523,7 @@
       text "Particle Physics:"
       cvar "cg_bounceParticles"
       cvarFloatList { "Low Quality" 0 "High Quality" 1 }
-      rect SCONTENT_X (SCONTENT_Y+(10*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(11*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
@@ -2523,7 +2544,7 @@
       text "Light Flares:"
       cvar "cg_lightFlare"
       cvarFloatList { "Off" 0 "No Fade" 1 "Timed Fade" 2 "Real Fade" 3 }
-      rect SCONTENT_X (SCONTENT_Y+(11*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(12*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
