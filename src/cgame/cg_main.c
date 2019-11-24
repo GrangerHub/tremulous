@@ -219,7 +219,7 @@ vmCvar_t  cg_debugVoices;
 vmCvar_t  ui_currentClass;
 vmCvar_t  ui_carriage;
 vmCvar_t  ui_credit;
-vmCvar_t  ui_ammoFull;
+vmCvar_t  ui_isAmmoFull;
 vmCvar_t  ui_stages;
 vmCvar_t  ui_dialog;
 vmCvar_t  ui_voteActive;
@@ -360,7 +360,7 @@ static cvarTable_t cvarTable[ ] =
   { &ui_currentClass, "ui_currentClass", "0", CVAR_ROM },
   { &ui_carriage, "ui_carriage", "", CVAR_ROM },
   { &ui_credit, "ui_credit", "0", CVAR_ROM },
-  { &ui_ammoFull, "ui_ammoFull", "1", CVAR_ROM },
+  { &ui_isAmmoFull, "ui_isAmmoFull", "1", CVAR_ROM },
   { &ui_stages, "ui_stages", "0 0", CVAR_ROM },
   { &ui_dialog, "ui_dialog", "Text not set", CVAR_ROM },
   { &ui_voteActive, "ui_voteActive", "0", CVAR_ROM },
@@ -483,7 +483,7 @@ static void CG_SetUIVars( void )
   credit = ps->persistant[ PERS_CREDIT ];
   trap_Cvar_Set( "ui_credit", va( "%d", credit > -1 ? credit : 0 ) );
 
-  trap_Cvar_Set( "ui_ammoFull", va( "%d", !CG_DoNeedAmmo(ps)));
+  trap_Cvar_Set( "ui_isAmmoFull", va( "%d", !CG_DoNeedAmmo(ps)));
 
   trap_Cvar_Set( "ui_stages", va( "%d %d", cgs.alienStage, cgs.humanStage ) );
 }
@@ -881,8 +881,13 @@ static void CG_RegisterGraphics( void )
 
   cgs.media.creepShader               = trap_R_RegisterShader( "creep" );
 
-  for( i = 0; i < 550; i++ )
+  CG_UpdateMediaFraction( 0.67f );
+  for( i = 0; i < 225; i++ )
     cgs.media.creepAnimationShader[ i ] = trap_R_RegisterShader( va( "creep%d", i ) );
+  CG_UpdateMediaFraction( 0.68f );
+  for( i = 225; i < 550; i++ )
+    cgs.media.creepAnimationShader[ i ] = trap_R_RegisterShader( va( "creep%d", i ) );
+  CG_UpdateMediaFraction( 0.69f );
 
   cgs.media.scannerBlipShader         = trap_R_RegisterShader( "gfx/2d/blip" );
   cgs.media.scannerLineShader         = trap_R_RegisterShader( "gfx/2d/stalk" );

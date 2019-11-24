@@ -1569,7 +1569,7 @@ extern  vmCvar_t    cg_debugVoices;
 extern  vmCvar_t    ui_currentClass;
 extern  vmCvar_t    ui_carriage;
 extern  vmCvar_t    ui_credit;
-extern  vmCvar_t    ui_ammoFull;
+extern  vmCvar_t    ui_isAmmoFull;
 extern  vmCvar_t    ui_stages;
 extern  vmCvar_t    ui_dialog;
 extern  vmCvar_t    ui_voteActive;
