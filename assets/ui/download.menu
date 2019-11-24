@@ -1,4 +1,5 @@
 #include "ui/menudef.h"
+#include "ui/menustyle.h"
 
 {
   \\ DOWNLOAD \\
@@ -9,7 +10,7 @@
     visible MENU_FALSE
     fullscreen MENU_FALSE
     rect 158 80 320 320
-    focusColor 1 .75 0 1
+    focusColor WINDOW_FOCUSCOLOR
     style WINDOW_STYLE_FILLED
     border WINDOW_BORDER_FULL
     popup

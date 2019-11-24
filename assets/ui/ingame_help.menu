@@ -1,4 +1,5 @@
 #include "ui/menudef.h"
+#include "ui/menustyle.h"
 
 {
 
@@ -26,7 +27,7 @@
     fullscreen MENU_FALSE
     outOfBoundsClick      // this closes the window if it gets a click out of the rectangle
     rect X Y W H
-    focusColor 1 .75 0 1
+    focusColor WINDOW_FOCUSCOLOR
     aspectBias ALIGN_LEFT
     onOpen {
       setFocus list;

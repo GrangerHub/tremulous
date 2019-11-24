@@ -1,4 +1,5 @@
 #include "ui/menudef.h"
+#include "ui/menustyle.h"
 
 {
 
@@ -34,7 +35,7 @@
     fullscreen MENU_FALSE
     outOfBoundsClick
     rect (320-(W/2)) (240-(H/2)) W H
-    focusColor 1 .75 0 1
+    focusColor HUMANS_WINDOW_FOCUSCOLOR
     style WINDOW_STYLE_FILLED
     popup
     onOpen

@@ -1,5 +1,6 @@
-// vim:ft=menu
+focusColor WINDOW_FOCUSCOLOR// vim:ft=menu
 #include "ui/menudef.h"
+#include "ui/menustyle.h"
 #include "ui/menu_bool.h"
 
 {
@@ -26,7 +27,7 @@
         fullscreen true
         rect 0 0 640 480// Size and position of the menu
         visible true   // Visible on open
-        focuscolor 1 .75 0 1// Menu focus color for text and items
+        focusColor WINDOW_FOCUSCOLOR// Menu focus color for text and items
         background "ui/assets/mainmenu.jpg"
         aspectbias ASPECT_NONE
 
