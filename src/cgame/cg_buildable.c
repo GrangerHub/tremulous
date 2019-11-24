@@ -106,11 +106,12 @@ CG_Creep
 static void CG_Creep( centity_t *cent )
 {
   int           msec;
-  float         frac;
+  float         size, frac;
   trace_t       tr;
   vec3_t        temp, origin;
   int           scaleUpTime = BG_Buildable( cent->currentState.modelindex )->buildTime;
   int           time, frame;
+  int           animatedCreep = cg_animatedCreep.integer;
 
   time = cent->currentState.time;
 
@@ -140,11 +141,24 @@ static void CG_Creep( centity_t *cent )
 
   VectorCopy( tr.endpos, origin );
 
-  frame = (int)((float)(CREEP_FRAMES - 1) * frac);
 
-  if( frac > 0.0f && tr.fraction < 1.0f )
+  if (animatedCreep > 0)
+  {
+    frame = (int)((float)(CREEP_FRAMES - 1) * frac);
+
+    if( frac > 0.0f && tr.fraction < 1.0f )
     CG_ImpactMark( cgs.media.creepAnimationShader[ frame ], origin, cent->currentState.origin2,
-                   0.0f, 1.0f, 1.0f, 1.0f, 1.0f, qfalse, CREEP_SIZE, qtrue );
+      0.0f, 1.0f, 1.0f, 1.0f, 1.0f, qfalse, CREEP_SIZE, qtrue );
+  }
+  else
+  {
+    size = CREEP_SIZE * frac;
+
+    if( size > 0.0f && tr.fraction < 1.0f )
+      CG_ImpactMark( cgs.media.creepShader, origin, cent->currentState.origin2,
+                     0.0f, 1.0f, 1.0f, 1.0f, 1.0f, qfalse, size, qtrue );
+  }
+
 }
 
 /*

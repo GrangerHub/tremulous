@@ -204,6 +204,8 @@ vmCvar_t  cg_rangeMarkerForBlueprint;
 vmCvar_t  cg_rangeMarkerBuildableTypes;
 vmCvar_t  cg_binaryShaderScreenScale;
 
+vmCvar_t  cg_animatedCreep;
+
 vmCvar_t  cg_painBlendUpRate;
 vmCvar_t  cg_painBlendDownRate;
 vmCvar_t  cg_painBlendMax;
@@ -342,6 +344,8 @@ static cvarTable_t cvarTable[ ] =
   { &cg_rangeMarkerBuildableTypes, "cg_rangeMarkerBuildableTypes", "support", CVAR_ARCHIVE },
   { NULL, "cg_buildableRangeMarkerMask", "", CVAR_USERINFO },
   { &cg_binaryShaderScreenScale, "cg_binaryShaderScreenScale", "1.0", CVAR_ARCHIVE },
+
+  { &cg_animatedCreep, "cg_animatedCreep", "2", CVAR_ARCHIVE },
 
   { &cg_hudFiles, "cg_hudFiles", "ui/hud.txt", CVAR_ARCHIVE},
   { NULL, "cg_alienConfig", "", CVAR_ARCHIVE },
@@ -829,6 +833,7 @@ static void CG_RegisterSounds( void )
 //===================================================================================
 
 
+#define CREEP_FRAMES          550
 /*
 =================
 CG_RegisterGraphics
@@ -839,6 +844,8 @@ This function may execute for a couple of minutes with a slow disk.
 static void CG_RegisterGraphics( void )
 {
   int         i;
+  int         animatedCreep = cg_animatedCreep.integer;
+
   static char *sb_nums[ 11 ] =
   {
     "gfx/2d/numbers/zero_32b",
@@ -881,13 +888,18 @@ static void CG_RegisterGraphics( void )
 
   cgs.media.creepShader               = trap_R_RegisterShader( "creep" );
 
-  CG_UpdateMediaFraction( 0.67f );
-  for( i = 0; i < 225; i++ )
-    cgs.media.creepAnimationShader[ i ] = trap_R_RegisterShader( va( "creep%d", i ) );
-  CG_UpdateMediaFraction( 0.68f );
-  for( i = 225; i < 550; i++ )
-    cgs.media.creepAnimationShader[ i ] = trap_R_RegisterShader( va( "creep%d", i ) );
-  CG_UpdateMediaFraction( 0.69f );
+  if (animatedCreep > 0)
+  {
+    CG_UpdateMediaFraction( 0.67f );
+    for ( i = 0; i < CREEP_FRAMES; i++ )
+    {
+      if (i % animatedCreep == 0 || i == CREEP_FRAMES - 1)
+        cgs.media.creepAnimationShader[ i ] = trap_R_RegisterShader( va( "creep%d", i ) );
+      else
+        cgs.media.creepAnimationShader[ i ] = cgs.media.creepAnimationShader[ (i / animatedCreep) * animatedCreep ];
+    }
+    CG_UpdateMediaFraction( 0.685f );
+  }
 
   cgs.media.scannerBlipShader         = trap_R_RegisterShader( "gfx/2d/blip" );
   cgs.media.scannerLineShader         = trap_R_RegisterShader( "gfx/2d/stalk" );
