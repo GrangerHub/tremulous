@@ -611,16 +611,19 @@ CG_GhostBuildable
 */
 void CG_GhostBuildable( buildable_t buildable )
 {
-  refEntity_t     ent;
+  refEntity_t     ent[MAX_BUILDABLE_MODELS];
   playerState_t   *ps;
   vec3_t          angles, entity_origin;
   vec3_t          mins, maxs;
   trace_t         tr;
   float           scale;
+  int             i;
 
   ps = &cg.predictedPlayerState;
-
-  memset( &ent, 0, sizeof( ent ) );
+  for( i = 0; i < MAX_BUILDABLE_MODELS; i++ )
+  {
+    memset( &(ent[i]), 0, sizeof( ent[i] ) );
+  }
 
   BG_BuildableBoundingBox( buildable, mins, maxs );
 
@@ -630,37 +633,51 @@ void CG_GhostBuildable( buildable_t buildable )
     CG_GhostBuildableRangeMarker( buildable, entity_origin, tr.plane.normal );
 
   CG_PositionAndOrientateBuildable( ps->viewangles, entity_origin, tr.plane.normal, ps->clientNum,
-                                    mins, maxs, ent.axis, ent.origin );
+                                    mins, maxs, ent[0].axis, ent[0].origin );
 
   //offset on the Z axis if required
-  VectorMA( ent.origin, BG_BuildableConfig( buildable )->zOffset, tr.plane.normal, ent.origin );
+  VectorMA( ent[0].origin, BG_BuildableConfig( buildable )->zOffset, tr.plane.normal, ent[0].origin );
 
-  VectorCopy( ent.origin, ent.lightingOrigin );
-  VectorCopy( ent.origin, ent.oldorigin ); // don't positionally lerp at all
 
-  ent.hModel = cg_buildables[ buildable ].models[ 0 ];
-
-  if( ps->stats[ STAT_BUILDABLE ] & SB_VALID_TOGGLEBIT )
-    ent.customShader = cgs.media.greenBuildShader;
-  else
-    ent.customShader = cgs.media.redBuildShader;
-
-  //rescale the model
   scale = BG_BuildableConfig( buildable )->modelScale;
 
-  if( scale != 1.0f )
+  for( i = 0; i < MAX_BUILDABLE_MODELS; i++ )
   {
-    VectorScale( ent.axis[ 0 ], scale, ent.axis[ 0 ] );
-    VectorScale( ent.axis[ 1 ], scale, ent.axis[ 1 ] );
-    VectorScale( ent.axis[ 2 ], scale, ent.axis[ 2 ] );
+    if( cg_buildables[ buildable ].models[ i ] )
+    {
+      if (i != 0)
+      {
+        VectorCopy( ent[0].origin, ent[i].origin );
+        AxisCopy( ent[0].axis, ent[i].axis );
+      }
 
-    ent.nonNormalizedAxes = qtrue;
+      VectorCopy( ent[i].origin, ent[i].lightingOrigin );
+      VectorCopy( ent[i].origin, ent[i].oldorigin ); // don't positionally lerp at all
+
+      ent[i].hModel = cg_buildables[ buildable ].models[ i ];
+      ent[i].frame = cg_buildables[ buildable ].animations[ BANIM_CONSTRUCT1 ].firstFrame;
+
+      if( ps->stats[ STAT_BUILDABLE ] & SB_VALID_TOGGLEBIT )
+        ent[i].customShader = cgs.media.greenBuildShader;
+      else
+        ent[i].customShader = cgs.media.redBuildShader;
+
+      //rescale the model
+      if( scale != 1.0f )
+      {
+        VectorScale( ent[i].axis[ 0 ], scale, ent[i].axis[ 0 ] );
+        VectorScale( ent[i].axis[ 1 ], scale, ent[i].axis[ 1 ] );
+        VectorScale( ent[i].axis[ 2 ], scale, ent[i].axis[ 2 ] );
+
+        ent[i].nonNormalizedAxes = qtrue;
+      }
+      else
+        ent[i].nonNormalizedAxes = qfalse;
+
+      // add to refresh list
+      trap_R_AddRefEntityToScene( &ent[i] );
+    }
   }
-  else
-    ent.nonNormalizedAxes = qfalse;
-
-  // add to refresh list
-  trap_R_AddRefEntityToScene( &ent );
 }
 
 /*
