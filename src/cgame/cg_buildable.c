@@ -632,7 +632,7 @@ void CG_GhostBuildable( buildable_t buildable )
   if( cg_rangeMarkerForBlueprint.integer && tr.entityNum != ENTITYNUM_NONE )
     CG_GhostBuildableRangeMarker( buildable, entity_origin, tr.plane.normal );
 
-  CG_PositionAndOrientateBuildable( ps->viewangles, entity_origin, tr.plane.normal, ps->clientNum,
+  CG_PositionAndOrientateBuildable( angles, entity_origin, tr.plane.normal, ps->clientNum,
                                     mins, maxs, ent[0].axis, ent[0].origin );
 
   //offset on the Z axis if required

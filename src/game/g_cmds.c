@@ -2711,7 +2711,7 @@ void Cmd_Build_f( gentity_t *ent )
   char          s[ MAX_TOKEN_CHARS ];
   buildable_t   buildable;
   float         dist;
-  vec3_t        origin, normal;
+  vec3_t        origin, normal, angles;
   int           groundEntNum;
   team_t        team;
 
@@ -2755,7 +2755,7 @@ void Cmd_Build_f( gentity_t *ent )
     dist = BG_Class( ent->client->ps.stats[ STAT_CLASS ] )->buildDist;
 
     //these are the errors displayed when the builder first selects something to use
-    switch( G_CanBuild( ent, buildable, dist, origin, normal, &groundEntNum ) )
+    switch( G_CanBuild( ent, buildable, dist, origin, normal, angles, &groundEntNum ) )
     {
       // can place right away, set the blueprint and the valid togglebit
       case IBE_NONE:
@@ -2830,6 +2830,83 @@ void Cmd_Build_f( gentity_t *ent )
   else
     G_TriggerMenu( ent->client->ps.clientNum, MN_B_CANNOT );
 }
+
+
+/*
+=================
+Cmd_RotateBuild
+=================
+*/
+static void Cmd_RotateBuild( gentity_t *ent, int unit, qboolean add )
+{
+  int currentAngle;
+  int finalAngle;
+
+  if ( !ent->client || ent->client->ps.stats[ STAT_BUILDABLE ] & SB_BUILDABLE_MASK == 0 )
+    return;
+
+  if (add == qtrue)
+  {
+    currentAngle =
+    (ent->client->ps.stats[ STAT_BUILDABLE ] & SB_ROTATION_MASK)
+    / SB_ROTATION_UNIT;
+    finalAngle = currentAngle + unit;
+  }
+  else
+  {
+    finalAngle = unit;
+  }
+  finalAngle %= 16;
+  if (finalAngle < 0)
+    finalAngle -= 16;
+
+  ent->client->ps.stats[ STAT_BUILDABLE ] &= ~SB_ROTATION_MASK;  // Earse rotation data
+  ent->client->ps.stats[ STAT_BUILDABLE ] |= SB_ROTATION_UNIT * finalAngle;  // Write rotation data
+}
+
+
+/*
+=================
+Cmd_RotateBuild_f
+=================
+*/
+void Cmd_RotateBuild_f( gentity_t *ent )
+{
+  int   unit;
+  char  arg[16];
+  char  *argcpy;
+
+  trap_Argv( 1, arg, sizeof( arg ) );
+  argcpy = arg;
+  while (*argcpy && isspace(*argcpy))
+    argcpy++;
+  unit = atoi(arg);
+
+  Cmd_RotateBuild( ent, unit, *argcpy == '-' || *argcpy == '+' );
+}
+
+
+/*
+=================
+Cmd_RotateBuildLeft_f
+=================
+*/
+void Cmd_RotateBuildLeft_f( gentity_t *ent )
+{
+  Cmd_RotateBuild( ent, -1, qtrue );
+}
+
+
+/*
+=================
+Cmd_RotateBuildRight_f
+=================
+*/
+void Cmd_RotateBuildRight_f( gentity_t *ent )
+{
+  Cmd_RotateBuild( ent, 1, qtrue );
+}
+
 
 /*
 =================
@@ -3520,6 +3597,9 @@ int G_FloodLimited( gentity_t *ent )
 commands_t cmds[ ] = {
   { "a", CMD_MESSAGE|CMD_INTERMISSION, Cmd_AdminMessage_f },
   { "build", CMD_TEAM|CMD_ALIVE, Cmd_Build_f },
+  { "rotatebuild", CMD_TEAM|CMD_ALIVE, Cmd_RotateBuild_f },
+  { "rotatebuildleft", CMD_TEAM|CMD_ALIVE, Cmd_RotateBuildLeft_f },
+  { "rotatebuildright", CMD_TEAM|CMD_ALIVE, Cmd_RotateBuildRight_f },
   { "buy", CMD_HUMAN|CMD_ALIVE, Cmd_Buy_f },
   { "callteamvote", CMD_MESSAGE|CMD_TEAM, Cmd_CallVote_f },
   { "callvote", CMD_MESSAGE, Cmd_CallVote_f },

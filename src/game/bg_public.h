@@ -259,7 +259,10 @@ typedef enum
 #define SS_HEALING_2X           0x00000800 // medkit or double healing rate
 #define SS_HEALING_3X           0x00001000 // triple healing rate
 
-#define SB_VALID_TOGGLEBIT      0x00002000
+#define SB_BUILDABLE_MASK       0x000000ff
+#define SB_ROTATION_MASK        0x0000f000
+#define SB_ROTATION_UNIT        0x00001000
+#define SB_VALID_TOGGLEBIT      0x00000200
 
 // player_state->persistant[] indexes
 // these fields are the only part of player_state that isn't

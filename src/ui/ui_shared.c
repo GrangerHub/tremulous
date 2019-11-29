@@ -4812,6 +4812,9 @@ static bind_t g_bindings[] = {{"+scores", K_TAB, -1, -1, -1, -1}, {"+button2", K
     {"reload", 'r', -1, -1, -1, -1},  // reload
     {"buy ammo", 'b', -1, -1, -1, -1},  // buy ammo
     {"itemact medkit", 'm', -1, -1, -1, -1},  // use medkit
+    {"rotatebuildleft", ',', -1, -1, -1, -1},  // Rotate ghost build to left
+    {"rotatebuildright", '.', -1, -1, -1, -1},  // Rotate ghost build to right
+    {"rotatebuild", 'l', -1, -1, -1, -1},  // Reset ghost build rotation
     {"+button7", 'q', -1, -1, -1, -1},  // buildable use
     {"deconstruct", 'e', -1, -1, -1, -1},  // buildable destroy
     {"weapprev", '[', -1, -1, -1, -1}, {"weapnext", ']', -1, -1, -1, -1}, {"+button3", K_MOUSE3, -1, -1, -1, -1},

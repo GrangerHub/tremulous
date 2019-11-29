@@ -1254,8 +1254,8 @@ void CG_AddViewWeapon( playerState_t *ps )
     return;
 
   // draw a prospective buildable infront of the player
-  if( ( ps->stats[ STAT_BUILDABLE ] & ~SB_VALID_TOGGLEBIT ) > BA_NONE )
-    CG_GhostBuildable( ps->stats[ STAT_BUILDABLE ] & ~SB_VALID_TOGGLEBIT );
+  if( ( ps->stats[ STAT_BUILDABLE ] & SB_BUILDABLE_MASK ) > BA_NONE )
+    CG_GhostBuildable( ps->stats[ STAT_BUILDABLE ] & SB_BUILDABLE_MASK );
 
   // no gun if in third person view
   if( cg.renderingThirdPerson )

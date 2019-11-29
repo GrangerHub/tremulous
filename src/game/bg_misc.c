@@ -3327,6 +3327,25 @@ void BG_GetClientViewOrigin( const playerState_t *ps, vec3_t viewOrigin )
 
 /*
 ===============
+BG_GetBuildableRotation
+
+Read the custom rotation added by the player
+===============
+*/
+static int BG_GetBuildableRotation( const playerState_t *ps )
+{
+    int angle = 0;
+
+    // Get the angle in hexadecimal with value from 0 to 15
+    angle = (ps->stats[ STAT_BUILDABLE ] & SB_ROTATION_MASK) / SB_ROTATION_UNIT;
+    // Convert to degree
+    angle = (int)((float)angle * 360.0f/16.0f);
+
+    return (angle);
+}
+
+/*
+===============
 BG_PositionBuildableRelativeToPlayer
 
 Find a place to build a buildable
@@ -3338,7 +3357,7 @@ void BG_PositionBuildableRelativeToPlayer( const playerState_t *ps,
                                                           const vec3_t, const vec3_t, int, int ),
                                            vec3_t outOrigin, vec3_t outAngles, trace_t *tr )
 {
-  vec3_t  forward, entityOrigin, targetOrigin;
+  vec3_t  forward, rotated, entityOrigin, targetOrigin;
   vec3_t  angles, playerOrigin, playerNormal;
   float   buildDist;
 
@@ -3352,6 +3371,7 @@ void BG_PositionBuildableRelativeToPlayer( const playerState_t *ps,
   ProjectPointOnPlane( forward, forward, playerNormal );
   VectorNormalize( forward );
 
+  // Move the build to `buildDist` distance forwaring the player
   VectorMA( playerOrigin, buildDist, forward, entityOrigin );
 
   VectorCopy( entityOrigin, targetOrigin );
@@ -3365,7 +3385,10 @@ void BG_PositionBuildableRelativeToPlayer( const playerState_t *ps,
   // The mask is MASK_DEADSOLID on purpose to avoid collisions with other entities
   (*trace)( tr, entityOrigin, mins, maxs, targetOrigin, ps->clientNum, MASK_DEADSOLID );
   VectorCopy( tr->endpos, outOrigin );
-  vectoangles( forward, outAngles );
+
+  // Create a rotated vector from the forwarding. The norrnal was calculated from `trace`
+  RotatePointAroundVector(rotated, tr->plane.normal, forward, BG_GetBuildableRotation(ps));
+  vectoangles( rotated, outAngles );
 }
 
 /*

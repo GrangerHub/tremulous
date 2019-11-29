@@ -799,7 +799,7 @@ buildFire
 void buildFire( gentity_t *ent, dynMenu_t menu )
 {
   buildable_t buildable = ( ent->client->ps.stats[ STAT_BUILDABLE ]
-                            & ~SB_VALID_TOGGLEBIT );
+                            & SB_BUILDABLE_MASK );
 
   if( buildable > BA_NONE )
   {

@@ -1273,6 +1273,66 @@
       }
     }
 
+    itemDef
+    {
+      name upgrades
+      group optionsGrp
+      type ITEM_TYPE_BIND
+      text "Rotate build left:"
+      cvar "rotatebuildleft"
+      rect SCONTENT_X (SCONTENT_Y+(8*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+      action
+      {
+        play "sound/misc/menu1.wav";
+      }
+    }
+
+    itemDef
+    {
+      name upgrades
+      group optionsGrp
+      type ITEM_TYPE_BIND
+      text "Rotate build right:"
+      cvar "rotatebuildright"
+      rect SCONTENT_X (SCONTENT_Y+(9*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+      action
+      {
+        play "sound/misc/menu1.wav";
+      }
+    }
+
+    itemDef
+    {
+      name upgrades
+      group optionsGrp
+      type ITEM_TYPE_BIND
+      text "Reset build rotation:"
+      cvar "rotatebuild"
+      rect SCONTENT_X (SCONTENT_Y+(10*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+      action
+      {
+        play "sound/misc/menu1.wav";
+      }
+    }
+
 //////// MISC
 
     itemDef
