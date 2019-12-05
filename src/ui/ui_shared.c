@@ -4819,7 +4819,7 @@ static bind_t g_bindings[] = {{"+scores", K_TAB, -1, -1, -1, -1}, {"+button2", K
     {"deconstruct", 'e', -1, -1, -1, -1},  // buildable destroy
     {"weapprev", '[', -1, -1, -1, -1}, {"weapnext", ']', -1, -1, -1, -1}, {"+button3", K_MOUSE3, -1, -1, -1, -1},
     {"+button4", K_MOUSE4, -1, -1, -1, -1}, {"vote yes", K_F1, -1, -1, -1, -1}, {"vote no", K_F2, -1, -1, -1, -1},
-    {"teamvote yes", K_F3, -1, -1, -1, -1}, {"teamvote no", K_F4, -1, -1, -1, -1},
+    {"teamvote yes", K_F3, -1, -1, -1, -1}, {"teamvote no", K_F4, -1, -1, -1, -1}, {"ready", K_F5, -1, -1, -1, -1},
     {"scoresUp", K_KP_PGUP, -1, -1, -1, -1}, {"scoresDown", K_KP_PGDN, -1, -1, -1, -1},
     {"screenshotJPEG", -1, -1, -1, -1, -1}, {"messagemode", -1, -1, -1, -1, -1}, {"messagemode2", -1, -1, -1, -1, -1}};
 
