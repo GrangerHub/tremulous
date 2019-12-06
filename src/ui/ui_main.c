@@ -1819,6 +1819,31 @@ static stage_t UI_GetCurrentHumanStage(void)
 
 /*
 ===============
+UI_GetStageText
+===============
+*/
+static char *UI_GetStageText(int stages)
+{
+    if (stages == (( 1 << S1 )|( 1 << S2 )|( 1 << S3 )))
+      return "from stage 1";
+    else if (stages == (( 1 << S2 )|( 1 << S3 )))
+      return "from stage 2";
+    else if (stages == (( 1 << S1 )|( 1 << S3 )))
+      return "at stages 1 and 3";
+    else if (stages == (( 1 << S1 )|( 1 << S2 )))
+      return "at stages 1 and 2";
+    else if (stages == (( 1 << S3 )))
+      return "at stage 3";
+    else if (stages == ( 1 << S1 ))
+      return "at stage 1";
+    else if (stages == ( 1 << S2 ))
+      return "at stage 2";
+    else
+      return "nevertime";
+}
+
+/*
+===============
 UI_DrawInfoPane
 ===============
 */
@@ -1848,47 +1873,48 @@ static void UI_DrawInfoPane(menuItem_t *item, rectDef_t *rect, float text_x, flo
                         ALIEN_CREDITS_PER_KILL - 1) /
                     ALIEN_CREDITS_PER_KILL;
 
-            if (value < 1)
-            {
-                s = va("%s\n\n%s", BG_ClassConfig(item->v.pclass)->humanName, BG_Class(item->v.pclass)->info);
-            }
-            else
-            {
-                s = va("%s\n\n%s\n\nFrags: %d", BG_ClassConfig(item->v.pclass)->humanName,
-                    BG_Class(item->v.pclass)->info, value);
-            }
+            s = va("%s\n\n%s\nAvailable %s.%s",
+                  BG_ClassConfig(item->v.pclass)->humanName,
+                  BG_Class(item->v.pclass)->info,
+                  UI_GetStageText(BG_Class(item->v.pclass)->stages),
+                  (
+                    (value > 0) ?
+                      va("\n\nFrags: %d", value) :
+                      ""
+                  )
+                );
 
             break;
 
         case INFOTYPE_WEAPON:
             value = BG_Weapon(item->v.weapon)->price;
 
-            if (value == 0)
-            {
-                s = va(
-                    "%s\n\n%s\n\nCredits: Free", BG_Weapon(item->v.weapon)->humanName, BG_Weapon(item->v.weapon)->info);
-            }
-            else
-            {
-                s = va("%s\n\n%s\n\nCredits: %d", BG_Weapon(item->v.weapon)->humanName, BG_Weapon(item->v.weapon)->info,
-                    value);
-            }
+            s = va("%s\n\n%s\nAvailable %s.\n\nCredits: %s",
+                  BG_Weapon(item->v.weapon)->humanName,
+                  BG_Weapon(item->v.weapon)->info,
+                  UI_GetStageText(BG_Weapon(item->v.weapon)->stages),
+                  (
+                    (value > 0) ?
+                      va("%d", value) :
+                      "Free"
+                  )
+                );
 
             break;
 
         case INFOTYPE_UPGRADE:
             value = BG_Upgrade(item->v.upgrade)->price;
 
-            if (value == 0)
-            {
-                s = va("%s\n\n%s\n\nCredits: Free", BG_Upgrade(item->v.upgrade)->humanName,
-                    BG_Upgrade(item->v.upgrade)->info);
-            }
-            else
-            {
-                s = va("%s\n\n%s\n\nCredits: %d", BG_Upgrade(item->v.upgrade)->humanName,
-                    BG_Upgrade(item->v.upgrade)->info, value);
-            }
+            s = va("%s\n\n%s\nAvailable %s.\n\nCredits: %s",
+                  BG_Upgrade(item->v.upgrade)->humanName,
+                  BG_Upgrade(item->v.upgrade)->info,
+                  UI_GetStageText(BG_Upgrade(item->v.upgrade)->stages),
+                  (
+                    (value > 0) ?
+                      va("%d", value) :
+                      "Free"
+                  )
+                );
 
             break;
 
@@ -1909,15 +1935,16 @@ static void UI_DrawInfoPane(menuItem_t *item, rectDef_t *rect, float text_x, flo
                     break;
             }
 
-            if (value == 0)
-            {
-                s = va("%s\n\n%s", BG_Buildable(item->v.buildable)->humanName, BG_Buildable(item->v.buildable)->info);
-            }
-            else
-            {
-                s = va("%s\n\n%s\n\n%s: %d", BG_Buildable(item->v.buildable)->humanName,
-                    BG_Buildable(item->v.buildable)->info, string, value);
-            }
+            s = va("%s\n\n%s\nAvailable %s.%s",
+                BG_Buildable(item->v.buildable)->humanName,
+                BG_Buildable(item->v.buildable)->info,
+                UI_GetStageText(BG_Buildable(item->v.buildable)->stages),
+                (
+                  (value > 0) ?
+                    va("\n\n%s: %d", string, value) :
+                    ""
+                )
+              );
 
             break;
     }
