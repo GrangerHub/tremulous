@@ -335,8 +335,8 @@ static cvarTable_t cvarTable[ ] =
   { &cg_tutorial, "cg_tutorial", "1", CVAR_ARCHIVE },
 
   { &cg_rangeMarkerDrawSurface, "cg_rangeMarkerDrawSurface", "1", CVAR_ARCHIVE },
-  { &cg_rangeMarkerDrawIntersection, "cg_rangeMarkerDrawIntersection", "1", CVAR_ARCHIVE },
-  { &cg_rangeMarkerDrawFrontline, "cg_rangeMarkerDrawFrontline", "1", CVAR_ARCHIVE },
+  { &cg_rangeMarkerDrawIntersection, "cg_rangeMarkerDrawIntersection", "0", CVAR_ARCHIVE },
+  { &cg_rangeMarkerDrawFrontline, "cg_rangeMarkerDrawFrontline", "0", CVAR_ARCHIVE },
   { &cg_rangeMarkerSurfaceOpacity, "cg_rangeMarkerSurfaceOpacity", "0.08", CVAR_ARCHIVE },
   { &cg_rangeMarkerLineOpacity, "cg_rangeMarkerLineOpacity", "0.4", CVAR_ARCHIVE },
   { &cg_rangeMarkerLineThickness, "cg_rangeMarkerLineThickness", "4.0", CVAR_ARCHIVE },
