@@ -5262,8 +5262,10 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
     y = SCROLLBAR_Y(item) + (listPtr->elementHeight * renderPos);
     w = item->window.rect.w - (two * item->window.borderSize);
 
+    highlight = highlight && row == item->cursorPos;
+
     if (scrollbar)
-        w -= SCROLLBAR_ARROW_WIDTH;
+        w -= SCROLLBAR_ARROW_WIDTH + 1.0f;
 
     if (listPtr->elementStyle == LISTBOX_IMAGE)
     {
@@ -5274,7 +5276,7 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
         if (image)
             DC->drawHandlePic(x + one, y + 1.0f, listPtr->elementWidth - two, listPtr->elementHeight - 2.0f, image);
 
-        if (highlight && row == item->cursorPos)
+        if (highlight)
         {
             DC->drawRect(
                 x, y, listPtr->elementWidth, listPtr->elementHeight, item->window.borderSize, item->window.borderColor);
@@ -5287,6 +5289,14 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
         const float m = UI_Text_EmHeight(item->textscale);
         char text[MAX_STRING_CHARS];
         qhandle_t optionalImage;
+
+        if (highlight)
+        {
+          if( item->window.border == WINDOW_BORDER_ROUNDED )
+              DC->fillRoundedRect(x, y, w, listPtr->elementHeight, item->window.borderSize, item->window.borderStyle, item->window.outlineColor);
+          else
+              DC->fillRect(x, y, w, listPtr->elementHeight, item->window.outlineColor);
+        }
 
         if (listPtr->numColumns > 0)
         {
@@ -5342,7 +5352,7 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
                     }
 
                     UI_Text_Paint(x + columnPos + alignOffset, y + m + ((listPtr->elementHeight - m) / 2.0f),
-                        item->textscale, item->window.foreColor, text, 0, 0, item->textStyle);
+                        item->textscale, (highlight ? menu->focusColor : item->window.foreColor), text, 0, 0, item->textStyle);
                 }
 
                 UI_ClearClipRegion();
@@ -5366,14 +5376,11 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
             else if (text[0])
             {
                 UI_Text_Paint(x + offset, y + m + ((listPtr->elementHeight - m) / 2.0f), item->textscale,
-                    item->window.foreColor, text, 0, 0, item->textStyle);
+                    (highlight ? menu->focusColor : item->window.foreColor), text, 0, 0, item->textStyle);
             }
 
             UI_ClearClipRegion();
         }
-
-        if (highlight && row == item->cursorPos)
-            DC->fillRect(x, y, w, listPtr->elementHeight, item->window.outlineColor);
     }
 }
 
