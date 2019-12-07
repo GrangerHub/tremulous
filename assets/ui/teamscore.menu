@@ -24,7 +24,7 @@
     visible MENU_FALSE
     fullscreen MENU_FALSE
     rect (320-(W/2)) (240-(H/2)) W H
-    focusColor WINDOW_FOCUSCOLOR
+    focusColor .75 .75 .75 1  // Avoid focus
     style WINDOW_STYLE_EMPTY
 
     // TEAM NAME  //
