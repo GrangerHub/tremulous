@@ -1986,6 +1986,7 @@ static void UI_DrawInfoPaneModel(menuItemModel_t *model, rectDef_t *rect)
   float suggestedDist;
   int i;
   int millisPerDeg = 100;  // 36s = 1 turn
+  float tmpFrame;
 
   if (model->assetCount == 0)
     return;
@@ -2090,8 +2091,22 @@ static void UI_DrawInfoPaneModel(menuItemModel_t *model, rectDef_t *rect)
     ent[i].hModel = model->asset[i];
     if (model->skin[i])
       ent[i].customSkin = model->skin[i];
-    ent[i].frame = model->frame[i]; // Only static for now
-    ent[i].oldframe = model->frame[i]; // Only static for now
+    if (model->frame[i] == -1)
+    {
+      // Animate
+      tmpFrame = (uiInfo.uiDC.realTime * model->animationFPS[i]) / 1000;
+      ent[i].backlerp = 1.0f - (tmpFrame - floor(tmpFrame));
+      tmpFrame = (int)tmpFrame % (model->animation[i][1] - model->animation[i][0])
+                  + model->animation[i][0];
+      ent[i].frame = tmpFrame + 1;
+      ent[i].oldframe = tmpFrame;
+    }
+    else
+    {
+      // Static
+      ent[i].frame = model->frame[i];
+      ent[i].oldframe = model->frame[i];
+    }
     if (i && strlen(model->parent[i - 1].parentTagName))
     {
       AxisClear(ent[i].axis);

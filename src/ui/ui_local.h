@@ -187,6 +187,8 @@ typedef struct {
     int assetCount;
     qhandle_t skin[4];
     int frame[4];
+    int animation[4][2];
+    float animationFPS[4];
     menuItemModelParent_t parent[3];
     float scale;
     float zOffset;
