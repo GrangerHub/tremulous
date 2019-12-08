@@ -2872,7 +2872,7 @@ static qboolean UI_IsAmmoFull(void)
 {
   char ammoFullCvar[MAX_TOKEN_CHARS];
 
-  trap_Cvar_VariableStringBuffer("ui_isAmmoFull", ammoFullCvar, sizeof(ammoFullCvar));
+  trap_Cvar_VariableStringBuffer("ui_ammoFull", ammoFullCvar, sizeof(ammoFullCvar));
   return (atoi(ammoFullCvar));
 }
 
