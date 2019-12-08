@@ -1874,6 +1874,89 @@ static char *UI_GetStageText(int stages)
 
 /*
 ===============
+UI_DrawNewProgressBar
+===============
+*/
+static void UI_DrawNewProgressBar( rectDef_t *rect, vec4_t color,
+                                vec4_t backColor, float scale, int align,
+                                int textalign, int textStyle, float borderSize,
+                                float progress )
+{
+  float   rimWidth;
+  float   doneWidth, leftWidth;
+  float   tx, ty;
+  char    textBuffer[ 8 ];
+  float   borderStyle[ 4 ];
+  int     w, h;
+
+  borderStyle[0] = BORDER_FOLD;
+  borderStyle[1] = BORDER_FOLD;
+  borderStyle[2] = BORDER_FOLD;
+  borderStyle[3] = BORDER_FOLD;
+
+  if( borderSize >= 0.0f )
+    rimWidth = borderSize;
+  else
+  {
+    rimWidth = rect->h / 20.0f;
+    if( rimWidth < 0.6f )
+      rimWidth = 0.6f;
+  }
+
+  if( progress < 0.0f )
+    progress = 0.0f;
+  else if( progress > 1.0f )
+    progress = 1.0f;
+
+  doneWidth = ( rect->w - (8 + 6) * rimWidth ) * progress + 6 * rimWidth;
+
+  //draw rim and bar
+  UI_DrawRoundedRect(rect->x, rect->y, rect->w, rect->h, rimWidth, borderStyle, color);
+  UI_FillRoundedRect(
+    rect->x + rimWidth * 4,
+    rect->y + rimWidth * 4,
+    doneWidth,
+    rect->h - rimWidth * 8,
+    rimWidth, borderStyle, backColor);
+
+
+  //draw text
+  if( scale > 0.0 )
+  {
+    Com_sprintf( textBuffer, sizeof( textBuffer ), "%d%%", (int)( progress * 100 ) );
+    w = UI_Text_Width(textBuffer, scale);
+    h = UI_Text_Height(textBuffer, scale);
+    UI_Text_Paint( rect->x + (rect->w - w ) / 2.0, rect->y + h + ( rect->h - h ) / 2.0f, scale, color, textBuffer, 0, 0, textStyle );
+  }
+}
+
+/*
+===============
+UI_DrawDownloadOverall
+===============
+*/
+static void UI_DrawDownloadOverall( rectDef_t *rect, vec4_t color, vec4_t backColor, float scale,
+                                    int align, int textalign, int textStyle,
+                                    float borderSize )
+{
+  char downloadName[MAX_INFO_VALUE];
+  int downloadSize, downloadCount, downloadTotal, downloadDone;
+
+  trap_Cvar_VariableStringBuffer("cl_downloadName", downloadName, sizeof(downloadName));
+  if (!*downloadName)
+    return;
+
+  downloadSize = trap_Cvar_VariableValue("cl_downloadSize");
+  downloadCount = trap_Cvar_VariableValue("cl_downloadCount");
+  downloadTotal = trap_Cvar_VariableValue("cl_downloadTotal");
+  downloadDone = trap_Cvar_VariableValue("cl_downloadDone");
+
+  UI_DrawNewProgressBar( rect, color, backColor, scale, align, textalign, textStyle, borderSize,
+    (downloadSize ? ((float)downloadCount / downloadSize / downloadTotal) : 0) + (float)downloadDone / downloadTotal );
+}
+
+/*
+===============
 UI_DrawInfoPane
 ===============
 */
@@ -2375,6 +2458,11 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
 
     switch (ownerDraw)
     {
+        case UI_DOWNLOAD_OVERALL:
+            UI_DrawDownloadOverall(&rect, foreColor, backColor, scale, align, textalign,
+                textStyle, borderSize );
+            break;
+
         case UI_TEAMINFOPANE:
             UI_DrawInfoPane(&uiInfo.teamList[uiInfo.teamIndex], &rect, text_x, text_y, scale, textalign, textvalign,
                 foreColor, textStyle);
@@ -5569,7 +5657,7 @@ static void UI_DisplayDownloadInfo(const char *downloadName, float centerPoint, 
     static char etaText[] = "Estimated time left:";
     static char xferText[] = "Transfer rate:";
 
-    int downloadSize, downloadCount, downloadTime;
+    int downloadSize, downloadCount, downloadTime, downloadTotal, downloadDone;
     char dlSizeBuf[64], totalSizeBuf[64], xferRateBuf[64], dlTimeBuf[64];
     int xferRate;
     int leftWidth;
@@ -5578,6 +5666,8 @@ static void UI_DisplayDownloadInfo(const char *downloadName, float centerPoint, 
     downloadSize = trap_Cvar_VariableValue("cl_downloadSize");
     downloadCount = trap_Cvar_VariableValue("cl_downloadCount");
     downloadTime = trap_Cvar_VariableValue("cl_downloadTime");
+    downloadTotal = trap_Cvar_VariableValue("cl_downloadTotal");
+    downloadDone = trap_Cvar_VariableValue("cl_downloadDone");
 
     leftWidth = 320;
 
@@ -5587,7 +5677,7 @@ static void UI_DisplayDownloadInfo(const char *downloadName, float centerPoint, 
     Text_PaintCenter(centerPoint, yStart + 248, scale, colorWhite, xferText, 0);
 
     if (downloadSize > 0)
-        s = va("%s (%d%%)", downloadName, (int)((float)downloadCount * 100.0f / downloadSize));
+        s = va("%s (%d%%, %d/%d)", downloadName, (int)((float)downloadCount * 100.0f / downloadSize), downloadDone + 1, downloadTotal);
     else
         s = downloadName;
 
