@@ -223,6 +223,8 @@ vmCvar_t  ui_carriage;
 vmCvar_t  ui_credit;
 vmCvar_t  ui_ammoFull;
 vmCvar_t  ui_stages;
+vmCvar_t  ui_alienStates;
+vmCvar_t  ui_humanStates;
 vmCvar_t  ui_dialog;
 vmCvar_t  ui_voteActive;
 vmCvar_t  ui_alienTeamVoteActive;
@@ -366,6 +368,8 @@ static cvarTable_t cvarTable[ ] =
   { &ui_credit, "ui_credit", "0", CVAR_ROM },
   { &ui_ammoFull, "ui_ammoFull", "1", CVAR_ROM },
   { &ui_stages, "ui_stages", "0 0", CVAR_ROM },
+  { &ui_alienStates, "ui_alienStates", "0 0 0 0 0", CVAR_ROM },
+  { &ui_humanStates, "ui_humanStates", "0 0 0 0 0 0", CVAR_ROM },
   { &ui_dialog, "ui_dialog", "Text not set", CVAR_ROM },
   { &ui_voteActive, "ui_voteActive", "0", CVAR_ROM },
   { &ui_humanTeamVoteActive, "ui_humanTeamVoteActive", "0", CVAR_ROM },
@@ -463,6 +467,8 @@ static void CG_SetUIVars( void )
   char  carriageCvar[ MAX_TOKEN_CHARS ];
   int   credit;
   playerState_t *ps;
+  alienStates_t *alienStates = &cgs.alienStates;
+  humanStates_t *humanStates = &cgs.humanStates;
 
   if( !cg.snap )
     return;
@@ -490,6 +496,12 @@ static void CG_SetUIVars( void )
   trap_Cvar_Set( "ui_ammoFull", va( "%d", !CG_DoNeedAmmo(ps)));
 
   trap_Cvar_Set( "ui_stages", va( "%d %d", cgs.alienStage, cgs.humanStage ) );
+
+  trap_Cvar_Set( "ui_alienStates", va( "%d %d %d %d %d", alienStates->omBuilding, alienStates->omHealth,
+      alienStates->spawns, alienStates->builders, alienStates->boosters ) );
+
+  trap_Cvar_Set( "ui_humanStates", va( "%d %d %d %d %d %d %d", humanStates->rcBuilding, humanStates->rcHealth,
+      humanStates->spawns, humanStates->builders, humanStates->armourys, humanStates->medicals, humanStates->computers ) );
 }
 
 /*

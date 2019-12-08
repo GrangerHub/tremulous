@@ -1388,6 +1388,9 @@ typedef struct
   int           alienNextStageThreshold;
   int           humanNextStageThreshold;
 
+  alienStates_t alienStates;
+  humanStates_t humanStates;
+
   //
   // locally derived information from gamestate
   //
@@ -1573,6 +1576,8 @@ extern  vmCvar_t    ui_carriage;
 extern  vmCvar_t    ui_credit;
 extern  vmCvar_t    ui_ammoFull;
 extern  vmCvar_t    ui_stages;
+extern  vmCvar_t    ui_alienStates;
+extern  vmCvar_t    ui_humanStates;
 extern  vmCvar_t    ui_dialog;
 extern  vmCvar_t    ui_voteActive;
 extern  vmCvar_t    ui_alienTeamVoteActive;

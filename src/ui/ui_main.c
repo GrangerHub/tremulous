@@ -1819,6 +1819,36 @@ static stage_t UI_GetCurrentHumanStage(void)
 
 /*
 ===============
+UI_alienStates
+===============
+*/
+static void UI_alienStates(alienStates_t *state)
+{
+  char alienStates[MAX_TOKEN_CHARS];
+
+  trap_Cvar_VariableStringBuffer("ui_alienStates", alienStates, sizeof(alienStates));
+
+  sscanf( alienStates, "%d %d %d %d %d", &state->omBuilding, &state->omHealth,
+      &state->spawns, &state->builders, &state->boosters );
+}
+
+/*
+===============
+UI_humanStates
+===============
+*/
+static void UI_humanStates(humanStates_t *state)
+{
+  char humanStates[MAX_TOKEN_CHARS];
+
+  trap_Cvar_VariableStringBuffer("ui_humanStates", humanStates, sizeof(humanStates));
+
+  sscanf( humanStates, "%d %d %d %d %d %d %d", &state->rcBuilding, &state->rcHealth,
+      &state->spawns, &state->builders, &state->armourys, &state->medicals, &state->computers );
+}
+
+/*
+===============
 UI_GetStageText
 ===============
 */
@@ -2714,9 +2744,9 @@ UI_AddClass
 ===============
 */
 
-static void UI_AddClass(class_t class)
+static void UI_AddClass(class_t class, char *prefix)
 {
-    uiInfo.alienClassList[uiInfo.alienClassCount].text = BG_ClassConfig(class)->humanName;
+    uiInfo.alienClassList[uiInfo.alienClassCount].text = String_Alloc(va("%s%s", prefix, BG_ClassConfig(class)->humanName));
     uiInfo.alienClassList[uiInfo.alienClassCount].cmd = String_Alloc(va("cmd class %s\n", BG_Class(class)->name));
     uiInfo.alienClassList[uiInfo.alienClassCount].type = INFOTYPE_CLASS;
 
@@ -2742,16 +2772,28 @@ UI_LoadAlienClasses
 */
 static void UI_LoadAlienClasses(void)
 {
+    alienStates_t state;
+    stage_t       stage;
+    char          *prefix;
+
     uiInfo.alienClassCount = 0;
+    UI_alienStates(&state);
+    stage = UI_GetCurrentAlienStage();
+
+    if ( ( !state.omHealth || !state.spawns || BG_BuildableAllowedInStage(BA_A_BOOSTER, stage) && !state.boosters )
+          && !state.builders )
+        prefix = "[!] ";
+    else
+        prefix = "";
 
     if (BG_ClassIsAllowed(PCL_ALIEN_LEVEL0))
-        UI_AddClass(PCL_ALIEN_LEVEL0);
+        UI_AddClass(PCL_ALIEN_LEVEL0, "");
 
     if (BG_ClassIsAllowed(PCL_ALIEN_BUILDER0_UPG) &&
         BG_ClassAllowedInStage(PCL_ALIEN_BUILDER0_UPG, UI_GetCurrentAlienStage()))
-        UI_AddClass(PCL_ALIEN_BUILDER0_UPG);
+        UI_AddClass(PCL_ALIEN_BUILDER0_UPG, prefix);
     else if (BG_ClassIsAllowed(PCL_ALIEN_BUILDER0))
-        UI_AddClass(PCL_ALIEN_BUILDER0);
+        UI_AddClass(PCL_ALIEN_BUILDER0, prefix);
 }
 
 /*
@@ -2759,9 +2801,9 @@ static void UI_LoadAlienClasses(void)
 UI_AddItem
 ===============
 */
-static void UI_AddItem(weapon_t weapon)
+static void UI_AddItem(weapon_t weapon, char *prefix)
 {
-    uiInfo.humanItemList[uiInfo.humanItemCount].text = BG_Weapon(weapon)->humanName;
+    uiInfo.humanItemList[uiInfo.humanItemCount].text = String_Alloc(va("%s%s", prefix, BG_Weapon(weapon)->humanName));
     uiInfo.humanItemList[uiInfo.humanItemCount].cmd = String_Alloc(va("cmd class %s\n", BG_Weapon(weapon)->name));
     uiInfo.humanItemList[uiInfo.humanItemCount].type = INFOTYPE_WEAPON;
     uiInfo.humanItemList[uiInfo.humanItemCount].v.weapon = weapon;
@@ -2785,13 +2827,27 @@ UI_LoadHumanItems
 */
 static void UI_LoadHumanItems(void)
 {
+    humanStates_t state;
+    stage_t       stage;
+    char          *prefix;
+
     uiInfo.humanItemCount = 0;
+    UI_humanStates(&state);
+    stage = UI_GetCurrentHumanStage();
+
+    if ( ( !state.rcHealth || !state.spawns || BG_BuildableAllowedInStage(BA_H_ARMOURY, stage) && !state.armourys
+            || BG_BuildableAllowedInStage(BA_H_MEDISTAT, stage) && !state.medicals
+            || BG_BuildableAllowedInStage(BA_H_DCC, stage) && !state.computers )
+          && !state.builders )
+        prefix = "[!] ";
+    else
+        prefix = "";
 
     if (BG_WeaponIsAllowed(WP_MACHINEGUN))
-        UI_AddItem(WP_MACHINEGUN);
+        UI_AddItem(WP_MACHINEGUN, "");
 
     if (BG_WeaponIsAllowed(WP_HBUILD))
-        UI_AddItem(WP_HBUILD);
+        UI_AddItem(WP_HBUILD, prefix);
 }
 
 /*
@@ -3076,7 +3132,8 @@ static void UI_LoadHumanArmouryModels(void)
 UI_LoadHumanArmouryBuysWeapon
 ===============
 */
-static void UI_LoadHumanArmouryBuysWeapon(int priority, int *j, int stage, int sellingBudget, int credits)
+static void UI_LoadHumanArmouryBuysWeapon(int priority, int *j, int stage, int sellingBudget,
+                                          int credits, qboolean criticalBuilds)
 {
   int       i = 0;
   qboolean  addWeapon;
@@ -3089,8 +3146,16 @@ static void UI_LoadHumanArmouryBuysWeapon(int priority, int *j, int stage, int s
       {
           addWeapon = qfalse;
           switch (priority) {
+              case 0:
+                if (criticalBuilds == qtrue && i == WP_HBUILD)  // If there are critical builds to build
+                {
+                    addWeapon = qtrue;
+                    prefix = "[!] ";
+                }
+                break;
               case 1:
-                  if (BG_WeaponAllowedInStage(i, stage) && UI_CanUpgradeToWeapon(i, sellingBudget, credits))
+                  if (BG_WeaponAllowedInStage(i, stage) && UI_CanUpgradeToWeapon(i, sellingBudget, credits)
+                      && !(criticalBuilds == qtrue && i == WP_HBUILD))
                   {
                       addWeapon = qtrue;
                       prefix = UI_IsBetterWeapon(i, sellingBudget) ? "[upgrade] " : "";
@@ -3198,11 +3263,14 @@ UI_LoadHumanArmouryBuys
 static void UI_LoadHumanArmouryBuys(void)
 {
     int i, j = 0;
+    humanStates_t state;
+    qboolean criticalBuilds;
     stage_t stage = UI_GetCurrentHumanStage();
     // int slots = 0;
     int sellingBudget = 0;
     int credits = UI_GetCurrentCredits();
 
+    UI_humanStates(&state);
     UI_ParseCarriageList();
 
     for (i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++)
@@ -3220,22 +3288,27 @@ static void UI_LoadHumanArmouryBuys(void)
     //         slots |= BG_Upgrade(i)->slots;
     // }
 
+    criticalBuilds = ( ( !state.rcHealth || !state.spawns || BG_BuildableAllowedInStage(BA_H_ARMOURY, stage) && !state.armourys
+            || BG_BuildableAllowedInStage(BA_H_MEDISTAT, stage) && !state.medicals
+            || BG_BuildableAllowedInStage(BA_H_DCC, stage) && !state.computers )
+          && !state.builders );
+
     uiInfo.humanArmouryBuyCount = 0;
 
     // Critical (ammo mainly)
+    UI_LoadHumanArmouryBuysWeapon(0, &j, stage, sellingBudget, credits, criticalBuilds);
     UI_LoadHumanArmouryBuysUpgrade(0, &j, stage, sellingBudget, credits);
-    // UI_LoadHumanArmouryBuysWeapon(0, &j, stage, sellingBudget, credits);
 
     // Available to buy
-    UI_LoadHumanArmouryBuysWeapon(1, &j, stage, sellingBudget, credits);
+    UI_LoadHumanArmouryBuysWeapon(1, &j, stage, sellingBudget, credits, criticalBuilds);
     UI_LoadHumanArmouryBuysUpgrade(1, &j, stage, sellingBudget, credits);
 
     // Unlocked but no enough funds
-    UI_LoadHumanArmouryBuysWeapon(2, &j, stage, sellingBudget, credits);
+    UI_LoadHumanArmouryBuysWeapon(2, &j, stage, sellingBudget, credits, criticalBuilds);
     UI_LoadHumanArmouryBuysUpgrade(2, &j, stage, sellingBudget, credits);
 
     // Locked
-    UI_LoadHumanArmouryBuysWeapon(3, &j, stage, sellingBudget, credits);
+    UI_LoadHumanArmouryBuysWeapon(3, &j, stage, sellingBudget, credits, criticalBuilds);
     UI_LoadHumanArmouryBuysUpgrade(3, &j, stage, sellingBudget, credits);
 }
 
@@ -3350,8 +3423,6 @@ static void UI_LoadAlienUpgradesClass(int priority, int *j, int class, int credi
         if (BG_ClassIsAllowed(i))
         {
             switch (priority) {
-                case 0:
-                    break;
                 case 1:
                     if (BG_ClassCanEvolveFromTo(class, i, credits, stage, 0) >= 0)
                     {
@@ -3399,7 +3470,6 @@ UI_LoadAlienUpgrades
 static void UI_LoadAlienUpgrades(void)
 {
     int i, j = 0;
-
     int class, credits;
     char ui_currentClass[MAX_STRING_CHARS];
     stage_t stage = UI_GetCurrentAlienStage();
@@ -3458,16 +3528,18 @@ UI_LoadAlienBuildsItems
 */
 static void UI_LoadAlienBuildsItems(int priority, int *j, int stage)
 {
-    int       i = 0;
-    qboolean  addItem;
-    char      *prefix;
-    qboolean  needUpgrade;
-    // qboolean  critical;
+    int           i = 0;
+    qboolean      addItem;
+    char          *prefix;
+    qboolean      critical;
+    alienStates_t state;
+
+    UI_alienStates(&state);
 
     for (i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++)
     {
         addItem = qfalse;
-        // critical = qfalse;
+        critical = qfalse;
         if (BG_Buildable(i)->team == TEAM_ALIENS && BG_BuildableIsAllowed(i))
         {
             switch (priority) {
@@ -3477,23 +3549,17 @@ static void UI_LoadAlienBuildsItems(int priority, int *j, int stage)
                     if (BG_BuildableAllowedInStage(i, stage))
                     {
                         addItem = qtrue;
-                        // if cam booster and no booster / if dc and no dc
-                        // if no spawn // if no om/rc
-                        // => Set critical to true
-                        // Not implanted yet cause CG have no reliable ways to know theses informations
-                        // If need om om to build it
-                        // add [om] to prefix
-                        if (!(BG_Buildable(i)->buildWeapon & uiInfo.weapons)) // Need to upgrade
-                        {
-                          // if (critical)
-                          //   prefix = "[!] [upgrade] ^0";
-                          // else
-                            prefix = "[upgrade][advgranger] ^0";
-                        }
-                        // else if (critical)
-                        //   prefix = "[!] ";
-                        else
-                          prefix = "";
+                        if (i == BA_A_SPAWN && !state.spawns
+                            || i == BA_A_BOOSTER && !state.boosters
+                            || i == BA_A_OVERMIND && !state.omHealth )
+                            critical = qtrue;
+                        prefix = (char*)(va(
+                          "%s%s%s%s",
+                          ( (!state.omHealth || state.omBuilding) && i != BA_A_OVERMIND ) ? "[overmind] " : "", // Show an overmind if it need it
+                          ( !state.omHealth && i != BA_A_OVERMIND ) ? "^0" : "", // Grey out the item if om is not building too
+                          ( !(BG_Buildable(i)->buildWeapon & uiInfo.weapons) ) ? "[upgrade][advgranger]^0 " : "", // Grey out and ask to upgrade if adv granger is needed
+                          ( critical ) ? "[!] " : "" // Inform if this item is important
+                        ));
                     }
                     break;
                 case 2:
@@ -3580,16 +3646,18 @@ UI_LoadHumanBuildsItems
 */
 static void UI_LoadHumanBuildsItems(int priority, int *j, int stage)
 {
-    int       i = 0;
-    qboolean  addItem;
-    char      *prefix;
-    qboolean  needUpgrade;
-    // qboolean  critical;
+    int           i = 0;
+    qboolean      addItem;
+    char          *prefix;
+    qboolean      critical;
+    humanStates_t state;
+
+    UI_humanStates(&state);
 
     for (i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++)
     {
         addItem = qfalse;
-        // critical = qfalse;
+        critical = qfalse;
         if (BG_Buildable(i)->team == TEAM_HUMANS && BG_BuildableIsAllowed(i))
         {
             switch (priority) {
@@ -3599,23 +3667,19 @@ static void UI_LoadHumanBuildsItems(int priority, int *j, int stage)
                     if (BG_BuildableAllowedInStage(i, stage))
                     {
                         addItem = qtrue;
-                        // if cam booster and no booster / if dc and no dc
-                        // if no spawn // if no om/rc
-                        // => Set critical to true
-                        // Not implanted yet cause CG have no reliable ways to know theses informations
-                        // If need om/rc om to build it
-                        // add [om]/[rc] to prefix
-                        if (!(BG_Buildable(i)->buildWeapon & uiInfo.weapons)) // Need to upgrade
-                        {
-                          // if (critical)
-                          //   prefix = "[!] [upgrade] ^0";
-                          // else
-                            prefix = "[upgrade][ckit] ^0";
-                        }
-                        // else if (critical)
-                        //   prefix = "[!] ";
-                        else
-                          prefix = "";
+                        if (i == BA_H_SPAWN && !state.spawns
+                            || i == BA_H_ARMOURY && !state.armourys
+                            || i == BA_H_MEDISTAT && !state.medicals
+                            || i == BA_H_DCC && !state.computers
+                            || i == BA_H_REACTOR && !state.rcHealth )
+                            critical = qtrue;
+                        prefix = (char*)(va(
+                          "%s%s%s%s",
+                          ( (!state.rcHealth || state.rcBuilding) && i != BA_H_REACTOR ) ? "[reactor] " : "", // Show a reactor if it need it
+                          ( !state.rcHealth && i != BA_H_REACTOR ) ? "^0" : "", // Grey out the item if om is not building too
+                          ( !(BG_Buildable(i)->buildWeapon & uiInfo.weapons) ) ? "[upgrade][ckit]^0 " : "", // Grey out and ask to upgrade if adv ckit is needed. Now Ckit = AdvCkit (keep for compatibility)
+                          ( critical ) ? "[!] " : "" // Inform if this item is important
+                        ));
                     }
                     break;
                 case 2:
