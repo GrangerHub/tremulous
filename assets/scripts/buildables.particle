@@ -257,6 +257,7 @@ alienBuildableDestroyedPS
       alpha  0 1.0 0.0
       rotation 0 ~360 -
       bounce 0.0
+      bounceMark 3 16 gfx/sprites/green_acid_mark
 
       lifeTime 1000~50%
     }
@@ -288,6 +289,7 @@ alienBuildableDestroyedPS
       alpha  0 1.0 0.0
       rotation 0 ~360 -
       bounce 0.2
+      bounceMark 3 16 gfx/sprites/green_acid_mark
 
       lifeTime 1000
     }
