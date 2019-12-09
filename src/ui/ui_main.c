@@ -4829,6 +4829,7 @@ static const char *UI_FeederItemText(int feederID, int index, int column, qhandl
             static int lastColumn = -1;
             static int lastTime = 0;
             int ping;
+            char *cleanedcpy;
 
             if (lastColumn != column || lastTime > uiInfo.uiDC.realTime + 5000)
             {
@@ -4851,15 +4852,19 @@ static const char *UI_FeederItemText(int feederID, int index, int column, qhandl
                     {
                         static char hostname[1024];
 
+                        // Strip leading whitespace
+                        cleanedcpy = cleaned;
+                        while (*cleanedcpy != '\0' && *cleanedcpy == ' ')
+                            cleanedcpy++;
+
                         if (ui_netSource.integer == AS_LOCAL)
                         {
-                            Com_sprintf(hostname, sizeof(hostname), "%s [%s]", cleaned,
+                            Com_sprintf(hostname, sizeof(hostname), "^7%s [%s]", cleaned,
                                 netnames[atoi(Info_ValueForKey(info, "nettype"))]);
                             return hostname;
                         }
                         else
                         {
-                            char *text;
                             char *label;
 
                             label = Info_ValueForKey(info, "label");
@@ -4868,20 +4873,14 @@ static const char *UI_FeederItemText(int feederID, int index, int column, qhandl
                                 // First char of the label response is a sorting tag. Skip it.
                                 label += 1;
 
-                                Com_sprintf(hostname, sizeof(hostname), "%s %s", label, cleaned);
+                                Com_sprintf(hostname, sizeof(hostname), "^7%s %s", label, cleaned);
                             }
                             else
                             {
-                                Com_sprintf(hostname, sizeof(hostname), "%s", cleaned);
+                                Com_sprintf(hostname, sizeof(hostname), "^7%s", cleaned);
                             }
 
-                            // Strip leading whitespace
-                            text = hostname;
-
-                            while (*text != '\0' && *text == ' ')
-                                text++;
-
-                            return text;
+                            return hostname;
                         }
                     }
 
