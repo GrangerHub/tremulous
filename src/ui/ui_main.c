@@ -2757,6 +2757,7 @@ static void UI_LoadTeams(void)
 {
     class_t alienPreviewClass = PCL_ALIEN_LEVEL0;
 
+    memset(&(uiInfo.teamListModel), 0, sizeof(uiInfo.teamListModel));
     uiInfo.teamCount = 4;
 
     uiInfo.teamList[0].text = "Aliens";
@@ -2775,9 +2776,7 @@ static void UI_LoadTeams(void)
     uiInfo.teamListModel[0].scale = BG_ClassConfig(alienPreviewClass)->modelScale;
     uiInfo.teamListModel[0].zOffset = BG_ClassConfig(alienPreviewClass)->zOffset;
     uiInfo.teamListModel[0].cameraDist = 100;
-    uiInfo.teamListModel[0].frame[0] = 0;
     uiInfo.teamListModel[0].autoAdjust = qtrue;
-    uiInfo.teamListModel[0].forceCentering = qfalse;
 
     uiInfo.teamList[1].text = "Humans";
     uiInfo.teamList[1].cmd = "cmd team humans\n";
@@ -2789,8 +2788,6 @@ static void UI_LoadTeams(void)
         "ensures they stay built. A wide range of upgrades and "
         "weapons are available to the humans, each contributing "
         "to eradicate the alien threat.";
-    uiInfo.teamListModel[1].autoAdjust = qfalse;
-    uiInfo.teamListModel[1].forceCentering = qfalse;
     uiInfo.teamListModel[1].assetCount = 4;
     uiInfo.teamListModel[1].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
     uiInfo.teamListModel[1].asset[1] = uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
@@ -2801,10 +2798,8 @@ static void UI_LoadTeams(void)
     uiInfo.teamListModel[1].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
     uiInfo.teamListModel[1].frame[0] = 157;
     uiInfo.teamListModel[1].frame[1] = 151;
-    uiInfo.teamListModel[1].frame[2] = 0;
-    uiInfo.teamListModel[1].frame[3] = 0;
     uiInfo.teamListModel[1].parent[0].parentTagName = "tag_torso";
-    uiInfo.teamListModel[1].parent[0].parentIndex = 0;
+    // uiInfo.teamListModel[1].parent[0].parentIndex = 0;
     uiInfo.teamListModel[1].parent[1].parentTagName = "tag_head";
     uiInfo.teamListModel[1].parent[1].parentIndex = 1;
     uiInfo.teamListModel[1].parent[2].parentTagName = "tag_weapon";
@@ -2817,13 +2812,11 @@ static void UI_LoadTeams(void)
     uiInfo.teamList[2].cmd = "cmd team spectate\n";
     uiInfo.teamList[2].type = INFOTYPE_TEXT;
     uiInfo.teamList[2].v.text = "Watch the game without playing.";
-    uiInfo.teamListModel[2].assetCount = 0;
 
     uiInfo.teamList[3].text = "Auto select";
     uiInfo.teamList[3].cmd = "cmd team auto\n";
     uiInfo.teamList[3].type = INFOTYPE_TEXT;
     uiInfo.teamList[3].v.text = "Join the team with the least players.";
-    uiInfo.teamListModel[3].assetCount = 0;
 }
 
 /*
@@ -2846,9 +2839,7 @@ static void UI_AddClass(class_t class, char *prefix)
     uiInfo.alienClassListModel[uiInfo.alienClassCount].scale = BG_ClassConfig(class)->modelScale;
     uiInfo.alienClassListModel[uiInfo.alienClassCount].zOffset = BG_ClassConfig(class)->zOffset;
     uiInfo.alienClassListModel[uiInfo.alienClassCount].cameraDist = 100;
-    uiInfo.alienClassListModel[uiInfo.alienClassCount].frame[0] = 0;
     uiInfo.alienClassListModel[uiInfo.alienClassCount].autoAdjust = qtrue;
-    uiInfo.alienClassListModel[uiInfo.alienClassCount].forceCentering = qfalse;
 
     uiInfo.alienClassCount++;
 }
@@ -2864,6 +2855,7 @@ static void UI_LoadAlienClasses(void)
     stage_t       stage;
     char          *prefix;
 
+    memset(&(uiInfo.alienClassListModel), 0, sizeof(uiInfo.alienClassListModel));
     uiInfo.alienClassCount = 0;
     UI_alienStates(&state);
     stage = UI_GetCurrentAlienStage();
@@ -2899,9 +2891,7 @@ static void UI_AddItem(weapon_t weapon, char *prefix)
     uiInfo.humanItemListModel[uiInfo.humanItemCount].asset[0] = uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(weapon)->name, BG_Weapon(weapon)->name));
     uiInfo.humanItemListModel[uiInfo.humanItemCount].assetCount = 1;
     uiInfo.humanItemListModel[uiInfo.humanItemCount].scale = 1.0;
-    uiInfo.humanItemListModel[uiInfo.humanItemCount].zOffset = 0.0;
     uiInfo.humanItemListModel[uiInfo.humanItemCount].cameraDist = 0.0;
-    uiInfo.humanItemListModel[uiInfo.humanItemCount].frame[0] = 0;
     uiInfo.humanItemListModel[uiInfo.humanItemCount].autoAdjust = qtrue;
     uiInfo.humanItemListModel[uiInfo.humanItemCount].forceCentering = qtrue;
 
@@ -2919,6 +2909,7 @@ static void UI_LoadHumanItems(void)
     stage_t       stage;
     char          *prefix;
 
+    memset(&(uiInfo.humanItemListModel), 0, sizeof(uiInfo.humanItemListModel));
     uiInfo.humanItemCount = 0;
     UI_humanStates(&state);
     stage = UI_GetCurrentHumanStage();
@@ -3069,6 +3060,7 @@ static void UI_LoadHumanArmouryModels(void)
 {
     int i, j = 0;
 
+    memset(&(uiInfo.humanArmouryBuyListModel), 0, sizeof(uiInfo.humanArmouryBuyListModel));
     for (i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++)
     {
         uiInfo.humanArmouryBuyListModel[i].assetCount = 0;
@@ -3077,9 +3069,6 @@ static void UI_LoadHumanArmouryModels(void)
             uiInfo.humanArmouryBuyListModel[i].asset[0] = uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(i)->name, BG_Weapon(i)->name));
             uiInfo.humanArmouryBuyListModel[i].assetCount = 1;
             uiInfo.humanArmouryBuyListModel[i].scale = 1.0;
-            uiInfo.humanArmouryBuyListModel[i].zOffset = 0.0;
-            uiInfo.humanArmouryBuyListModel[i].cameraDist = 0.0;
-            uiInfo.humanArmouryBuyListModel[i].frame[0] = 0;
             uiInfo.humanArmouryBuyListModel[i].autoAdjust = qtrue;
             uiInfo.humanArmouryBuyListModel[i].forceCentering = qtrue;
         }
@@ -3093,13 +3082,6 @@ static void UI_LoadHumanArmouryModels(void)
         {
             uiInfo.humanArmouryBuyListModel[j].assetCount = 1;
             uiInfo.humanArmouryBuyListModel[j].scale = 1.0;
-            uiInfo.humanArmouryBuyListModel[j].frame[0] = 0;
-            uiInfo.humanArmouryBuyListModel[j].frame[1] = 0;
-            uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
-            uiInfo.humanArmouryBuyListModel[j].zOffset = 0;
-            uiInfo.humanArmouryBuyListModel[j].cameraDist = 0;
-            uiInfo.humanArmouryBuyListModel[j].autoAdjust = qfalse;
-            uiInfo.humanArmouryBuyListModel[j].forceCentering = qfalse;
             switch (i) {
               case UP_LIGHTARMOUR:
                 uiInfo.humanArmouryBuyListModel[j].assetCount = 3;
@@ -3111,9 +3093,7 @@ static void UI_LoadHumanArmouryModels(void)
                 uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
                 uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
                 uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
-                uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
                 uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
-                uiInfo.humanArmouryBuyListModel[j].parent[0].parentIndex = 0;
                 uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
                 uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
                 uiInfo.humanArmouryBuyListModel[j].cameraDist = 40;
@@ -3129,9 +3109,7 @@ static void UI_LoadHumanArmouryModels(void)
                 uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_light.skin");
                 uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
                 uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
-                uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
                 uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
-                uiInfo.humanArmouryBuyListModel[j].parent[0].parentIndex = 0;
                 uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
                 uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
                 uiInfo.humanArmouryBuyListModel[j].cameraDist = 32;
@@ -3151,10 +3129,7 @@ static void UI_LoadHumanArmouryModels(void)
                 uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
                 uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
                 uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
-                uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
-                uiInfo.humanArmouryBuyListModel[j].frame[3] = 0;
                 uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
-                uiInfo.humanArmouryBuyListModel[j].parent[0].parentIndex = 0;
                 uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
                 uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
                 uiInfo.humanArmouryBuyListModel[j].parent[2].parentTagName = "tag_head";
@@ -3173,8 +3148,6 @@ static void UI_LoadHumanArmouryModels(void)
                 uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
                 uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
                 uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
-                uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
-                uiInfo.humanArmouryBuyListModel[j].frame[3] = 0;
                 uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
                 uiInfo.humanArmouryBuyListModel[j].parent[0].parentIndex = 0;
                 uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
@@ -3194,9 +3167,7 @@ static void UI_LoadHumanArmouryModels(void)
                 uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_bsuit/head_default.skin");
                 uiInfo.humanArmouryBuyListModel[j].frame[0] = 166;
                 uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
-                uiInfo.humanArmouryBuyListModel[j].frame[2] = 0;
                 uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
-                uiInfo.humanArmouryBuyListModel[j].parent[0].parentIndex = 0;
                 uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
                 uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
                 uiInfo.humanArmouryBuyListModel[j].cameraDist = 100;
@@ -3478,6 +3449,7 @@ static void UI_LoadAlienUpgradesModels(void)
 {
   int i;
 
+  memset(&(uiInfo.alienUpgradeListModel), 0, sizeof(uiInfo.alienUpgradeListModel));
   // No clean way found to determin is class is aliens one
   for (i = PCL_NONE + 1; i < PCL_HUMAN; i++)
   {
@@ -3487,9 +3459,7 @@ static void UI_LoadAlienUpgradesModels(void)
     uiInfo.alienUpgradeListModel[i].scale = BG_ClassConfig(i)->modelScale;
     uiInfo.alienUpgradeListModel[i].zOffset = BG_ClassConfig(i)->zOffset;
     uiInfo.alienUpgradeListModel[i].cameraDist = 100;
-    uiInfo.alienUpgradeListModel[i].frame[0] = 0;
     uiInfo.alienUpgradeListModel[i].autoAdjust = qtrue;
-    uiInfo.alienUpgradeListModel[i].forceCentering = qfalse;
   }
 }
 
@@ -3585,6 +3555,7 @@ static void UI_LoadAlienBuildsModels(void)
   fileHandle_t  h;
   char *modelFile;
 
+  memset(&(uiInfo.alienBuildListModel), 0, sizeof(uiInfo.alienBuildListModel));
   for (i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++)
   {
       if (BG_Buildable(i)->team == TEAM_ALIENS && BG_BuildableIsAllowed(i))
@@ -3594,17 +3565,13 @@ static void UI_LoadAlienBuildsModels(void)
           {
             modelFile = BG_BuildableConfig( i )->models[ h ];
             if( strlen( modelFile ) > 0 )
-            {
               uiInfo.alienBuildListModel[i].asset[ uiInfo.alienBuildListModel[i].assetCount++ ]
                 = uiInfo.uiDC.registerModel( modelFile );
-                uiInfo.alienBuildListModel[i].frame[h] = 0;
-            }
           }
           uiInfo.alienBuildListModel[i].scale = BG_BuildableConfig( i )->modelScale;
           uiInfo.alienBuildListModel[i].zOffset = BG_BuildableConfig( i )->zOffset;
           uiInfo.alienBuildListModel[i].cameraDist = 100;
           uiInfo.alienBuildListModel[i].autoAdjust = qtrue;
-          uiInfo.alienBuildListModel[i].forceCentering = qfalse;
       }
   }
 }
@@ -3704,25 +3671,22 @@ static void UI_LoadHumansBuildsModels(void)
   fileHandle_t  h;
   char *modelFile;
 
+  memset(&(uiInfo.humanBuildListModel), 0, sizeof(uiInfo.humanBuildListModel));
   for (i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++)
   {
       if (BG_Buildable(i)->team == TEAM_HUMANS && BG_BuildableIsAllowed(i))
       {
-          uiInfo.humanBuildListModel[i].assetCount = 0;
           for( h = 0; h < MAX_BUILDABLE_MODELS; h++ )
           {
             modelFile = BG_BuildableConfig( i )->models[ h ];
-            if( strlen( modelFile ) > 0 ){
+            if( strlen( modelFile ) > 0 )
               uiInfo.humanBuildListModel[i].asset[ uiInfo.humanBuildListModel[i].assetCount++ ]
                 = uiInfo.uiDC.registerModel( modelFile );
-              uiInfo.humanBuildListModel[i].frame[h] = 0;
-            }
           }
           uiInfo.humanBuildListModel[i].scale = BG_BuildableConfig( i )->modelScale;
           uiInfo.humanBuildListModel[i].zOffset = BG_BuildableConfig( i )->zOffset;
           uiInfo.humanBuildListModel[i].cameraDist = 160;
           uiInfo.humanBuildListModel[i].autoAdjust = qtrue;
-          uiInfo.humanBuildListModel[i].forceCentering = qfalse;
       }
   }
 }
@@ -4854,7 +4818,7 @@ static const char *UI_FeederItemText(int feederID, int index, int column, qhandl
 
                         // Strip leading whitespace
                         cleanedcpy = cleaned;
-                        while (*cleanedcpy != '\0' && *cleanedcpy == ' ')
+                        while (*cleanedcpy != '\0' && isspace(*cleanedcpy))
                             cleanedcpy++;
 
                         if (ui_netSource.integer == AS_LOCAL)
