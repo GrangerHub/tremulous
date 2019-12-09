@@ -5254,6 +5254,8 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
     listBoxDef_t *listPtr = item->typeData.list;
     menuDef_t *menu = (menuDef_t *)item->parent;
     float one, two;
+    rectDef_t itemRect;
+    vec4_t hightlightColor;
 
     one = 1.0f * DC->aspectScale;
     two = 2.0f * DC->aspectScale;
@@ -5261,6 +5263,11 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
     x = SCROLLBAR_X(item);
     y = SCROLLBAR_Y(item) + (listPtr->elementHeight * renderPos);
     w = item->window.rect.w - (two * item->window.borderSize);
+
+    itemRect.x = x;
+    itemRect.y = y;
+    itemRect.w = w;
+    itemRect.h = listPtr->elementHeight;
 
     highlight = highlight && row == item->cursorPos;
 
@@ -5289,13 +5296,16 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
         const float m = UI_Text_EmHeight(item->textscale);
         char text[MAX_STRING_CHARS];
         qhandle_t optionalImage;
+        Vector4Copy(item->window.outlineColor, hightlightColor);
 
-        if (highlight)
+        if (highlight || Rect_ContainsPoint(&itemRect, DC->cursorx, DC->cursory))
         {
+          if (!highlight)
+            hightlightColor[3] *= 0.55f;
           if( item->window.border == WINDOW_BORDER_ROUNDED )
-              DC->fillRoundedRect(x, y, w, listPtr->elementHeight, item->window.borderSize, item->window.borderStyle, item->window.outlineColor);
+            DC->fillRoundedRect(x, y, w, listPtr->elementHeight, item->window.borderSize, item->window.borderStyle, hightlightColor);
           else
-              DC->fillRect(x, y, w, listPtr->elementHeight, item->window.outlineColor);
+              DC->fillRect(x, y, w, listPtr->elementHeight, hightlightColor);
         }
 
         if (listPtr->numColumns > 0)
