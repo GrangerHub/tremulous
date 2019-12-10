@@ -2177,6 +2177,39 @@ static void UI_Text_Paint_Generic(float x, float y, float scale, float gapAdjust
                     float yadj = useScale * glyph->top;
 
                     DC->setColor(NULL);
+
+                    if (style == ITEM_TEXTSTYLE_SHADOWED || style == ITEM_TEXTSTYLE_SHADOWEDMORE)
+                    {
+                        int ofs;
+
+                        if (style == ITEM_TEXTSTYLE_SHADOWED)
+                            ofs = 1;
+                        else
+                            ofs = 2;
+
+                        colorBlack[3] = newColor[3] * 4 / 8 / 6;
+                        DC->setColor(colorBlack);
+                        DC->drawHandlePic(x + ofs - 0.2f, y + ofs - 0.2f - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
+                        DC->drawHandlePic(x + ofs + 0.2f, y + ofs - 0.2f - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
+                        DC->drawHandlePic(x + ofs - 0.2f, y + ofs + 0.2f - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
+                        DC->drawHandlePic(x + ofs + 0.2f, y + ofs + 0.2f - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
+                        colorBlack[3] = newColor[3] * 3 / 8 / 6;
+                        DC->setColor(colorBlack);
+                        DC->drawHandlePic(x + ofs - 0.4f, y + ofs - 0.4f - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
+                        DC->drawHandlePic(x + ofs + 0.4f, y + ofs - 0.4f - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
+                        DC->drawHandlePic(x + ofs - 0.4f, y + ofs + 0.4f - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
+                        DC->drawHandlePic(x + ofs + 0.4f, y + ofs + 0.4f - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
+                        colorBlack[3] = newColor[3] * 1 / 8 / 6;
+                        DC->setColor(colorBlack);
+                        DC->drawHandlePic(x + ofs - 0.6f, y + ofs - 0.6f - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
+                        DC->drawHandlePic(x + ofs + 0.6f, y + ofs - 0.6f - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
+                        DC->drawHandlePic(x + ofs - 0.6f, y + ofs + 0.6f - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
+                        DC->drawHandlePic(x + ofs + 0.6f, y + ofs + 0.6f - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
+
+                        DC->setColor(NULL);
+                        colorBlack[3] = 1.0f;
+                    }
+
                     DC->drawHandlePic(x, y - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
                     DC->setColor(newColor);
                     x += (emoticonW * emoticonWidth) + gapAdjust;
@@ -2195,9 +2228,26 @@ static void UI_Text_Paint_Generic(float x, float y, float scale, float gapAdjust
                 ofs = 1;
             else
                 ofs = 2;
-            colorBlack[3] = newColor[3];
+
+            colorBlack[3] = newColor[3] * 4 / 8 / 6;
             DC->setColor(colorBlack);
-            UI_Text_PaintChar(x + ofs, y + ofs, useScale, glyph, 0.0f);
+            UI_Text_PaintChar(x + ofs - 0.2f, y + ofs - 0.2f, useScale, glyph, 0.0f);
+            UI_Text_PaintChar(x + ofs + 0.2f, y + ofs - 0.2f, useScale, glyph, 0.0f);
+            UI_Text_PaintChar(x + ofs - 0.2f, y + ofs + 0.2f, useScale, glyph, 0.0f);
+            UI_Text_PaintChar(x + ofs + 0.2f, y + ofs + 0.2f, useScale, glyph, 0.0f);
+            colorBlack[3] = newColor[3] * 3 / 8 / 6;
+            DC->setColor(colorBlack);
+            UI_Text_PaintChar(x + ofs - 0.4f, y + ofs - 0.4f, useScale, glyph, 0.0f);
+            UI_Text_PaintChar(x + ofs + 0.4f, y + ofs - 0.4f, useScale, glyph, 0.0f);
+            UI_Text_PaintChar(x + ofs - 0.4f, y + ofs + 0.4f, useScale, glyph, 0.0f);
+            UI_Text_PaintChar(x + ofs + 0.4f, y + ofs + 0.4f, useScale, glyph, 0.0f);
+            colorBlack[3] = newColor[3] * 1 / 8 / 6;
+            DC->setColor(colorBlack);
+            UI_Text_PaintChar(x + ofs - 0.6f, y + ofs - 0.6f, useScale, glyph, 0.0f);
+            UI_Text_PaintChar(x + ofs + 0.6f, y + ofs - 0.6f, useScale, glyph, 0.0f);
+            UI_Text_PaintChar(x + ofs - 0.6f, y + ofs + 0.6f, useScale, glyph, 0.0f);
+            UI_Text_PaintChar(x + ofs + 0.6f, y + ofs + 0.6f, useScale, glyph, 0.0f);
+
             DC->setColor(newColor);
             colorBlack[3] = 1.0f;
         }
@@ -2206,13 +2256,30 @@ static void UI_Text_Paint_Generic(float x, float y, float scale, float gapAdjust
             vec4_t glow;
 
             memcpy(&glow[0], &newColor[0], sizeof(vec4_t));
-            glow[3] *= 0.2f;
 
             DC->setColor(glow);
-            UI_Text_PaintChar(x, y, useScale, glyph, 6.0f);
-            UI_Text_PaintChar(x, y, useScale, glyph, 4.0f);
-            DC->setColor(newColor);
-            UI_Text_PaintChar(x, y, useScale, glyph, 2.0f);
+            UI_Text_PaintChar(x - 0.1f, y - 0.1f, useScale, glyph, 0.0f);
+            UI_Text_PaintChar(x + 0.1f, y - 0.1f, useScale, glyph, 0.0f);
+            UI_Text_PaintChar(x - 0.1f, y + 0.1f, useScale, glyph, 0.0f);
+            UI_Text_PaintChar(x + 0.1f, y + 0.1f, useScale, glyph, 0.0f);
+            glow[3] = newColor[3] * 4 / 8 / 4;
+            DC->setColor(glow);
+            UI_Text_PaintChar(x - 0.2f, y - 0.2f, useScale, glyph, 0.4f);
+            UI_Text_PaintChar(x + 0.2f, y - 0.2f, useScale, glyph, 0.4f);
+            UI_Text_PaintChar(x - 0.2f, y + 0.2f, useScale, glyph, 0.4f);
+            UI_Text_PaintChar(x + 0.2f, y + 0.2f, useScale, glyph, 0.4f);
+            glow[3] = newColor[3] * 3 / 8 / 4;
+            DC->setColor(glow);
+            UI_Text_PaintChar(x - 0.4f, y - 0.4f, useScale, glyph, 0.4f);
+            UI_Text_PaintChar(x + 0.4f, y - 0.4f, useScale, glyph, 0.4f);
+            UI_Text_PaintChar(x - 0.4f, y + 0.4f, useScale, glyph, 0.4f);
+            UI_Text_PaintChar(x + 0.4f, y + 0.4f, useScale, glyph, 0.4f);
+            glow[3] = newColor[3] * 1 / 8 / 4;
+            DC->setColor(glow);
+            UI_Text_PaintChar(x - 0.8f, y - 0.8f, useScale, glyph, 0.8f);
+            UI_Text_PaintChar(x + 0.8f, y - 0.8f, useScale, glyph, 0.8f);
+            UI_Text_PaintChar(x - 0.8f, y + 0.8f, useScale, glyph, 0.8f);
+            UI_Text_PaintChar(x + 0.8f, y + 0.8f, useScale, glyph, 0.8f);
 
             DC->setColor(colorWhite);
         }
