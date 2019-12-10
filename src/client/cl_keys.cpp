@@ -1063,6 +1063,10 @@ void Key_Bind_f (void)
 			strcat (cmd, " ");
 	}
 
+	// Autoconvert boost to +button8
+	if (strcmp(cmd, "boost") == 0)
+		return Key_SetBinding (b, "+button8");
+
 	Key_SetBinding (b, cmd);
 }
 
