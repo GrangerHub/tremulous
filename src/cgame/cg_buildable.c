@@ -630,7 +630,7 @@ void CG_GhostBuildable( buildable_t buildable )
   BG_PositionBuildableRelativeToPlayer( ps, mins, maxs, CG_Trace, entity_origin, angles, &tr );
 
   if( cg_rangeMarkerForBlueprint.integer && tr.entityNum != ENTITYNUM_NONE )
-    CG_GhostBuildableRangeMarker( buildable, entity_origin, tr.plane.normal );
+    CG_GhostBuildableRangeMarker( buildable, entity_origin, tr.plane.normal, 0.7f );
 
   CG_PositionAndOrientateBuildable( angles, entity_origin, tr.plane.normal, ps->clientNum,
                                     mins, maxs, ent[0].axis, ent[0].origin );
@@ -1506,6 +1506,7 @@ void CG_Buildable( centity_t *cent )
   {
     // only light up the powered buildables.
     if ( es->eFlags & EF_B_POWERED )
-      CG_GhostBuildableRangeMarker( es->modelindex, ent.origin, surfNormal );
+      CG_GhostBuildableRangeMarker( es->modelindex, ent.origin, surfNormal,
+          CG_RangeMarkerAnimation( cent ) );
   }
 }

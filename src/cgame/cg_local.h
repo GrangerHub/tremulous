@@ -84,6 +84,8 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #define TEAM_OVERLAY_MAXNAME_WIDTH  12
 #define TEAM_OVERLAY_MAXLOCATION_WIDTH  16
 
+#define RM_ANIM_TIME 1000
+
 typedef enum
 {
   FOOTSTEP_NORMAL,
@@ -695,6 +697,7 @@ typedef struct centity_s
 
   qboolean              valid;
   qboolean              oldValid;
+  int                   validTime;
   struct centity_s      *nextLocation;
 } centity_t;
 
@@ -1684,7 +1687,8 @@ void        CG_DrawSphericalCone( const vec3_t tip, const vec3_t rotation, float
                                   qboolean a240, int customShader, const float *shaderRGBA );
 void        CG_DrawRangeMarker( rangeMarkerType_t rmType, const vec3_t origin, const float *angles, float range,
                                 qboolean drawSurface, qboolean drawIntersection, qboolean drawFrontline,
-                                const vec3_t rgb, float surfaceOpacity, float lineOpacity, float lineThickness );
+                                const vec3_t rgb, float surfaceOpacity, float lineOpacity, float lineThickness,
+                                float animation );
 
 //
 // cg_draw.c
@@ -1945,10 +1949,12 @@ qboolean    CG_GetRangeMarkerPreferences( qboolean *drawSurface, qboolean *drawI
 // cg_drawtools.c
 void        CG_DrawRangeMarker( rangeMarkerType_t rmType, const vec3_t origin, const float *angles, float range,
                                 qboolean drawSurface, qboolean drawIntersection, qboolean drawFrontline,
-                                const vec3_t rgb, float surfaceOpacity, float lineOpacity, float lineThickness );
+                                const vec3_t rgb, float surfaceOpacity, float lineOpacity, float lineThickness,
+                                float animation);
 // cg_buildable.c
+float       CG_RangeMarkerAnimation(centity_t *cent);
 qboolean    CG_GetBuildableRangeMarkerProperties( buildable_t bType, rangeMarkerType_t *rmType, float *range, vec3_t rgb );
-void        CG_GhostBuildableRangeMarker( buildable_t buildable, const vec3_t origin, const vec3_t normal );
+void        CG_GhostBuildableRangeMarker( buildable_t buildable, const vec3_t origin, const vec3_t normal, float animation );
 // cg_ents.c
 void        CG_RangeMarker( centity_t *cent );
 
