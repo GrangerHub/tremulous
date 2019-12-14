@@ -182,6 +182,7 @@ static void CG_DrawDir( rectDef_t *rect, vec3_t origin, vec4_t colour )
   vec3_t  up  = { 0.0f, 0.0f,   1.0f };
   vec3_t  top = { 0.0f, -1.0f,  0.0f };
   float   angle;
+  float   distanceRatio;
   playerState_t *ps = &cg.snap->ps;
 
   BG_GetClientNormal( ps, normal );
@@ -205,6 +206,10 @@ static void CG_DrawDir( rectDef_t *rect, vec3_t origin, vec4_t colour )
 
   RotatePointAroundVector( drawOrigin, up, top, angle );
 
+  // simplified circular easing out
+  distanceRatio = Distance(view, origin) / ALIENSENSE_RANGE;
+  colour[3] *= sqrt( 1 - distanceRatio * distanceRatio);
+
   trap_R_SetColor( colour );
   CG_DrawPic( rect->x + ( rect->w / 2 ) - ( BLIPX2 / 2 ) - drawOrigin[ 0 ] * ( rect->w / 2 ),
               rect->y + ( rect->h / 2 ) - ( BLIPY2 / 2 ) + drawOrigin[ 1 ] * ( rect->h / 2 ),
@@ -222,10 +227,32 @@ void CG_AlienSense( rectDef_t *rect )
   int     i;
   vec3_t  origin;
   vec3_t  relOrigin;
-  vec4_t  buildable = { 1.0f, 0.0f, 0.0f, 0.7f };
-  vec4_t  client    = { 0.0f, 0.0f, 1.0f, 0.7f };
+  vec4_t  abuildable = { 0.0f, 0.0f, 0.0f, 0.7f };
+  vec4_t  aclient    = { 0.5f, 0.55f, 0.02f, 0.7f };
+  vec4_t  hbuildable = { 1.0f, 0.0f, 0.0f, 0.7f };
+  vec4_t  hclient    = { 0.0f, 0.0f, 1.0f, 0.7f };
 
   VectorCopy( entityPositions.origin, origin );
+
+  //draw alien buildables
+  for( i = 0; i < entityPositions.numAlienBuildables; i++ )
+  {
+    VectorClear( relOrigin );
+    VectorSubtract( entityPositions.alienBuildablePos[ i ], origin, relOrigin );
+
+    if( VectorLength( relOrigin ) < ALIENSENSE_RANGE )
+      CG_DrawDir( rect, relOrigin, abuildable );
+  }
+
+  //draw alien clients
+  for( i = 0; i < entityPositions.numAlienClients; i++ )
+  {
+    VectorClear( relOrigin );
+    VectorSubtract( entityPositions.alienClientPos[ i ], origin, relOrigin );
+
+    if( VectorLength( relOrigin ) < ALIENSENSE_RANGE )
+      CG_DrawDir( rect, relOrigin, aclient );
+  }
 
   //draw human buildables
   for( i = 0; i < entityPositions.numHumanBuildables; i++ )
@@ -234,7 +261,7 @@ void CG_AlienSense( rectDef_t *rect )
     VectorSubtract( entityPositions.humanBuildablePos[ i ], origin, relOrigin );
 
     if( VectorLength( relOrigin ) < ALIENSENSE_RANGE )
-      CG_DrawDir( rect, relOrigin, buildable );
+      CG_DrawDir( rect, relOrigin, hbuildable );
   }
 
   //draw human clients
@@ -244,7 +271,7 @@ void CG_AlienSense( rectDef_t *rect )
     VectorSubtract( entityPositions.humanClientPos[ i ], origin, relOrigin );
 
     if( VectorLength( relOrigin ) < ALIENSENSE_RANGE )
-      CG_DrawDir( rect, relOrigin, client );
+      CG_DrawDir( rect, relOrigin, hclient );
   }
 }
 
@@ -382,7 +409,7 @@ void THZ_DrawScanner( rectDef_t *rect )
 
     // Draw cross
     CG_FillRect( rect->x + (rect->w/2),
-                 rect->y, 
+                 rect->y,
                  1,
                  rect->h,
                  color );
