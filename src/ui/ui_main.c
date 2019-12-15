@@ -3000,6 +3000,26 @@ static int UI_GetCurrentCredits(void)
 
 /*
 ===============
+UI_GetConflictingUpgradeBudget
+
+Calculate a reduction of what will be sold when buying the upgrade
+===============
+*/
+static int UI_GetConflictingUpgradeBudget( upgrade_t upgrade )
+{
+  int budget = 0;
+  int i;
+  int refSlots = BG_Upgrade(upgrade)->slots;
+
+  for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
+      if (uiInfo.upgrades & (1 << i) && BG_Upgrade(i)->slots & refSlots)
+          budget += BG_Upgrade(i)->price;
+
+  return (budget);
+}
+
+/*
+===============
 UI_IsAmmoFull
 ===============
 */
@@ -3038,6 +3058,7 @@ UI_CanGotUpgrade
 */
 static qboolean UI_CanGotUpgrade(upgrade_t upgrade, int credits)
 {
+  credits += UI_GetConflictingUpgradeBudget( upgrade );
   return (BG_Upgrade(upgrade)->price <= credits);
 }
 
@@ -3256,7 +3277,7 @@ static void UI_LoadHumanArmouryBuysWeapon(int priority, int *j, int stage, int s
 UI_LoadHumanArmouryBuysUpgrade
 ===============
 */
-static void UI_LoadHumanArmouryBuysUpgrade(int priority, int *j, int stage, int sellingBudget, int credits)
+static void UI_LoadHumanArmouryBuysUpgrade(int priority, int *j, int stage, int upgrSlots, int credits)
 {
     int       i = 0;
     qboolean  addUpgrade;
@@ -3280,7 +3301,7 @@ static void UI_LoadHumanArmouryBuysUpgrade(int priority, int *j, int stage, int 
                     if (i != UP_AMMO && BG_UpgradeAllowedInStage(i, stage) && UI_CanGotUpgrade(i, credits))
                     {
                         addUpgrade = qtrue;
-                        prefix = UI_IsUpgradeBetter(i, sellingBudget) ? "[upgrade] " : "";
+                        prefix = UI_IsUpgradeBetter(i, upgrSlots) ? "[upgrade] " : "";
                     }
                     break;
                 case 2:
@@ -3325,27 +3346,20 @@ static void UI_LoadHumanArmouryBuys(void)
     humanStates_t state;
     qboolean criticalBuilds;
     stage_t stage = UI_GetCurrentHumanStage();
-    // int slots = 0;
     int sellingBudget = 0;
+    int upgrSlots = 0;
     int credits = UI_GetCurrentCredits();
 
     UI_humanStates(&state);
     UI_ParseCarriageList();
 
     for (i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++)
-    {
         if (uiInfo.weapons & (1 << i))
-        {
-          // slots |= BG_Weapon(i)->slots;
           sellingBudget += BG_Weapon(i)->price;
-        }
-    }
-    //
-    // for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
-    // {
-    //     if (uiInfo.upgrades & (1 << i))
-    //         slots |= BG_Upgrade(i)->slots;
-    // }
+
+    for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
+        if (uiInfo.upgrades & (1 << i))
+            upgrSlots |= BG_Upgrade(i)->slots;
 
     criticalBuilds = ( ( !state.rcHealth || !state.spawns || BG_BuildableAllowedInStage(BA_H_ARMOURY, stage) && !state.armourys
             || BG_BuildableAllowedInStage(BA_H_MEDISTAT, stage) && !state.medicals
@@ -3356,19 +3370,19 @@ static void UI_LoadHumanArmouryBuys(void)
 
     // Critical (ammo mainly)
     UI_LoadHumanArmouryBuysWeapon(0, &j, stage, sellingBudget, credits, criticalBuilds);
-    UI_LoadHumanArmouryBuysUpgrade(0, &j, stage, sellingBudget, credits);
+    UI_LoadHumanArmouryBuysUpgrade(0, &j, stage, upgrSlots, credits);
 
     // Available to buy
     UI_LoadHumanArmouryBuysWeapon(1, &j, stage, sellingBudget, credits, criticalBuilds);
-    UI_LoadHumanArmouryBuysUpgrade(1, &j, stage, sellingBudget, credits);
+    UI_LoadHumanArmouryBuysUpgrade(1, &j, stage, upgrSlots, credits);
 
     // Unlocked but no enough funds
     UI_LoadHumanArmouryBuysWeapon(2, &j, stage, sellingBudget, credits, criticalBuilds);
-    UI_LoadHumanArmouryBuysUpgrade(2, &j, stage, sellingBudget, credits);
+    UI_LoadHumanArmouryBuysUpgrade(2, &j, stage, upgrSlots, credits);
 
     // Locked
     UI_LoadHumanArmouryBuysWeapon(3, &j, stage, sellingBudget, credits, criticalBuilds);
-    UI_LoadHumanArmouryBuysUpgrade(3, &j, stage, sellingBudget, credits);
+    UI_LoadHumanArmouryBuysUpgrade(3, &j, stage, upgrSlots, credits);
 }
 
 /*
