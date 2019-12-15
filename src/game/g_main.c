@@ -2087,8 +2087,8 @@ void CheckExitRules( void )
   {
     //humans win
     level.lastWin = TEAM_HUMANS;
-    trap_SendServerCommand( -1, "print \"Humans win\n\"");
-    trap_SetConfigstring( CS_WINNER, "Humans Win" );
+    trap_SendServerCommand( -1, "print \"Humans win [human]\n\"");
+    trap_SetConfigstring( CS_WINNER, "^5  Humans Win [human]" );
     LogExit( "Humans win." );
   }
   else if( level.uncondAlienWin ||
@@ -2098,8 +2098,8 @@ void CheckExitRules( void )
   {
     //aliens win
     level.lastWin = TEAM_ALIENS;
-    trap_SendServerCommand( -1, "print \"Aliens win\n\"");
-    trap_SetConfigstring( CS_WINNER, "Aliens Win" );
+    trap_SendServerCommand( -1, "print \"Aliens win [dragoon]\n\"");
+    trap_SetConfigstring( CS_WINNER, "^1  Aliens Win [dragoon]" );
     LogExit( "Aliens win." );
   }
 }
