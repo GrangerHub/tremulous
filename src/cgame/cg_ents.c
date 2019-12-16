@@ -1279,6 +1279,7 @@ void CG_AddPacketEntities( void )
   int             num;
   centity_t       *cent;
   playerState_t   *ps;
+  entityState_t   *es;
 
   // set cg.frameInterpolation
   if( cg.nextSnap )
@@ -1354,14 +1355,23 @@ void CG_AddPacketEntities( void )
     CG_AddCEntity( cent );
   }
 
-  // Keep range marker for hidding animation
-  for( num = 0; num < MAX_GENTITIES; num++ )
+  if ( cg_rangeMarkerForBlueprint.integer )
   {
-    cent = &cg_entities[ num ];
+    // Keep range marker for hidding animation
+    for( num = 0; num < MAX_GENTITIES; num++ )
+    {
+      cent = &cg_entities[ num ];
 
-    if( !cent->valid && cent->currentState.eType == ET_BUILDABLE
-        && cg.time - cent->validTime < RM_ANIM_TIME)
-      CG_AddCEntity( cent );
+      if( !cent->valid && cent->currentState.eType == ET_BUILDABLE
+          && cg.time - cent->validTime < RM_ANIM_TIME)
+      {
+        es = &cent->currentState;
+        // only light up the powered buildables.
+        if ( es->eFlags & EF_B_POWERED )
+          CG_GhostBuildableRangeMarker( es->modelindex, cent->buildableCache.cachedOrigin, cent->buildableCache.cachedNormal,
+              CG_RangeMarkerAnimation( cent ) );
+      }
+    }
   }
 
   //make an attempt at drawing bounding boxes of selected entity types
