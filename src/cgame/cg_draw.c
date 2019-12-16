@@ -255,7 +255,7 @@ static void CG_DrawNewProgressBar( rectDef_t *rect, vec4_t color,
   borderStyle[1] = BORDER_FOLD;
   borderStyle[2] = BORDER_FOLD;
   borderStyle[3] = BORDER_FOLD;
-  
+
   if( borderSize >= 0.0f )
     rimWidth = borderSize;
   else
@@ -1494,6 +1494,68 @@ static void CG_DrawTeamLabel( rectDef_t *rect, team_t team, float text_x, float 
   CG_AlignText( rect, s, scale, 0.0f, 0.0f, textalign, textvalign, &tx, &ty );
   UI_Text_Paint( text_x + tx, text_y + ty, scale, color, s, 0, 0, textStyle );
 }
+
+/*
+==================
+CG_DrawTeamStatus
+==================
+*/
+static void CG_DrawTeamStatus( rectDef_t *rect, float text_x, float text_y,
+    vec4_t color, float scale, int textalign, int textvalign, int textStyle )
+{
+  char  s[ MAX_TOKEN_CHARS ];
+  float tx, ty;
+
+  if( cg.intermissionStarted )
+    return;
+
+  if( cg.snap->ps.stats[ STAT_TEAM ] == TEAM_NONE )
+    return;
+
+  if( cg.snap->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
+  {
+    alienStates_t *alienStates = &cgs.alienStates;
+    int fullHealth = BG_Buildable(BA_A_OVERMIND)->health;
+    Com_sprintf( s, MAX_TOKEN_CHARS, "^7%s[overmind](%s%i/%i^7) [egg](%s%i^7) [granger](%s%i^7) [booster](%s%i^7)",
+        alienStates->omBuilding ? "[upgrade]" : (alienStates->omHealth ? "" : "[!]"),
+        ((alienStates->omHealth > fullHealth / 2) ? "^2" : ((alienStates->omHealth > fullHealth / 4) ? "^3" : "^1" )),
+        alienStates->omHealth,
+        fullHealth,
+        !alienStates->spawns ? "^1" : "^2",
+        alienStates->spawns,
+        !alienStates->builders ? ((!alienStates->spawns || !alienStates->omHealth) ? "^1" : "^0") : "^2",
+        alienStates->builders,
+        !alienStates->boosters ? (BG_BuildableAllowedInStage(BA_A_BOOSTER, cgs.alienStage) ? "^1" : "^0") : "^2",
+        alienStates->boosters
+      );
+  }
+  else if( cg.snap->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
+  {
+    humanStates_t *humanStates = &cgs.humanStates;
+    int fullHealth = BG_Buildable(BA_H_REACTOR)->health;
+    Com_sprintf( s, MAX_TOKEN_CHARS, "^7%s[reactor](%s%i/%i^7) [telenode](%s%i^7) [ckit](%s%i^7) [armoury](%s%i^7) [medstat](%s%i^7) [defcomp](%s%i^7)",
+        (humanStates->rcBuilding ? "[upgrade]" : (humanStates->rcHealth ? "" : "[!]")),
+        ((humanStates->rcHealth > fullHealth / 2) ? "^2" : ((humanStates->rcHealth > fullHealth / 4) ? "^3" : "^1" )),
+        humanStates->rcHealth,
+        fullHealth,
+        !humanStates->spawns ? "^1" : "^2",
+        humanStates->spawns,
+        !humanStates->builders ? ((!humanStates->spawns || !humanStates->rcHealth) ? "^1" : "^0") : "^2",
+        humanStates->builders,
+        !humanStates->armourys ? "^1" : "^2",
+        humanStates->armourys,
+        !humanStates->medicals ? "^1" : "^2",
+        humanStates->medicals,
+        !humanStates->computers ? (BG_BuildableAllowedInStage(BA_H_DCC, cgs.humanStage) ? "^1" : "^0") : "^2",
+        humanStates->computers
+      );
+  }
+
+  CG_AlignText( rect, s, scale, 0.0f, 0.0f, textalign, textvalign, &tx, &ty );
+
+  UI_Text_Paint( text_x + tx, text_y + ty, scale, color, s, 0, 0, textStyle );
+}
+
 
 /*
 ==================
@@ -2970,6 +3032,9 @@ void CG_OwnerDraw( float x, float y, float w, float h, float text_x,
       break;
     case CG_PLAYER_CROSSHAIR:
       CG_DrawCrosshair( &rect, foreColor );
+      break;
+    case CG_TEAM_STATUS:
+      CG_DrawTeamStatus( &rect, text_x, text_y, foreColor, scale, textalign, textvalign, textStyle );
       break;
     case CG_STAGE_REPORT_TEXT:
       CG_DrawStageReport( &rect, text_x, text_y, foreColor, scale, textalign, textvalign, textStyle );
