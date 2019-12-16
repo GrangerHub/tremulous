@@ -23,13 +23,21 @@ models/buildables/tesla/tesla_ball
 {
 	{
 		map models/buildables/tesla/tesla_ball.tga
-		tcGen environment
 		rgbGen lightingDiffuse
+		tcMod scroll -0.2 0.2
 	}
 	{
 		map models/buildables/tesla/tesla_ball.tga
-		blendFunc GL_SRC_ALPHA GL_ONE
+		rgbGen lightingDiffuse
+		blendfunc add
 		detail
+		tcMod scroll 0.35 -0.45
+		tcMod scale -1 1
+	}
+	{
+		map models/buildables/tesla/tesla_ball.tga
+		tcGen environment
+		blendFunc GL_SRC_ALPHA GL_ONE
 		alphaGen lightingSpecular
 	}
 }
