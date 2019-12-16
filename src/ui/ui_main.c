@@ -4983,7 +4983,23 @@ static const char *UI_FeederItemText(int feederID, int index, int column, qhandl
     else if (feederID == FEEDER_TREMHUMANARMOURYSELL)
     {
         if (index >= 0 && index < uiInfo.humanArmourySellCount)
-            return uiInfo.humanArmourySellList[index].text;
+        {
+            // If conflicting with selected
+            if (
+                (
+                    uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].type == INFOTYPE_WEAPON ?
+                    BG_Weapon(uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].v.weapon)->slots :
+                    BG_Upgrade(uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].v.upgrade)->slots
+                ) & (
+                    uiInfo.humanArmourySellList[index].type == INFOTYPE_WEAPON ?
+                    BG_Weapon(uiInfo.humanArmourySellList[index].v.weapon)->slots :
+                    BG_Upgrade(uiInfo.humanArmourySellList[index].v.upgrade)->slots
+                )
+            )
+                return (va("[!] %s", uiInfo.humanArmourySellList[index].text));
+            else
+                return uiInfo.humanArmourySellList[index].text;
+        }
     }
     else if (feederID == FEEDER_TREMALIENUPGRADE)
     {
