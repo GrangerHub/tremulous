@@ -323,7 +323,7 @@ static cvarTable_t cvarTable[ ] =
   { &cg_unlagged, "cg_unlagged", "1", CVAR_ARCHIVE|CVAR_USERINFO },
   { NULL, "cg_flySpeed", "600", CVAR_ARCHIVE|CVAR_USERINFO },
   { &cg_depthSortParticles, "cg_depthSortParticles", "1", CVAR_ARCHIVE },
-  { &cg_bounceParticles, "cg_bounceParticles", "0", CVAR_ARCHIVE },
+  { &cg_bounceParticles, "cg_bounceParticles", "1", CVAR_ARCHIVE },
   { &cg_consoleLatency, "cg_consoleLatency", "3000", CVAR_ARCHIVE },
   { &cg_lightFlare, "cg_lightFlare", "3", CVAR_ARCHIVE },
   { &cg_debugParticles, "cg_debugParticles", "0", CVAR_CHEAT },
