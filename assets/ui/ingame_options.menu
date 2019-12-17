@@ -833,7 +833,7 @@
       type ITEM_TYPE_MULTI
       text "Wallwalking Speed:"
       cvar "cg_wwSmoothTime"
-      cvarFloatList { "Medium" 300 "Fast" 150 "Instant" 0 "Slow" 600 }
+      cvarFloatList { "Slower" 450 "Slow" 300 "Medium" 225 "Fast" 150 "Faster" 75 "Instant" 0}
       rect SCONTENT_X (SCONTENT_Y+(2*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
