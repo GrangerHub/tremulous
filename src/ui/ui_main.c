@@ -2432,7 +2432,7 @@ static void UI_BuildPlayerList(void)
 static void UI_DrawGLInfo(rectDef_t *rect, float scale, int textalign, int textvalign, vec4_t color, int textStyle,
     float text_x, float text_y)
 {
-    char buffer[4096];
+    char buffer[8192];
 
     Com_sprintf(buffer, sizeof(buffer),
         "VENDOR: %s\nVERSION: %s\n"
