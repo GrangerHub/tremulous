@@ -121,7 +121,7 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 
 #define SLIDER_WIDTH (96.0f * DC->aspectScale)
 #define SLIDER_HEIGHT 16.0f
-#define SLIDER_THUMB_WIDTH (12.0f * DC->aspectScale)
+#define SLIDER_THUMB_WIDTH (10.0f * DC->aspectScale)
 #define SLIDER_THUMB_HEIGHT 20.0f
 #define NUM_CROSSHAIRS 10
 
