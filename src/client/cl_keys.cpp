@@ -815,7 +815,7 @@ static void Message_Key( int key ) {
 				} else {
 					//string isnt long enough
 					Com_Printf ( 
-						"^3Error:your clantag has to be Between 3 and 10 chars long. current value is:^7 %s^7\n",
+						"^3Error:your cl_clantag has to be Between 3 and 10 chars long. current value is:^7 %s^7\n",
 						clantagDecolored );
 					return;
 				}
