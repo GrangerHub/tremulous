@@ -432,4 +432,11 @@ DEF_LOCAL( void fs_check_default_paks(void) )
 
 DEF_LOCAL( qboolean fs_check_trusted_vm_hash(unsigned char *hash) )
 
+/* ******************************************************************************** */
+// Tremulous
+/* ******************************************************************************** */
+
+DEF_PUBLIC( bool FS_BrowseHomepath( void ) )
+DEF_PUBLIC( bool FS_OpenBaseGamePath( const char *baseGamePath ) )
+
 #undef qboolean
