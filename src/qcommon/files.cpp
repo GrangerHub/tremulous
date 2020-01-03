@@ -2,13 +2,13 @@
    Copyright (C) 2016 Victor Roemer (wtfbbqhax), <victor@badsec.org>.
    Copyright (C) 2000-2013 Darklegion Development
    Copyright (C) 1999-2005 Id Software, Inc.
-   Copyright (C) 2015-2018 GrangerHub
+   Copyright (C) 2015-2019 GrangerHub
 
    This file is part of Tremulous.
 
    Tremulous is free software; you can redistribute it
    and/or modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the License,
+   published by the Free Software Foundation; either version 3 of the License,
    or (at your option) any later version.
 
    Tremulous is distributed in the hope that it will be
@@ -17,8 +17,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with Tremulous; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+   along with Tremulous; if not, see <https://www.gnu.org/licenses/>
+   
 */
 
 #ifndef NEW_FILESYSTEM
@@ -395,6 +395,75 @@ char *FS_BuildOSPath(const char *base, const char *game, const char *qpath)
             __FUNCTION__, ospath[toggle]);
 
     return ospath[toggle];
+}
+
+/*
+============
+FS_OpenWithDefault
+
+Wrapper for Sys_OpenWithDefault()
+============
+*/
+static bool FS_OpenWithDefault( const char *path )
+{
+    if( Sys_OpenWithDefault( path ) )
+    {
+        // minimize the client's window
+        Cmd_ExecuteString( "minimize" );
+        return true;
+    }
+
+    return false;
+}
+
+/*
+============
+FS_BrowseHomepath
+
+Opens the homepath in the default file manager
+============
+*/
+bool FS_BrowseHomepath( void )
+{
+    const char *homePath = Sys_DefaultHomePath( );
+
+    if (!homePath || !homePath[0])
+    {
+        homePath = fs_basepath->string;
+    }
+
+    if( FS_OpenWithDefault( homePath ) )
+        return true;
+
+    Com_Printf( S_COLOR_RED "FS_BrowseHomepath: failed to open the homepath with the default file manager.\n" S_COLOR_WHITE );
+    return false;
+}
+
+/*
+============
+FS_OpenBaseGamePath
+
+Opens the given path for the
+base game in the default file manager
+============
+*/
+bool FS_OpenBaseGamePath( const char *baseGamePath )
+{
+    const char *homePath = Sys_DefaultHomePath( );
+    const char *path;
+
+    if (!homePath || !homePath[0])
+    {
+        homePath = fs_basepath->string;
+    }
+
+    path = FS_BuildOSPath( homePath, fs_basegame->string, baseGamePath);
+
+    if( FS_OpenWithDefault( path ) )
+        return true;
+
+    Com_Printf( S_COLOR_RED "FS_BrowseHomepath: failed to open the homepath with the default file manager.\n" S_COLOR_WHITE );
+    return false;
 }
 
 /*

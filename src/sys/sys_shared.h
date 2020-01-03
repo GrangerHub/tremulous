@@ -2,7 +2,7 @@
 
    This File is part of Tremulous.
    Copyright (C) 2016, wtfbbqhax <victor@badsec.org>.
-   Copyright (C) 2015-2018, GrangerHub <grangerhub.com>.
+   Copyright (C) 2015-2019, GrangerHub <grangerhub.com>.
 
 */
 
@@ -71,6 +71,7 @@ void Sys_SetErrorText(const char *text);
 FILE *Sys_FOpen(const char *ospath, const char *mode);
 bool Sys_Mkdir(const char *path);
 FILE *Sys_Mkfifo(const char *ospath);
+bool Sys_OpenWithDefault( const char *path );
 char *Sys_Cwd(void);
 void Sys_SetDefaultInstallPath(const char *path);
 char *Sys_DefaultInstallPath(void);

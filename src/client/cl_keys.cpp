@@ -2,13 +2,13 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
-Copyright (C) 2015-2018 GrangerHub
+Copyright (C) 2015-2019 GrangerHub
 
 This file is part of Tremulous.
 
 Tremulous is free software; you can redistribute it
 and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2 of the License,
+published by the Free Software Foundation; either version 3 of the License,
 or (at your option) any later version.
 
 Tremulous is distributed in the hope that it will be
@@ -17,8 +17,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Tremulous; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+along with Tremulous; if not, see <https://www.gnu.org/licenses/>
+
 ===========================================================================
 */
 
@@ -39,6 +39,8 @@ field_t g_consoleField;
 
 field_t chatField;
 bool chat_team;
+bool chat_admins;
+bool chat_clans;
 int chat_playerNum;
 
 bool key_overstrikeMode;
@@ -794,6 +796,30 @@ static void Message_Key( int key ) {
 				             "say_team \"%s\"\n",
 										 chatField.buffer );
 			}
+			else if (chat_admins) {
+				Com_sprintf( buffer, sizeof( buffer ), 
+										 "a \"%s\"\n",
+										 chatField.buffer );
+			}
+			else if (chat_clans) {
+				char clantagDecolored[ 32 ];
+
+				Q_strncpyz( clantagDecolored, cl_clantag->string,
+										sizeof(clantagDecolored) );
+				Q_CleanStr( clantagDecolored );
+
+				if( strlen(clantagDecolored) > 2 && strlen(clantagDecolored) < 11 ) {
+					Com_sprintf( buffer, sizeof( buffer ),
+											 "m \"%s\" \"%s\"\n", clantagDecolored,
+											 chatField.buffer );
+				} else {
+					//string isnt long enough
+					Com_Printf ( 
+						"^3Error:your cl_clantag has to be Between 3 and 10 chars long. current value is:^7 %s^7\n",
+						clantagDecolored );
+					return;
+				}
+			}
 			else {
 				Com_sprintf( buffer, sizeof( buffer ),
 				             "say \"%s\"\n", chatField.buffer );
@@ -1288,6 +1314,12 @@ static void CL_KeyDownEvent( int key, unsigned time )
 		( clc.demoplaying || clc.state == CA_CINEMATIC ) && Key_GetCatcher( ) == 0 ) {
 
 		if (Cvar_VariableValue ("com_cameraMode") == 0) {
+			if( clc.demoplaying && key != K_ESCAPE ) {
+				// avoid accidental stopping of demos from pressing a random key by opening the console
+				Con_ToggleConsole_f ();
+				Key_ClearStates ();
+				return;
+			}
 			Cvar_Set ("nextdemo","");
 			key = K_ESCAPE;
 		}

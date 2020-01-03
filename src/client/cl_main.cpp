@@ -2,13 +2,13 @@
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2013 Darklegion Development
-Copyright (C) 2015-2018 GrangerHub
+Copyright (C) 2015-2019 GrangerHub
 
 This file is part of Tremulous.
 
 Tremulous is free software; you can redistribute it
 and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2 of the License,
+published by the Free Software Foundation; either version 3 of the License,
 or (at your option) any later version.
 
 Tremulous is distributed in the hope that it will be
@@ -17,8 +17,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Tremulous; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+along with Tremulous; if not, see <https://www.gnu.org/licenses/>
+
 ===========================================================================
 */
 // cl_main.c  -- client main loop
@@ -125,6 +125,8 @@ cvar_t *cl_lanForcePackets;
 
 cvar_t *cl_guidServerUniq;
 
+cvar_t *cl_clantag;
+
 cvar_t *cl_consoleKeys;
 
 cvar_t *cl_rate;
@@ -177,6 +179,12 @@ static void CL_InstallUpdate_f()
 }
 
 static void CL_CheckForUpdate_f() { CL_GetLatestRelease(); }
+
+static void CL_BrowseHomepath_f() { FS_BrowseHomepath(); }
+
+static void CL_BrowseDemos_f() { FS_OpenBaseGamePath( "demos/" ); }
+
+static void CL_BrowseScreenShots_f() { FS_OpenBaseGamePath( "screenshots/" ); }
 
 #ifdef USE_MUMBLE
 static void CL_UpdateMumble(void)
@@ -767,7 +775,11 @@ static void CL_Record_f(void)
     {
         const char *s = Cmd_Argv(1);
         Q_strncpyz(demoName, s, sizeof(demoName));
-        Com_sprintf(name, sizeof(name), "demos/%s.%s%d", demoName, DEMOEXT, PROTOCOL_VERSION);
+        Com_sprintf(
+          name, sizeof(name),
+          "demos/%s.%s%d", demoName, DEMOEXT,
+            (clc.netchan.alternateProtocol == 0 ?
+              PROTOCOL_VERSION : clc.netchan.alternateProtocol == 1 ? 70 : 69));
     }
     else
     {
@@ -5062,10 +5074,12 @@ void CL_Init(void)
     // ~ and `, as keys and characters
     cl_consoleKeys = Cvar_Get("cl_consoleKeys", "~ ` 0x7e 0x60", CVAR_ARCHIVE);
 
+    cl_clantag = Cvar_Get ("cl_clantag", "", CVAR_ARCHIVE);
+
     // userinfo
     Cvar_Get("name", "UnnamedPlayer", CVAR_USERINFO | CVAR_ARCHIVE);
     cl_rate = Cvar_Get("rate", "25000", CVAR_USERINFO | CVAR_ARCHIVE);
-    Cvar_Get("snaps", "20", CVAR_USERINFO | CVAR_ARCHIVE);
+    Cvar_Get("snaps", "40", CVAR_USERINFO | CVAR_ARCHIVE);
     Cvar_Get("color1", "4", CVAR_USERINFO | CVAR_ARCHIVE);
     Cvar_Get("color2", "5", CVAR_USERINFO | CVAR_ARCHIVE);
     Cvar_Get("handicap", "100", CVAR_USERINFO | CVAR_ARCHIVE);
@@ -5130,6 +5144,9 @@ void CL_Init(void)
     Cmd_AddCommand("downloadUpdate", CL_DownloadUpdate_f);
     Cmd_AddCommand("installUpdate", CL_InstallUpdate_f);
     Cmd_AddCommand("checkForUpdate", CL_CheckForUpdate_f);
+    Cmd_AddCommand("browseHomepath", CL_BrowseHomepath_f);
+    Cmd_AddCommand("browseDemos", CL_BrowseDemos_f);
+    Cmd_AddCommand("browseScreenShots", CL_BrowseScreenShots_f);
 
     CL_InitRef();
 
