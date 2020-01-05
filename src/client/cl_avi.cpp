@@ -612,7 +612,7 @@ bool CL_CloseAVI( void )
   indexSize = 0;
   { char path[FS_MAX_PATH];
     if(fs_generate_path_writedir(FS_GetCurrentGameDir(), idxFileName,
-              0, FS_ALLOW_SLASH, path, sizeof(path)))
+              0, FS_ALLOW_DIRECTORIES, path, sizeof(path)))
       afd.idxF = fs_direct_read_handle_open(0, path, (unsigned int *)&indexSize); }
   if(indexSize <= 0)
 #else

@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 // This section is to support future crosshair lookup features
 
-#define STACKPTR(pointer) (fsc_stack_retrieve(&fs->general_stack, pointer))
+#define STACKPTR(pointer) (FSC_STACK_RETRIEVE(&fs->general_stack, pointer, 0))  // non-null
 
 /* ******************************************************************************** */
 // Crosshair Indexing
@@ -63,7 +63,7 @@ int index_crosshair(fsc_filesystem_t *fs, fsc_stackptr_t source_file_ptr, fsc_er
 // Other
 /* ******************************************************************************** */
 
-int is_crosshair_enabled(fsc_filesystem_t *fs, fsc_crosshair_t *crosshair)
+int is_crosshair_enabled(fsc_filesystem_t *fs, const fsc_crosshair_t *crosshair)
 {
     return fsc_is_file_enabled((const fsc_file_t *)STACKPTR(crosshair->source_file_ptr), fs);
 }

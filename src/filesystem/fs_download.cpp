@@ -102,8 +102,7 @@ static qboolean check_attempted_download(unsigned int hash, qboolean http)
 
 void fs_register_current_download_attempt(qboolean http)
 {
-    if (!current_download)
-        Com_Error(ERR_FATAL, "fs_register_current_download_attempt with null current_download");
+    FSC_ASSERT(current_download);
     register_attempted_download(current_download->hash, http);
 }
 
@@ -124,7 +123,7 @@ static qboolean entry_match_in_index(download_entry_t *entry, fsc_file_direct_t 
     fsc_pk3_hash_map_entry_t *hashmap_entry;
 
     fsc_hashtable_open(&fs.pk3_hash_lookup, entry->hash, &hti);
-    while ((hashmap_entry = (fsc_pk3_hash_map_entry_t *)STACKPTR(fsc_hashtable_next(&hti))))
+    while ((hashmap_entry = (fsc_pk3_hash_map_entry_t *)STACKPTRN(fsc_hashtable_next(&hti))))
     {
         fsc_file_direct_t *pk3 = (fsc_file_direct_t *)STACKPTR(hashmap_entry->pk3);
         if (!fsc_is_file_enabled((fsc_file_t *)pk3, &fs))
@@ -245,7 +244,8 @@ static download_entry_t *create_download_entry(const char *name, unsigned int ha
         return 0;
     if (!temp_filename)
         return 0;
-    if (!fs_generate_path(temp_mod_dir, 0, 0, 0, 0, 0, mod_dir, sizeof(mod_dir)))
+    fs_sanitize_mod_dir(temp_mod_dir, mod_dir);
+    if (!*mod_dir)
         return 0;
     if (!fs_generate_path(temp_filename, 0, 0, 0, 0, 0, filename, sizeof(filename)))
         return 0;
@@ -395,7 +395,7 @@ void fs_finalize_download(void)
         return;
     }
     if (!fs_generate_path_writedir(current_download->local_name, 0,
-            FS_ALLOW_PK3 | FS_ALLOW_SLASH | FS_CREATE_DIRECTORIES_FOR_FILE, 0, target_path, sizeof(target_path)))
+            FS_ALLOW_PK3 | FS_ALLOW_DIRECTORIES | FS_CREATE_DIRECTORIES_FOR_FILE, 0, target_path, sizeof(target_path)))
     {
         Com_Printf("ERROR: Failed to get target path for download\n");
         return;
@@ -411,7 +411,7 @@ void fs_finalize_download(void)
 
     if (actual_hash != current_download->hash)
     {
-        // Wrong hash - this could be a malicious attempt to spoof a default pak or maybe a corrupt
+        // Wrong hash - this could be a malicious attempt to spoof a core pak or maybe a corrupt
         //    download, but probably is just a server configuration issue mixing up pak versions.
         //    Run the file needed check with the new hash to see if it still passes.
         if (!fs_is_valid_download(current_download, actual_hash, qfalse))
@@ -431,7 +431,8 @@ void fs_finalize_download(void)
             fs_saveto_dlfolder->integer ? "downloads/" : "", current_download->filename, actual_hash);
         Com_Printf("WARNING: Downloaded pk3 %s conflicts with existing file. Using name %s instead.\n",
             current_download->local_name, new_name);
-        if (!fs_generate_path_writedir(new_name, 0, FS_ALLOW_SLASH | FS_ALLOW_PK3, 0, target_path, sizeof(target_path)))
+        if (!fs_generate_path_writedir(
+                new_name, 0, FS_ALLOW_DIRECTORIES | FS_ALLOW_PK3, 0, target_path, sizeof(target_path)))
         {
             Com_Printf("ERROR: Failed to get nonconflicted target path for download\n");
             return;

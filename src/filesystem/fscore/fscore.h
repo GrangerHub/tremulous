@@ -20,26 +20,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4477)	// warning about void ptrs from STACKPTR macros
-#endif
-
 /* ******************************************************************************** */
 // Definitions
 /* ******************************************************************************** */
 
-#define FSC_CACHE_VERSION 6
+#define FSC_CACHE_VERSION 11
 
 #define FSC_MAX_QPATH 256	// Buffer size including null terminator
 #define FSC_MAX_MODDIR 32	// Buffer size including null terminator
 
 #define	FSC_MAX_TOKEN_CHARS 1024	// based on q_shared.h
 #define FSC_MAX_SHADER_NAME FSC_MAX_TOKEN_CHARS
-
-#define FSC_CONTENTS_PK3 1
-#define FSC_CONTENTS_DLPK3 2
-#define FSC_CONTENTS_SHADER 4
-#define FSC_CONTENTS_CROSSHAIR 8
 
 /* ******************************************************************************** */
 // Misc (fsc_misc.c)
@@ -61,9 +52,10 @@ typedef struct {
 	int overflowed;
 } fsc_stream_t;
 
-int fsc_write_stream_data(fsc_stream_t *stream, void *data, unsigned int length);
-void fsc_stream_append_string(fsc_stream_t *stream, const char *string);
 int fsc_read_stream_data(fsc_stream_t *stream, void *output, unsigned int length);
+int fsc_write_stream_data(fsc_stream_t *stream, void *data, unsigned int length);
+void fsc_stream_append_string_substituted(fsc_stream_t *stream, const char *string, const char *substitution_table);
+void fsc_stream_append_string(fsc_stream_t *stream, const char *string);
 
 // ***** Standard Stack *****
 
@@ -82,11 +74,15 @@ typedef struct {
 
 void fsc_stack_initialize(fsc_stack_t *stack);
 fsc_stackptr_t fsc_stack_allocate(fsc_stack_t *stack, unsigned int size);
-void *fsc_stack_retrieve(const fsc_stack_t *stack, const fsc_stackptr_t pointer);
+void *fsc_stack_retrieve(const fsc_stack_t *stack, const fsc_stackptr_t pointer, int allow_null,
+		const char *caller, const char *expression);
 void fsc_stack_free(fsc_stack_t *stack);
 unsigned int fsc_stack_get_export_size(fsc_stack_t *stack);
 int fsc_stack_export(fsc_stack_t *stack, fsc_stream_t *stream);
 int fsc_stack_import(fsc_stack_t *stack, fsc_stream_t *stream);
+
+#define FSC_STACK_RETRIEVE(stack, pointer, allow_null) \
+		fsc_stack_retrieve(stack, pointer, allow_null, __func__, #pointer)
 
 // ***** Standard Hash Table *****
 
@@ -133,7 +129,7 @@ fsc_stackptr_t fsc_string_repository_getstring(const char *input, int allocate, 
 
 const char *fsc_get_qpath_conversion_table(void);
 int fsc_process_qpath(const char *input, char *buffer, const char **qp_dir, const char **qp_name, const char **qp_ext);
-int fsc_get_leading_directory(const char *input, char *output, int buffer_length, const char **remainder);
+unsigned int fsc_get_leading_directory(const char *input, char *buffer, unsigned int buffer_length, const char **remainder);
 
 // ***** Error Handling *****
 
@@ -143,14 +139,17 @@ int fsc_get_leading_directory(const char *input, char *output, int buffer_length
 #define FSC_ERROR_SHADERFILE 3	// current_element: fsc_file_t
 #define FSC_ERROR_CROSSHAIRFILE 4	// current_element: fsc_file_t
 
+#define FSC_ASSERT(expression) if(!(expression)) fsc_fatal_error_tagged("assertion failed", __func__, #expression);
+
 typedef struct {
 	void (*handler)(int id, const char *msg, void *current_element, void *context);
 	void *context;
 } fsc_errorhandler_t;
 
-void fsc_initialize_errorhandler(fsc_errorhandler_t *errorhandler,
-		void (*handler)(int id, const char *msg, void *current_element, void *context), void *context);
 void fsc_report_error(fsc_errorhandler_t *errorhandler, int id, const char *msg, void *current_element);
+void fsc_register_fatal_error_handler(void (*handler)(const char *msg));
+void fsc_fatal_error(const char *msg);
+void fsc_fatal_error_tagged(const char *msg, const char *caller, const char *expression);
 
 /* ******************************************************************************** */
 // Game Parsing Support (fsc_gameparse.c)
@@ -192,6 +191,7 @@ int fsc_compare_os_path(const void *path1, const void *path2);
 void iterate_directory(void *search_os_path, void (operation)(iterate_data_t *file_data,
 			void *iterate_context), void *iterate_context);
 
+void fsc_error_abort(const char *msg);
 int fsc_rename_file(void *source_os_path, void *target_os_path);
 int fsc_delete_file(void *os_path);
 int fsc_mkdir(void *os_path);
@@ -224,18 +224,23 @@ void fsc_free(void *allocation);
 #define FSC_SOURCETYPE_DIRECT 1
 #define FSC_SOURCETYPE_PK3 2
 
-#define FSC_FILEFLAG_DLPK3 1
+#define FSC_FILEFLAG_LINKED_CONTENT 1	// This file has other content like pk3 contents or shaders linked to it
+#define FSC_FILEFLAG_DLPK3 2	// This pk3 is located in a download directory
 
 typedef struct fsc_file_s {
 	// Hash table compliance
 	fsc_hashtable_entry_t hte;
 
 	// Identification
-	fsc_stackptr_t qp_dir_ptr;
-	fsc_stackptr_t qp_name_ptr;
+	// Note: The character encoding for qpaths is currently not standardized for values outside the ASCII range (val > 127)
+	// It depends on the encoding used by the OS library / pk3 file, which may be UTF-8, CP-1252, or something else
+	// Currently most content just uses ASCII characters
+	fsc_stackptr_t qp_dir_ptr;		// null for no directory
+	fsc_stackptr_t qp_name_ptr;		// should not be null
 	fsc_stackptr_t qp_ext_ptr;		// null for no extension
 
 	unsigned int filesize;
+	fsc_stackptr_t contents_cache;		// pointer to file data if cached, null otherwise
 	fsc_stackptr_t next_in_directory;	// Iteration
 	unsigned short flags;
 	unsigned short sourcetype;
@@ -251,10 +256,9 @@ typedef struct {
 	fsc_stackptr_t os_path_ptr;
 	unsigned int os_timestamp;
 	fsc_stackptr_t qp_mod_ptr;
-	fsc_stackptr_t pk3dir_ptr;
 
-	// Only relevant if this file is a pk3
-	unsigned int pk3_hash;
+	fsc_stackptr_t pk3dir_ptr;		// null if file is not part of a pk3dir
+	unsigned int pk3_hash;			// null if file is not a valid pk3
 
 	// For resource tallies
 	unsigned int pk3_subfile_count;
@@ -334,16 +338,21 @@ typedef struct fsc_filesystem_s {
 
 // ***** Functions *****
 
+const fsc_file_direct_t *fsc_get_base_file(const fsc_file_t *file, const fsc_filesystem_t *fs);
 int fsc_extract_file(const fsc_file_t *file, char *buffer, const fsc_filesystem_t *fs, fsc_errorhandler_t *eh);
 char *fsc_extract_file_allocated(fsc_filesystem_t *index, fsc_file_t *file, fsc_errorhandler_t *eh);
 
 int fsc_is_file_enabled(const fsc_file_t *file, const fsc_filesystem_t *fs);
 const char *fsc_get_mod_dir(const fsc_file_t *file, const fsc_filesystem_t *fs);
-int fsc_file_hash(const fsc_file_t *file, const fsc_filesystem_t *fs);
 void fsc_file_to_stream(const fsc_file_t *file, fsc_stream_t *stream, const fsc_filesystem_t *fs,
-			int include_mod, int include_pk3_origin);
+		int include_mod, int include_pk3_origin);
 
-int fsc_filename_contents(const char *qp_dir, const char *qp_name, const char *qp_ext);
+void fsc_register_file(fsc_stackptr_t file_ptr, fsc_filesystem_t *fs, fsc_errorhandler_t *eh);
+void fsc_load_file(int source_dir_id, const void *os_path, const char *mod_dir, const char *pk3dir_name,
+		const char *qp_dir, const char *qp_name, const char *qp_ext, unsigned int os_timestamp, unsigned int filesize,
+		fsc_filesystem_t *fs, fsc_errorhandler_t *eh);
+void fsc_load_file_full_path(int source_dir_id, const void *os_path, const char *full_qpath, unsigned int os_timestamp,
+		unsigned int filesize, fsc_filesystem_t *fs, fsc_errorhandler_t *eh);
 
 void fsc_filesystem_initialize(fsc_filesystem_t *fs);
 void fsc_filesystem_free(fsc_filesystem_t *fs);
@@ -357,7 +366,7 @@ void fsc_load_directory(fsc_filesystem_t *fs, void *os_path, int source_dir_id, 
 // receive_hash_data is used for standalone hash calculation operations,
 // and should be nulled during normal filesystem loading
 void fsc_load_pk3(void *os_path, fsc_filesystem_t *fs, fsc_stackptr_t sourcefile_ptr, fsc_errorhandler_t *eh,
-				void (receive_hash_data)(void *context, char *data, int size), void *receive_hash_data_context );
+				void (*receive_hash_data)(void *context, char *data, int size), void *receive_hash_data_context );
 void register_pk3_hash_lookup_entry(fsc_stackptr_t pk3_file_ptr, fsc_hashtable_t *pk3_hash_lookup, fsc_stack_t *stack);
 void *fsc_pk3_handle_open(const fsc_file_frompk3_t *file, int input_buffer_size, const fsc_filesystem_t *fs, fsc_errorhandler_t *eh);
 void fsc_pk3_handle_close(void *handle);
@@ -380,7 +389,7 @@ typedef struct fsc_shader_s {
 } fsc_shader_t;
 
 int index_shader_file(fsc_filesystem_t *fs, fsc_stackptr_t source_file_ptr, fsc_errorhandler_t *eh);
-int is_shader_enabled(fsc_filesystem_t *fs, fsc_shader_t *shader);
+int is_shader_enabled(fsc_filesystem_t *fs, const fsc_shader_t *shader);
 
 /* ******************************************************************************** */
 // Crosshair Lookup (fsc_crosshair.c)
@@ -395,7 +404,7 @@ typedef struct {
 } fsc_crosshair_t;
 
 int index_crosshair(fsc_filesystem_t *fs, fsc_stackptr_t source_file_ptr, fsc_errorhandler_t *eh);
-int is_crosshair_enabled(fsc_filesystem_t *fs, fsc_crosshair_t *crosshair);
+int is_crosshair_enabled(fsc_filesystem_t *fs, const fsc_crosshair_t *crosshair);
 
 /* ******************************************************************************** */
 // Iteration (fsc_iteration.c)

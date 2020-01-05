@@ -82,11 +82,14 @@ void fs_register_reference(const fsc_file_t *file)
     {
         int i;
         static const char *special_extensions[] = {"shader", "txt", "cfg", "config", "bot", "arena", "menu"};
-        const char *extension = (const char *)STACKPTR(file->qp_ext_ptr);
-        for (i = 0; i < ARRAY_LEN(special_extensions); ++i)
+        if (file->qp_ext_ptr)
         {
-            if (!Q_stricmp(extension, special_extensions[i]))
-                return;
+            const char *extension = (const char *)STACKPTR(file->qp_ext_ptr);
+            for (i = 0; i < ARRAY_LEN(special_extensions); ++i)
+            {
+                if (!Q_stricmp(extension, special_extensions[i]))
+                    return;
+            }
         }
     }
 
@@ -105,7 +108,7 @@ void fs_register_reference(const fsc_file_t *file)
     }
 
     // Add the reference
-    if (reference_tracker_add((fsc_file_direct_t *)STACKPTR(((fsc_file_frompk3_t *)file)->source_pk3)))
+    if (reference_tracker_add((fsc_file_direct_t *)fsc_get_base_file(file, &fs)))
     {
         if (fs_debug_references->integer)
         {
@@ -123,9 +126,28 @@ void FS_ClearPakReferences(int flags)
     fs_hashtable_reset(&reference_tracker, 0);
 }
 
-static int referenced_pak_qsort(const void *e1, const void *e2)
+static void reftracker_gen_sort_key(const fsc_file_t *file, fsc_stream_t *output)
 {
-    return fs_compare_file(*(const fsc_file_t **)e1, *(const fsc_file_t **)e2, qtrue);
+    fs_generate_core_sort_key(file, output, qtrue);
+    fs_write_sort_filename(file, output);
+    fs_write_sort_value(fs_get_source_dir_id(file), output);
+}
+
+static int reftracker_compare_file(const fsc_file_t *file1, const fsc_file_t *file2)
+{
+    char buffer1[1024];
+    char buffer2[1024];
+    fsc_stream_t stream1 = {buffer1, 0, sizeof(buffer1), qfalse};
+    fsc_stream_t stream2 = {buffer2, 0, sizeof(buffer2), qfalse};
+    reftracker_gen_sort_key(file1, &stream1);
+    reftracker_gen_sort_key(file2, &stream2);
+    return fsc_memcmp(
+        stream2.data, stream1.data, stream1.position < stream2.position ? stream1.position : stream2.position);
+}
+
+static int reftracker_qsort(const void *e1, const void *e2)
+{
+    return reftracker_compare_file(*(const fsc_file_t **)e1, *(const fsc_file_t **)e2);
 }
 
 static fsc_file_direct_t **generate_referenced_pak_list(int *count_out)
@@ -150,7 +172,7 @@ static fsc_file_direct_t **generate_referenced_pak_list(int *count_out)
         Com_Error(ERR_FATAL, "generate_referenced_pak_list list underflow");
 
     // Sort reference list
-    qsort(reference_list, count, sizeof(*reference_list), referenced_pak_qsort);
+    qsort(reference_list, count, sizeof(*reference_list), reftracker_qsort);
 
     if (count_out)
         *count_out = count;
@@ -281,8 +303,7 @@ static int get_pure_checksum_for_file(const fsc_file_t *file, int checksum_feed)
         return 0;
     if (file->sourcetype != FSC_SOURCETYPE_PK3)
         return 0;
-    return get_pure_checksum_for_pk3(
-        (const fsc_file_direct_t *)STACKPTR(((fsc_file_frompk3_t *)file)->source_pk3), checksum_feed);
+    return get_pure_checksum_for_pk3(fsc_get_base_file(file, &fs), checksum_feed);
 }
 
 static void add_referenced_pure_pk3s(fsc_stream_t *stream, fs_hashtable_t *reference_tracker)
@@ -366,7 +387,8 @@ typedef struct {
     char mod_dir[FSC_MAX_MODDIR];
     char name[FSC_MAX_QPATH];
     unsigned int hash;
-    const fsc_file_direct_t *pak;  // Optional (if null, will attempt to determine later)
+    const fsc_file_direct_t *pak_file;  // Optional (if null, represents hash-only entry)
+    unsigned int pak_file_name_match;  // For sorting purposes
 
     // Command characteristics
     char command_name[64];  // Name of the selector command that created this entry, for debug prints
@@ -374,10 +396,6 @@ typedef struct {
 
     // For debug print purposes
     int entry_id;
-
-    // How closely the specified mod dir/name match the ones in the pak reference
-    // 0 = no pak, 1 = no name match, 2 = case insensitive match, 3 = case sensitive match
-    unsigned int name_match;
 
     // Sorting
     char sort_key[FSC_MAX_MODDIR + FSC_MAX_QPATH + 32];
@@ -392,7 +410,6 @@ typedef struct {
 
     // For debug prints
     int entry_id_counter;
-    int duplicates;
 
     // Current command
     char command_name[64];
@@ -400,7 +417,7 @@ typedef struct {
 } reference_set_work_t;
 
 static void generate_reference_set_entry(reference_set_work_t *rsw, const char *mod_dir, const char *name,
-    unsigned int hash, const fsc_file_direct_t *pak, reference_set_entry_t *target)
+    unsigned int hash, const fsc_file_direct_t *pak_file, reference_set_entry_t *target)
 {
     // pak can be null; other parameters are required
     fsc_stream_t sort_stream = {target->sort_key, 0, sizeof(target->sort_key), 0};
@@ -409,40 +426,47 @@ static void generate_reference_set_entry(reference_set_work_t *rsw, const char *
     Q_strncpyz(target->mod_dir, mod_dir, sizeof(target->mod_dir));
     Q_strncpyz(target->name, name, sizeof(target->name));
     target->hash = hash;
-    target->pak = pak;
+    target->pak_file = pak_file;
     target->cluster = rsw->cluster;
     target->entry_id = rsw->entry_id_counter++;
 
+    // Write command name debug string
     Q_strncpyz(target->command_name, rsw->command_name, sizeof(target->command_name));
     if (strlen(rsw->command_name) >= sizeof(target->command_name))
     {
         strcpy(target->command_name + sizeof(target->command_name) - 4, "...");
     }
 
-    if (pak)
+    // Determine pak_file_name_match, which is added to the sort key to handle special cases
+    //   e.g. if a pk3 is specified in the download manifest with a specific hash, and multiple pk3s exist
+    //   in the filesystem with that hash, this sort value attempts to prioritize the physical pk3 closer to
+    //   the user-specified name to be used as the physical download source file
+    // 0 = no pak, 1 = no name match, 2 = case insensitive match, 3 = case sensitive match
+    if (pak_file)
     {
-        const char *pak_mod = (const char *)STACKPTR(pak->qp_mod_ptr);
-        const char *pak_name = (const char *)STACKPTR(pak->f.qp_name_ptr);
+        const char *pak_mod = (const char *)STACKPTR(pak_file->qp_mod_ptr);
+        const char *pak_name = (const char *)STACKPTR(pak_file->f.qp_name_ptr);
         if (!strcmp(mod_dir, pak_mod) && !strcmp(name, pak_name))
-            target->name_match = 3;
+            target->pak_file_name_match = 3;
         else if (!Q_stricmp(mod_dir, pak_mod) && !Q_stricmp(name, pak_name))
-            target->name_match = 2;
+            target->pak_file_name_match = 2;
         else
-            target->name_match = 1;
+            target->pak_file_name_match = 1;
     }
 
+    // Write sort key
     {
         FS_ModType mod_type = fs_get_mod_type(target->mod_dir);
-        unsigned int default_pak_priority =
-            mod_type < MODTYPE_OVERRIDE_DIRECTORY ? (unsigned int)default_pk3_position(hash) : 0;
+        unsigned int core_pak_priority =
+            mod_type < MODTYPE_OVERRIDE_DIRECTORY ? (unsigned int)core_pk3_position(hash) : 0;
 
         fs_write_sort_value(~target->cluster, &sort_stream);
         fs_write_sort_value(mod_type >= MODTYPE_OVERRIDE_DIRECTORY ? (unsigned int)mod_type : 0, &sort_stream);
-        fs_write_sort_value(default_pak_priority, &sort_stream);
+        fs_write_sort_value(core_pak_priority, &sort_stream);
         fs_write_sort_value((unsigned int)mod_type, &sort_stream);
-        fs_write_sort_string(target->mod_dir, &sort_stream);
-        fs_write_sort_string(target->name, &sort_stream);
-        fs_write_sort_value(target->name_match, &sort_stream);
+        fs_write_sort_string(target->mod_dir, &sort_stream, qfalse);
+        fs_write_sort_string(target->name, &sort_stream, qfalse);
+        fs_write_sort_value(target->pak_file_name_match, &sort_stream);
         target->sort_key_length = sort_stream.position;
     }
 }
@@ -473,15 +497,17 @@ static void reference_set_insert_entry(
         Com_Printf("source rule: %s\n", new_entry.command_name);
         Com_Printf("path: %s/%s\n", new_entry.mod_dir, new_entry.name);
         Com_Printf("hash: %i\n", (int)new_entry.hash);
-        if (new_entry.pak)
+        if (new_entry.pak_file)
         {
             char buffer[FS_FILE_BUFFER_SIZE];
-            fs_file_to_buffer((const fsc_file_t *)new_entry.pak, buffer, sizeof(buffer), qtrue, qtrue, qtrue, qfalse);
-            Com_Printf("physical file: %s\n", buffer);
+            fs_file_to_buffer(
+                (const fsc_file_t *)new_entry.pak_file, buffer, sizeof(buffer), qtrue, qtrue, qtrue, qfalse);
+            Com_Printf("pak file: %s\n", buffer);
+            Com_Printf("pak file name match: %u\n", new_entry.pak_file_name_match);
         }
         else
         {
-            Com_Printf("physical file: <none>\n");
+            Com_Printf("pak file: <none>\n");
         }
         Com_Printf("cluster: %i\n", new_entry.cluster);
     }
@@ -521,12 +547,12 @@ static void reference_set_insert_entry(
             if (fs_debug_references->integer)
             {
                 if (compare_result >= 0)
-                    Com_Printf("result: Skipping entry due to existing %s precedence entry id %i\n",
+                    Com_Printf("result: Duplicate hash - skipping entry due to existing %s precedence entry id %i\n",
                         compare_result > 0 ? "higher" : "equal", target_entry->entry_id);
                 else
-                    Com_Printf("result: Overwriting existing lower precedence entry id %i\n", target_entry->entry_id);
+                    Com_Printf("result: Duplicate hash - overwriting existing lower precedence entry id %i\n",
+                        target_entry->entry_id);
             }
-            ++rsw->duplicates;
             if (compare_result < 0)
                 *target_entry = new_entry;
             return;
@@ -575,7 +601,7 @@ static void add_pak_containing_file(reference_set_work_t *rsw, const char *name)
     {
         return;
     }
-    reference_set_insert_pak(rsw, (fsc_file_direct_t *)STACKPTR(((fsc_file_frompk3_t *)file)->source_pk3));
+    reference_set_insert_pak(rsw, fsc_get_base_file(file, &fs));
 }
 
 typedef enum { PAKCATEGORY_ACTIVE_MOD, PAKCATEGORY_BASEGAME, PAKCATEGORY_INACTIVE_MOD } pakcategory_t;
@@ -600,10 +626,14 @@ static void add_paks_by_category(reference_set_work_t *rsw, pakcategory_t catego
     for (i = 0; i < fs.pk3_hash_lookup.bucket_count; ++i)
     {
         fsc_hashtable_open(&fs.pk3_hash_lookup, i, &hti);
-        while ((hash_entry = (fsc_pk3_hash_map_entry_t *)STACKPTR(fsc_hashtable_next(&hti))))
+        while ((hash_entry = (fsc_pk3_hash_map_entry_t *)STACKPTRN(fsc_hashtable_next(&hti))))
         {
             fsc_file_direct_t *pk3 = (fsc_file_direct_t *)STACKPTR(hash_entry->pk3);
-            if (fs_file_disabled((fsc_file_t *)pk3, 0))
+            // The *inactivemod_paks rule explicitly follows the fs_read_inactive_mods setting in order for
+            //    fs_read_inactive_mods to work in the expected way when using the default pure manifest
+            // Note: Pure list from a previous client session should be cleared at this point in the map load process,
+            //    so the potential pure list check in FD_CHECK_READ_INACTIVE_MODS should not be a factor here.
+            if (fs_file_disabled((fsc_file_t *)pk3, FD_CHECK_FILE_ENABLED | FD_CHECK_READ_INACTIVE_MODS))
                 continue;
             if (get_pak_category(pk3) != category)
                 continue;
@@ -676,10 +706,10 @@ static void add_pak_by_name(reference_set_work_t *rsw, const char *string)
         fsc_hashtable_iterator_t hti;
         fsc_pk3_hash_map_entry_t *entry;
         fsc_hashtable_open(&fs.pk3_hash_lookup, hash, &hti);
-        while ((entry = (fsc_pk3_hash_map_entry_t *)STACKPTR(fsc_hashtable_next(&hti))))
+        while ((entry = (fsc_pk3_hash_map_entry_t *)STACKPTRN(fsc_hashtable_next(&hti))))
         {
             const fsc_file_direct_t *file = (const fsc_file_direct_t *)STACKPTR(entry->pk3);
-            if (fs_file_disabled((fsc_file_t *)file, 0))
+            if (fs_file_disabled((fsc_file_t *)file, FD_CHECK_FILE_ENABLED))
                 continue;
             if (file->pk3_hash != hash)
                 continue;
@@ -701,13 +731,13 @@ static void add_pak_by_name(reference_set_work_t *rsw, const char *string)
         fsc_hashtable_iterator_t hti;
         const fsc_file_direct_t *file;
         fsc_hashtable_open(&fs.files, fsc_string_hash(name, 0), &hti);
-        while ((file = (const fsc_file_direct_t *)STACKPTR(fsc_hashtable_next(&hti))))
+        while ((file = (const fsc_file_direct_t *)STACKPTRN(fsc_hashtable_next(&hti))))
         {
             if (file->f.sourcetype != FSC_SOURCETYPE_DIRECT)
                 continue;
             if (!file->pk3_hash)
                 continue;
-            if (fs_file_disabled((const fsc_file_t *)file, 0))
+            if (fs_file_disabled((const fsc_file_t *)file, FD_CHECK_FILE_ENABLED))
                 continue;
             if (Q_stricmp((const char *)STACKPTR(file->f.qp_name_ptr), name))
                 continue;
@@ -716,14 +746,15 @@ static void add_pak_by_name(reference_set_work_t *rsw, const char *string)
             reference_set_insert_entry(rsw, mod_dir, name, file->pk3_hash, file);
             ++count;
         }
-    }
 
-    if (count != 1)
-        Com_Printf(
-            "WARNING: Command %s %s\n", rsw->command_name, count ? "found multiple pk3s" : "failed to locate pk3");
+        if (count == 0)
+            Com_Printf("WARNING: Command %s failed to match pk3.\n", rsw->command_name);
+        if (count > 1)
+            Com_Printf("WARNING: Command %s matched multiple pk3s.\n", rsw->command_name);
+    }
 }
 
-static void generate_reference_set(const char *manifest, fs_hashtable_t *output, int *duplicates_out)
+static void generate_reference_set(const char *manifest, fs_hashtable_t *output)
 {
     // Provide initialized hashtable for output
     reference_set_work_t rsw;
@@ -797,8 +828,6 @@ static void generate_reference_set(const char *manifest, fs_hashtable_t *output,
         rsw.exclude_mode = qfalse;
     }
 
-    if (duplicates_out)
-        *duplicates_out = rsw.duplicates;
     pk3_list_free(&rsw.exclude_set);
 }
 
@@ -878,7 +907,6 @@ static void generate_reference_strings(const char *manifest, fsc_stream_t *hash_
     fs_hashtable_t reference_set;
     reference_set_entry_t **reference_list;
     int count = 0;
-    int duplicates = 0;
     int allowDownload = Cvar_VariableIntegerValue("sv_allowDownload");
 
     if (fs_debug_references->integer)
@@ -892,7 +920,7 @@ static void generate_reference_strings(const char *manifest, fsc_stream_t *hash_
 
     // Generate reference set
     fs_hashtable_initialize(&reference_set, MAX_REFERENCE_SET_ENTRIES);
-    generate_reference_set(manifest, &reference_set, &duplicates);
+    generate_reference_set(manifest, &reference_set);
 
     // Generate reference list
     {
@@ -934,12 +962,10 @@ static void generate_reference_strings(const char *manifest, fsc_stream_t *hash_
                 mod_dir = fs_basegame->string;
 
             // Patch mod dir capitalization
-            for (const char *mod_def : {BASEGAME_1_1, BASEGAME_GPP, BASEGAME_1_3, BASEGAME_OVERRIDE, BASEGAME,
-                     (const char *)fs_basegame->string, (const char *)current_mod_dir})
-            {
-                if (!Q_stricmp(mod_dir, mod_def))
-                    mod_dir = mod_def;
-            }
+            if (!Q_stricmp(mod_dir, fs_basegame->string))
+                mod_dir = fs_basegame->string;
+            if (!Q_stricmp(mod_dir, FS_GetCurrentGameDir()))
+                mod_dir = FS_GetCurrentGameDir();
 
 #ifndef STANDALONE
             // Don't put paks that fail the id pak check in download list because clients won't download
@@ -959,7 +985,7 @@ static void generate_reference_strings(const char *manifest, fsc_stream_t *hash_
 #endif
 
             // Print warning if file is physically unavailable
-            if (!entry->pak && allowDownload && !(allowDownload & DLF_NO_UDP))
+            if (!entry->pak_file && allowDownload && !(allowDownload & DLF_NO_UDP))
             {
                 Com_Printf(
                     "WARNING: Download list file %s/%s from command %s was not found on the server."
@@ -996,10 +1022,10 @@ static void generate_reference_strings(const char *manifest, fsc_stream_t *hash_
 
         if (download_map_output)
         {
-            if (entry->pak)
+            if (entry->pak_file)
             {
                 Com_sprintf(buffer, sizeof(buffer), "%s/%s.pk3", mod_dir, name);
-                add_download_map_entry(download_map_output, buffer, entry->pak);
+                add_download_map_entry(download_map_output, buffer, entry->pak_file);
             }
         }
     }
@@ -1007,7 +1033,7 @@ static void generate_reference_strings(const char *manifest, fsc_stream_t *hash_
     fs_hashtable_free(&reference_set, 0);
     Z_Free(reference_list);
 
-    Com_Printf("Got %i unique paks with %i duplications\n", count, duplicates);
+    Com_Printf("%i paks listed\n", count);
 }
 
 /* ******************************************************************************** */

@@ -30,35 +30,35 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static void cmd_find_file(void)
 {
-    if (Cmd_Argc() != 2)
+    if (Cmd_Argc() < 2)
     {
-        Com_Printf("Usage: find_file <path>\n");
+        Com_Printf("Usage: find_file <path> <optional flag value>\n");
         return;
     }
 
-    fs_general_lookup(Cmd_Argv(1), 0, qtrue);
+    fs_general_lookup(Cmd_Argv(1), atoi(Cmd_Argv(2)), qtrue);
 }
 
 static void cmd_find_shader(void)
 {
-    if (Cmd_Argc() != 2)
+    if (Cmd_Argc() < 2)
     {
-        Com_Printf("Usage: find_shader <shader/image name>\n");
+        Com_Printf("Usage: find_shader <shader/image name> <optional flag value>\n");
         return;
     }
 
-    fs_shader_lookup(Cmd_Argv(1), 1, qtrue);
+    fs_shader_lookup(Cmd_Argv(1), atoi(Cmd_Argv(2)), qtrue);
 }
 
 static void cmd_find_sound(void)
 {
-    if (Cmd_Argc() != 2)
+    if (Cmd_Argc() < 2)
     {
-        Com_Printf("Usage: find_sound <sound name>\n");
+        Com_Printf("Usage: find_sound <sound name> <optional flag value>\n");
         return;
     }
 
-    fs_sound_lookup(Cmd_Argv(1), qtrue);
+    fs_sound_lookup(Cmd_Argv(1), atoi(Cmd_Argv(2)), qtrue);
 }
 
 static void cmd_find_vm(void)
@@ -88,6 +88,13 @@ static void cmd_compare(void)
 /* ******************************************************************************** */
 // Other Commands
 /* ******************************************************************************** */
+
+static void cmd_fs_refresh(void)
+{
+    // Runs filesystem refresh
+    // Can be called with parameter 1 for quiet mode
+    fs_refresh_auto_ext(qtrue, atoi(Cmd_Argv(1)) ? qtrue : qfalse);
+}
 
 static void cmd_readcache_debug(void) { fs_readcache_debug(); }
 
@@ -148,7 +155,7 @@ static void FS_NewDir_f(void)
 
     Com_Printf("---------------\n");
 
-    dirnames = FS_ListFilteredFiles("", "", filter, &ndirs, qfalse);
+    dirnames = FS_FlagListFilteredFiles("", "", filter, &ndirs, 0);
 
     for (i = 0; i < ndirs; i++)
     {
@@ -213,24 +220,25 @@ static void FS_Path_f(void)
     {
         if (!fs_sourcedirs[sourceid].active)
             continue;
-        Com_Printf("Looking in %s (%s)\n", fs_sourcedirs[sourceid].name, fs_sourcedirs[sourceid].path_cvar->string);
+        Com_Printf("Looking in %s (%s)\n", fs_sourcedirs[sourceid].name, fs_sourcedirs[sourceid].path);
 
         for (i = 0; i < fs.pk3_hash_lookup.bucket_count; ++i)
         {
             fsc_hashtable_open(&fs.pk3_hash_lookup, i, &hti);
-            while ((hash_entry = (fsc_pk3_hash_map_entry_t *)STACKPTR(fsc_hashtable_next(&hti))))
+            while ((hash_entry = (fsc_pk3_hash_map_entry_t *)STACKPTRN(fsc_hashtable_next(&hti))))
             {
                 const fsc_file_direct_t *pak = (const fsc_file_direct_t *)STACKPTR(hash_entry->pk3);
-                if (pak->source_dir_id == sourceid && !fs_file_disabled((fsc_file_t *)pak, 0))
+                if (pak->source_dir_id == sourceid &&
+                    !fs_file_disabled((fsc_file_t *)pak, FD_CHECK_FILE_ENABLED | FD_CHECK_READ_INACTIVE_MODS))
                 {
                     char buffer[FS_FILE_BUFFER_SIZE];
                     fs_file_to_buffer((fsc_file_t *)pak, buffer, sizeof(buffer), qfalse, qtrue, qfalse, qfalse);
                     Com_Printf("%s (%i files)\n", buffer, pak->pk3_subfile_count);
-                    Com_Printf("    hash(%i) default_pk3_position(%i)\n", (int)pak->pk3_hash,
-                        default_pk3_position(pak->pk3_hash));
+                    Com_Printf(
+                        "    hash(%i) core_pk3_position(%i)\n", (int)pak->pk3_hash, core_pk3_position(pak->pk3_hash));
                     if (fs_connected_server_pure_state())
                         Com_Printf("    %son the pure list\n",
-                            pk3_list_lookup(&connected_server_pk3_list, pak->pk3_hash, qfalse) ? "" : "not ");
+                            pk3_list_lookup(&connected_server_pure_list, pak->pk3_hash, qfalse) ? "" : "not ");
                 }
             }
         }
@@ -252,6 +260,7 @@ void fs_register_commands(void)
     Cmd_AddCommand("find_vm", cmd_find_vm);
     Cmd_AddCommand("compare", cmd_compare);
 
+    Cmd_AddCommand("fs_refresh", cmd_fs_refresh);
     Cmd_AddCommand("readcache_debug", cmd_readcache_debug);
     Cmd_AddCommand("indexcache_write", cmd_indexcache_write);
 

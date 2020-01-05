@@ -26,8 +26,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // This section is used to provide faster file iteration when starting at a certain
 // directory, rather than iterating over the entire filesystem.
 
-#define STACKPTR(pointer) (fsc_stack_retrieve(&fs->general_stack, pointer))
-#define STACKPTRL(pointer) (fsc_stack_retrieve(stack, pointer))  // stack is a local parameter
+#define STACKPTR_LCL(pointer) (FSC_STACK_RETRIEVE(stack, pointer, 0))  // non-null, local stack parameter
+#define STACKPTRN_LCL(pointer) (FSC_STACK_RETRIEVE(stack, pointer, 1))  // null allowed, local stack parameter
 
 /* ******************************************************************************** */
 // File Registration
@@ -82,7 +82,7 @@ static fsc_stackptr_t get_directory(
     fsc_hashtable_open(directories, qp_dir_hash, &hti);
     while ((directory_ptr = fsc_hashtable_next(&hti)))
     {
-        directory = (fsc_directory_t *)STACKPTRL(directory_ptr);
+        directory = (fsc_directory_t *)STACKPTR_LCL(directory_ptr);
         if (!directory->qp_dir_ptr)
         {
             if (!qp_dir)
@@ -91,13 +91,13 @@ static fsc_stackptr_t get_directory(
         }
         if (!qp_dir)
             continue;
-        if (!fsc_stricmp((const char *)STACKPTRL(directory->qp_dir_ptr), qp_dir))
+        if (!fsc_stricmp((const char *)STACKPTR_LCL(directory->qp_dir_ptr), qp_dir))
             return directory_ptr;
     }
 
     // It isn't, so create a new directory
     directory_ptr = fsc_stack_allocate(stack, sizeof(fsc_directory_t));
-    directory = (fsc_directory_t *)STACKPTRL(directory_ptr);
+    directory = (fsc_directory_t *)STACKPTR_LCL(directory_ptr);
     directory->qp_dir_ptr = qp_dir ? fsc_string_repository_getstring(qp_dir, 1, string_repository, stack) : 0;
     fsc_hashtable_insert(directory_ptr, qp_dir_hash, directories);
 
@@ -108,7 +108,7 @@ static fsc_stackptr_t get_directory(
     // Get the parent directory
     parent_path_found = get_parent_qp_dir(qp_dir, parent_qp_dir);
     parent_dir_ptr = get_directory(parent_path_found ? parent_qp_dir : 0, directories, string_repository, stack);
-    parent_dir = (fsc_directory_t *)STACKPTRL(parent_dir_ptr);
+    parent_dir = (fsc_directory_t *)STACKPTR_LCL(parent_dir_ptr);
 
     // Add current directory to parent's sub_directory linked list
     directory->peer_directory = parent_dir->sub_directory;
@@ -120,12 +120,12 @@ static fsc_stackptr_t get_directory(
 void fsc_iteration_register_file(
     fsc_stackptr_t file_ptr, fsc_hashtable_t *directories, fsc_hashtable_t *string_repository, fsc_stack_t *stack)
 {
-    fsc_file_t *file = (fsc_file_t *)STACKPTRL(file_ptr);
+    fsc_file_t *file = (fsc_file_t *)STACKPTR_LCL(file_ptr);
 
     // Get directory
     fsc_stackptr_t directory_ptr =
-        get_directory((const char *)STACKPTRL(file->qp_dir_ptr), directories, string_repository, stack);
-    fsc_directory_t *directory = (fsc_directory_t *)STACKPTRL(directory_ptr);
+        get_directory((const char *)STACKPTRN_LCL(file->qp_dir_ptr), directories, string_repository, stack);
+    fsc_directory_t *directory = (fsc_directory_t *)STACKPTR_LCL(directory_ptr);
 
     // Add file to directory's sub_file linked list
     file->next_in_directory = directory->sub_file;

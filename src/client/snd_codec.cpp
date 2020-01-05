@@ -47,7 +47,7 @@ static void *S_CodecGetSound(const char *filename, snd_info_t *info)
 	COM_StripExtension(filename, localName, MAX_QPATH);
 
 	// Look up the file
-	file = fs_sound_lookup(localName, 0);
+	file = fs_sound_lookup(localName, 0, false);
 	if(!file) {
 		Com_Printf(S_COLOR_YELLOW "WARNING: Failed to %s sound %s!\n", info ? "load" : "open", filename);
 		return NULL; }

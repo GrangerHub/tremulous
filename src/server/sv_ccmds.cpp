@@ -60,7 +60,7 @@ static void SV_Map_f( void ) {
 	Com_sprintf (expanded, sizeof(expanded), "maps/%s.bsp", map);
 #ifdef NEW_FILESYSTEM
 	// Refresh in case a map was just manually added
-	fs_auto_refresh();
+	fs_refresh_auto();
 
 	// Perform the check without respect to current connected pure list
 	// If we go forward loading the map, the pure list will be cleared in SV_SpawnServer

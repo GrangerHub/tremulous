@@ -23,7 +23,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifdef NEW_FILESYSTEM
 #include "fscore.h"
 
-#define STACKPTR_SRC(pointer) (fsc_stack_retrieve(&xw->source_fs->general_stack, pointer))
+#define STACKPTR_SRC(pointer) (FSC_STACK_RETRIEVE(&xw->source_fs->general_stack, pointer, 0))  // non-null
+#define STACKPTRN_SRC(pointer) (FSC_STACK_RETRIEVE(&xw->source_fs->general_stack, pointer, 1))  // null allowed
 
 /* ******************************************************************************** */
 // Support Structures
@@ -79,7 +80,7 @@ fsc_stackptr_t convert_string(fsc_stackptr_t source_string, export_work_t *xw)
 
 fsc_stackptr_t file_map_lookup(fsc_stackptr_t source_file_ptr, export_work_t *xw)
 {
-    // Converts stackptr in general stack to stackptr in export stack
+    // Maps stackptr in general stack to converted file stackptr in export stack
     unsigned int hash = integer_hash(source_file_ptr);
     fsc_hashtable_iterator_t hti;
     fsc_stackptr_t filemap_entry_ptr;
@@ -88,7 +89,7 @@ fsc_stackptr_t file_map_lookup(fsc_stackptr_t source_file_ptr, export_work_t *xw
     fsc_hashtable_open(&xw->filemap, hash, &hti);
     while ((filemap_entry_ptr = fsc_hashtable_next(&hti)))
     {
-        filemap_entry = (filemap_entry_t *)fsc_stack_retrieve(&xw->filemap_stack, filemap_entry_ptr);
+        filemap_entry = (filemap_entry_t *)FSC_STACK_RETRIEVE(&xw->filemap_stack, filemap_entry_ptr, 0);
         if (filemap_entry->source_file_ptr == source_file_ptr)
             return filemap_entry->export_file_ptr;
     }
@@ -103,7 +104,7 @@ void file_map_insert(fsc_stackptr_t source_file_ptr, fsc_stackptr_t export_file_
     filemap_entry_t *filemap_entry;
 
     filemap_entry_ptr = fsc_stack_allocate(&xw->filemap_stack, sizeof(filemap_entry_t));
-    filemap_entry = (filemap_entry_t *)fsc_stack_retrieve(&xw->filemap_stack, filemap_entry_ptr);
+    filemap_entry = (filemap_entry_t *)FSC_STACK_RETRIEVE(&xw->filemap_stack, filemap_entry_ptr, 0);
 
     filemap_entry->source_file_ptr = source_file_ptr;
     filemap_entry->export_file_ptr = export_file_ptr;
@@ -112,41 +113,42 @@ void file_map_insert(fsc_stackptr_t source_file_ptr, fsc_stackptr_t export_file_
 
 fsc_stackptr_t convert_file(fsc_stackptr_t source_file_ptr, export_work_t *xw)
 {
+    // Converts file from source filesystem to export filesystem if not already converted
+    // If file is already converted, just returns the existing converted file
+    // Should only be called for direct or pk3 sourcetype files (not custom sourcetypes)
     fsc_file_t *source_file = (fsc_file_t *)STACKPTR_SRC(source_file_ptr);
     fsc_stackptr_t export_file_ptr;
     fsc_file_t *export_file;
-    int file_size;
+    int file_size = 0;
 
-    // Check if the file has already been loaded
+    // Check if the file has already been converted
     export_file_ptr = file_map_lookup(source_file_ptr, xw);
     if (export_file_ptr)
         return export_file_ptr;
 
     // Get file structure size for copy
-    switch (source_file->sourcetype)
-    {
-        case FSC_SOURCETYPE_DIRECT:
-            file_size = sizeof(fsc_file_direct_t);
-            break;
-        case FSC_SOURCETYPE_PK3:
-            file_size = sizeof(fsc_file_frompk3_t);
-            break;
-        default:
-            return 0;
-    }  // Shouldn't happen
+    if (source_file->sourcetype == FSC_SOURCETYPE_DIRECT)
+        file_size = sizeof(fsc_file_direct_t);
+    else if (source_file->sourcetype == FSC_SOURCETYPE_PK3)
+        file_size = sizeof(fsc_file_frompk3_t);
+    else
+        fsc_fatal_error("convert_file called on unsupported sourcetype");
 
     // Generate copy of file in export_stack
     export_file_ptr = fsc_stack_allocate(&xw->export_stack, file_size);
-    export_file = (fsc_file_t *)fsc_stack_retrieve(&xw->export_stack, export_file_ptr);
+    export_file = (fsc_file_t *)FSC_STACK_RETRIEVE(&xw->export_stack, export_file_ptr, 0);
     fsc_memcpy(export_file, source_file, file_size);
 
-    // Perform conversions
+    // Reallocate stackptrs from original stack to export stack and other adjustments
     export_file->qp_dir_ptr = convert_string(export_file->qp_dir_ptr, xw);
     export_file->qp_name_ptr = convert_string(export_file->qp_name_ptr, xw);
     export_file->qp_ext_ptr = convert_string(export_file->qp_ext_ptr, xw);
-    // Currently no flags need to be stored in cache, but this can be evaluated
-    // on a case-by-case basis if new flags are added
-    export_file->flags = 0;
+    if (export_file->contents_cache)
+    {
+        export_file->contents_cache = fsc_stack_allocate(&xw->export_stack, source_file->filesize);
+        fsc_memcpy(FSC_STACK_RETRIEVE(&xw->export_stack, export_file->contents_cache, 0),
+            STACKPTR_SRC(source_file->contents_cache), source_file->filesize);
+    }
     if (source_file->sourcetype == FSC_SOURCETYPE_DIRECT)
     {
         fsc_file_direct_t *export_file_typed = (fsc_file_direct_t *)export_file;
@@ -167,8 +169,9 @@ fsc_stackptr_t convert_file(fsc_stackptr_t source_file_ptr, export_work_t *xw)
 
     // Insert file into filemap, hash table, and iteration system
     file_map_insert(source_file_ptr, export_file_ptr, xw);
-    fsc_hashtable_insert(export_file_ptr, fsc_string_hash((const char *)STACKPTR_SRC(source_file->qp_name_ptr),
-                                              (const char *)STACKPTR_SRC(source_file->qp_dir_ptr)),
+    fsc_hashtable_insert(export_file_ptr,
+        fsc_string_hash(
+            (const char *)STACKPTR_SRC(source_file->qp_name_ptr), (const char *)STACKPTRN_SRC(source_file->qp_dir_ptr)),
         &xw->export_files);
     fsc_iteration_register_file(
         export_file_ptr, &xw->export_directories, &xw->export_string_repository, &xw->export_stack);
@@ -204,12 +207,17 @@ void fscache_build_filesystem(export_work_t *xw)
         while ((source_file_ptr = fsc_hashtable_next(&hti)))
         {
             fsc_file_t *source_file = (fsc_file_t *)STACKPTR_SRC(source_file_ptr);
-            if (!fsc_is_file_enabled(source_file, xw->source_fs))
-                continue;  // Process only active files
-            if (source_file->sourcetype != FSC_SOURCETYPE_PK3)
-                continue;  // Process only pk3 sourcetype files
 
-            convert_file(source_file_ptr, xw);
+            // Process active files from pk3 sources, or from direct sources if contents_cache is set
+            // Files referenced by shaders or crosshairs will be cached in their own cycle below,
+            //    if not already cached here
+            if (!fsc_is_file_enabled(source_file, xw->source_fs))
+                continue;
+            if (source_file->sourcetype == FSC_SOURCETYPE_PK3 ||
+                (source_file->sourcetype == FSC_SOURCETYPE_DIRECT && source_file->contents_cache))
+            {
+                convert_file(source_file_ptr, xw);
+            }
         }
     }
 }
@@ -238,13 +246,18 @@ void fscache_build_shaders(export_work_t *xw)
         fsc_hashtable_open(&xw->source_fs->shaders, i, &hti);
         while ((source_shader_ptr = fsc_hashtable_next(&hti)))
         {
-            fsc_shader_t *source_shader = (fsc_shader_t *)STACKPTR_SRC(source_shader_ptr);
+            const fsc_shader_t *source_shader = (fsc_shader_t *)STACKPTR_SRC(source_shader_ptr);
+            const fsc_file_t *source_file = (const fsc_file_t *)STACKPTR_SRC(source_shader->source_file_ptr);
+
+            // Process only active shaders from direct/pk3 sources
+            if (source_file->sourcetype != FSC_SOURCETYPE_DIRECT && source_file->sourcetype != FSC_SOURCETYPE_PK3)
+                continue;
             if (!is_shader_enabled(xw->source_fs, source_shader))
-                continue;  // Process only active shaders
+                continue;
 
             // Allocate new shader
             export_shader_ptr = fsc_stack_allocate(&xw->export_stack, sizeof(fsc_shader_t));
-            export_shader = (fsc_shader_t *)fsc_stack_retrieve(&xw->export_stack, export_shader_ptr);
+            export_shader = (fsc_shader_t *)FSC_STACK_RETRIEVE(&xw->export_stack, export_shader_ptr, 0);
             fsc_memcpy(export_shader, source_shader, sizeof(fsc_shader_t));
 
             // Convert stackptrs within the shader
@@ -276,13 +289,18 @@ void fscache_build_crosshairs(export_work_t *xw)
         fsc_hashtable_open(&xw->source_fs->crosshairs, i, &hti);
         while ((source_crosshair_ptr = fsc_hashtable_next(&hti)))
         {
-            fsc_crosshair_t *source_crosshair = (fsc_crosshair_t *)STACKPTR_SRC(source_crosshair_ptr);
+            const fsc_crosshair_t *source_crosshair = (fsc_crosshair_t *)STACKPTR_SRC(source_crosshair_ptr);
+            const fsc_file_t *source_file = (const fsc_file_t *)STACKPTR_SRC(source_crosshair->source_file_ptr);
+
+            // Process only active crosshairs from direct/pk3 sources
+            if (source_file->sourcetype != FSC_SOURCETYPE_DIRECT && source_file->sourcetype != FSC_SOURCETYPE_PK3)
+                continue;
             if (!is_crosshair_enabled(xw->source_fs, source_crosshair))
-                continue;  // Process only active crosshairs
+                continue;
 
             // Allocate new crosshair
             export_crosshair_ptr = fsc_stack_allocate(&xw->export_stack, sizeof(fsc_crosshair_t));
-            export_crosshair = (fsc_crosshair_t *)fsc_stack_retrieve(&xw->export_stack, export_crosshair_ptr);
+            export_crosshair = (fsc_crosshair_t *)FSC_STACK_RETRIEVE(&xw->export_stack, export_crosshair_ptr, 0);
             fsc_memcpy(export_crosshair, source_crosshair, sizeof(fsc_crosshair_t));
 
             // Convert stackptrs within the crosshair
@@ -491,7 +509,7 @@ int fsc_cache_import_file(void *os_path, fsc_filesystem_t *target_fs, fsc_errorh
         return 1;
     }
 
-    // Read compressed data and close file
+    // Read data and close file
     stream.data = (char *)fsc_malloc(header.size);
     if (fsc_fread(stream.data, header.size, fp) != header.size)
     {

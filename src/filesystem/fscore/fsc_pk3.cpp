@@ -29,8 +29,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <zlib.h>
 #endif
 
-#define STACKPTR(pointer) (fsc_stack_retrieve(&fs->general_stack, pointer))
-#define STACKPTRL(pointer) (fsc_stack_retrieve(stack, pointer))  // stack is a local parameter
+#define STACKPTR(pointer) (FSC_STACK_RETRIEVE(&fs->general_stack, pointer, 0))  // non-null
+#define STACKPTRN(pointer) (FSC_STACK_RETRIEVE(&fs->general_stack, pointer, 1))  // null allowed
+#define STACKPTR_LCL(pointer) (FSC_STACK_RETRIEVE(stack, pointer, 0))  // non null, local stack parameter
 
 // Somewhat arbitrary limit to avoid overflow issues
 #define FSC_MAX_PK3_SIZE 4240000000u
@@ -221,9 +222,9 @@ static int get_pk3_central_directory_path(
 
 void register_pk3_hash_lookup_entry(fsc_stackptr_t pk3_file_ptr, fsc_hashtable_t *pk3_hash_lookup, fsc_stack_t *stack)
 {
-    fsc_file_direct_t *pk3_file = (fsc_file_direct_t *)STACKPTRL(pk3_file_ptr);
+    fsc_file_direct_t *pk3_file = (fsc_file_direct_t *)STACKPTR_LCL(pk3_file_ptr);
     fsc_stackptr_t hash_map_entry_ptr = fsc_stack_allocate(stack, sizeof(fsc_pk3_hash_map_entry_t));
-    fsc_pk3_hash_map_entry_t *hash_map_entry = (fsc_pk3_hash_map_entry_t *)STACKPTRL(hash_map_entry_ptr);
+    fsc_pk3_hash_map_entry_t *hash_map_entry = (fsc_pk3_hash_map_entry_t *)STACKPTR_LCL(hash_map_entry_ptr);
     hash_map_entry->pk3 = pk3_file_ptr;
     fsc_hashtable_insert(hash_map_entry_ptr, pk3_file->pk3_hash, pk3_hash_lookup);
 }
@@ -238,18 +239,15 @@ static void register_file_from_pk3(fsc_filesystem_t *fs, char *filename, int fil
 
     char buffer[FSC_MAX_QPATH];
     const char *qp_dir, *qp_name, *qp_ext;
-    unsigned int fs_hash;
-    int filename_contents;
 
     // Copy filename into null-terminated buffer for process_qpath
     // Also convert to lowercase to match behavior of old filesystem
-    if (filename_length > FSC_MAX_QPATH - 1)
+    if (filename_length >= FSC_MAX_QPATH)
         filename_length = FSC_MAX_QPATH - 1;
     fsc_strncpy_lower(buffer, filename, filename_length + 1);
 
     // Call process_qpath
     fsc_process_qpath(buffer, buffer, &qp_dir, &qp_name, &qp_ext);
-    fs_hash = fsc_string_hash(qp_name, qp_dir);
 
     // Write qpaths to file structure
     file->f.qp_dir_ptr =
@@ -266,29 +264,17 @@ static void register_file_from_pk3(fsc_filesystem_t *fs, char *filename, int fil
     file->compression_method = compression_method;
     file->f.filesize = uncompressed_size;
 
-    // Register file and contents
-    fsc_hashtable_insert(file_ptr, fs_hash, &fs->files);
-    fsc_iteration_register_file(file_ptr, &fs->directories, &fs->string_repository, &fs->general_stack);
+    // Register file and load contents
+    fsc_register_file(file_ptr, fs, eh);
     ++sourcefile->pk3_subfile_count;
-
-    filename_contents = fsc_filename_contents(qp_dir, qp_name, qp_ext);
-    if (filename_contents & FSC_CONTENTS_SHADER)
-    {
-        ++sourcefile->shader_file_count;
-        sourcefile->shader_count += index_shader_file(fs, file_ptr, eh);
-    }
-    if (filename_contents & FSC_CONTENTS_CROSSHAIR)
-    {
-        index_crosshair(fs, file_ptr, eh);
-    }
 }
 
 void fsc_load_pk3(void *os_path, fsc_filesystem_t *fs, fsc_stackptr_t sourcefile_ptr, fsc_errorhandler_t *eh,
-    void(receive_hash_data)(void *context, char *data, int size), void *receive_hash_data_context)
+    void (*receive_hash_data)(void *context, char *data, int size), void *receive_hash_data_context)
 {
     // In normal usage, this is used to load pk3 files into the index. It can also be called with
     //    receive_hash_data set to generate pk3 hash data without indexing anything.
-    fsc_file_direct_t *sourcefile = (fsc_file_direct_t *)STACKPTR(sourcefile_ptr);
+    fsc_file_direct_t *sourcefile = (fsc_file_direct_t *)STACKPTRN(sourcefile_ptr);
     central_directory_t cd;
     int entry_position = 0;  // Position of current entry relative to central directory data
     int entry_counter = 0;  // Number of current entry
@@ -302,6 +288,9 @@ void fsc_load_pk3(void *os_path, fsc_filesystem_t *fs, fsc_stackptr_t sourcefile
     int *crcs_for_hash;
     int crcs_for_hash_buffer[1024];
     int crcs_for_hash_count = 0;
+
+    if (!receive_hash_data)
+        FSC_ASSERT(sourcefile_ptr);
 
     // Load central directory
     if (get_pk3_central_directory_path(os_path, &cd, sourcefile, eh))
@@ -549,14 +538,12 @@ unsigned int fsc_pk3_handle_read(void *handle, char *buffer, unsigned int length
 
 static int fsc_pk3_is_file_active(const fsc_file_t *file, const fsc_filesystem_t *fs)
 {
-    const fsc_file_direct_t *source_pk3 = (const fsc_file_direct_t *)STACKPTR(((fsc_file_frompk3_t *)file)->source_pk3);
-    return source_pk3->refresh_count == fs->refresh_count;
+    return fsc_get_base_file(file, fs)->refresh_count == fs->refresh_count;
 }
 
 static const char *fsc_pk3_get_mod_dir(const fsc_file_t *file, const fsc_filesystem_t *fs)
 {
-    const fsc_file_direct_t *source_pk3 = (const fsc_file_direct_t *)STACKPTR(((fsc_file_frompk3_t *)file)->source_pk3);
-    return (const char *)STACKPTR(source_pk3->qp_mod_ptr);
+    return (const char *)STACKPTR(fsc_get_base_file(file, fs)->qp_mod_ptr);
 }
 
 static int fsc_pk3_extract_data(
