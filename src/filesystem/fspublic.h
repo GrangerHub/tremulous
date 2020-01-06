@@ -286,14 +286,21 @@ DEF_LOCAL( char *fs_read_journal_data(void) )
 // Config file functions
 DEF_PUBLIC( fileHandle_t fs_open_settings_file_write(const char *filename) )
 
-// Misc Handle Operations
+// Data reading operations
 DEF_PUBLIC( long FS_ReadFile(const char *qpath, void **buffer) )
 DEF_PUBLIC( void FS_FreeFile(void *buffer) )
+
+// "Read-back" tracking
+DEF_LOCAL( void fs_readback_tracker_reset(void) )
+
+// FS_FOpenFile functions
 DEF_PUBLIC( long FS_FOpenFileRead(const char *filename, fileHandle_t *file, qboolean uniqueFILE) )
 DEF_PUBLIC( fileHandle_t FS_FOpenFileWrite(const char *filename) )
 DEF_PUBLIC( fileHandle_t FS_FOpenFileAppend(const char *filename) )
 DEF_PUBLIC( int FS_FOpenFileByModeOwner(const char *qpath, fileHandle_t *f, fsMode_t mode, fs_handle_owner_t owner) )
 DEF_PUBLIC( int FS_FOpenFileByMode(const char *qpath, fileHandle_t *f, fsMode_t mode) )
+
+// Misc handle operations
 DEF_PUBLIC( long FS_SV_FOpenFileRead(const char *filename, fileHandle_t *fp) )
 DEF_PUBLIC( fileHandle_t FS_SV_FOpenFileWrite(const char *filename) )
 DEF_PUBLIC( void FS_FCloseFile(fileHandle_t f) )
