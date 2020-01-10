@@ -227,8 +227,8 @@ void CG_AlienSense( rectDef_t *rect )
   int     i;
   vec3_t  origin;
   vec3_t  relOrigin;
-  vec4_t  abuildable = { 0.0f, 0.0f, 0.0f, 0.7f };
-  vec4_t  aclient    = { 0.5f, 0.55f, 0.02f, 0.7f };
+  vec4_t  abuildable = { 0.5f, 0.55f, 0.02f, 0.7f };
+  vec4_t  aclient    = { 0.325f, 0.55f, 0.025f, 0.7f };
   vec4_t  hbuildable = { 1.0f, 0.0f, 0.0f, 0.7f };
   vec4_t  hclient    = { 0.0f, 0.0f, 1.0f, 0.7f };
 
