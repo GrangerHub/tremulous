@@ -184,6 +184,7 @@ static void CG_DrawDir( rectDef_t *rect, vec3_t origin, vec4_t colour )
   float   angle;
   float   distanceRatio;
   playerState_t *ps = &cg.snap->ps;
+  vec4_t drawColor;
 
   BG_GetClientNormal( ps, normal );
 
@@ -206,11 +207,12 @@ static void CG_DrawDir( rectDef_t *rect, vec3_t origin, vec4_t colour )
 
   RotatePointAroundVector( drawOrigin, up, top, angle );
 
+  Vector4Copy(colour, drawColor);
   // simplified circular easing out
   distanceRatio = Distance(view, origin) / ALIENSENSE_RANGE;
-  colour[3] *= sqrt( 1 - distanceRatio * distanceRatio);
+  drawColor[3] *= sqrt( 1 - distanceRatio * distanceRatio);
 
-  trap_R_SetColor( colour );
+  trap_R_SetColor( drawColor );
   CG_DrawPic( rect->x + ( rect->w / 2 ) - ( BLIPX2 / 2 ) - drawOrigin[ 0 ] * ( rect->w / 2 ),
               rect->y + ( rect->h / 2 ) - ( BLIPY2 / 2 ) + drawOrigin[ 1 ] * ( rect->h / 2 ),
               BLIPX2, BLIPY2, cgs.media.scannerBlipShader );
