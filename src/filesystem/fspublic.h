@@ -73,9 +73,10 @@ typedef enum {
 #define FS_BASEGAME_DEFAULT "trem13"
 
 enum FS_Profile {
-	FS_PROFILE_DEFAULT,
+	FS_PROFILE_UNSET,
 	FS_PROFILE_1_1,
-	FS_PROFILE_GPP
+	FS_PROFILE_GPP,
+	FS_PROFILE_1_3
 };
 
 typedef struct {
@@ -141,6 +142,7 @@ DEF_LOCAL( extern cvar_t *fs_debug_references )
 DEF_LOCAL( extern cvar_t *fs_debug_filelist )
 
 DEF_LOCAL( extern cvar_t *fs_basegame )
+DEF_LOCAL( extern cvar_t *fs_force_profile )
 
 #ifdef FSLOCAL
 #define FS_MAX_SOURCEDIRS 16
@@ -158,16 +160,18 @@ DEF_LOCAL( extern int checksum_feed )
 
 DEF_LOCAL( extern int connected_server_sv_pure )
 DEF_LOCAL( extern pk3_list_t connected_server_pure_list )
-DEF_LOCAL( extern FS_Profile fs_profile )
+DEF_LOCAL( extern FS_Profile fs_connected_server_profile )
 
 // State Accessors
 DEF_PUBLIC( const char *FS_GetCurrentGameDir(void) )
 DEF_PUBLIC( const char *fs_pid_file_directory(void) )
 DEF_PUBLIC( qboolean FS_Initialized( void ) )
 DEF_LOCAL( int fs_connected_server_pure_state(void) )
+DEF_LOCAL( FS_Profile fs_current_profile(void) )
 
 // State Modifiers
 DEF_PUBLIC( void fs_register_current_map(const char *name) )
+DEF_PUBLIC( void fs_set_connected_server_profile(int alternateProtocol) )
 DEF_PUBLIC( void fs_set_connected_server_sv_pure_value(int sv_pure) )
 DEF_PUBLIC( void FS_PureServerSetLoadedPaks(const char *hash_list, const char *name_list) )
 DEF_PUBLIC( void fs_disconnect_cleanup(void) )
@@ -390,6 +394,7 @@ enum FS_ModType {
 	MODTYPE_CURRENT_MOD
 };
 #endif
+DEF_LOCAL( const char *fs_profile_to_string(FS_Profile profile) )
 DEF_LOCAL( int core_pk3_position(unsigned int hash) )
 DEF_LOCAL( FS_ModType fs_get_mod_type(const char *mod_dir, bool prioritize_fs_basegame=false) )
 

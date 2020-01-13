@@ -453,7 +453,9 @@ void CL_SystemInfoChanged( void ) {
 	if ( !gameSet && *Cvar_VariableString("fs_game") ) {
 		Cvar_Set( "fs_game", "" );
 	}
-#ifndef NEW_FILESYSTEM
+#ifdef NEW_FILESYSTEM
+	fs_set_connected_server_profile(clc.netchan.alternateProtocol);
+#else
 	cl_connectedToPureServer = (bool)Cvar_VariableValue( "sv_pure" );
 #endif
 }

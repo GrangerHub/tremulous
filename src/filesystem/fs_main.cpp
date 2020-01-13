@@ -53,6 +53,7 @@ cvar_t *fs_debug_references;
 cvar_t *fs_debug_filelist;
 
 cvar_t *fs_basegame;
+cvar_t *fs_force_profile;
 
 fs_source_directory_t fs_sourcedirs[FS_MAX_SOURCEDIRS];
 qboolean fs_read_only;  // If false, fs_sourcedirs[0] is write directory
@@ -71,7 +72,7 @@ int connected_server_sv_pure;
 pk3_list_t connected_server_pure_list;
 
 // Current version profile used to prioritize file lookups
-FS_Profile fs_profile;
+FS_Profile fs_connected_server_profile;
 
 /* ******************************************************************************** */
 // Filesystem State Accessors
@@ -111,6 +112,22 @@ int fs_connected_server_pure_state(void)
     return 1;
 }
 
+FS_Profile fs_current_profile(void)
+{
+    if (*fs_force_profile->string)
+    {
+        if (!Q_stricmp(fs_force_profile->string, "13"))
+            return FS_PROFILE_1_3;
+        if (!Q_stricmp(fs_force_profile->string, "gpp"))
+            return FS_PROFILE_GPP;
+        if (!Q_stricmp(fs_force_profile->string, "11"))
+            return FS_PROFILE_1_1;
+    }
+    if (fs_connected_server_profile != FS_PROFILE_UNSET)
+        return fs_connected_server_profile;
+    return FS_PROFILE_1_3;
+}
+
 /* ******************************************************************************** */
 // Filesystem State Modifiers
 /* ******************************************************************************** */
@@ -143,6 +160,20 @@ void fs_set_connected_server_sv_pure_value(int sv_pure)
     }
 }
 
+void fs_set_connected_server_profile(int alternateProtocol)
+{
+    if (alternateProtocol == 0)
+        fs_connected_server_profile = FS_PROFILE_1_3;
+    else if (alternateProtocol == 1)
+        fs_connected_server_profile = FS_PROFILE_GPP;
+    else
+        fs_connected_server_profile = FS_PROFILE_1_1;
+    if (fs_debug_state->integer)
+    {
+        Com_Printf("fs_state: connected_server_profile set to %s\n", fs_profile_to_string(fs_connected_server_profile));
+    }
+}
+
 void FS_PureServerSetLoadedPaks(const char *hash_list, const char *name_list)
 {
     int i;
@@ -169,11 +200,15 @@ void fs_disconnect_cleanup(void)
 {
     current_map_pk3 = 0;
     connected_server_sv_pure = 0;
+    fs_connected_server_profile = FS_PROFILE_UNSET;
     pk3_list_free(&connected_server_pure_list);
     if (fs_debug_state->integer)
         Com_Printf(
-            "fs_state: disconnect cleanup\n   > current_map_pk3 cleared"
-            "\n   > connected_server_sv_pure set to 0\n   > connected_server_pure_list cleared\n");
+            "fs_state: disconnect cleanup\n"
+            "   > current_map_pk3 cleared\n"
+            "   > connected_server_sv_pure set to 0\n"
+            "   > connected_server_pure_list cleared\n"
+            "   > connected_server_profile cleared\n");
 }
 
 static void generate_current_mod_dir(const char *source, char *target)
@@ -640,6 +675,7 @@ void fs_startup(void)
     fs_debug_filelist = Cvar_Get("fs_debug_filelist", "0", 0);
 
     fs_basegame = Cvar_Get("fs_basegame", FS_BASEGAME_DEFAULT, CVAR_INIT);
+    fs_force_profile = Cvar_Get("fs_force_profile", "", 0);
 
     Cvar_Get("new_filesystem", "1", CVAR_ROM);  // Enables new filesystem calls in renderer
 

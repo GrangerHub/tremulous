@@ -205,25 +205,41 @@ void pk3_list_free(pk3_list_t *pk3_list)
 // Pk3 precedence functions
 /* ******************************************************************************** */
 
-#define BASE_PAKS                                  \
-    -1286840555, /* vms-1.1.0.pk3 */               \
-        1428306337, /* data-1.1.0.pk3 */           \
-        -537036296, /* map-uncreation-1.1.0.pk3 */ \
-        -1768007739, /* map-tremor-1.1.0.pk3 */    \
-        -2044057604, /* map-transit-1.1.0.pk3 */   \
-        2047591756, /* map-niveus-1.1.0.pk3 */     \
-        -2034645069, /* map-nexus6-1.1.0.pk3 */    \
-        1167370113, /* map-karith-1.1.0.pk3 */     \
-        -2177599, /* map-atcs-1.1.0.pk3 */         \
-        -1985258489 /* map-arachnid2-1.1.0.pk3 */
+const char *fs_profile_to_string(FS_Profile profile)
+{
+    switch (profile)
+    {
+        case FS_PROFILE_1_1:
+            return "1.1";
+        case FS_PROFILE_GPP:
+            return "GPP";
+        case FS_PROFILE_1_3:
+            return "1.3";
+        case FS_PROFILE_UNSET:
+            return "unset";
+    }
+    return "invalid";
+}
 
-#define GPP_PAKS                    \
-    -1154612609, /* vms-gpp1.pk3 */ \
-        -1688908842 /* data-gpp1.pk3 */
+#define HASHLIST_1_1                                    \
+    -1286840555, /* base/vms-1.1.0.pk3 */               \
+        1428306337, /* base/data-1.1.0.pk3 */           \
+        -537036296, /* base/map-uncreation-1.1.0.pk3 */ \
+        -1768007739, /* base/map-tremor-1.1.0.pk3 */    \
+        -2044057604, /* base/map-transit-1.1.0.pk3 */   \
+        2047591756, /* base/map-niveus-1.1.0.pk3 */     \
+        -2034645069, /* base/map-nexus6-1.1.0.pk3 */    \
+        1167370113, /* base/map-karith-1.1.0.pk3 */     \
+        -2177599, /* base/map-atcs-1.1.0.pk3 */         \
+        -1985258489 /* base/map-arachnid2-1.1.0.pk3 */
 
-#define BASE13_PAKS                             \
-    -294027093, /* vms-v1.3.0-alpha.0.13.pk3 */ \
-        1646107670 /* data-v1.3.0-alpha.0.13.pk3 */
+#define HASHLIST_GPP                    \
+    -1154612609, /* gpp/vms-gpp1.pk3 */ \
+        -1688908842 /* gpp/data-gpp1.pk3 */
+
+#define HASHLIST_1_3                                                    \
+    -498868165, /* trem13/vms-gpp-v1.3.0-alpha.0.13-25-g55049001.pk3 */ \
+        715301300 /* trem13/data-v1.3.0-alpha.0.13-25-g55049001.pk3 */
 
 #define PROCESS_PAKS(hashes)                    \
     for (int i = 0; i < ARRAY_LEN(hashes); ++i) \
@@ -234,22 +250,22 @@ void pk3_list_free(pk3_list_t *pk3_list)
 
 int core_pk3_position(unsigned int hash)
 {
-    static const int hashes_default[] = {BASE13_PAKS, GPP_PAKS, BASE_PAKS};
-    static const int hashes_1_1[] = {BASE_PAKS, GPP_PAKS, BASE13_PAKS};
-    static const int hashes_gpp[] = {GPP_PAKS, BASE_PAKS, BASE13_PAKS};
+    static const int hashes_default[] = {HASHLIST_1_3, HASHLIST_GPP, HASHLIST_1_1};
+    static const int hashes_1_1[] = {HASHLIST_1_1, HASHLIST_GPP, HASHLIST_1_3};
+    static const int hashes_gpp[] = {HASHLIST_GPP, HASHLIST_1_1, HASHLIST_1_3};
 
-    switch (fs_profile)
+    switch (fs_current_profile())
     {
-        case FS_PROFILE_DEFAULT:
-            PROCESS_PAKS(hashes_default);
-            break;
-
         case FS_PROFILE_1_1:
             PROCESS_PAKS(hashes_1_1);
             break;
 
         case FS_PROFILE_GPP:
             PROCESS_PAKS(hashes_gpp);
+            break;
+
+        default:
+            PROCESS_PAKS(hashes_default);
             break;
     }
 
@@ -274,7 +290,7 @@ FS_ModType fs_get_mod_type(const char *mod_dir, bool prioritize_fs_basegame)
             return MODTYPE_FS_BASEGAME;
     }
 
-    switch (fs_profile)
+    switch (fs_current_profile())
     {
         default:
             if (!Q_stricmp(mod_dir, BASEGAME_1_3))
