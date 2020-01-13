@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #ifdef NEW_FILESYSTEM
+#include <initializer_list>
 #include "fslocal.h"
 
 /* ******************************************************************************** */
@@ -177,14 +178,15 @@ void fs_disconnect_cleanup(void)
 
 static void generate_current_mod_dir(const char *source, char *target)
 {
-    // Converts mod dir to format used in current_mod_dir, with fs_basegame and basemod
+    // Converts mod dir to format used in current_mod_dir, with base directories and basemod
     //   replaced by empty string
     // Target should be size FSC_MAX_MODDIR
     fs_sanitize_mod_dir(source, target);
-    if (!Q_stricmp(target, "basemod"))
-        *target = 0;
-    if (!Q_stricmp(target, fs_basegame->string))
-        *target = 0;
+    for (const char *name : {BASEGAME_1_1, BASEGAME_GPP, BASEGAME_1_3, BASEGAME_OVERRIDE})
+    {
+        if (!Q_stricmp(target, name))
+            *target = 0;
+    }
 }
 
 static qboolean matches_current_mod_dir(const char *mod_dir)
@@ -637,7 +639,7 @@ void fs_startup(void)
     fs_debug_references = Cvar_Get("fs_debug_references", "0", 0);
     fs_debug_filelist = Cvar_Get("fs_debug_filelist", "0", 0);
 
-    fs_basegame = Cvar_Get("fs_basegame", BASEGAME, CVAR_INIT);
+    fs_basegame = Cvar_Get("fs_basegame", FS_BASEGAME_DEFAULT, CVAR_INIT);
 
     Cvar_Get("new_filesystem", "1", CVAR_ROM);  // Enables new filesystem calls in renderer
 

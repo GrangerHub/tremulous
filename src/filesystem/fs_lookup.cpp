@@ -88,7 +88,8 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
     const fsc_file_direct_t *base_file = fsc_get_base_file(resource->file, &fs);
 
     // Determine mod dir match level
-    resource->mod_type = fs_get_mod_type(resource_mod_dir);
+    bool prioritize_fs_basegame = (query->lookup_flags & LOOKUPFLAG_PRIORITIZE_FS_BASEGAME) ? true : false;
+    resource->mod_type = fs_get_mod_type(resource_mod_dir, prioritize_fs_basegame);
 
     // Configure pk3-specific properties
     if (resource->file->sourcetype == FSC_SOURCETYPE_PK3)
@@ -107,8 +108,8 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
         }
     }
 
-    // Check mod dir for case mismatched current or basegame directory
-    for (const char *name : {BASEGAME_1_1, BASEGAME_GPP, BASEGAME_1_3, BASEGAME_OVERRIDE, BASEGAME,
+    // Check for case-mismatched mod directories
+    for (const char *name : {BASEGAME_1_1, BASEGAME_GPP, BASEGAME_1_3, BASEGAME_OVERRIDE,
              (const char *)fs_basegame->string, (const char *)current_mod_dir})
     {
         if (!Q_stricmp(resource_mod_dir, name) && strcmp(resource_mod_dir, name))
@@ -833,7 +834,7 @@ static selection_output_t debug_selection;
 
 static void debug_lookup_flags_to_stream(int flags, fsc_stream_t *stream)
 {
-    const char *flag_strings[8] = {0};
+    const char *flag_strings[9] = {0};
     flag_strings[0] = (flags & LOOKUPFLAG_ENABLE_DDS) ? "enable_dds" : 0;
     flag_strings[1] = (flags & LOOKUPFLAG_IGNORE_PURE_LIST) ? "ignore_pure_list" : 0;
     flag_strings[2] = (flags & LOOKUPFLAG_PURE_ALLOW_DIRECT_SOURCE) ? "pure_allow_direct_source" : 0;
@@ -842,6 +843,7 @@ static void debug_lookup_flags_to_stream(int flags, fsc_stream_t *stream)
     flag_strings[5] = (flags & LOOKUPFLAG_PK3_SOURCE_ONLY) ? "pk3_source_only" : 0;
     flag_strings[6] = (flags & LOOKUPFLAG_SETTINGS_FILE) ? "settings_file" : 0;
     flag_strings[7] = (flags & LOOKUPFLAG_NO_DOWNLOAD_FOLDER) ? "no_download_folder" : 0;
+    flag_strings[8] = (flags & LOOKUPFLAG_PRIORITIZE_FS_BASEGAME) ? "prioritize_fs_basegame" : 0;
     fs_comma_separated_list(flag_strings, ARRAY_LEN(flag_strings), stream);
 }
 

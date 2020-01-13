@@ -256,40 +256,51 @@ int core_pk3_position(unsigned int hash)
     return 0;
 }
 
-FS_ModType fs_get_mod_type(const char *mod_dir)
+FS_ModType fs_get_mod_type(const char *mod_dir, bool prioritize_fs_basegame)
 {
     if (*current_mod_dir && !Q_stricmp(mod_dir, current_mod_dir))
         return MODTYPE_CURRENT_MOD;
     if (!Q_stricmp(mod_dir, BASEGAME_OVERRIDE))
         return MODTYPE_OVERRIDE_DIRECTORY;
 
+    if (!Q_stricmp(mod_dir, fs_basegame->string))
+    {
+        if (prioritize_fs_basegame)
+            return MODTYPE_FS_BASEGAME;
+
+        // Always prioritize fs_basegame if it is different from any of the regular base directories
+        if (Q_stricmp(fs_basegame->string, BASEGAME_1_3) && Q_stricmp(fs_basegame->string, BASEGAME_GPP) &&
+            Q_stricmp(fs_basegame->string, BASEGAME_1_1))
+            return MODTYPE_FS_BASEGAME;
+    }
+
     switch (fs_profile)
     {
-        case FS_PROFILE_DEFAULT:
+        default:
             if (!Q_stricmp(mod_dir, BASEGAME_1_3))
-                return MODTYPE_BASE1;
+                return MODTYPE_BASE3;
             if (!Q_stricmp(mod_dir, BASEGAME_GPP))
                 return MODTYPE_BASE2;
             if (!Q_stricmp(mod_dir, BASEGAME_1_1))
-                return MODTYPE_BASE3;
+                return MODTYPE_BASE1;
             break;
 
         case FS_PROFILE_1_1:
             if (!Q_stricmp(mod_dir, BASEGAME_1_1))
-                return MODTYPE_BASE1;
+                return MODTYPE_BASE3;
             if (!Q_stricmp(mod_dir, BASEGAME_GPP))
                 return MODTYPE_BASE2;
             if (!Q_stricmp(mod_dir, BASEGAME_1_3))
-                return MODTYPE_BASE3;
+                return MODTYPE_BASE1;
             break;
 
         case FS_PROFILE_GPP:
             if (!Q_stricmp(mod_dir, BASEGAME_GPP))
-                return MODTYPE_BASE1;
+                return MODTYPE_BASE3;
             if (!Q_stricmp(mod_dir, BASEGAME_1_1))
                 return MODTYPE_BASE2;
             if (!Q_stricmp(mod_dir, BASEGAME_1_3))
-                return MODTYPE_BASE3;
+                return MODTYPE_BASE1;
             break;
     }
 
@@ -651,7 +662,8 @@ void fs_execute_config_file(const char *name, fs_config_type_t config_type, cbuf
     else
     {
         const fsc_file_t *file;
-        int lookup_flags = LOOKUPFLAG_PURE_ALLOW_DIRECT_SOURCE | LOOKUPFLAG_IGNORE_CURRENT_MAP;
+        int lookup_flags =
+            LOOKUPFLAG_PURE_ALLOW_DIRECT_SOURCE | LOOKUPFLAG_IGNORE_CURRENT_MAP | LOOKUPFLAG_PRIORITIZE_FS_BASEGAME;
         if (fs_restrict_dlfolder->integer)
         {
             // Don't allow config files from restricted download folder pk3s, because they could disable the download

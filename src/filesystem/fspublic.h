@@ -63,13 +63,14 @@ typedef enum {
 // Versioned pk3 search locations
 #define BASEGAME_1_1 "base"
 #define BASEGAME_GPP "gpp"
-#define BASEGAME_1_3 "base_1.3"
+#define BASEGAME_1_3 "trem13"
 
 // User mod directory; overrides the regular search locations
 #define BASEGAME_OVERRIDE "basemod"
 
 // Store location for saved demos, screenshots, configs, condumps, etc.
-#define BASEGAME "base_1.3"
+// Can be modified on command line via fs_basegame cvar
+#define FS_BASEGAME_DEFAULT "trem13"
 
 enum FS_Profile {
 	FS_PROFILE_DEFAULT,
@@ -194,6 +195,7 @@ DEF_PUBLIC( void fs_startup(void) )
 #define LOOKUPFLAG_PK3_SOURCE_ONLY 32	// Only allow files in pk3s
 #define LOOKUPFLAG_SETTINGS_FILE 64		// Apply fs_mod_settings for auto-executed config files (e.g. q3config, autoexec, default)
 #define LOOKUPFLAG_NO_DOWNLOAD_FOLDER 128	// Don't allow files from download folder
+#define LOOKUPFLAG_PRIORITIZE_FS_BASEGAME 256	// (Tremulous) Prioritize fs_basegame over the other hardcoded base directories
 
 DEF_LOCAL( void debug_resource_comparison(int resource1_position, int resource2_position) )
 DEF_PUBLIC( const fsc_file_t *fs_general_lookup(const char *name, int lookup_flags, qboolean debug) )
@@ -380,15 +382,16 @@ DEF_LOCAL( void pk3_list_free(pk3_list_t *pk3_list) )
 #ifdef FSLOCAL
 enum FS_ModType {
 	MODTYPE_INACTIVE,
-	MODTYPE_BASE3,
-	MODTYPE_BASE2,
 	MODTYPE_BASE1,
+	MODTYPE_BASE2,
+	MODTYPE_BASE3,
+	MODTYPE_FS_BASEGAME,
 	MODTYPE_OVERRIDE_DIRECTORY,
 	MODTYPE_CURRENT_MOD
 };
 #endif
 DEF_LOCAL( int core_pk3_position(unsigned int hash) )
-DEF_LOCAL( FS_ModType fs_get_mod_type(const char *mod_dir) )
+DEF_LOCAL( FS_ModType fs_get_mod_type(const char *mod_dir, bool prioritize_fs_basegame=false) )
 
 // File helper functions
 #ifdef FSLOCAL
