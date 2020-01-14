@@ -197,7 +197,7 @@ DEF_PUBLIC( void fs_startup(void) )
 #define LOOKUPFLAG_IGNORE_CURRENT_MAP 8		// Ignore current map sort criteria
 #define LOOKUPFLAG_DIRECT_SOURCE_ONLY 16	// Only allow files on disk
 #define LOOKUPFLAG_PK3_SOURCE_ONLY 32	// Only allow files in pk3s
-#define LOOKUPFLAG_SETTINGS_FILE 64		// Apply fs_mod_settings for auto-executed config files (e.g. q3config, autoexec, default)
+#define LOOKUPFLAG_SETTINGS_FILE 64		// Apply fs_mod_settings for auto-executed settings files (e.g. autogen.cfg, autoexec.cfg)
 #define LOOKUPFLAG_NO_DOWNLOAD_FOLDER 128	// Don't allow files from download folder
 #define LOOKUPFLAG_PRIORITIZE_FS_BASEGAME 256	// (Tremulous) Prioritize fs_basegame over the other hardcoded base directories
 

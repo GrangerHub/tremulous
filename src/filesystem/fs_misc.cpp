@@ -688,15 +688,14 @@ void fs_execute_config_file(const char *name, fs_config_type_t config_type, cbuf
         }
         if (config_type == FS_CONFIGTYPE_SETTINGS)
         {
-            // For q3config.cfg and autoexec.cfg - only load files on disk and from appropriate fs_mod_settings
+            // For autogen.cfg and autoexec.cfg - only load files on disk and from appropriate fs_mod_settings
             // locations
             lookup_flags |= (LOOKUPFLAG_SETTINGS_FILE | LOOKUPFLAG_DIRECT_SOURCE_ONLY);
         }
-        if (config_type == FS_CONFIGTYPE_DEFAULT)
-        {
-            // For default.cfg - only load from appropriate fs_mod_settings locations
-            lookup_flags |= LOOKUPFLAG_SETTINGS_FILE;
-        }
+
+        // NOTE: For now, just use the standard precedence for default.cfg. Since it gets overridden by the settings
+        // config files executed afterwards it usually shouldn't cause any problems even if it doesn't follow the
+        // fs_mod_settings policy.
 
         if (!quiet)
             Com_Printf("execing %s\n", name);
