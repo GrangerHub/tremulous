@@ -1237,8 +1237,9 @@ const fsc_file_t *fs_vm_lookup(const char *name, qboolean qvm_only, qboolean deb
 
     if (!qvm_only)
     {
+        // Don't include ARCH_STRING in dll name as per GrangerHub standard
         queries[1].lookup_flags = LOOKUPFLAG_IGNORE_CURRENT_MAP;
-        fsc_process_qpath(va("%s" ARCH_STRING, name), qpath_buffers[1], &queries[1].qp_dir, &queries[1].qp_name, 0);
+        fsc_process_qpath(va("%s" /*ARCH_STRING*/, name), qpath_buffers[1], &queries[1].qp_dir, &queries[1].qp_name, 0);
         queries[1].qp_exts = dll_exts;
         queries[1].extension_count = ARRAY_LEN(dll_exts);
         queries[1].dll_query = qtrue;
