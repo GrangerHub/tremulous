@@ -367,13 +367,13 @@ void CL_cURL_PerformDownload(void)
 
 		qcurl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &code);	
 #ifdef NEW_FILESYSTEM
-		Com_Printf("Download Error: %s Code: %ld URL: %s\n",
+		if(!clc.activeCURLNotGameRelated) Com_Printf("Download Error: %s Code: %ld URL: %s\n",
 			qcurl_easy_strerror(msg->data.result), code, clc.downloadURL);
-#else
+		else
+#endif
 		Com_Error(ERR_DROP, "Download Error: %s Code: %ld URL: %s",
 			qcurl_easy_strerror(msg->data.result),
 			code, clc.downloadURL);
-#endif
 	}
 
 #ifdef NEW_FILESYSTEM
