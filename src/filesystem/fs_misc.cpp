@@ -161,20 +161,14 @@ void fs_hashtable_reset(fs_hashtable_t *hashtable, void (*free_entry)(fs_hashtab
 // Pk3 List
 /* ******************************************************************************** */
 
+// The pk3 list structure maps pk3 hashes to index value
+// First pk3 inserted has index 1, second pk3 has index 2, etc.
+// If same hash is inserted multiple times, the first index will be used
+
 void pk3_list_initialize(pk3_list_t *pk3_list, unsigned int bucket_count)
 {
     FSC_ASSERT(pk3_list);
     fs_hashtable_initialize(&pk3_list->ht, bucket_count);
-}
-
-void pk3_list_insert(pk3_list_t *pk3_list, unsigned int hash)
-{
-    pk3_list_entry_t *new_entry;
-    FSC_ASSERT(pk3_list);
-    new_entry = (pk3_list_entry_t *)S_Malloc(sizeof(pk3_list_entry_t));
-    fs_hashtable_insert(&pk3_list->ht, &new_entry->hte, hash);
-    new_entry->hash = hash;
-    new_entry->position = pk3_list->ht.element_count;
 }
 
 int pk3_list_lookup(const pk3_list_t *pk3_list, unsigned int hash, qboolean reverse)
@@ -193,6 +187,18 @@ int pk3_list_lookup(const pk3_list_t *pk3_list, unsigned int hash, qboolean reve
         }
     }
     return 0;
+}
+
+void pk3_list_insert(pk3_list_t *pk3_list, unsigned int hash)
+{
+    pk3_list_entry_t *new_entry;
+    FSC_ASSERT(pk3_list);
+    if (pk3_list_lookup(pk3_list, hash, qfalse))
+        return;
+    new_entry = (pk3_list_entry_t *)S_Malloc(sizeof(pk3_list_entry_t));
+    fs_hashtable_insert(&pk3_list->ht, &new_entry->hte, hash);
+    new_entry->hash = hash;
+    new_entry->position = pk3_list->ht.element_count;
 }
 
 void pk3_list_free(pk3_list_t *pk3_list)

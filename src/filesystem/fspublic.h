@@ -378,8 +378,8 @@ DEF_LOCAL( void fs_hashtable_reset(fs_hashtable_t *hashtable, void (*free_entry)
 
 // Pk3 List
 DEF_LOCAL( void pk3_list_initialize(pk3_list_t *pk3_list, unsigned int bucket_count) )
-DEF_LOCAL( void pk3_list_insert(pk3_list_t *pk3_list, unsigned int hash) )
 DEF_LOCAL( int pk3_list_lookup(const pk3_list_t *pk3_list, unsigned int hash, qboolean reverse) )
+DEF_LOCAL( void pk3_list_insert(pk3_list_t *pk3_list, unsigned int hash) )
 DEF_LOCAL( void pk3_list_free(pk3_list_t *pk3_list) )
 
 // Pk3 precedence functions
