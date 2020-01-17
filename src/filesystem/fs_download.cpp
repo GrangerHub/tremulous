@@ -116,11 +116,25 @@ void fs_clear_attempted_downloads(void)
 // Needed Download Checks
 /* ******************************************************************************** */
 
+static bool dl_is_base_directory(const char *mod_dir)
+{
+    // Returns true if specified mod dir is considered a base directory for download purposes
+    if (!Q_stricmp(mod_dir, BASEGAME_1_1))
+        return true;
+    if (!Q_stricmp(mod_dir, BASEGAME_GPP))
+        return true;
+    if (!Q_stricmp(mod_dir, BASEGAME_1_3))
+        return true;
+    return false;
+}
+
 static qboolean entry_match_in_index(download_entry_t *entry, fsc_file_direct_t **different_moddir_match_out)
 {
     // Returns qtrue if download entry matches a file already in main index
     fsc_hashtable_iterator_t hti;
     fsc_pk3_hash_map_entry_t *hashmap_entry;
+    bool core_pak = core_pk3_position(entry->hash) ? true : false;
+    bool target_is_base_directory = dl_is_base_directory(entry->mod_dir);
 
     fsc_hashtable_open(&fs.pk3_hash_lookup, entry->hash, &hti);
     while ((hashmap_entry = (fsc_pk3_hash_map_entry_t *)STACKPTRN(fsc_hashtable_next(&hti))))
@@ -130,6 +144,13 @@ static qboolean entry_match_in_index(download_entry_t *entry, fsc_file_direct_t 
             continue;
         if (pk3->pk3_hash != entry->hash)
             continue;
+
+        if (core_pak && target_is_base_directory && dl_is_base_directory(fsc_get_mod_dir((fsc_file_t *)pk3, &fs)))
+        {
+            // Don't redownload core pk3s to different base directories regardless of fs_redownload_across_mods setting
+            return qtrue;
+        }
+
         if (fs_redownload_across_mods->integer && Q_stricmp(fsc_get_mod_dir((fsc_file_t *)pk3, &fs), entry->mod_dir))
         {
             // If "fs_redownload_across_mods" is set, ignore match from different mod dir,
