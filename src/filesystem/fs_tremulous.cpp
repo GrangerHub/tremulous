@@ -21,9 +21,152 @@
 */
 
 #ifdef NEW_FILESYSTEM
+#include <initializer_list>
+#include <vector>
 #include "fslocal.h"
 
 // This file is used for some Tremulous-specific filesystem functions
+
+/* ******************************************************************************** */
+// Core Resource Precedence
+/* ******************************************************************************** */
+
+// This section is used to determine the priority of core resources such as pk3s that
+// are included in game releases.
+
+struct core_resource_s {
+    unsigned int hash;
+    const char *special_id;
+
+    core_resource_s(int _hash, const char *_special_id = 0)
+    {
+        hash = (unsigned int)_hash;
+        special_id = _special_id;
+    }
+};
+
+#define CORE_RESOURCES_1_1 \
+    -1286840555,            /* base/vms-1.1.0.pk3 */ \
+    1428306337,             /* base/data-1.1.0.pk3 */ \
+    -537036296,             /* base/map-uncreation-1.1.0.pk3 */ \
+    -1768007739,            /* base/map-tremor-1.1.0.pk3 */ \
+    -2044057604,            /* base/map-transit-1.1.0.pk3 */ \
+    2047591756,             /* base/map-niveus-1.1.0.pk3 */ \
+    -2034645069,            /* base/map-nexus6-1.1.0.pk3 */ \
+    1167370113,             /* base/map-karith-1.1.0.pk3 */ \
+    -2177599,               /* base/map-atcs-1.1.0.pk3 */ \
+    -1985258489             /* base/map-arachnid2-1.1.0.pk3 */ \
+
+#define CORE_RESOURCES_GPP \
+    -1154612609,            /* gpp/vms-gpp1.pk3 */ \
+    -1688908842             /* gpp/data-gpp1.pk3 */ \
+
+#define CORE_RESOURCES_1_3 \
+    -498868165,             /* trem13/vms-gpp-v1.3.0-alpha.0.13-25-g55049001.pk3 */ \
+    715301300               /* trem13/data-v1.3.0-alpha.0.13-25-g55049001.pk3 */ \
+
+typedef std::vector<core_resource_s> core_resource_set_t;
+static auto core_set_default = core_resource_set_t({CORE_RESOURCES_1_3, CORE_RESOURCES_GPP, CORE_RESOURCES_1_1});
+static auto core_set_1_1 = core_resource_set_t({CORE_RESOURCES_1_1, CORE_RESOURCES_GPP, CORE_RESOURCES_1_3});
+static auto core_set_gpp = core_resource_set_t({CORE_RESOURCES_GPP, CORE_RESOURCES_1_1, CORE_RESOURCES_1_3});
+
+static core_resource_set_t &core_set_current()
+{
+    switch (fs_current_profile())
+    {
+        case FS_PROFILE_1_1:
+            return core_set_1_1;
+        case FS_PROFILE_GPP:
+            return core_set_gpp;
+        default:
+            return core_set_default;
+    }
+}
+
+int core_pk3_position(unsigned int hash)
+{
+    // Determines the precedence value of a core pk3 (higher value equals higher precedence)
+    if (!hash)
+        return 0;
+    auto core_set = core_set_current();
+    size_t length = core_set.size();
+    for (int i = 0; i < length; ++i)
+    {
+        if (core_set[i].hash == hash)
+            return length - i;
+    }
+    return 0;
+}
+
+int core_special_position(const char *special_id)
+{
+    // Determines the precedence value of a resource indicated by a special identifier string
+    // This allows special content used by the engine such as game dlls to be included in the
+    //   resource lists and get a precedence value relative to the core pk3s
+    auto core_set = core_set_current();
+    size_t length = core_set.size();
+    for (int i = 0; i < length; ++i)
+    {
+        if (core_set[i].special_id && !Q_stricmp(special_id, core_set[i].special_id))
+            return length - i;
+    }
+    return 0;
+}
+
+/* ******************************************************************************** */
+// Base Directory & Mod Precedence
+/* ******************************************************************************** */
+
+FS_ModType fs_get_mod_type(const char *mod_dir, bool prioritize_fs_basegame)
+{
+    if (*current_mod_dir && !Q_stricmp(mod_dir, current_mod_dir))
+        return MODTYPE_CURRENT_MOD;
+    if (!Q_stricmp(mod_dir, BASEGAME_OVERRIDE))
+        return MODTYPE_OVERRIDE_DIRECTORY;
+
+    if (!Q_stricmp(mod_dir, fs_basegame->string))
+    {
+        if (prioritize_fs_basegame)
+            return MODTYPE_FS_BASEGAME;
+
+        // Always prioritize fs_basegame if it is different from any of the regular base directories
+        if (Q_stricmp(fs_basegame->string, BASEGAME_1_3) && Q_stricmp(fs_basegame->string, BASEGAME_GPP) &&
+            Q_stricmp(fs_basegame->string, BASEGAME_1_1))
+            return MODTYPE_FS_BASEGAME;
+    }
+
+    switch (fs_current_profile())
+    {
+        case FS_PROFILE_1_1:
+            if (!Q_stricmp(mod_dir, BASEGAME_1_1))
+                return MODTYPE_BASE3;
+            if (!Q_stricmp(mod_dir, BASEGAME_GPP))
+                return MODTYPE_BASE2;
+            if (!Q_stricmp(mod_dir, BASEGAME_1_3))
+                return MODTYPE_BASE1;
+            break;
+
+        case FS_PROFILE_GPP:
+            if (!Q_stricmp(mod_dir, BASEGAME_GPP))
+                return MODTYPE_BASE3;
+            if (!Q_stricmp(mod_dir, BASEGAME_1_1))
+                return MODTYPE_BASE2;
+            if (!Q_stricmp(mod_dir, BASEGAME_1_3))
+                return MODTYPE_BASE1;
+            break;
+
+        default:
+            if (!Q_stricmp(mod_dir, BASEGAME_1_3))
+                return MODTYPE_BASE3;
+            if (!Q_stricmp(mod_dir, BASEGAME_GPP))
+                return MODTYPE_BASE2;
+            if (!Q_stricmp(mod_dir, BASEGAME_1_1))
+                return MODTYPE_BASE1;
+            break;
+    }
+
+    return MODTYPE_INACTIVE;
+}
 
 /* ******************************************************************************** */
 // System file manager functions

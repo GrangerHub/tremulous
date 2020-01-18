@@ -382,22 +382,6 @@ DEF_LOCAL( int pk3_list_lookup(const pk3_list_t *pk3_list, unsigned int hash) )
 DEF_LOCAL( void pk3_list_insert(pk3_list_t *pk3_list, unsigned int hash) )
 DEF_LOCAL( void pk3_list_free(pk3_list_t *pk3_list) )
 
-// Pk3 precedence functions
-#ifdef FSLOCAL
-enum FS_ModType {
-	MODTYPE_INACTIVE,
-	MODTYPE_BASE1,
-	MODTYPE_BASE2,
-	MODTYPE_BASE3,
-	MODTYPE_FS_BASEGAME,
-	MODTYPE_OVERRIDE_DIRECTORY,
-	MODTYPE_CURRENT_MOD
-};
-#endif
-DEF_LOCAL( const char *fs_profile_to_string(FS_Profile profile) )
-DEF_LOCAL( int core_pk3_position(unsigned int hash) )
-DEF_LOCAL( FS_ModType fs_get_mod_type(const char *mod_dir, bool prioritize_fs_basegame=false) )
-
 // File helper functions
 #ifdef FSLOCAL
 #define FS_FILE_BUFFER_SIZE 512
@@ -443,6 +427,7 @@ DEF_PUBLIC( void QDECL FS_Printf( fileHandle_t f, const char *fmt, ... ) __attri
 DEF_LOCAL( void fs_comma_separated_list(const char **strings, int count, fsc_stream_t *output) )
 DEF_LOCAL( qboolean FS_idPak(const char *pak, const char *base, int numPaks) )
 DEF_LOCAL( void fs_sanitize_mod_dir(const char *source, char *target) )
+DEF_LOCAL( const char *fs_profile_to_string(FS_Profile profile) )
 
 // QVM Hash Verification
 DEF_LOCAL( qboolean calculate_file_sha256(const fsc_file_t *file, unsigned char *output) )
@@ -462,6 +447,25 @@ DEF_LOCAL( qboolean fs_check_trusted_vm_hash(unsigned char *hash) )
 // Tremulous
 /* ******************************************************************************** */
 
+// Core Resource Precedence
+DEF_LOCAL( int core_pk3_position(unsigned int hash) )
+DEF_LOCAL( int core_special_position(const char *special_id) )
+
+// Base Directory & Mod Precedence
+#ifdef FSLOCAL
+enum FS_ModType {
+	MODTYPE_INACTIVE,
+	MODTYPE_BASE1,
+	MODTYPE_BASE2,
+	MODTYPE_BASE3,
+	MODTYPE_FS_BASEGAME,
+	MODTYPE_OVERRIDE_DIRECTORY,
+	MODTYPE_CURRENT_MOD
+};
+#endif
+DEF_LOCAL( FS_ModType fs_get_mod_type(const char *mod_dir, bool prioritize_fs_basegame=false) )
+
+// System file manager functions
 DEF_PUBLIC( bool FS_BrowseHomepath( void ) )
 DEF_PUBLIC( bool FS_OpenBaseGamePath( const char *baseGamePath ) )
 
