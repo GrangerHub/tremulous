@@ -95,7 +95,7 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
     if (resource->file->sourcetype == FSC_SOURCETYPE_PK3)
     {
         if (!(query->lookup_flags & LOOKUPFLAG_IGNORE_PURE_LIST))
-            resource->server_pure_position = pk3_list_lookup(&connected_server_pure_list, base_file->pk3_hash, qfalse);
+            resource->server_pure_position = pk3_list_lookup(&connected_server_pure_list, base_file->pk3_hash);
         if (base_file->f.flags & FSC_FILEFLAG_DLPK3)
             resource->flags |= RESFLAG_IN_DOWNLOAD_PK3;
 

@@ -238,7 +238,7 @@ static void FS_Path_f(void)
                         "    hash(%i) core_pk3_position(%i)\n", (int)pak->pk3_hash, core_pk3_position(pak->pk3_hash));
                     if (fs_connected_server_pure_state())
                         Com_Printf("    %son the pure list\n",
-                            pk3_list_lookup(&connected_server_pure_list, pak->pk3_hash, qfalse) ? "" : "not ");
+                            pk3_list_lookup(&connected_server_pure_list, pak->pk3_hash) ? "" : "not ");
                 }
             }
         }

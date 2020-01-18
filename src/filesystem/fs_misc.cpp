@@ -171,7 +171,7 @@ void pk3_list_initialize(pk3_list_t *pk3_list, unsigned int bucket_count)
     fs_hashtable_initialize(&pk3_list->ht, bucket_count);
 }
 
-int pk3_list_lookup(const pk3_list_t *pk3_list, unsigned int hash, qboolean reverse)
+int pk3_list_lookup(const pk3_list_t *pk3_list, unsigned int hash)
 {
     fs_hashtable_iterator_t it;
     pk3_list_entry_t *entry;
@@ -181,8 +181,6 @@ int pk3_list_lookup(const pk3_list_t *pk3_list, unsigned int hash, qboolean reve
     {
         if (entry->hash == hash)
         {
-            if (reverse)
-                return pk3_list->ht.element_count - entry->position + 1;
             return entry->position;
         }
     }
@@ -193,7 +191,7 @@ void pk3_list_insert(pk3_list_t *pk3_list, unsigned int hash)
 {
     pk3_list_entry_t *new_entry;
     FSC_ASSERT(pk3_list);
-    if (pk3_list_lookup(pk3_list, hash, qfalse))
+    if (pk3_list_lookup(pk3_list, hash))
         return;
     new_entry = (pk3_list_entry_t *)S_Malloc(sizeof(pk3_list_entry_t));
     fs_hashtable_insert(&pk3_list->ht, &new_entry->hte, hash);
@@ -424,7 +422,7 @@ static int get_pk3_list_position(const fsc_file_t *file)
 {
     if (file->sourcetype != FSC_SOURCETYPE_PK3)
         return 0;
-    return pk3_list_lookup(&connected_server_pure_list, fsc_get_base_file(file, &fs)->pk3_hash, qfalse);
+    return pk3_list_lookup(&connected_server_pure_list, fsc_get_base_file(file, &fs)->pk3_hash);
 }
 
 static qboolean inactive_mod_file_disabled(const fsc_file_t *file, int level)
@@ -445,7 +443,7 @@ static qboolean inactive_mod_file_disabled(const fsc_file_t *file, int level)
         const fsc_file_direct_t *base_file = fsc_get_base_file(file, &fs);
         if (base_file)
         {
-            if (pk3_list_lookup(&connected_server_pure_list, base_file->pk3_hash, qfalse))
+            if (pk3_list_lookup(&connected_server_pure_list, base_file->pk3_hash))
                 return qfalse;
             if (core_pk3_position(base_file->pk3_hash))
                 return qfalse;
@@ -541,7 +539,11 @@ static unsigned int server_pure_precedence(const fsc_file_t *file)
 {
     if (file->sourcetype == FSC_SOURCETYPE_PK3)
     {
-        return pk3_list_lookup(&connected_server_pure_list, fsc_get_base_file(file, &fs)->pk3_hash, qtrue);
+        // Pure list stores pk3s by position, with index 1 at highest priority,
+        //   so index values need to be inverted to get precedence
+        unsigned int index = pk3_list_lookup(&connected_server_pure_list, fsc_get_base_file(file, &fs)->pk3_hash);
+        if (index)
+            return ~index;
     }
     return 0;
 }

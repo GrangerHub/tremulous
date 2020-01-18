@@ -515,7 +515,7 @@ static void reference_set_insert_entry(
     // Process exclude command
     if (rsw->exclude_mode)
     {
-        if (pk3_list_lookup(&rsw->exclude_set, hash, qfalse))
+        if (pk3_list_lookup(&rsw->exclude_set, hash))
         {
             if (fs_debug_references->integer)
                 Com_Printf("result: Hash already in exclude set\n");
@@ -530,7 +530,7 @@ static void reference_set_insert_entry(
     }
 
     // Check if hash is excluded
-    if (pk3_list_lookup(&rsw->exclude_set, hash, qfalse))
+    if (pk3_list_lookup(&rsw->exclude_set, hash))
     {
         if (fs_debug_references->integer)
             Com_Printf("result: Skipping entry due to hash in exclude set\n");
