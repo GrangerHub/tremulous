@@ -27,6 +27,20 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // Common Definitions
 /* ******************************************************************************** */
 
+#ifdef FSLOCAL
+// Versioned pk3 search locations
+#define BASEGAME_1_3 "trem13"
+#define BASEGAME_GPP "gpp"
+#define BASEGAME_1_1 "base"
+
+// User mod directory; overrides the regular search locations
+#define BASEGAME_OVERRIDE "basemod"
+
+// Store location for saved demos, screenshots, configs, condumps, etc.
+// Can be modified on command line via fs_basegame cvar
+#define FS_BASEGAME_DEFAULT "trem13"
+#endif
+
 #define qboolean bool
 typedef FS_Origin fsOrigin_t;
 typedef FS_Mode fsMode_t;
@@ -60,18 +74,6 @@ typedef enum {
 } fs_config_type_t;
 
 #ifdef FSLOCAL
-// Versioned pk3 search locations
-#define BASEGAME_1_1 "base"
-#define BASEGAME_GPP "gpp"
-#define BASEGAME_1_3 "trem13"
-
-// User mod directory; overrides the regular search locations
-#define BASEGAME_OVERRIDE "basemod"
-
-// Store location for saved demos, screenshots, configs, condumps, etc.
-// Can be modified on command line via fs_basegame cvar
-#define FS_BASEGAME_DEFAULT "trem13"
-
 enum FS_Profile {
 	FS_PROFILE_UNSET,
 	FS_PROFILE_1_1,

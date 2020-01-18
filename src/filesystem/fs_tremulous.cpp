@@ -45,6 +45,14 @@ struct core_resource_s {
     }
 };
 
+#define CORE_RESOURCES_1_3 \
+    -498868165,             /* trem13/vms-gpp-v1.3.0-alpha.0.13-25-g55049001.pk3 */ \
+    715301300               /* trem13/data-v1.3.0-alpha.0.13-25-g55049001.pk3 */ \
+
+#define CORE_RESOURCES_GPP \
+    -1154612609,            /* gpp/vms-gpp1.pk3 */ \
+    -1688908842             /* gpp/data-gpp1.pk3 */ \
+
 #define CORE_RESOURCES_1_1 \
     -1286840555,            /* base/vms-1.1.0.pk3 */ \
     1428306337,             /* base/data-1.1.0.pk3 */ \
@@ -56,14 +64,6 @@ struct core_resource_s {
     1167370113,             /* base/map-karith-1.1.0.pk3 */ \
     -2177599,               /* base/map-atcs-1.1.0.pk3 */ \
     -1985258489             /* base/map-arachnid2-1.1.0.pk3 */ \
-
-#define CORE_RESOURCES_GPP \
-    -1154612609,            /* gpp/vms-gpp1.pk3 */ \
-    -1688908842             /* gpp/data-gpp1.pk3 */ \
-
-#define CORE_RESOURCES_1_3 \
-    -498868165,             /* trem13/vms-gpp-v1.3.0-alpha.0.13-25-g55049001.pk3 */ \
-    715301300               /* trem13/data-v1.3.0-alpha.0.13-25-g55049001.pk3 */ \
 
 typedef std::vector<core_resource_s> core_resource_set_t;
 static auto core_set_default = core_resource_set_t({CORE_RESOURCES_1_3, CORE_RESOURCES_GPP, CORE_RESOURCES_1_1});
