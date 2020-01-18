@@ -39,6 +39,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // Store location for saved demos, screenshots, configs, condumps, etc.
 // Can be modified on command line via fs_basegame cvar
 #define FS_BASEGAME_DEFAULT "trem13"
+
+// Name of core game dll (full location is {BASEGAME_1_3}/{FS_CORE_GAME_DLL_NAME}.{DLL_EXT})
+#define FS_CORE_GAME_DLL_NAME "core_game"
 #endif
 
 #define qboolean bool

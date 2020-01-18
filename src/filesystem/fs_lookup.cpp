@@ -43,6 +43,7 @@ typedef struct {
 
     // Special
     qboolean dll_query;
+    qboolean tremulous_core_game_query;
 } lookup_query_t;
 
 #define RESFLAG_IN_DOWNLOAD_PK3 1
@@ -106,6 +107,17 @@ static void configure_lookup_resource(const lookup_query_t *query, lookup_resour
             if (!(query->lookup_flags & LOOKUPFLAG_IGNORE_CURRENT_MAP) && base_file == current_map_pk3)
                 resource->flags |= RESFLAG_IN_CURRENT_MAP_PAK;
         }
+    }
+
+    // Special: Handle Tremulous core game dll query
+    if (query->tremulous_core_game_query)
+    {
+        // Core game dll must be located in trem13 mod directory
+        if (Q_stricmp(resource_mod_dir, BASEGAME_1_3))
+            resource->disabled = "core game dll must be located in " BASEGAME_1_3 " directory";
+
+        // Apply appropriate core resource precedence value
+        resource->core_pak_priority = core_special_position("core_game_dll");
     }
 
     // Check for case-mismatched mod directories
@@ -1223,9 +1235,9 @@ const fsc_file_t *fs_vm_lookup(const char *name, qboolean qvm_only, qboolean deb
     // May throw ERR_DROP due to fs_restrict_dlfolder checks
     const char *qvm_exts[] = {"qvm"};
     const char *dll_exts[] = {DLL_EXT + 1};
-    lookup_query_t queries[2];
-    int query_count = qvm_only ? 1 : 2;
-    char qpath_buffers[2][FSC_MAX_QPATH];
+    lookup_query_t queries[3];
+    char qpath_buffers[3][FSC_MAX_QPATH];
+    int query_count = 1;
     query_result_t lookup_result;
     FSC_ASSERT(name);
 
@@ -1243,6 +1255,19 @@ const fsc_file_t *fs_vm_lookup(const char *name, qboolean qvm_only, qboolean deb
         queries[1].qp_exts = dll_exts;
         queries[1].extension_count = ARRAY_LEN(dll_exts);
         queries[1].dll_query = qtrue;
+        ++query_count;
+
+        if (!Q_stricmp(name, "game"))
+        {
+            // Add core game dll for consideration
+            queries[2].lookup_flags = LOOKUPFLAG_IGNORE_CURRENT_MAP;
+            fsc_process_qpath(FS_CORE_GAME_DLL_NAME, qpath_buffers[2], &queries[2].qp_dir, &queries[2].qp_name, 0);
+            queries[2].qp_exts = dll_exts;
+            queries[2].extension_count = ARRAY_LEN(dll_exts);
+            queries[2].dll_query = qtrue;
+            queries[2].tremulous_core_game_query = qtrue;
+            ++query_count;
+        }
     }
 
     if (debug)
