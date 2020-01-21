@@ -16,4 +16,3 @@ else
 fi
 
 exit $failed
-

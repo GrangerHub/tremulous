@@ -9,9 +9,10 @@ You can install the latest released binaries from GrangerHub's release page,
 following these steps:
 
 * Download the most recent .zip file for your platform from https://github.com/GrangerHub/tremulous/releases
- - The 64 bit Windows release would be named release-mingw32-x86_64.zip
- - The 64 bit Linux release would be named release-linux-x86_64.zip
- - The 64 bit Mac OS X release would be named release-darwin-x86_64.zip
+ - The 64 bit Windows release would be named release-windows-64.zip
+ - The 32 bit Windows release would be named release-windows-32.zip
+ - The 64 bit Linux release would be named release-linux-64.zip
+ - The 64 bit Mac OS X release would be named release-macos-64.zip
 * Unzip the release .zip anywhere
 * Run the tremulous.exe from the unzipped release directory.
  - When you run the tremulous.exe binary for the first time, it may go through a bootstrap (download needed assets, generate an RSA key) process which may take a few minutes.
@@ -65,8 +66,8 @@ For Linux and Mac OS X builds, follow these steps.
 git clone https://github.com/GrangerHub/tremulous.git
 cd tremulous
 make
-# cd build/release-darwin-x86_64/
-# cd build/release-linux-x86_64/
+# cd build/release-macos-64/
+# cd build/release-linux-64/
 ./tremulous
 ```
 
