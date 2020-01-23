@@ -19,14 +19,14 @@ matrix:
     env: PLATFORM=linux
     before_install:
     - docker pull grangerhub/tremulous13:latest
-    - docker run -e PLATFORM -v $(pwd):/usr/src grangerhub/tremulous13:latest ./misc/docker-build.sh
+    - docker run -e PLATFORM -v $(pwd):/usr/src grangerhub/tremulous13:latest ./misc/travis-ci-docker-build.sh
     script:
     - true
   - os: linux
     env: PLATFORM=mingw32
     before_install:
     - docker pull grangerhub/tremulous13:latest
-    - docker run -e PLATFORM -v $(pwd):/usr/src grangerhub/tremulous13:latest ./misc/docker-build.sh
+    - docker run -e PLATFORM -v $(pwd):/usr/src grangerhub/tremulous13:latest ./misc/travis-ci-docker-build.sh
     script:
     - true
   - os: linux
@@ -34,7 +34,7 @@ matrix:
     before_install:
     - docker pull grangerhub/tremulous13:latest
     - docker run -e ARCH -e PLATFORM -v $(pwd):/usr/src grangerhub/tremulous13:latest
-      ./misc/docker-build.sh
+      ./misc/travis-ci-docker-build.sh
     script:
     - true
   - os: osx
@@ -49,9 +49,9 @@ deploy:
   provider: releases
   skip_cleanup: true
   api_key:
-    secure: "jtNUkZL1TK3nD1LfWi5kypaL2WzUHxM/N72AcwKTmvieQ/3iwL8gRDFOhfWKFkNcyuCsEBw+c2KlpgfNGVNZYJgZrQ3Ozvnno5yN+V8Pb4ODEFU0Ps4EHSY7gsdF6bBdp3ooqsCsg8BkGfIggFsV+R9oKOyWWH1/N1jPWhf8ioWD+mMaAh5ZOsyQIECtSKAKMu9/hikVkdDuNsIAiaiJhYvP8rli5fYrZ4sVJih3YgeJj42i2iLeeWXmOmYNF7T5ywuBpaUjQJBEo83MilglTF0UOb471ADU2Gz3SMrnNCOdqDZLQaBL+QVrrgJUvXy5A92nxkY16mJaIvdDEOeIzWwgWVLoKyil6AFW5bR7lp2YW+/4I6zYEkGrpUaiZ+S1lgvm3CwVgwhg3rVuCi0qrI/7j/ImS9ORmz9DGbVgtg+y7mZnUIcEWX4jRDbbYWYIc/1fN+fGt73+41h0HS5of7d31yH6AyxB8/DlkuoKZIVHiErD0J3ZUkdVJOwhPFiPKViYR/07KEvafhkZkcffZh7arIesFB++4Kmglapb/awHJRh4lhfKd16IiCGjjfof8MDKSkmqAdXUsdCRcPu1Q0/cJaO3TRiTS6M0skrBUeIOOYsV0AdWM1Fy7dTySEEYlqZXnkiD98MG7CwobkWXmeVZHEzOJh2fDtv2w2ojoDI="
+    secure: g9HIz82c3vz3bl7vsMuODCz6kwf4IogJGw8V1Pn7TapXTeO9JnR1BqAhQbuqjPEBsgnIf+zwNblzBYmSyihB5I8JC8GiyhX/5tq5C/fd0z+uAH3Gsm5BFowRRUjVQlneH61NY4LP8H6h1KfkFBlD3NfW1D8kCa7vUyEh4Lj11wJMj9WgYctYfPu0rW2f8mCBSJ5VPR0EDNnJ8DV0EKEKmv7tiF6sY6eLuMg7VMtSPCCd/NkSQz1A04xYi6AwghrCJ8EZvkBhRIqgUGFL8y2si2Dt30fEG4nz4eDuqm17JoI9NX6Iz7v8iwU2CBL4wrDlqVYcncYxFqL89ZcXAmVHBl9eqqPKfA0KzR10IbkjVuVGvM0eQTOlGayDNalutZ0UtDuqPnMjHALpH+AsGUCwdYCQN5KL6b/xsgmQYUHuRE2ThbVk6MC7UbVSj6BQPiff9q41lSlHin2tkL9XUrGea0RY9d8F5dgT1oiYygUOpXcXA8slme2zvkuaNDrgFgkqU9ii3zqhqJxcFHkDIOmqxJJhyKcI4v6BWCz0evZzV4Qv3LpQyZeKJhmCAH5yU3xJYwV5ePoHrEeZc4a9y46V6R2hMttwawyR1TPZeT4PvEAFtusmfpmVeVlLhB9mmINK/D9LmuTEo0CdBioCgsIM1YQLFT8727yC/acB61dYowE=
   file_glob: true
   file: build/*.zip
   on:
-    repo: GrangerHub/tremulous
+    repo: dGr8LookinSparky/tremulous
     tags: true
