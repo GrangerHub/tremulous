@@ -1843,6 +1843,15 @@ static fileHandle_t fs_fopenfile_write_handle_open(
     return fs_write_handle_open(full_path, append, sync);
 }
 
+static const char *fs_tremulous_write_mod_location(fs_handle_owner_t owner)
+{
+    // For Tremulous, engine writes should always go to fs_basegame regardless of active mod
+    // Game module writes can still go to mod directory if set
+    if (owner == FS_HANDLEOWNER_SYSTEM)
+        return fs_basegame->string;
+    return FS_GetCurrentGameDir();
+}
+
 static int FS_FOpenFileByModeGeneral(const char *qpath, fileHandle_t *f, fsMode_t mode, fs_handle_owner_t owner)
 {
     // Can be called with a null filehandle pointer in read mode for a size/existance check
@@ -1901,15 +1910,15 @@ static int FS_FOpenFileByModeGeneral(const char *qpath, fileHandle_t *f, fsMode_
     }
     else if (mode == FS_WRITE)
     {
-        handle = fs_fopenfile_write_handle_open(FS_GetCurrentGameDir(), qpath, qfalse, qfalse, 0);
+        handle = fs_fopenfile_write_handle_open(fs_tremulous_write_mod_location(owner), qpath, qfalse, qfalse, 0);
     }
     else if (mode == FS_APPEND_SYNC)
     {
-        handle = fs_fopenfile_write_handle_open(FS_GetCurrentGameDir(), qpath, qtrue, qtrue, 0);
+        handle = fs_fopenfile_write_handle_open(fs_tremulous_write_mod_location(owner), qpath, qtrue, qtrue, 0);
     }
     else if (mode == FS_APPEND)
     {
-        handle = fs_fopenfile_write_handle_open(FS_GetCurrentGameDir(), qpath, qtrue, qfalse, 0);
+        handle = fs_fopenfile_write_handle_open(fs_tremulous_write_mod_location(owner), qpath, qtrue, qfalse, 0);
     }
     else
     {
