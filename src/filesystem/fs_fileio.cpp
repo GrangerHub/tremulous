@@ -93,7 +93,6 @@ static qboolean fs_generate_path_element(fsc_stream_t *stream, const char *name,
 {
     // Sanitize name of single file or directory and write to stream
     // Returns qtrue on success, qfalse on error
-    int i;
     char sanitized_path[MAX_SUBPATH_LENGTH];
     int path_length;
     fsc_stream_t path_stream = {sanitized_path, 0, sizeof(sanitized_path), 0};
@@ -107,18 +106,10 @@ static qboolean fs_generate_path_element(fsc_stream_t *stream, const char *name,
 // Replace non-alphanumeric characters at beginning or end of string with underscores
 // Exploits against OS-specific filename processing behavior often rely on symbols at beginning or end of filename
 #define IS_ALPHANUMERIC(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z') || ((c) >= '0' && (c) <= '9'))
-    for (i = 0; i < path_length; ++i)
-    {
-        if (IS_ALPHANUMERIC(sanitized_path[i]))
-            break;
-        sanitized_path[i] = '_';
-    }
-    for (i = path_length - 1; i >= 0; --i)
-    {
-        if (IS_ALPHANUMERIC(sanitized_path[i]))
-            break;
-        sanitized_path[i] = '_';
-    }
+    if (!IS_ALPHANUMERIC(sanitized_path[0]))
+        sanitized_path[0] = '_';
+    if (!IS_ALPHANUMERIC(sanitized_path[path_length - 1]))
+        sanitized_path[path_length - 1] = '_';
 
     // Check for possible backwards path
     if (strstr(sanitized_path, ".."))
@@ -171,15 +162,24 @@ static qboolean fs_generate_subpath(fsc_stream_t *stream, const char *path, int 
         // Write each section of the path separated by slashes
         char name[MAX_SUBPATH_LENGTH];
         const char *path_ptr = path;
+        qboolean first_element = qtrue;
         if (fsc_strlen(path) >= MAX_SUBPATH_LENGTH)
             return qfalse;
         while (path_ptr)
         {
-            fsc_get_leading_directory(path_ptr, name, sizeof(name), &path_ptr);
-            if (!fs_generate_path_element(stream, name, flags))
-                return qfalse;
-            if (path_ptr)
+            if (!fsc_get_leading_directory(path_ptr, name, sizeof(name), &path_ptr))
+            {
+                // Ignore empty sections caused by excess slashes
+                continue;
+            }
+            if (!first_element)
                 fsc_stream_append_string(stream, "/");
+            if (!fs_generate_path_element(stream, name, flags))
+            {
+                // Abort on sanitize error
+                return qfalse;
+            }
+            first_element = qfalse;
         }
     }
 
