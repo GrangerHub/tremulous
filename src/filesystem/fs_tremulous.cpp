@@ -225,7 +225,8 @@ Attempts to open path of form [sourcedir 0]/[fs_basegame]/[baseGamePath] in defa
 bool FS_OpenBaseGamePath( const char *baseGamePath )
 {
     char path[FS_MAX_PATH];
-    if(fs_generate_path_sourcedir(0, fs_basegame->string, baseGamePath, 0, FS_ALLOW_DIRECTORIES, path, sizeof(path)))
+    if(fs_generate_path_sourcedir(0, fs_basegame->string, baseGamePath, FS_CREATE_DIRECTORIES,
+            FS_ALLOW_DIRECTORIES|FS_CREATE_DIRECTORIES, path, sizeof(path)))
     {
         if( FS_OpenWithDefault( path ) )
             return true;
