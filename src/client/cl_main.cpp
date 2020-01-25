@@ -970,6 +970,13 @@ void CL_DemoCompleted(void)
         }
     }
 
+#ifdef NEW_FILESYSTEM
+    if(!*Cvar_VariableString("nextdemo"))
+    {
+        // Do a full disconnect to ensure new UI gets loaded
+        CL_Disconnect_f();
+    }
+#endif
     CL_Disconnect(true);
     CL_NextDemo();
 }
