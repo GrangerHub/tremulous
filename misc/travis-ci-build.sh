@@ -5,7 +5,7 @@ failed=0
 
 if [[ $PLATFORM == "darwin" ]]; then
     rm -rf build
-    USE_FREETYPE=0 USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 make -j 2 release || failed=1
+    BASEMOD=trem13 USE_FREETYPE=0 USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 make -j 2 release || failed=1
     ./misc/download-paks.sh
 fi
 

@@ -81,4 +81,4 @@ NCPU=`sysctl -n hw.ncpu`
 (ARCH=${BUILDARCH} CFLAGS=$ARCH_CFLAGS LDFLAGS=$ARCH_LDFLAGS make -j$NCPU) || exit 1;
 
 # use the following shell script to build an application bundle
-"./make-macosx-app.sh" release ${BUILDARCH}
+"./make-macosx-app.sh" release basemod ${BUILDARCH}

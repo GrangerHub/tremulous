@@ -3,9 +3,9 @@
 # Let's make the user give us a target to work with.
 # architecture is assumed universal if not specified, and is optional.
 # if arch is defined, it we will store the .app bundle in the target arch build directory
-if [ $# == 0 ] || [ $# -gt 2 ]; then
-	echo "Usage:   $0 target <arch>"
-	echo "Example: $0 release x86"
+if [ $# == 0 ] || [ $# -gt 3 ]; then
+	echo "Usage:   $0 target <basemod> <arch>"
+	echo "Example: $0 release basemod x86"
 	echo "Valid targets are:"
 	echo " release"
 	echo " debug"
@@ -33,13 +33,13 @@ fi
 CURRENT_ARCH=""
 
 # validate the architecture if it was specified
-if [ "$2" != "" ]; then
-	if [ "$2" == "x86" ]; then
+if [ "$3" != "" ]; then
+	if [ "$3" == "x86" ]; then
 		CURRENT_ARCH="x86"
-	elif [ "$2" == "x86_64" ]; then
+	elif [ "$3" == "x86_64" ]; then
 		CURRENT_ARCH="x86_64"
 	else
-		echo "Invalid architecture: $2"
+		echo "Invalid architecture: $3"
 		echo "Valid architectures are:"
 		echo " x86"
 		echo " x86_64"
@@ -127,16 +127,14 @@ IOQ3_MP_CGAME_ARCHS=""
 IOQ3_MP_GAME_ARCHS=""
 IOQ3_MP_UI_ARCHS=""
 
-BASEDIR="trem13"
+BASEDIR=$2
 
-if [[ "${TARGET_NAME}" == "release" ]]; then
-	CGAME="core-cgame"
-	GAME="core-game"
-	UI="core-ui"
-else
-	CGAME="cgame"
+CGAME="cgame"
+UI="ui"
+if [[ "${2}" == "basemod" ]]; then
 	GAME="game"
-	UI="ui"
+else
+	GAME="core-game"
 fi
 
 RENDERER_OPENGL="renderer_opengl"
@@ -240,7 +238,7 @@ if [ "${IOQ3_CLIENT_ARCHS}" == "" ]; then
 fi
 
 # set the final application bundle output directory
-if [ "${2}" == "" ]; then
+if [ "${3}" == "" ]; then
 	BUILT_PRODUCTS_DIR="${OBJROOT}/${TARGET_NAME}-macos-universal"
 	if [ ! -d ${BUILT_PRODUCTS_DIR} ]; then
 		mkdir -p ${BUILT_PRODUCTS_DIR} || exit 1;

@@ -258,6 +258,7 @@ DEF_LOCAL( void fs_delete_file(const char *path) )
 DEF_PUBLIC( void FS_HomeRemove( const char *homePath ) )
 DEF_LOCAL( qboolean FS_FileInPathExists(const char *testpath) )
 DEF_PUBLIC( qboolean FS_FileExists(const char *file) )
+DEF_PUBLIC( qboolean FS_FileExistsInBaseGame(const char *file) )
 
 // File read cache
 DEF_PUBLIC( void fs_cache_initialize(void) )

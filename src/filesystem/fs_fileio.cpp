@@ -341,6 +341,15 @@ qboolean FS_FileExists(const char *file)
     return FS_FileInPathExists(path);
 }
 
+static const char *fs_tremulous_write_mod_location(fs_handle_owner_t owner);
+qboolean FS_FileExistsInBaseGame(const char *file)
+{
+    char path[FS_MAX_PATH];
+    if (!fs_generate_path_sourcedir(0, fs_tremulous_write_mod_location(FS_HANDLEOWNER_SYSTEM), file, 0, FS_ALLOW_DIRECTORIES, path, sizeof(path)))
+        return qfalse;
+    return FS_FileInPathExists(path);
+}
+
 /* ******************************************************************************** */
 // File read cache
 /* ******************************************************************************** */

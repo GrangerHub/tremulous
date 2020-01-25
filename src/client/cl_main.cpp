@@ -736,6 +736,9 @@ static char demoName[MAX_QPATH];  // compiler bug workaround
 
 static void CL_Record_f(void)
 {
+    char check_demo_name1[MAX_QPATH];
+    char check_demo_name2[MAX_QPATH];
+    char check_demo_name3[MAX_QPATH];
     char name[MAX_OSPATH];
     byte bufData[MAX_MSGLEN];
     msg_t buf;
@@ -774,7 +777,24 @@ static void CL_Record_f(void)
     if (Cmd_Argc() == 2)
     {
         const char *s = Cmd_Argv(1);
+        
         Q_strncpyz(demoName, s, sizeof(demoName));
+        Com_sprintf(
+            check_demo_name1, sizeof(check_demo_name1),
+            "demos/%s.%s71", demoName, DEMOEXT);
+        Com_sprintf(
+            check_demo_name2, sizeof(check_demo_name2),
+            "demos/%s.%s69", demoName, DEMOEXT);
+        Com_sprintf(
+            check_demo_name3, sizeof(check_demo_name3),
+            "demos/%s.%s70", demoName, DEMOEXT);
+        if (
+            FS_FileExistsInBaseGame(check_demo_name1) ||
+            FS_FileExistsInBaseGame(check_demo_name2) ||
+            FS_FileExistsInBaseGame(check_demo_name3)) {
+            Com_Printf(S_COLOR_RED "Demo name already exists, pick another name.\n" S_COLOR_WHITE);
+            return;
+        }
         Com_sprintf(
           name, sizeof(name),
           "demos/%s.%s%d", demoName, DEMOEXT,
@@ -789,9 +809,29 @@ static void CL_Record_f(void)
         for (number = 0; number <= 9999; number++)
         {
             CL_DemoFilename(number, demoName, sizeof(demoName));
-            Com_sprintf(name, sizeof(name), "demos/%s.%s%d", demoName, DEMOEXT, PROTOCOL_VERSION);
 
-            if (!FS_FileExists(name)) break;  // file doesn't exist
+            Com_sprintf(
+                check_demo_name1, sizeof(check_demo_name1),
+                "demos/%s.%s71", demoName, DEMOEXT);
+            Com_sprintf(
+                check_demo_name2, sizeof(check_demo_name2),
+                "demos/%s.%s69", demoName, DEMOEXT);
+            Com_sprintf(
+                check_demo_name3, sizeof(check_demo_name3),
+                "demos/%s.%s70", demoName, DEMOEXT);
+
+            if (
+                !FS_FileExistsInBaseGame(check_demo_name1) &&
+                !FS_FileExistsInBaseGame(check_demo_name2) &&
+                !FS_FileExistsInBaseGame(check_demo_name3)) {
+                // file doesn't exist, so use this name
+                Com_sprintf(
+                  name, sizeof(name),
+                  "demos/%s.%s%d", demoName, DEMOEXT,
+                    (clc.netchan.alternateProtocol == 0 ?
+                      PROTOCOL_VERSION : clc.netchan.alternateProtocol == 1 ? 70 : 69));
+                break;
+            }
         }
     }
 

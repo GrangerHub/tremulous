@@ -91,4 +91,4 @@ echo;echo
 echo
 
 # use the following shell script to build a universal application bundle
-"./make-macosx-app.sh" release
+"./make-macosx-app.sh" release basemod
