@@ -855,7 +855,7 @@ ifneq ($(BUILD_GAME_SO),0)
 ifneq ($(BASEMOD), basemod)
 TARGETS += \
   $(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
-  $(B)/$(BASEMOD)/core-game$(SHLIBNAME) \
+  $(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
   $(B)/$(BASEMOD)/ui$(SHLIBNAME)
 else
 TARGETS += \
@@ -2652,7 +2652,7 @@ GOBJ = $(GOBJ_) $(B)/$(BASEGAME)/game/g_syscalls.o
 GVMOBJ = $(GOBJ_:%.o=%.asm)
 
 ifneq ($(BASEMOD), basemod)
-$(B)/$(BASEMOD)/core-game$(SHLIBNAME): $(GOBJ)
+$(B)/$(BASEMOD)/core_game$(SHLIBNAME): $(GOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(SHLIBLDFLAGS) $(LDFLAGS) -o $@ $(GOBJ)
 else
@@ -3052,7 +3052,7 @@ ifneq ($(BASEMOD), basemod)
 	$(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3 \
 	$(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3 \
 	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
-	$(B)/$(BASEMOD)/core-game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
 	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
 	$(B).zip
 else
@@ -3077,7 +3077,7 @@ ifneq ($(BASEMOD), basemod)
 	$(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3 \
 	$(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3 \
 	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
-	$(B)/$(BASEMOD)/core-game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
 	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
 	$(B).zip
 else
@@ -3103,7 +3103,7 @@ ifneq ($(BASEMOD), basemod)
 	$(B)/$(BASEMOD)/data-$(VERSION).pk3 \
 	$(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3 \
 	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
-	$(B)/$(BASEMOD)/core-game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
 	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
 	$(B).zip
 else
@@ -3126,7 +3126,7 @@ ifneq ($(BASEMOD), basemod)
 	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
 	$(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3 \
 	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
-	$(B)/$(BASEMOD)/core-game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
 	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
 	$(B).zip
 else
@@ -3153,7 +3153,7 @@ ifneq ($(BASEMOD), basemod)
 	$(B)/$(BASEMOD)/data-$(VERSION).pk3 \
 	$(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3 \
 	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
-	$(B)/$(BASEMOD)/core-game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
 	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
 	$(B).zip
 else
@@ -3176,7 +3176,7 @@ ifneq ($(BASEMOD), basemod)
 	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
 	$(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3 \
 	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
-	$(B)/$(BASEMOD)/core-game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
 	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
 	$(B).zip
 else
@@ -3200,7 +3200,7 @@ ifneq ($(BASEMOD), basemod)
 	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
 	$(B)/$(BASEMOD)/data-$(VERSION).pk3 \
 	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
-	$(B)/$(BASEMOD)/core-game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
 	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
 	$(B).zip
 else
@@ -3221,7 +3221,7 @@ ifneq ($(BASEMOD), basemod)
 	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
 	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
 	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
-	$(B)/$(BASEMOD)/core-game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
 	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
 	$(B).zip
 else

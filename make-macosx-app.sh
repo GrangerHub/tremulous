@@ -134,7 +134,7 @@ UI="ui"
 if [[ "${2}" == "basemod" ]]; then
 	GAME="game"
 else
-	GAME="core-game"
+	GAME="core_game"
 fi
 
 RENDERER_OPENGL="renderer_opengl"
