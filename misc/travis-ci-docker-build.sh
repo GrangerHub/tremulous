@@ -19,6 +19,9 @@ for dir in ${REPO_ROOT}/build/*; do
 
   if [[ $PLATFORM != "darwin" ]]; then
       zip -d ${REPO_ROOT}/build/$(basename $dir).zip "trem13_11/vm/*"
+      zip -d ${REPO_ROOT}/build/$(basename $dir).zip "trem13/vm/*"
+      zip -d ${REPO_ROOT}/build/$(basename $dir).zip "trem13/cgame.*"
+      zip -d ${REPO_ROOT}/build/$(basename $dir).zip "trem13/ui.*"
   fi
 done
 chmod -R ugo+rw build
