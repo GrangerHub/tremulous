@@ -13,7 +13,6 @@ if [[ $PLATFORM == "darwin" ]]; then
           continue;
       fi
 
-      zip -d ${REPO_ROOT}/build/$(basename $dir).zip "Tremulous.app/Contents/MacOS/trem13/vm/*"
       zip -d ${REPO_ROOT}/build/$(basename $dir).zip "Tremulous.app/Contents/MacOS/trem13/cgame.*"
       zip -d ${REPO_ROOT}/build/$(basename $dir).zip "Tremulous.app/Contents/MacOS/trem13/ui.*"
     done
