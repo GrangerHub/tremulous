@@ -474,5 +474,6 @@ DEF_LOCAL( FS_ModType fs_get_mod_type(const char *mod_dir, bool prioritize_fs_ba
 // System file manager functions
 DEF_PUBLIC( bool FS_BrowseHomepath( void ) )
 DEF_PUBLIC( bool FS_OpenBaseGamePath( const char *baseGamePath ) )
+DEF_PUBLIC( bool FS_OpenModPath( const char *modPath ) )
 
 #undef qboolean

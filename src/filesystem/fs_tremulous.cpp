@@ -48,7 +48,7 @@ struct core_resource_s {
 #define CORE_RESOURCES_1_3 \
     {0, "core_game_dll"},   /* Core dll defined by FS_CORE_GAME_DLL_NAME */ \
     -498868165,             /* trem13/vms-gpp-v1.3.0-alpha.0.13-25-g55049001.pk3 */ \
-    715301300               /* trem13/data-v1.3.0-alpha.0.13-25-g55049001.pk3 */ \
+    -754603633              /* trem13/data-v1.3.0-alpha.0.14.6.pk3 */ \
 
 #define CORE_RESOURCES_GPP \
     -1154612609,            /* gpp/vms-gpp1.pk3 */ \
@@ -233,6 +233,27 @@ bool FS_OpenBaseGamePath( const char *baseGamePath )
     }
 
     Com_Printf( S_COLOR_RED "FS_OpenBaseGamePath: failed to open game path with the default file manager.\n" S_COLOR_WHITE );
+    return false;
+}
+
+/*
+============
+FS_OpenModPath
+
+Attempts to open path of form [sourcedir 0]/[modPath] in default file manager
+============
+*/
+bool FS_OpenModPath( const char *modPath )
+{
+    char path[FS_MAX_PATH];
+    if(fs_generate_path_sourcedir(0, modPath, 0, FS_CREATE_DIRECTORIES,
+            FS_ALLOW_DIRECTORIES|FS_CREATE_DIRECTORIES, path, sizeof(path)))
+    {
+        if( FS_OpenWithDefault( path ) )
+            return true;
+    }
+
+    Com_Printf( S_COLOR_RED "FS_OpenModPath: failed to open mod path %s with the default file manager.\n" S_COLOR_WHITE, modPath );
     return false;
 }
 

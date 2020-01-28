@@ -259,6 +259,7 @@ void         FS_HomeRemove (const char* homePath);
 void         FS_Remove (const char* osPath);
 bool         FS_BrowseHomepath ( void );
 bool         FS_OpenBaseGamePath( const char *baseGamePath );
+bool         FS_OpenModPath( const char *modPath );
 bool     FS_CreatePath (const char* OSPath);
 char*        FS_BuildOSPath (const char* base, const char* game, const char* qpath);
 long         FS_filelength (fileHandle_t f);

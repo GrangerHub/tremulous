@@ -102,6 +102,24 @@
 
         itemDef
         {
+            text "Browse basemod Folder"
+            type ITEM_TYPE_BUTTON
+            textscale .25
+            style WINDOW_STYLE_EMPTY
+            rect X (Y+(3*(BUTT_H+ELEM_GAP))) W BUTT_H
+            textalign ALIGN_CENTER
+            textvalign VALIGN_CENTER
+            forecolor 1 1 1 1
+            visible MENU_TRUE
+            action
+            {
+                play "sound/misc/menu1.wav";
+                exec browseBasemod
+            }
+        }
+
+        itemDef
+        {
             text "OK"
             type ITEM_TYPE_BUTTON
             textscale .25

@@ -186,6 +186,8 @@ static void CL_BrowseDemos_f() { FS_OpenBaseGamePath( "demos/" ); }
 
 static void CL_BrowseScreenShots_f() { FS_OpenBaseGamePath( "screenshots/" ); }
 
+static void CL_BrowseBasemod_f() { FS_OpenModPath( "basemod" ); }
+
 #ifdef USE_MUMBLE
 static void CL_UpdateMumble(void)
 {
@@ -5194,6 +5196,7 @@ void CL_Init(void)
     Cmd_AddCommand("browseHomepath", CL_BrowseHomepath_f);
     Cmd_AddCommand("browseDemos", CL_BrowseDemos_f);
     Cmd_AddCommand("browseScreenShots", CL_BrowseScreenShots_f);
+    Cmd_AddCommand("browseBasemod", CL_BrowseBasemod_f);
 
     CL_InitRef();
 

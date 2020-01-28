@@ -468,6 +468,33 @@ bool FS_OpenBaseGamePath( const char *baseGamePath )
 
 /*
 ============
+FS_OpenModPath
+
+Opens the given path for the
+mod in the default file manager
+============
+*/
+bool FS_OpenModPath( const char *modPath )
+{
+    const char *homePath = Sys_DefaultHomePath( );
+    const char *path;
+
+    if (!homePath || !homePath[0])
+    {
+        homePath = fs_basepath->string;
+    }
+
+    path = FS_BuildOSPath( homePath, modPath, "");
+
+    if( FS_OpenWithDefault( path ) )
+        return true;
+
+    Com_Printf( S_COLOR_RED "FS_OpenModPath: failed to open the mod folder %s with the default file manager.\n" S_COLOR_WHITE, modPath );
+    return false;
+}
+
+/*
+============
 FS_CreatePath
 
 Creates any directories needed to store the given filename
