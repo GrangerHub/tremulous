@@ -1013,7 +1013,11 @@ static script_t *Parse_LoadScriptFile(const char *filename)
   void *buffer;
   script_t *script;
 
+#ifdef NEW_FILESYSTEM
+  length = FS_FOpenFileReadParseScript( filename, &fp, false );
+#else
   length = FS_FOpenFileRead( filename, &fp, false );
+#endif
   if (!fp) return NULL;
 
   buffer = Z_Malloc(sizeof(script_t) + length + 1);
