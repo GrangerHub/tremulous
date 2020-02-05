@@ -345,8 +345,7 @@ static const char *fs_tremulous_write_mod_location(fs_handle_owner_t owner);
 qboolean FS_FileExistsInBaseGame(const char *file)
 {
     char path[FS_MAX_PATH];
-    if (!fs_generate_path_sourcedir(0, fs_tremulous_write_mod_location(FS_HANDLEOWNER_SYSTEM), file, 0,
-            FS_ALLOW_DIRECTORIES, path, sizeof(path)))
+    if (!fs_generate_path_sourcedir(0, fs_tremulous_write_mod_location(FS_HANDLEOWNER_SYSTEM), file, 0, FS_ALLOW_DIRECTORIES, path, sizeof(path)))
         return qfalse;
     return FS_FileInPathExists(path);
 }
@@ -1862,8 +1861,7 @@ static const char *fs_tremulous_write_mod_location(fs_handle_owner_t owner)
     return FS_GetCurrentGameDir();
 }
 
-static int FS_FOpenFileByModeGeneral(
-    const char *qpath, fileHandle_t *f, fsMode_t mode, fs_handle_owner_t owner, int lookup_flags)
+static int FS_FOpenFileByModeGeneral(const char *qpath, fileHandle_t *f, fsMode_t mode, fs_handle_owner_t owner)
 {
     // Can be called with a null filehandle pointer in read mode for a size/existance check
     int size = 0;
@@ -1882,6 +1880,8 @@ static int FS_FOpenFileByModeGeneral(
     {
         if (owner != FS_HANDLEOWNER_SYSTEM)
         {
+            int lookup_flags = 0;
+
             if (fs_readback_tracker_process_path(qpath, qfalse))
             {
                 // If file was potentially just written, run filesystem refresh to make sure it is registered
@@ -1915,7 +1915,7 @@ static int FS_FOpenFileByModeGeneral(
 
         // Engine reads don't do anything fancy so just use the basic method
         else
-            size = fs_fopenfile_read_handle_open(qpath, f ? &handle : 0, lookup_flags, qfalse);
+            size = fs_fopenfile_read_handle_open(qpath, f ? &handle : 0, 0, qfalse);
     }
     else if (mode == FS_WRITE)
     {
@@ -1960,8 +1960,8 @@ static const char *fs_mode_string(fsMode_t mode)
     return "unknown";
 }
 
-static int FS_FOpenFileByModeLogged(const char *qpath, fileHandle_t *f, fsMode_t mode, fs_handle_owner_t owner,
-    const char *calling_function, int lookup_flags = 0)
+static int FS_FOpenFileByModeLogged(
+    const char *qpath, fileHandle_t *f, fsMode_t mode, fs_handle_owner_t owner, const char *calling_function)
 {
     int result;
 
@@ -1971,8 +1971,6 @@ static int FS_FOpenFileByModeLogged(const char *qpath, fileHandle_t *f, fsMode_t
         fs_debug_indent_start();
         FS_DPrintf("origin: %s\n", calling_function);
         FS_DPrintf("path: %s\n", qpath);
-        if (lookup_flags)
-            FS_DPrintf("lookup_flags: %i\n", lookup_flags);
         if (mode == FS_READ && !f)
         {
             FS_DPrintf("mode: read (size check)\n");
@@ -1984,7 +1982,7 @@ static int FS_FOpenFileByModeLogged(const char *qpath, fileHandle_t *f, fsMode_t
         FS_DPrintf("owner: %s\n", fs_owner_string(owner));
     }
 
-    result = FS_FOpenFileByModeGeneral(qpath, f, mode, owner, lookup_flags);
+    result = FS_FOpenFileByModeGeneral(qpath, f, mode, owner);
 
     if (fs_debug_fileio->integer)
     {
@@ -1999,15 +1997,6 @@ long FS_FOpenFileRead(const char *filename, fileHandle_t *file, qboolean uniqueF
 {
     FSC_ASSERT(filename);
     return FS_FOpenFileByModeLogged(filename, file, FS_READ, FS_HANDLEOWNER_SYSTEM, "FS_FOpenFileRead");
-}
-
-long FS_FOpenFileReadParseScript(const char *filename, fileHandle_t *file, qboolean uniqueFILE)
-{
-    // Allow Tremulous parse calls like UI_PARSE_LOAD_SOURCE to access files on disk when connected
-    // to a pure server, like standard game module filesystem calls already do
-    FSC_ASSERT(filename);
-    return FS_FOpenFileByModeLogged(filename, file, FS_READ, FS_HANDLEOWNER_SYSTEM, "FS_FOpenFileReadParseScript",
-        LOOKUPFLAG_PURE_ALLOW_DIRECT_SOURCE);
 }
 
 fileHandle_t FS_FOpenFileWrite(const char *filename)

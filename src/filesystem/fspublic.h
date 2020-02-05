@@ -307,7 +307,6 @@ DEF_LOCAL( void fs_readback_tracker_reset(void) )
 
 // FS_FOpenFile functions
 DEF_PUBLIC( long FS_FOpenFileRead(const char *filename, fileHandle_t *file, qboolean uniqueFILE) )
-DEF_PUBLIC( long FS_FOpenFileReadParseScript(const char *filename, fileHandle_t *file, qboolean uniqueFILE) )
 DEF_PUBLIC( fileHandle_t FS_FOpenFileWrite(const char *filename) )
 DEF_PUBLIC( fileHandle_t FS_FOpenFileAppend(const char *filename) )
 DEF_PUBLIC( int FS_FOpenFileByModeOwner(const char *qpath, fileHandle_t *f, fsMode_t mode, fs_handle_owner_t owner) )
