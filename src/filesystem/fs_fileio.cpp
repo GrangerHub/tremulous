@@ -345,7 +345,8 @@ static const char *fs_tremulous_write_mod_location(fs_handle_owner_t owner);
 qboolean FS_FileExistsInBaseGame(const char *file)
 {
     char path[FS_MAX_PATH];
-    if (!fs_generate_path_sourcedir(0, fs_tremulous_write_mod_location(FS_HANDLEOWNER_SYSTEM), file, 0, FS_ALLOW_DIRECTORIES, path, sizeof(path)))
+    if (!fs_generate_path_sourcedir(0, fs_tremulous_write_mod_location(FS_HANDLEOWNER_SYSTEM), file, 0,
+            FS_ALLOW_DIRECTORIES, path, sizeof(path)))
         return qfalse;
     return FS_FileInPathExists(path);
 }
@@ -1861,6 +1862,15 @@ static const char *fs_tremulous_write_mod_location(fs_handle_owner_t owner)
     return FS_GetCurrentGameDir();
 }
 
+static bool FS_IsExt(const char *filename, const char *ext, int namelen)
+{
+    int extlen = strlen(ext);
+    if (extlen > namelen)
+        return false;
+    filename += namelen - extlen;
+    return !Q_stricmp(filename, ext);
+}
+
 static int FS_FOpenFileByModeGeneral(const char *qpath, fileHandle_t *f, fsMode_t mode, fs_handle_owner_t owner)
 {
     // Can be called with a null filehandle pointer in read mode for a size/existance check
@@ -1878,10 +1888,15 @@ static int FS_FOpenFileByModeGeneral(const char *qpath, fileHandle_t *f, fsMode_
 
     if (mode == FS_READ)
     {
+        int lookup_flags = 0;
+
+        // Tremulous: Allow specific extensions to be read outside pk3s when connected to a pure server
+        int len = fsc_strlen(qpath);
+        if (FS_IsExt(qpath, ".cfg", len) || FS_IsExt(qpath, ".dat", len) || FS_IsExt(qpath, ".menu", len))
+            lookup_flags |= LOOKUPFLAG_PURE_ALLOW_DIRECT_SOURCE;
+
         if (owner != FS_HANDLEOWNER_SYSTEM)
         {
-            int lookup_flags = 0;
-
             if (fs_readback_tracker_process_path(qpath, qfalse))
             {
                 // If file was potentially just written, run filesystem refresh to make sure it is registered
@@ -1898,13 +1913,6 @@ static int FS_FOpenFileByModeGeneral(const char *qpath, fileHandle_t *f, fsMode_
                 // by the pure list when running a local game with sv_pure enabled.
                 lookup_flags |= LOOKUPFLAG_IGNORE_PURE_LIST;
             }
-            else
-            {
-                // For other VMs, allow opening files on disk when pure. This is a bit more permissive than
-                // the original filesystem, which only allowed certain extensions, but this allows more
-                // flexibility for mods and shouldn't cause any problems.
-                lookup_flags |= LOOKUPFLAG_PURE_ALLOW_DIRECT_SOURCE;
-            }
 
             // Use read with direct handle support option, to ensure recently/actively written files
             // on disk are opened properly, and to optimize for pk3 read operations that read only the
@@ -1915,7 +1923,7 @@ static int FS_FOpenFileByModeGeneral(const char *qpath, fileHandle_t *f, fsMode_
 
         // Engine reads don't do anything fancy so just use the basic method
         else
-            size = fs_fopenfile_read_handle_open(qpath, f ? &handle : 0, 0, qfalse);
+            size = fs_fopenfile_read_handle_open(qpath, f ? &handle : 0, lookup_flags, qfalse);
     }
     else if (mode == FS_WRITE)
     {
