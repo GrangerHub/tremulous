@@ -2728,11 +2728,11 @@ $(B)/$(BASEMOD)_11/vm/ui.qvm: $(UIVMOBJ11) $(UIDIR)/ui_syscalls_11.asm $(Q3ASM)
 
 ifneq ($(BUILD_GAME_QVM),0)
 $(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3: $(B)/$(BASEMOD)/vm/ui.qvm $(B)/$(BASEMOD)/vm/cgame.qvm $(B)/$(BASEMOD)/vm/game.qvm
-	@(zip -r $(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3 $(B)/$(BASEMOD)/vm/)
+	@(cd $(B)/$(BASEMOD) && zip -r vms-gpp-$(VERSION).pk3 vm/)
 endif
 ifneq ($(BUILD_GAME_QVM_11),0)
 $(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3: $(B)/$(BASEMOD)_11/vm/ui.qvm $(B)/$(BASEMOD)_11/vm/cgame.qvm 
-	@(zip -r $(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3 $(B)/$(BASEMOD)_11/vm/)
+	@(cd $(B)/$(BASEMOD)_11 && zip -r vms-1.1-$(VERSION).pk3 vm/)
 endif
 
 

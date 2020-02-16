@@ -47,7 +47,7 @@ struct core_resource_s {
 
 #define CORE_RESOURCES_1_3 \
     {0, "core_game_dll"},   /* Core dll defined by FS_CORE_GAME_DLL_NAME */ \
-    -498868165,             /* trem13/vms-gpp-v1.3.0-alpha.0.13-25-g55049001.pk3 */ \
+    -498868165,             /* trem13/vms-gpp-v1.3.0-alpha.0.14.9.pk3 */ \
     -754603633              /* trem13/data-v1.3.0-alpha.0.14.6.pk3 */ \
 
 #define CORE_RESOURCES_GPP \
