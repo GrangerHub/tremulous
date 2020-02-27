@@ -840,6 +840,9 @@ ifeq ($(USE_CURL),1)
   ifeq ($(USE_CURL_DLOPEN),1)
     CLIENT_CFLAGS += -DUSE_CURL_DLOPEN
   endif
+  ifeq ($(USE_INTERNAL_LIBS),1)
+    CLIENT_CFLAGS += -I$(CURLHDIR)
+  endif
 endif
 
 ifeq ($(USE_VOIP),1)
@@ -2879,6 +2882,8 @@ clean2:
 	@rm -f $(OBJ_D_FILES)
 	@rm -f $(STRINGOBJ)
 	@rm -f $(TARGETS)
+	@rm -rf $(B)
+	@rm -rf $(BUILD_DIR)
 
 toolsclean: toolsclean-debug toolsclean-release
 
