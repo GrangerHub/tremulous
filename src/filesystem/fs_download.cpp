@@ -377,6 +377,25 @@ qboolean fs_get_current_download_info(
     return qtrue;
 }
 
+int fs_estimate_remaining_downloads(void)
+{
+    // Tremulous - quick and dirty estimate of remaining download count for UI menu purposes
+    int count = 0;
+    download_entry_t *entry = current_download ? current_download : next_download;
+
+    while (entry)
+    {
+        // Count downloads pending in either HTTP or UDP mode
+        if (fs_is_valid_download(entry, 0, qfalse) || fs_is_valid_download(entry, 0, qtrue))
+        {
+            ++count;
+        }
+        entry = entry->next;
+    }
+
+    return count;
+}
+
 /* ******************************************************************************** */
 // Download Completion
 /* ******************************************************************************** */

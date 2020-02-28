@@ -2093,6 +2093,10 @@ void CL_NextDownload(void)
 		char *remoteName, *localName;
 		bool curl_already_attempted = false;
 
+		// Update remaining download stats for UI
+		clc.downloadDone = clc.downloadTotal - fs_estimate_remaining_downloads();
+		Cvar_SetValue("cl_downloadDone", clc.downloadDone);
+
 		// Get next potential download
 		fs_advance_next_needed_download(clc.cURLDisconnected);
 		if(!fs_get_current_download_info(&localName, &remoteName, &curl_already_attempted)) {
@@ -2391,15 +2395,17 @@ and determine if we need to download them
 void CL_InitDownloads(void)
 {
 #ifdef NEW_FILESYSTEM
-	clc.state = CA_CONNECTED;
+    clc.state = CA_CONNECTED;
 
-	*clc.downloadTempName = *clc.downloadName = 0;
-	Cvar_Set( "cl_downloadName", "" );
-	if(clc.download) {
-		FS_FCloseFile(clc.download);
-		clc.download = 0; }
+    *clc.downloadTempName = *clc.downloadName = 0;
+    Cvar_Set("cl_downloadName", "");
+    if (clc.download)
+    {
+        FS_FCloseFile(clc.download);
+        clc.download = 0;
+    }
 
-	fs_print_download_list();
+    fs_print_download_list();
 
 	CL_NextDownload();
 #else

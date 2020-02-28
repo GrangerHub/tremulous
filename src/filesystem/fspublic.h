@@ -349,6 +349,7 @@ DEF_PUBLIC( void fs_clear_attempted_downloads(void) )
 DEF_PUBLIC( void fs_advance_next_needed_download(qboolean curl_disconnected) )
 DEF_PUBLIC( qboolean fs_get_current_download_info(char **local_name_out, char **remote_name_out,
 		qboolean *curl_already_attempted_out) )
+DEF_PUBLIC( int fs_estimate_remaining_downloads(void) )
 
 // Download Completion
 DEF_PUBLIC( void fs_finalize_download(void) )
