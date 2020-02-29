@@ -2407,7 +2407,13 @@ void CL_InitDownloads(void)
 
     fs_print_download_list();
 
-	CL_NextDownload();
+    // Initialize remaining download stats for UI
+    clc.downloadDone = 0;
+    clc.downloadTotal = fs_estimate_remaining_downloads();
+    Cvar_Set("cl_downloadDone", "0");
+    Cvar_SetValue("cl_downloadTotal", clc.downloadTotal);
+
+    CL_NextDownload();
 #else
     char *s;
 
