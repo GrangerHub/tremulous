@@ -362,9 +362,8 @@ DEF_LOCAL( void fs_register_reference(const fsc_file_t *file) )
 DEF_PUBLIC( void FS_ClearPakReferences( int flags ) )
 DEF_PUBLIC( const char *FS_ReferencedPakNames( void ) )
 DEF_PUBLIC( const char *FS_ReferencedPakPureChecksums( void ) )
-DEF_PUBLIC( void fs_set_download_list(void) )
+DEF_PUBLIC( void fs_generate_reference_lists(void) )
 DEF_PUBLIC( fileHandle_t fs_open_download_pak(const char *path, unsigned int *size_out) )
-DEF_PUBLIC( void fs_set_pure_list(void) )
 
 /* ******************************************************************************** */
 // Misc
