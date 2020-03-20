@@ -658,10 +658,7 @@ static void IN_InitHaptic( void )
 	if (rumbleSupported == SDL_TRUE)
 	{
 		if ( SDL_HapticRumbleInit( haptic ) == 0 )
-		{
-			if ( SDL_HapticRumblePlay(haptic, 1.0f, 250) != 0 )
-				Com_DPrintf( "Can't run test haptic's rumble effect: %s\n", SDL_GetError() );
-		}
+			SDL_HapticRumblePlay(haptic, 1.0f, 300);
 		else
 			Com_DPrintf( "Can't initialize haptic's rumble effect: %s\n", SDL_GetError() );
 	}
