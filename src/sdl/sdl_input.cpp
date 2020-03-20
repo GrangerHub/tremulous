@@ -54,7 +54,7 @@ static cvar_t *in_joystickUseAnalog = NULL;
 
 static cvar_t *in_haptic          = NULL;
 static cvar_t *in_hapticNo        = NULL;
-static int hapticRumbleSupported = NULL;
+static int hapticRumbleSupported 	= SDL_FALSE;
 
 static int vidRestartTime = 0;
 static int in_eventTime = 0;
@@ -609,7 +609,7 @@ static void IN_InitHaptic( void )
 	int total = 0;
 	char buf[16384] = "";
 
-	hapticRumbleSupported = NULL;
+	hapticRumbleSupported = SDL_FALSE;
 
 	if (haptic)
 		SDL_HapticClose(haptic);
@@ -664,9 +664,9 @@ static void IN_InitHaptic( void )
 		else
 		{
 			Com_Printf( "Can't initialize haptic's rumble effect: %s\n", SDL_GetError() );
-			SDL_HapticClose( in_hapticNo->integer );
+			SDL_HapticClose( haptic );
 			haptic = NULL;
-			hapticRumbleSupported = NULL;
+			hapticRumbleSupported = SDL_FALSE;
 		}
 	}
 	else if (hapticRumbleSupported < 0)
@@ -722,14 +722,23 @@ static void IN_ShutdownHaptic( void )
 
 	if (haptic)
 	{
+		SDL_HapticRumbleStop(haptic);
+		SDL_HapticStopAll(haptic);
 		SDL_HapticClose(haptic);
 		haptic = NULL;
-		hapticRumbleSupported = NULL;
+		hapticRumbleSupported = SDL_FALSE;
 	}
 
 	SDL_QuitSubSystem(SDL_INIT_HAPTIC);
 }
 
+void IN_HapticFeedback( float strength, uint32_t length )
+{
+	if (in_haptic->integer && haptic && hapticRumbleSupported == SDL_TRUE && length)
+	{
+		SDL_HapticRumblePlay(haptic, strength, length);
+	}
+}
 
 static bool KeyToAxisAndSign(int keynum, int *outAxis, int *outSign)
 {

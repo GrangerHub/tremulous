@@ -2065,6 +2065,9 @@ void          trap_S_AddLoopingSound( int entityNum, const vec3_t origin, const 
 void          trap_S_AddRealLoopingSound( int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx );
 void          trap_S_UpdateEntityPosition( int entityNum, const vec3_t origin );
 
+// feedback
+void          trap_IN_FeedbackEffect( float strength, uint32_t length );
+
 // respatialize recalculates the volumes of sound as they should be heard by the
 // given entityNum and position
 void          trap_S_Respatialize( int entityNum, const vec3_t origin, vec3_t axis[3], int inwater );

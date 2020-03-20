@@ -103,6 +103,7 @@ void IN_Init( void *windowData );
 void IN_Frame( void );
 void IN_Shutdown( void );
 void IN_Restart( void );
+void IN_HapticFeedback( float strength, uint32_t length );
 
 #ifdef __cplusplus
 }

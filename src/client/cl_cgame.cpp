@@ -152,7 +152,7 @@ bool CL_GetSnapshot( int snapshotNumber, snapshot_t *snapshot )
 		snapshot->numEntities = count;
 		for ( int i = 0 ; i < count ; i++ )
         {
-			snapshot->entities[i] = 
+			snapshot->entities[i] =
 				cl.parseEntities[ ( clSnap->parseEntitiesNum + i ) & (MAX_PARSE_ENTITIES-1) ];
 		}
 	}
@@ -205,7 +205,7 @@ void CL_ConfigstringModified( void )
 
 	// leave the first 0 for uninitialized strings
 	cl.gameState.dataCount = 1;
-		
+
     const char* dup;
 	for ( int i = 0 ; i < MAX_CONFIGSTRINGS ; i++ )
     {
@@ -436,7 +436,7 @@ intptr_t CL_CgameSystemCalls( intptr_t *args )
         case CG_MILLISECONDS:
             return Sys_Milliseconds();
         case CG_CVAR_REGISTER:
-            Cvar_Register( (vmCvar_t*)VMA(1), (const char*)VMA(2), (const char*)VMA(3), args[4] ); 
+            Cvar_Register( (vmCvar_t*)VMA(1), (const char*)VMA(2), (const char*)VMA(3), args[4] );
             return 0;
         case CG_CVAR_UPDATE:
             Cvar_Update( (vmCvar_t*)VMA(1) );
@@ -573,9 +573,12 @@ intptr_t CL_CgameSystemCalls( intptr_t *args )
         case CG_S_STARTBACKGROUNDTRACK:
             S_StartBackgroundTrack( (const char*)VMA(1), (const char*)VMA(2) );
             return 0;
+        case CG_IN_FEEDBACKEFFECT:
+            IN_HapticFeedback( (float)args[1], (uint32_t)args[2] );
+            return 0;
         case CG_R_LOADWORLDMAP:
             re.LoadWorld( (const char*)VMA(1) );
-            return 0; 
+            return 0;
         case CG_R_REGISTERMODEL:
             return re.RegisterModel( (const char*)VMA(1) );
         case CG_R_REGISTERSKIN:
@@ -1055,7 +1058,7 @@ void CL_SetCGameTime( void ) {
 		if ( clc.state != CA_ACTIVE ) {
 			return;
 		}
-	}	
+	}
 
 	// if we have gotten to this point, cl.snap is guaranteed to be valid
 	if ( !cl.snap.valid ) {
@@ -1081,10 +1084,10 @@ void CL_SetCGameTime( void ) {
 
 	} else {
 		// cl_timeNudge is a user adjustable cvar that allows more
-		// or less latency to be added in the interest of better 
+		// or less latency to be added in the interest of better
 		// smoothness or better responsiveness.
 		int tn;
-		
+
 		tn = cl_timeNudge->integer;
 		if (tn<-30) {
 			tn = -30;

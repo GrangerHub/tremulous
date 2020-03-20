@@ -277,6 +277,11 @@ void  trap_S_StopLoopingSound( int entityNum )
   syscall( CG_S_STOPLOOPINGSOUND, entityNum );
 }
 
+void  trap_IN_FeedbackEffect( float strength, uint32_t length )
+{
+  syscall( CG_IN_FEEDBACKEFFECT, strength, length );
+}
+
 void  trap_S_UpdateEntityPosition( int entityNum, const vec3_t origin )
 {
   syscall( CG_S_UPDATEENTITYPOSITION, entityNum, origin );

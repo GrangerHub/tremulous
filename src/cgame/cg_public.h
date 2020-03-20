@@ -191,6 +191,7 @@ typedef enum {
     CG_S_SOUNDDURATION,
     CG_FIELD_COMPLETELIST,
 #endif
+    CG_IN_FEEDBACKEFFECT,
 
     CG_MEMSET = 200,
     CG_MEMCPY,
