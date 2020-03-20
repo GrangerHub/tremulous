@@ -115,7 +115,7 @@ char CG_GetForceColorFromPlayerState( playerState_t *ps )
 
 /*
 ===============
-CG_GetAllowedKeys
+CG_getTutorialMode
 ===============
 */
 static tutorialMode_t CG_getTutorialMode( void )
