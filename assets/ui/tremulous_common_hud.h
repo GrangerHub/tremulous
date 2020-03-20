@@ -9,7 +9,7 @@
 #define MAIN_W    (W-(2*BORDER))
 
 //#define TUTORIAL_X (W-(BORDER*MAIN_W))
-#define TUTORIAL_X  320
+#define TUTORIAL_X  260
 
 #define KILLFEED_X (BORDER)
 #define KILLFEED_Y (410)
@@ -40,11 +40,11 @@ itemDef
   style WINDOW_STYLE_EMPTY
   visible MENU_TRUE
   decoration
-  forecolor 1 1 1 0.35
+  forecolor 1 1 1 0.65
   textalign ALIGN_LEFT
   textvalign VALIGN_CENTER
   textscale 0.3
-  textstyle ITEM_TEXTSTYLE_NORMAL
+  textstyle ITEM_TEXTSTYLE_SHADOWED
   ownerdraw CG_TUTORIAL
 }
 
@@ -244,4 +244,3 @@ itemDef
   textstyle ITEM_TEXTSTYLE_SHADOWED
   ownerdraw CG_KILLFEED
 }
-

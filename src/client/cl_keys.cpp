@@ -797,7 +797,7 @@ static void Message_Key( int key ) {
 										 chatField.buffer );
 			}
 			else if (chat_admins) {
-				Com_sprintf( buffer, sizeof( buffer ), 
+				Com_sprintf( buffer, sizeof( buffer ),
 										 "a \"%s\"\n",
 										 chatField.buffer );
 			}
@@ -814,7 +814,7 @@ static void Message_Key( int key ) {
 											 chatField.buffer );
 				} else {
 					//string isnt long enough
-					Com_Printf ( 
+					Com_Printf (
 						"^3Error:your cl_clantag has to be Between 3 and 10 chars long. current value is:^7 %s^7\n",
 						clantagDecolored );
 					return;
@@ -1318,7 +1318,7 @@ static void CL_KeyDownEvent( int key, unsigned time )
 		( clc.demoplaying || clc.state == CA_CINEMATIC ) && Key_GetCatcher( ) == 0 ) {
 
 		if (Cvar_VariableValue ("com_cameraMode") == 0) {
-			if( clc.demoplaying && key != K_ESCAPE ) {
+			if( clc.demoplaying && key != K_ESCAPE && key != K_PAD0_BACK && key != K_PAD0_GUIDE ) {
 				// avoid accidental stopping of demos from pressing a random key by opening the console
 				Con_ToggleConsole_f ();
 				Key_ClearStates ();
@@ -1330,7 +1330,7 @@ static void CL_KeyDownEvent( int key, unsigned time )
 	}
 
 	// escape is always handled special
-	if ( key == K_ESCAPE ) {
+	if ( key == K_ESCAPE || key == K_PAD0_BACK || key == K_PAD0_GUIDE ) {
 		if ( clc.netchan.alternateProtocol == 2 &&
 			   ( Key_GetCatcher( ) & KEYCATCH_MESSAGE ) ) {
 			// clear message mode

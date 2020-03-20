@@ -42,7 +42,7 @@
     {
       uiScript LoadHumanArmouryBuys;
       uiScript LoadHumanArmourySells;
-      setFocus list
+      setFocus buylist
     }
 
     itemDef

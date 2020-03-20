@@ -84,6 +84,7 @@ static void Item_ListBox_SetStartPos(itemDef_t *item, int startPos);
 void Menu_SetupKeywordHash(void);
 int BindingIDFromName(const char *name);
 qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down);
+itemDef_t *Menu_GetFocusedItem(menuDef_t *menu);
 itemDef_t *Menu_SetPrevCursorItem(menuDef_t *menu);
 itemDef_t *Menu_SetNextCursorItem(menuDef_t *menu);
 static qboolean Menu_OverActiveItem(menuDef_t *menu, float x, float y);
@@ -1096,6 +1097,22 @@ static void Border_Paint(Window *w)
     }
 }
 
+static void BorderFocus_Paint(Window *w, vec4_t focusColor)
+{
+  Window Focus;
+
+  memcpy(&Focus, w, sizeof(Window));
+  Vector4Copy(focusColor, Focus.borderColor);
+  Focus.borderColor[3] /= 3.0f;
+  Border_Paint(&Focus);
+  Focus.rect.x -= 3;
+  Focus.rect.y -= 3;
+  Focus.rect.w += 6;
+  Focus.rect.h += 6;
+  Focus.borderSize *= 1.5f;
+  Border_Paint(&Focus);
+}
+
 void Item_SetScreenCoords(itemDef_t *item, float x, float y)
 {
     if (item == NULL)
@@ -1984,6 +2001,7 @@ qboolean UI_Text_IsEmoticon(const char *s, qboolean *escaped, int *length, qhand
     const char *p = s;
     char emoticon[MAX_EMOTICON_NAME_LEN];
     int i;
+    int emoticonLength = 0;
 
     if (*p != '[')
         return qfalse;
@@ -2002,9 +2020,10 @@ qboolean UI_Text_IsEmoticon(const char *s, qboolean *escaped, int *length, qhand
         if (!p[*length] || *length == MAX_EMOTICON_NAME_LEN - 1)
             return qfalse;
 
-        emoticon[*length] = p[*length];
+        if ( p[*length] != Q_COLOR_ESCAPE && ( !*length || p[*length - 1] != Q_COLOR_ESCAPE ) )
+          emoticon[emoticonLength++] = p[*length];
     }
-    emoticon[*length] = '\0';
+    emoticon[emoticonLength] = '\0';
 
     for (i = 0; i < DC->Assets.emoticonCount; i++)
         if (!Q_stricmp(DC->Assets.emoticons[i].name, emoticon))
@@ -2389,7 +2408,9 @@ static void UI_Text_Paint_Generic(
                         DC->setColor(NULL);
                         colorBlack[3] = 1.0f;
                     }
-
+                    colorWhite[3] = newColor[3];
+                    DC->setColor(colorWhite);
+                    colorWhite[3] = 1;
                     DC->drawHandlePic(x, y - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
                     DC->setColor(newColor);
                     x += (emoticonW * emoticonWidth) + gapAdjust;
@@ -2803,6 +2824,59 @@ static void Item_ListBox_SetStartPos(itemDef_t *item, int startPos)
     listPtr->endPos = listPtr->startPos + MIN((total - listPtr->startPos), Item_ListBox_NumItemsForItemHeight(item));
 }
 
+static void Item_ListBox_SelectPrevious(itemDef_t *item)
+{
+    listBoxDef_t *listPtr = item->typeData.list;
+    int viewmax = Item_ListBox_NumItemsForItemHeight(item);
+
+    if (!listPtr->notselectable)
+    {
+        listPtr->cursorPos = item->cursorPos;
+        listPtr->cursorPos -= 1;
+
+        if (listPtr->cursorPos < 0)
+            listPtr->cursorPos = 0;
+
+        if (listPtr->cursorPos < listPtr->startPos)
+            Item_ListBox_SetStartPos(item, listPtr->cursorPos);
+
+        if (listPtr->cursorPos >= listPtr->startPos + viewmax)
+            Item_ListBox_SetStartPos(item, listPtr->cursorPos - viewmax + 1);
+
+        item->cursorPos = listPtr->cursorPos;
+        DC->feederSelection(item->feederID, item->cursorPos);
+    }
+    else
+        Item_ListBox_SetStartPos(item, listPtr->startPos - 1);
+}
+
+static void Item_ListBox_SelectNext(itemDef_t *item)
+{
+    listBoxDef_t *listPtr = item->typeData.list;
+    int count = DC->feederCount(item->feederID);
+    int viewmax = Item_ListBox_NumItemsForItemHeight(item);
+
+    if (!listPtr->notselectable)
+    {
+        listPtr->cursorPos = item->cursorPos;
+        listPtr->cursorPos += 1;
+
+        if (listPtr->cursorPos < listPtr->startPos)
+            Item_ListBox_SetStartPos(item, listPtr->cursorPos);
+
+        if (listPtr->cursorPos >= count)
+            listPtr->cursorPos = count - 1;
+
+        if (listPtr->cursorPos >= listPtr->startPos + viewmax)
+            Item_ListBox_SetStartPos(item, listPtr->cursorPos - viewmax + 1);
+
+        item->cursorPos = listPtr->cursorPos;
+        DC->feederSelection(item->feederID, item->cursorPos);
+    }
+    else
+        Item_ListBox_SetStartPos(item, listPtr->startPos + 1);
+}
+
 float Item_ListBox_ThumbPosition(itemDef_t *item)
 {
     float max, pos, size;
@@ -2851,9 +2925,9 @@ float Item_Slider_ThumbPosition(itemDef_t *item)
 
     value = DC->getCVarValue(item->cvar);
 
-    if (value < editDef->minVal)
+    if (editDef->minVal < editDef->maxVal ? value < editDef->minVal : value > editDef->minVal)
         value = editDef->minVal;
-    else if (value > editDef->maxVal)
+    else if (editDef->minVal < editDef->maxVal ? value > editDef->maxVal : value < editDef->maxVal)
         value = editDef->maxVal;
 
     range = editDef->maxVal - editDef->minVal;
@@ -3064,9 +3138,9 @@ qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolea
     listBoxDef_t *listPtr = item->typeData.list;
     int count = DC->feederCount(item->feederID);
     int viewmax;
+    qboolean mouseOver = Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory);
 
-    if (force ||
-        (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory) && item->window.flags & WINDOW_HASFOCUS))
+    if (force || item->window.flags & WINDOW_HASFOCUS)
     {
         viewmax = Item_ListBox_NumItemsForItemHeight(item);
 
@@ -3074,45 +3148,48 @@ qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolea
         {
             case K_MOUSE1:
             case K_MOUSE2:
-                if (item->window.flags & WINDOW_LB_UPARROW)
-                    Item_ListBox_SetStartPos(item, listPtr->startPos - 1);
-                else if (item->window.flags & WINDOW_LB_DOWNARROW)
-                    Item_ListBox_SetStartPos(item, listPtr->startPos + 1);
-                else if (item->window.flags & WINDOW_LB_PGUP)
-                    Item_ListBox_SetStartPos(item, listPtr->startPos - viewmax);
-                else if (item->window.flags & WINDOW_LB_PGDN)
-                    Item_ListBox_SetStartPos(item, listPtr->startPos + viewmax);
-                else if (item->window.flags & WINDOW_LB_THUMB)
-                    break;  // Handled by capture function
-                else
+                if (mouseOver)
                 {
-                    // Select an item
-                    qboolean runDoubleClick = qfalse;
-
-                    // Mouse isn't over an item
-                    if (listPtr->cursorPos < 0)
-                        break;
-
-                    if (item->cursorPos != listPtr->cursorPos)
+                    if (item->window.flags & WINDOW_LB_UPARROW)
+                        Item_ListBox_SetStartPos(item, listPtr->startPos - 1);
+                    else if (item->window.flags & WINDOW_LB_DOWNARROW)
+                        Item_ListBox_SetStartPos(item, listPtr->startPos + 1);
+                    else if (item->window.flags & WINDOW_LB_PGUP)
+                        Item_ListBox_SetStartPos(item, listPtr->startPos - viewmax);
+                    else if (item->window.flags & WINDOW_LB_PGDN)
+                        Item_ListBox_SetStartPos(item, listPtr->startPos + viewmax);
+                    else if (item->window.flags & WINDOW_LB_THUMB)
+                        break;  // Handled by capture function
+                    else
                     {
-                        item->cursorPos = listPtr->cursorPos;
-                        DC->feederSelection(item->feederID, item->cursorPos);
-                    }
+                        // Select an item
+                        qboolean runDoubleClick = qfalse;
 
-                    runDoubleClick = DC->realTime < lastListBoxClickTime && listPtr->doubleClick;
-                    lastListBoxClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
+                        // Mouse isn't over an item
+                        if (listPtr->cursorPos < 0)
+                            break;
 
-                    // Made a selection, so close combobox
-                    if (g_comboBoxItem != NULL)
-                    {
-                        if (listPtr->doubleClick)
+                        if (item->cursorPos != listPtr->cursorPos)
+                        {
+                            item->cursorPos = listPtr->cursorPos;
+                            DC->feederSelection(item->feederID, item->cursorPos);
+                        }
+
+                        runDoubleClick = DC->realTime < lastListBoxClickTime && listPtr->doubleClick;
+                        lastListBoxClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
+
+                        // Made a selection, so close combobox
+                        if (g_comboBoxItem != NULL)
+                        {
+                            if (listPtr->doubleClick)
                             runDoubleClick = qtrue;
 
-                        g_comboBoxItem = NULL;
-                    }
+                            g_comboBoxItem = NULL;
+                        }
 
-                    if (runDoubleClick)
-                        Item_RunScript(item, listPtr->doubleClick);
+                        if (runDoubleClick)
+                          Item_RunScript(item, listPtr->doubleClick);
+                    }
                 }
 
                 break;
@@ -3125,11 +3202,28 @@ qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolea
                 Item_ListBox_SetStartPos(item, listPtr->startPos + 1);
                 break;
 
+            case K_KP_UPARROW:
+            case K_UPARROW:
+            case K_PAD0_RIGHTSTICK_UP:
+            case K_PAD0_LEFTSTICK_UP:
+          	case K_PAD0_DPAD_UP:
+                Item_ListBox_SelectPrevious(item);
+                break;
+
+            case K_KP_DOWNARROW:
+            case K_DOWNARROW:
+            case K_PAD0_RIGHTSTICK_DOWN:
+            case K_PAD0_LEFTSTICK_DOWN:
+          	case K_PAD0_DPAD_DOWN:
+                Item_ListBox_SelectNext(item);
+                break;
+
             case K_ENTER:
+            case K_KP_ENTER:
+            case K_PAD0_A:
                 // Invoke the doubleClick handler when enter is pressed
                 if (listPtr->doubleClick)
                     Item_RunScript(item, listPtr->doubleClick);
-
                 break;
 
             case K_PGUP:
@@ -3191,6 +3285,9 @@ qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolea
 
 qboolean Item_ComboBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolean force)
 {
+    qboolean mouseOver = Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory);
+    listBoxDef_t *listPtr = item->typeData.list;
+
     if (g_comboBoxItem != NULL)
     {
         qboolean result;
@@ -3199,22 +3296,36 @@ qboolean Item_ComboBox_HandleKey(itemDef_t *item, int key, qboolean down, qboole
         result = Item_ListBox_HandleKey(item, key, down, force);
         Item_ComboBox_MaybeUnCastFromListBox(item, cast);
 
-        if (!result)
+        if (!result || key == K_ENTER || key == K_KP_ENTER || key == K_PAD0_A || key == K_PAD0_B
+                || key == K_MOUSE1 || key == K_MOUSE2 || key == K_MOUSE3)
             g_comboBoxItem = NULL;
 
         return result;
     }
-    else
+    else if (force || item->window.flags & WINDOW_HASFOCUS)
     {
-        if (force ||
-            (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory) && item->window.flags & WINDOW_HASFOCUS))
+        if (force || ( mouseOver && (key == K_MOUSE1 || key == K_MOUSE2) )
+                || key == K_ENTER || key == K_KP_ENTER || key == K_PAD0_A )
         {
-            if (key == K_MOUSE1 || key == K_MOUSE2)
-            {
-                g_comboBoxItem = item;
+            g_comboBoxItem = item;
+            return qtrue;
+        }
+        // else if (key == K_BACKSPACE || key == K_DEL || key == K_PAD0_Y || key == K_PAD0_BACK)
+        //     return qfalse;  // No way to reset it for now
+        else
+        {
+            if ( (mouseOver && key == K_MWHEELUP)
+                    || key == K_KP_MINUS || key == K_PGUP || key == K_PAD0_LEFTSHOULDER )
+                Item_ListBox_SelectPrevious(item);
+            else if ( (mouseOver && key == K_MWHEELDOWN)
+                    || key == K_KP_PLUS || key == K_PGDN || key == K_PAD0_RIGHTSHOULDER )
+                Item_ListBox_SelectNext(item);
+            else
+                return qfalse;
 
-                return qtrue;
-            }
+            if (listPtr->doubleClick)
+                Item_RunScript(item, listPtr->doubleClick);
+            return qtrue;
         }
     }
 
@@ -3223,18 +3334,21 @@ qboolean Item_ComboBox_HandleKey(itemDef_t *item, int key, qboolean down, qboole
 
 qboolean Item_YesNo_HandleKey(itemDef_t *item, int key)
 {
-    if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory) && item->window.flags & WINDOW_HASFOCUS &&
-        item->cvar)
+    qboolean mouseOver = Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory);
+
+    if (item->window.flags & WINDOW_HASFOCUS && item->cvar)
     {
-        if (key == K_MOUSE1 || key == K_ENTER || key == K_MOUSE2 || key == K_MOUSE3)
-        {
+        if ( mouseOver &&
+                    (key == K_MOUSE1 || key == K_MOUSE2 || key == K_MOUSE3 || key == K_MWHEELDOWN || key == K_MWHEELUP)
+                || key == K_ENTER || key == K_KP_ENTER || key == K_PAD0_A || key == K_PAD0_B
+                || key == K_KP_PLUS || key == K_KP_MINUS || key == K_PGUP || key == K_PGUP
+                || key == K_PAD0_RIGHTSHOULDER || key == K_PAD0_LEFTSHOULDER )
             DC->setCVar(item->cvar, va("%i", !DC->getCVarValue(item->cvar)));
-            return qtrue;
-        }
-        else if (key == K_BACKSPACE || key == K_DEL)
-        {
+        else if (key == K_BACKSPACE || key == K_DEL || key == K_PAD0_Y || key == K_PAD0_BACK)
             DC->resetCVar(item->cvar);
-        }
+        else
+          return qfalse;
+        return qtrue;
     }
 
     return qfalse;
@@ -3322,7 +3436,9 @@ qboolean Item_Cycle_HandleKey(itemDef_t *item, int key)
     {
         if (item->window.flags & WINDOW_HASFOCUS)
         {
-            if ((mouseOver && key == K_MOUSE1) || key == K_ENTER || key == K_RIGHTARROW || key == K_DOWNARROW)
+            if ((mouseOver && (key == K_MOUSE1 || key == K_MWHEELDOWN))
+                || ((key == K_ENTER || key == K_KP_ENTER) && !DC->isDown(K_SHIFT))
+                || key == K_KP_PLUS || key == K_PGUP || key == K_PAD0_RIGHTSHOULDER )
             {
                 if (count > 0)
                     cyclePtr->cursorPos = (cyclePtr->cursorPos + 1) % count;
@@ -3331,7 +3447,9 @@ qboolean Item_Cycle_HandleKey(itemDef_t *item, int key)
 
                 return qtrue;
             }
-            else if ((mouseOver && key == K_MOUSE2) || key == K_LEFTARROW || key == K_UPARROW)
+            else if ((mouseOver && (key == K_MOUSE2 || key == K_MWHEELUP))
+                || key == K_ENTER || key == K_KP_ENTER
+                || key == K_KP_MINUS || key == K_PGDN || key == K_PAD0_LEFTSHOULDER )
             {
                 if (count > 0)
                     cyclePtr->cursorPos = (count + cyclePtr->cursorPos - 1) % count;
@@ -3358,17 +3476,21 @@ qboolean Item_Multi_HandleKey(itemDef_t *item, int key)
         {
             int current;
 
-            if ((mouseOver && key == K_MOUSE1) || key == K_ENTER || key == K_RIGHTARROW || key == K_DOWNARROW)
+            if ((mouseOver && (key == K_MOUSE1 || key == K_MWHEELDOWN))
+                || ((key == K_ENTER || key == K_KP_ENTER ) && !DC->isDown(K_SHIFT))
+                || key == K_KP_PLUS || key == K_PGUP || key == K_PAD0_RIGHTSHOULDER )
             {
                 current = (Item_Multi_FindCvarByValue(item) + 1) % max;
                 changed = qtrue;
             }
-            else if ((mouseOver && key == K_MOUSE2) || key == K_LEFTARROW || key == K_UPARROW)
+            else if ((mouseOver && (key == K_MOUSE2 || key == K_MWHEELUP))
+                || key == K_ENTER || key == K_KP_ENTER
+                || key == K_KP_MINUS || key == K_PGDN || key == K_PAD0_LEFTSHOULDER )
             {
                 current = (Item_Multi_FindCvarByValue(item) + max - 1) % max;
                 changed = qtrue;
             }
-            else if (key == K_BACKSPACE || key == K_DEL)
+            else if (key == K_BACKSPACE || key == K_DEL || key == K_PAD0_Y || key == K_PAD0_BACK)
             {
                 DC->resetCVar(item->cvar);
             }
@@ -3685,7 +3807,7 @@ qboolean Item_TextField_HandleKey(itemDef_t *item, int key)
                         } else {
                             if(
                                 chatInfo.nextHistoryLine -
-                                chatInfo.historyLine < MAX_SAY_HISTORY_LINES 
+                                chatInfo.historyLine < MAX_SAY_HISTORY_LINES
                                 && chatInfo.historyLine > 0 ) {
                                 char buffer[ MAX_CVAR_VALUE_STRING ];
 
@@ -3732,6 +3854,8 @@ qboolean Item_TextField_HandleKey(itemDef_t *item, int key)
                 case K_ENTER:
                 case K_KP_ENTER:
                 case K_ESCAPE:
+                case K_PAD0_BACK:
+                case K_PAD0_GUIDE:
                     releaseFocus = qtrue;
                     goto exit;
 
@@ -3960,14 +4084,16 @@ void Item_StopCapture(itemDef_t *item) {}
 
 qboolean Item_Slider_HandleKey(itemDef_t *item, int key, qboolean down)
 {
-    float x, value, width;
+    float x, value, width, delta, minVal, maxVal;
+    qboolean mouseOver = Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory);
 
-    if (item->window.flags & WINDOW_HASFOCUS && item->cvar &&
-        Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory))
+    if (item->window.flags & WINDOW_HASFOCUS && item->cvar)
     {
         if (item->typeData.edit)
         {
-            if (key == K_ENTER || key == K_MOUSE1 || key == K_MOUSE2 || key == K_MOUSE3)
+            minVal = item->typeData.edit->minVal;
+            maxVal = item->typeData.edit->maxVal;
+            if (mouseOver && (key == K_ENTER || key == K_KP_ENTER || key == K_MOUSE1 || key == K_MOUSE2 || key == K_MOUSE3))
             {
                 rectDef_t testRect;
                 width = SLIDER_WIDTH;
@@ -3985,15 +4111,37 @@ qboolean Item_Slider_HandleKey(itemDef_t *item, int key, qboolean down)
                 if (Rect_ContainsPoint(&testRect, DC->cursorx, DC->cursory))
                 {
                     value = (float)(DC->cursorx - x) / width;
-                    value *= (item->typeData.edit->maxVal - item->typeData.edit->minVal);
-                    value += item->typeData.edit->minVal;
+                    value *= (maxVal - minVal);
+                    value += minVal;
                     DC->setCVar(item->cvar, va("%f", value));
                     return qtrue;
                 }
             }
-            else if (key == K_BACKSPACE || key == K_DEL)
+            else if (key == K_BACKSPACE || key == K_DEL || key == K_KP_EQUALS || key == K_PAD0_Y || key == K_PAD0_BACK )
             {
                 DC->resetCVar(item->cvar);
+            }
+            else
+            {
+                value = DC->getCVarValue(item->cvar);
+                delta = (maxVal - minVal) / 100;
+
+                if ( key == K_KP_MINUS || key == K_PGDN || key == K_PAD0_LEFTSHOULDER
+                        || key == K_PAD0_B || mouseOver && key == K_MWHEELDOWN )
+                    value -= delta;
+                else if ( key == K_KP_PLUS || key == K_PGUP || key == K_PAD0_RIGHTSHOULDER
+                        || key == K_PAD0_A || mouseOver && key == K_MWHEELUP )
+                    value += delta;
+                else
+                    return qfalse;
+
+                if ( minVal < maxVal ? value < minVal : value > minVal )
+                    value = minVal;
+                else if ( minVal < maxVal ? value > maxVal : value < maxVal )
+                    value = maxVal;
+
+                DC->setCVar(item->cvar, va("%f", value));
+                return qtrue;
             }
         }
     }
@@ -4132,6 +4280,134 @@ itemDef_t *Menu_SetNextCursorItem(menuDef_t *menu)
 
     menu->cursorItem = oldCursor;
     return NULL;
+}
+
+// FIXEME : Need to review this function depending of its context
+static double getAngle(double Ax, double Ay, double Bx, double By)
+{
+  if (Ax == Bx && Ay == By)
+    return 0;
+  return atan2(Ay - By, Ax - Bx);
+}
+
+static double getItemsAngle(itemDef_t *a, itemDef_t *b)
+{
+  double Ax, Ay, Bx, By;
+
+  Ax = a->window.rect.x + a->window.rect.w / 2;
+  Ay = a->window.rect.y + a->window.rect.h / 2;
+  Bx = b->window.rect.x + b->window.rect.w / 2;
+  By = b->window.rect.y + b->window.rect.h / 2;
+
+  return getAngle(Ax, Ay, Bx, By);
+}
+
+static double getDistance(double Ax, double Ay, double Bx, double By)
+{
+  return sqrt( pow(Ax - Bx, 2) + pow(Ay - By, 2) );
+}
+
+static double getItemsDistance(itemDef_t *a, itemDef_t *b)
+{
+  double Ax, Ay, Bx, By;
+
+  Ax = a->window.rect.x + a->window.rect.w / 2;
+  Ay = a->window.rect.y + a->window.rect.h / 2;
+  Bx = b->window.rect.x + b->window.rect.w / 2;
+  By = b->window.rect.y + b->window.rect.h / 2;
+
+  return getDistance(Ax, Ay, Bx, By);
+}
+
+static double compareAngles(double firstAngle, double secondAngle)
+{
+  double difference = secondAngle - firstAngle;
+  while (difference < -M_PI)
+    difference += 2*M_PI;
+  while (difference > M_PI)
+    difference -= 2*M_PI;
+  return difference;
+}
+
+// FIXEME : Need to refactor this function
+itemDef_t *Menu_SetCursorItemFromDirection(menuDef_t *menu, double angle)
+{
+  qboolean newCandidate;
+  int cursor = 0;
+  int candidate = -1;
+  itemDef_t *item, *candidateItem;
+  itemDef_t *focused = Menu_GetFocusedItem(menu);
+  double alpha, beta, CA, CB;
+  double h = M_PI/2000;
+
+  if (!focused)
+    return Menu_SetNextCursorItem(menu);
+
+  while (cursor < menu->itemCount)
+  {
+    item = menu->items[cursor];
+    newCandidate = qfalse;
+
+    if ( item != NULL && item != focused
+        && !(item->window.flags & (WINDOW_HASFOCUS | WINDOW_DECORATION)) && item->window.flags & WINDOW_VISIBLE )
+    {
+      alpha = compareAngles(angle, getItemsAngle(focused, item));
+      if (fabs(alpha) < M_PI / 2 - h)
+      {
+        if ( candidate == -1 )
+          newCandidate = qtrue;
+        else
+        {
+          beta = compareAngles(angle, getItemsAngle(focused, candidateItem));
+          CA = getItemsDistance(focused, item);
+          CB = getItemsDistance(focused, candidateItem);
+          if ( (CA / (cos(alpha) + 0.1)) < (CB / (cos(beta) + 0.1)) )
+            newCandidate = qtrue;
+        }
+      }
+    }
+
+    if (newCandidate)
+    {
+      candidate = cursor;
+      candidateItem = menu->items[candidate];
+    }
+
+    cursor++;
+  }
+
+  if (candidate != -1)
+  {
+    menu->cursorItem = candidate;
+    if (Item_SetFocus(menu->items[menu->cursorItem], DC->cursorx, DC->cursory))
+    {
+      Menu_HandleMouseMove(menu, menu->items[menu->cursorItem]->window.rect.x + 1,
+        menu->items[menu->cursorItem]->window.rect.y + 1);
+        return menu->items[menu->cursorItem];
+    }
+  }
+
+  return NULL;
+}
+
+itemDef_t *Menu_SetUpperCursorItem(menuDef_t *menu)
+{
+  return (Menu_SetCursorItemFromDirection(menu, M_PI / 2));
+}
+
+itemDef_t *Menu_SetDownCursorItem(menuDef_t *menu)
+{
+  return (Menu_SetCursorItemFromDirection(menu, -M_PI / 2));
+}
+
+itemDef_t *Menu_SetLeftCursorItem(menuDef_t *menu)  // Angle should be M_PI
+{
+  return (Menu_SetCursorItemFromDirection(menu, 0));
+}
+
+itemDef_t *Menu_SetRightCursorItem(menuDef_t *menu)  // Angle should be 0
+{
+  return (Menu_SetCursorItemFromDirection(menu, M_PI));
 }
 
 static void Window_CloseCinematic(Window *window)
@@ -4428,12 +4704,9 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 
             break;
 
-        case K_KP_UPARROW:
-        case K_UPARROW:
-            Menu_SetPrevCursorItem(menu);
-            break;
-
         case K_ESCAPE:
+        case K_PAD0_BACK:
+        case K_PAD0_GUIDE:
             if (!g_waitingForKey && menu->onESC)
             {
                 itemDef_t it;
@@ -4444,9 +4717,52 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
             break;
 
         case K_TAB:
+            if (DC->isDown(K_SHIFT))
+                Menu_SetPrevCursorItem(menu);
+            else
+                Menu_SetNextCursorItem(menu);
+            break;
+
+        case K_PAD0_LEFTTRIGGER:
+        case K_MWHEELDOWN:
+            Menu_SetPrevCursorItem(menu);
+            break;
+
+        case K_PAD0_RIGHTTRIGGER:
+        case K_MWHEELUP:
+            Menu_SetNextCursorItem(menu);
+            break;
+
+        case K_KP_UPARROW:
+        case K_UPARROW:
+        case K_PAD0_RIGHTSTICK_UP:
+        case K_PAD0_LEFTSTICK_UP:
+      	case K_PAD0_DPAD_UP:
+            Menu_SetUpperCursorItem(menu);
+            break;
+
+        case K_KP_LEFTARROW:
+        case K_LEFTARROW:
+        case K_PAD0_RIGHTSTICK_LEFT:
+        case K_PAD0_LEFTSTICK_LEFT:
+      	case K_PAD0_DPAD_LEFT:
+            Menu_SetLeftCursorItem(menu);
+            break;
+
         case K_KP_DOWNARROW:
         case K_DOWNARROW:
-            Menu_SetNextCursorItem(menu);
+        case K_PAD0_RIGHTSTICK_DOWN:
+        case K_PAD0_LEFTSTICK_DOWN:
+      	case K_PAD0_DPAD_DOWN:
+            Menu_SetDownCursorItem(menu);
+            break;
+
+        case K_KP_RIGHTARROW:
+        case K_RIGHTARROW:
+        case K_PAD0_RIGHTSTICK_RIGHT:
+        case K_PAD0_LEFTSTICK_RIGHT:
+      	case K_PAD0_DPAD_RIGHT:
+            Menu_SetRightCursorItem(menu);
             break;
 
         case K_MOUSE1:
@@ -4507,8 +4823,9 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
         case K_AUX16:
             break;
 
-        case K_KP_ENTER:
         case K_ENTER:
+        case K_KP_ENTER:
+        case K_PAD0_A:
             if (item)
             {
                 if (Item_IsEditField(item))
@@ -5289,37 +5606,39 @@ typedef struct {
     int id;
     int defaultbind1;
     int defaultbind2;
+    int defaultbind3;
     int bind1;
     int bind2;
+    int bind3;
 } bind_t;
 
-static bind_t g_bindings[] = {{"+scores", K_TAB, -1, -1, -1, -1}, {"+button2", K_ENTER, -1, -1, -1, -1},
-    {"+speed", K_SHIFT, -1, -1, -1, -1}, {"+button6", 'z', -1, -1, -1, -1},  // human dodging
-    {"+button8", 'x', -1, -1, -1, -1}, {"+forward", K_UPARROW, -1, -1, -1, -1}, {"+back", K_DOWNARROW, -1, -1, -1, -1},
-    {"+moveleft", ',', -1, -1, -1, -1}, {"+moveright", '.', -1, -1, -1, -1}, {"+moveup", K_SPACE, -1, -1, -1, -1},
-    {"+movedown", 'c', -1, -1, -1, -1}, {"+left", K_LEFTARROW, -1, -1, -1, -1},
-    {"+right", K_RIGHTARROW, -1, -1, -1, -1}, {"+strafe", K_ALT, -1, -1, -1, -1}, {"+lookup", K_PGDN, -1, -1, -1, -1},
-    {"+lookdown", K_DEL, -1, -1, -1, -1}, {"+mlook", '/', -1, -1, -1, -1}, {"centerview", K_END, -1, -1, -1, -1},
-    {"+zoom", -1, -1, -1, -1, -1}, {"weapon 1", '1', -1, -1, -1, -1}, {"weapon 2", '2', -1, -1, -1, -1},
-    {"weapon 3", '3', -1, -1, -1, -1}, {"weapon 4", '4', -1, -1, -1, -1}, {"weapon 5", '5', -1, -1, -1, -1},
-    {"weapon 6", '6', -1, -1, -1, -1}, {"weapon 7", '7', -1, -1, -1, -1}, {"weapon 8", '8', -1, -1, -1, -1},
-    {"weapon 9", '9', -1, -1, -1, -1}, {"weapon 10", '0', -1, -1, -1, -1}, {"weapon 11", -1, -1, -1, -1, -1},
-    {"weapon 12", -1, -1, -1, -1, -1}, {"weapon 13", -1, -1, -1, -1, -1}, {"+attack", K_MOUSE1, -1, -1, -1, -1},
-    {"+button5", K_MOUSE2, -1, -1, -1, -1},  // secondary attack
-    {"reload", 'r', -1, -1, -1, -1},  // reload
-    {"buy ammo", 'b', -1, -1, -1, -1},  // buy ammo
-    {"itemact medkit", 'm', -1, -1, -1, -1},  // use medkit
-    {"rotatebuildleft", ',', -1, -1, -1, -1},  // Rotate ghost build to left
-    {"rotatebuildright", '.', -1, -1, -1, -1},  // Rotate ghost build to right
-    {"rotatebuild", 'l', -1, -1, -1, -1},  // Reset ghost build rotation
-    {"+button7", 'q', -1, -1, -1, -1},  // buildable use
-    {"deconstruct", 'e', -1, -1, -1, -1},  // buildable destroy
-    {"weapprev", '[', -1, -1, -1, -1}, {"weapnext", ']', -1, -1, -1, -1}, {"+button3", K_MOUSE3, -1, -1, -1, -1},
-    {"+button4", K_MOUSE4, -1, -1, -1, -1}, {"vote yes", K_F1, -1, -1, -1, -1}, {"vote no", K_F2, -1, -1, -1, -1},
-    {"teamvote yes", K_F3, -1, -1, -1, -1}, {"teamvote no", K_F4, -1, -1, -1, -1}, {"ready", K_F5, -1, -1, -1, -1},
-    {"scoresUp", K_KP_PGUP, -1, -1, -1, -1}, {"scoresDown", K_KP_PGDN, -1, -1, -1, -1},
-    {"screenshotJPEG", -1, -1, -1, -1, -1}, {"messagemode", -1, -1, -1, -1, -1}, {"messagemode2", -1, -1, -1, -1, -1},
-    {"messagemode5",  -1, -1, -1, -1}, {"messagemode6", -1, -1, -1, -1}};
+static bind_t g_bindings[] = {{"+scores", K_TAB, -1, -1, -1, -1, -1, -1}, {"+button2", K_ENTER, -1, -1, -1, -1, -1, -1},
+    {"+speed", K_SHIFT, -1, -1, -1, -1, -1, -1}, {"+button6", 'z', -1, -1, -1, -1, -1, -1},  // human dodging
+    {"+button8", 'x', -1, -1, -1, -1, -1, -1}, {"+forward", K_UPARROW, -1, -1, -1, -1, -1, -1}, {"+back", K_DOWNARROW, -1, -1, -1, -1, -1, -1},
+    {"+moveleft", ',', -1, -1, -1, -1, -1, -1}, {"+moveright", '.', -1, -1, -1, -1, -1, -1}, {"+moveup", K_SPACE, -1, -1, -1, -1, -1, -1},
+    {"+movedown", 'c', -1, -1, -1, -1, -1, -1}, {"+left", K_LEFTARROW, -1, -1, -1, -1, -1, -1},
+    {"+right", K_RIGHTARROW, -1, -1, -1, -1, -1, -1}, {"+strafe", K_ALT, -1, -1, -1, -1, -1, -1}, {"+lookup", K_PGDN, -1, -1, -1, -1, -1, -1},
+    {"+lookdown", K_DEL, -1, -1, -1, -1, -1, -1}, {"+mlook", '/', -1, -1, -1, -1, -1, -1}, {"centerview", K_END, -1, -1, -1, -1, -1, -1},
+    {"+zoom", -1, -1, -1, -1, -1, -1, -1}, {"weapon 1", '1', -1, -1, -1, -1, -1, -1}, {"weapon 2", '2', -1, -1, -1, -1, -1, -1},
+    {"weapon 3", '3', -1, -1, -1, -1, -1, -1}, {"weapon 4", '4', -1, -1, -1, -1, -1, -1}, {"weapon 5", '5', -1, -1, -1, -1, -1, -1},
+    {"weapon 6", '6', -1, -1, -1, -1, -1, -1}, {"weapon 7", '7', -1, -1, -1, -1, -1, -1}, {"weapon 8", '8', -1, -1, -1, -1, -1, -1},
+    {"weapon 9", '9', -1, -1, -1, -1, -1, -1}, {"weapon 10", '0', -1, -1, -1, -1, -1, -1}, {"weapon 11", -1, -1, -1, -1, -1, -1, -1},
+    {"weapon 12", -1, -1, -1, -1, -1, -1, -1}, {"weapon 13", -1, -1, -1, -1, -1, -1, -1}, {"+attack", K_MOUSE1, -1, -1, -1, -1, -1, -1},
+    {"+button5", K_MOUSE2, -1, -1, -1, -1, -1, -1},  // secondary attack
+    {"reload", 'r', -1, -1, -1, -1, -1, -1},  // reload
+    {"buy ammo", 'b', -1, -1, -1, -1, -1, -1},  // buy ammo
+    {"itemact medkit", 'm', -1, -1, -1, -1, -1, -1},  // use medkit
+    {"rotatebuildleft", ',', -1, -1, -1, -1, -1, -1},  // Rotate ghost build to left
+    {"rotatebuildright", '.', -1, -1, -1, -1, -1, -1},  // Rotate ghost build to right
+    {"rotatebuild", 'l', -1, -1, -1, -1, -1, -1},  // Reset ghost build rotation
+    {"+button7", 'q', -1, -1, -1, -1, -1, -1},  // buildable use
+    {"deconstruct", 'e', -1, -1, -1, -1, -1, -1},  // buildable destroy
+    {"weapprev", '[', -1, -1, -1, -1, -1, -1}, {"weapnext", ']', -1, -1, -1, -1, -1, -1}, {"+button3", K_MOUSE3, -1, -1, -1, -1, -1, -1},
+    {"+button4", K_MOUSE4, -1, -1, -1, -1, -1, -1}, {"vote yes", K_F1, -1, -1, -1, -1, -1, -1}, {"vote no", K_F2, -1, -1, -1, -1, -1, -1},
+    {"teamvote yes", K_F3, -1, -1, -1, -1, -1, -1}, {"teamvote no", K_F4, -1, -1, -1, -1, -1, -1}, {"ready", K_F5, -1, -1, -1, -1, -1, -1},
+    {"scoresUp", K_KP_PGUP, -1, -1, -1, -1, -1, -1}, {"scoresDown", K_KP_PGDN, -1, -1, -1, -1, -1, -1},
+    {"screenshotJPEG", -1, -1, -1, -1, -1, -1, -1}, {"messagemode", -1, -1, -1, -1, -1, -1, -1}, {"messagemode2", -1, -1, -1, -1, -1, -1, -1},
+    {"messagemode5", -1, -1, -1, -1, -1, -1, -1}, {"messagemode6", -1, -1, -1, -1, -1, -1, -1}};
 
 static const size_t g_bindCount = ARRAY_LEN(g_bindings);
 
@@ -5328,16 +5647,16 @@ static const size_t g_bindCount = ARRAY_LEN(g_bindings);
 Controls_GetKeyAssignment
 =================
 */
-static void Controls_GetKeyAssignment(char *command, int *twokeys)
+static void Controls_GetKeyAssignment(char *command, int *threekeys)
 {
     int count;
     int j;
     char b[256];
 
-    twokeys[0] = twokeys[1] = -1;
+    threekeys[0] = threekeys[1] = threekeys[2] = -1;
     count = 0;
 
-    for (j = 0; j < 256; j++)
+    for (j = 0; j < MAX_KEYS; j++)
     {
         DC->getBindingBuf(j, b, 256);
 
@@ -5346,10 +5665,10 @@ static void Controls_GetKeyAssignment(char *command, int *twokeys)
 
         if (!Q_stricmp(b, command))
         {
-            twokeys[count] = j;
+            threekeys[count] = j;
             count++;
 
-            if (count == 2)
+            if (count == 3)
                 break;
         }
     }
@@ -5365,14 +5684,15 @@ Iterate each command, get its numeric binding
 void Controls_GetConfig(void)
 {
     size_t i;
-    int twokeys[2];
+    int threekeys[3];
 
     for (i = 0; i < g_bindCount; i++)
     {
-        Controls_GetKeyAssignment(g_bindings[i].command, twokeys);
+        Controls_GetKeyAssignment(g_bindings[i].command, threekeys);
 
-        g_bindings[i].bind1 = twokeys[0];
-        g_bindings[i].bind2 = twokeys[1];
+        g_bindings[i].bind1 = threekeys[0];
+        g_bindings[i].bind2 = threekeys[1];
+        g_bindings[i].bind3 = threekeys[2];
     }
 }
 
@@ -5395,7 +5715,11 @@ void Controls_SetConfig(qboolean restart)
         {
             DC->setBinding(g_bindings[i].bind1, g_bindings[i].command);
             if (g_bindings[i].bind2 != -1)
-                DC->setBinding(g_bindings[i].bind2, g_bindings[i].command);
+            {
+              DC->setBinding(g_bindings[i].bind2, g_bindings[i].command);
+              if (g_bindings[i].bind3 != -1)
+                  DC->setBinding(g_bindings[i].bind3, g_bindings[i].command);
+            }
         }
     }
 
@@ -5416,6 +5740,7 @@ void Controls_SetDefaults(void)
     {
         g_bindings[i].bind1 = g_bindings[i].defaultbind1;
         g_bindings[i].bind2 = g_bindings[i].defaultbind2;
+        g_bindings[i].bind3 = g_bindings[i].defaultbind3;
     }
 }
 
@@ -5433,10 +5758,11 @@ int BindingIDFromName(const char *name)
 
 char g_nameBind1[32];
 char g_nameBind2[32];
+char g_nameBind3[32];
 
 void BindingFromName(const char *cvar)
 {
-    int i, b1, b2;
+    int i, b1, b2, b3;
 
     // iterate each command, set its default binding
 
@@ -5444,29 +5770,39 @@ void BindingFromName(const char *cvar)
     {
         if (Q_stricmp(cvar, g_bindings[i].command) == 0)
         {
-            b1 = g_bindings[i].bind1;
 
+            b1 = g_bindings[i].bind1;
+            b2 = g_bindings[i].bind2;
+            b3 = g_bindings[i].bind3;
             if (b1 == -1)
                 break;
 
-            DC->keynumToStringBuf(b1, g_nameBind1, 32);
-            Q_strupr(g_nameBind1);
-
-            b2 = g_bindings[i].bind2;
+            memcpy(g_nameBind1, "^7[^3", 6);
+            DC->keynumToStringBuf(b1, g_nameBind1 + 5, 32);
+            Q_strupr(g_nameBind1 + 5);
+            Q_strcat( g_nameBind1, MAX_STRING_CHARS, "^7]" );
 
             if (b2 != -1)
             {
-                DC->keynumToStringBuf(b2, g_nameBind2, 32);
-                Q_strupr(g_nameBind2);
-                strcat(g_nameBind1, " or ");
-                strcat(g_nameBind1, g_nameBind2);
+              DC->keynumToStringBuf(b2, g_nameBind2, 32);
+              Q_strcat( g_nameBind1, MAX_STRING_CHARS, b3 == -1 ? " or [^3": ", [^3" );
+              Q_strcat( g_nameBind1, MAX_STRING_CHARS, Q_strupr(g_nameBind2) );
+              Q_strcat( g_nameBind1, MAX_STRING_CHARS, "^7]" );
+
+              if (b3 != -1)
+              {
+                DC->keynumToStringBuf(b3, g_nameBind3, 32);
+                Q_strcat( g_nameBind1, MAX_STRING_CHARS, " or [^3" );
+                Q_strcat( g_nameBind1, MAX_STRING_CHARS, Q_strupr(g_nameBind3) );
+                Q_strcat( g_nameBind1, MAX_STRING_CHARS, "^7]" );
+              }
             }
 
             return;
         }
     }
 
-    strcpy(g_nameBind1, "???");
+    strcpy(g_nameBind1, "(unbound)");
 }
 
 void Item_Slider_Paint(itemDef_t *item)
@@ -5518,7 +5854,7 @@ void Item_Bind_Paint(itemDef_t *item)
 
     if (item->window.flags & WINDOW_HASFOCUS)
     {
-        if (g_bindItem == item)
+        if (g_bindItem == item && g_waitingForKey)
         {
             lowLight[0] = 0.8f * parent->focusColor[0];
             lowLight[1] = 0.8f * parent->focusColor[1];
@@ -5559,31 +5895,31 @@ qboolean Display_KeyBindPending(void) { return g_waitingForKey; }
 qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down)
 {
     int id;
+    qboolean mouseOver = Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory);
 
-    if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory) && !g_waitingForKey)
+    if ( !g_waitingForKey && down &&
+            ( mouseOver && key == K_MOUSE1 || key == K_ENTER || key == K_KP_ENTER || key == K_PAD0_A ) )
     {
-        if (down && (key == K_MOUSE1 || key == K_ENTER))
-        {
-            g_waitingForKey = qtrue;
-            g_bindItem = item;
-        }
-
+        g_waitingForKey = qtrue;
+        g_bindItem = item;
         return qtrue;
     }
     else
     {
         if (!g_waitingForKey || g_bindItem == NULL)
-            return qtrue;
+            return qfalse;
 
         if (key & K_CHAR_FLAG)
-            return qtrue;
+            return qfalse;
 
         switch (key)
         {
             case K_ESCAPE:
+            case K_PAD0_GUIDE:
                 g_waitingForKey = qfalse;
                 return qtrue;
 
+            case K_PAD0_BACK:
             case K_BACKSPACE:
                 id = BindingIDFromName(item->cvar);
 
@@ -5591,6 +5927,7 @@ qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down)
                 {
                     g_bindings[id].bind1 = -1;
                     g_bindings[id].bind2 = -1;
+                    g_bindings[id].bind3 = -1;
                 }
 
                 Controls_SetConfig(qtrue);
@@ -5608,13 +5945,20 @@ qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down)
         unsigned int i;
         for (i = 0; i < g_bindCount; i++)
         {
+            if (g_bindings[i].bind3 == key)
+                g_bindings[i].bind3 = -1;
+
             if (g_bindings[i].bind2 == key)
-                g_bindings[i].bind2 = -1;
+            {
+                g_bindings[i].bind2 = g_bindings[i].bind3;
+                g_bindings[i].bind3 = -1;
+            }
 
             if (g_bindings[i].bind1 == key)
             {
                 g_bindings[i].bind1 = g_bindings[i].bind2;
-                g_bindings[i].bind2 = -1;
+                g_bindings[i].bind2 = g_bindings[i].bind3;
+                g_bindings[i].bind3 = -1;
             }
         }
     }
@@ -5636,17 +5980,28 @@ qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down)
                 DC->setBinding(g_bindings[id].bind2, "");
                 g_bindings[id].bind2 = -1;
             }
+
+            if (g_bindings[id].bind3 != -1)
+            {
+                DC->setBinding(g_bindings[id].bind3, "");
+                g_bindings[id].bind3 = -1;
+            }
         }
         else if (g_bindings[id].bind1 == -1)
             g_bindings[id].bind1 = key;
         else if (g_bindings[id].bind1 != key && g_bindings[id].bind2 == -1)
             g_bindings[id].bind2 = key;
-        else
+        else if (g_bindings[id].bind1 != key && g_bindings[id].bind2 != key && g_bindings[id].bind3 == -1)
+            g_bindings[id].bind3 = key;
+        else if (g_bindings[id].bind1 != key && g_bindings[id].bind2 != key && g_bindings[id].bind3 != key)
         {
+            // If both 3 bind are full, clean it up
             DC->setBinding(g_bindings[id].bind1, "");
             DC->setBinding(g_bindings[id].bind2, "");
+            DC->setBinding(g_bindings[id].bind3, "");
             g_bindings[id].bind1 = key;
             g_bindings[id].bind2 = -1;
+            g_bindings[id].bind3 = -1;
         }
     }
 
@@ -5803,7 +6158,7 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
           if( item->window.border == WINDOW_BORDER_ROUNDED )
             DC->fillRoundedRect(x, y, w, listPtr->elementHeight, item->window.borderSize, item->window.borderStyle, hightlightColor);
           else
-              DC->fillRect(x, y, w, listPtr->elementHeight, hightlightColor);
+            DC->fillRect(x, y, w, listPtr->elementHeight, hightlightColor);
         }
 
         if (listPtr->numColumns > 0)
@@ -6295,6 +6650,12 @@ void Item_Paint(itemDef_t *item)
     }
 
     Border_Paint(&item->window);
+
+    if ( item->window.flags & WINDOW_HASFOCUS
+            && (item->type == ITEM_TYPE_COMBOBOX || item->type == ITEM_TYPE_LISTBOX)
+            && g_comboBoxItem == NULL )
+        BorderFocus_Paint(&item->window, parent->focusColor);
+
 }
 
 void Menu_Init(menuDef_t *menu)

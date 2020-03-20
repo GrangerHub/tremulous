@@ -26,9 +26,9 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #define __QCURL_H__
 
 #ifdef USE_LOCAL_HEADERS
-#include "curl/curl.h"
+  #include "../../external/libcurl-7.35.0/curl/curl.h"
 #else
-#include <curl/curl.h>
+  #include <curl/curl.h>
 #endif
 
 #include "qcommon/q_shared.h"
@@ -67,7 +67,7 @@ extern struct curl_slist* (*qcurl_slist_append)(struct curl_slist *, const char 
 extern void         (*qcurl_slist_free_all)(struct curl_slist *);
 extern CURLcode     (*qcurl_global_init)(long flags);
 extern void         (*qcurl_global_cleanup)(void);
-  
+
 #else
 #define qcurl_version curl_version
 #define qcurl_easy_init curl_easy_init

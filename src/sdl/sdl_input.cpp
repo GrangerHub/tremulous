@@ -39,6 +39,7 @@ static cvar_t *in_keyboardDebug     = NULL;
 
 static SDL_GameController *gamepad = NULL;
 static SDL_Joystick *stick = NULL;
+static SDL_Haptic *haptic = NULL;
 
 static bool mouseAvailable = false;
 static bool mouseActive = false;
@@ -50,6 +51,9 @@ static cvar_t *in_joystick          = NULL;
 static cvar_t *in_joystickThreshold = NULL;
 static cvar_t *in_joystickNo        = NULL;
 static cvar_t *in_joystickUseAnalog = NULL;
+
+static cvar_t *in_haptic          = NULL;
+static cvar_t *in_hapticNo        = NULL;
 
 static int vidRestartTime = 0;
 static int in_eventTime = 0;
@@ -566,7 +570,7 @@ static void IN_InitJoystick( void )
 	if( in_joystickNo->integer < 0 || in_joystickNo->integer >= total )
 		Cvar_Set( "in_joystickNo", "0" );
 
-	in_joystickUseAnalog = Cvar_Get( "in_joystickUseAnalog", "0", CVAR_ARCHIVE );
+	in_joystickUseAnalog = Cvar_Get( "in_joystickUseAnalog", "1", CVAR_ARCHIVE );
 
 	stick = SDL_JoystickOpen( in_joystickNo->integer );
 
@@ -586,9 +590,91 @@ static void IN_InitJoystick( void )
 	Com_DPrintf( "Balls:      %d\n", SDL_JoystickNumBalls(stick) );
 	Com_DPrintf( "Use Analog: %s\n", in_joystickUseAnalog->integer ? "Yes" : "No" );
 	Com_DPrintf( "Is gamepad: %s\n", gamepad ? "Yes" : "No" );
+	Com_DPrintf( "Is haptic: %s\n", SDL_JoystickIsHaptic(stick) ? "Yes" : "No" );
 
 	SDL_JoystickEventState(SDL_QUERY);
 	SDL_GameControllerEventState(SDL_QUERY);
+}
+
+
+/*
+===============
+IN_InitHaptic
+===============
+*/
+static void IN_InitHaptic( void )
+{
+	int i = 0;
+	int total = 0;
+	char buf[16384] = "";
+	int rumbleSupported;
+
+	if (haptic)
+		SDL_HapticClose(haptic);
+
+	haptic = NULL;
+
+	if (!SDL_WasInit(SDL_INIT_HAPTIC))
+	{
+		Com_DPrintf("Calling SDL_Init(SDL_INIT_HAPTIC)...\n");
+		if (SDL_Init(SDL_INIT_HAPTIC) != 0)
+		{
+			Com_DPrintf("SDL_Init(SDL_INIT_HAPTIC) failed: %s\n", SDL_GetError());
+			return;
+		}
+		Com_DPrintf("SDL_Init(SDL_INIT_HAPTIC) passed.\n");
+	}
+
+	total = SDL_NumHaptics();
+	Com_DPrintf("%d possible haptics\n", total);
+
+	// Print list and build cvar to allow ui to select joystick.
+	for (i = 0; i < total; i++)
+	{
+		Q_strcat(buf, sizeof(buf), SDL_HapticName(i));
+		Q_strcat(buf, sizeof(buf), "\n");
+	}
+
+	Cvar_Get( "in_availableHaptics", buf, CVAR_ROM );
+
+	if( !in_haptic->integer ) {
+		Com_DPrintf( "Haptic is not active.\n" );
+		SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
+		return;
+	}
+
+	in_hapticNo = Cvar_Get( "in_haptickNo", "0", CVAR_ARCHIVE );
+	if( in_hapticNo->integer < 0 || in_hapticNo->integer >= total )
+		Cvar_Set( "in_hapticNo", "0" );
+
+	haptic = SDL_HapticOpen( in_hapticNo->integer );
+
+	if (haptic == NULL) {
+		Com_DPrintf( "No haptic opened: %s\n", SDL_GetError() );
+		return;
+	}
+
+	rumbleSupported = SDL_HapticRumbleSupported( haptic );
+	if (rumbleSupported == SDL_TRUE)
+	{
+		if ( SDL_HapticRumbleInit( haptic ) == 0 )
+		{
+			if ( SDL_HapticRumblePlay(haptic, 1.0f, 250) != 0 )
+				Com_DPrintf( "Can't run test haptic's rumble effect: %s\n", SDL_GetError() );
+		}
+		else
+			Com_DPrintf( "Can't initialize haptic's rumble effect: %s\n", SDL_GetError() );
+	}
+	else if (rumbleSupported < 0)
+	{
+		Com_DPrintf( "Error when querring haptic's rumble effect: %s\n", SDL_GetError() );
+	}
+
+
+	Com_DPrintf( "Haptic %d opened\n", in_hapticNo->integer );
+	Com_DPrintf( "Rumble:     %s\n", rumbleSupported == SDL_TRUE ? "Yes" : "No" );
+	Com_DPrintf( "Axes:       %d\n", SDL_HapticNumAxes(haptic) );
+	Com_DPrintf( "Effects:    %d\n", SDL_HapticNumEffects(haptic) );
 }
 
 /*
@@ -616,14 +702,38 @@ static void IN_ShutdownJoystick( void )
 		stick = NULL;
 	}
 
+	if (haptic)
+	{
+		SDL_HapticClose(haptic);
+		haptic = NULL;
+	}
+
 	SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
 	SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
+	SDL_QuitSubSystem(SDL_INIT_HAPTIC);
+}
+
+/*
+===============
+IN_ShutdownHaptic
+===============
+*/
+static void IN_ShutdownHaptic( void )
+{
+	if ( !SDL_WasInit( SDL_INIT_HAPTIC ) )
+		return;
+
+	SDL_QuitSubSystem(SDL_INIT_HAPTIC);
 }
 
 
 static bool KeyToAxisAndSign(int keynum, int *outAxis, int *outSign)
 {
 	if (!keynum)
+		return false;
+
+	// Let the UI access to analogs as keys
+	if ( Key_GetCatcher( ) & KEYCATCH_UI )
 		return false;
 
 	const char* bind = Key_GetBinding(keynum);
@@ -1160,6 +1270,8 @@ static void IN_ProcessEvents( void )
 			case SDL_CONTROLLERDEVICEREMOVED:
 				if (in_joystick->integer)
 					IN_InitJoystick();
+				if (in_haptic->integer)
+					IN_InitHaptic();
 				break;
 
 			case SDL_QUIT:
@@ -1294,8 +1406,9 @@ void IN_Init( void *windowData )
 	in_mouse = Cvar_Get( "in_mouse", "1", CVAR_ARCHIVE );
 	in_nograb = Cvar_Get( "in_nograb", "0", CVAR_ARCHIVE );
 
-	in_joystick = Cvar_Get( "in_joystick", "0", CVAR_ARCHIVE|CVAR_LATCH );
-	in_joystickThreshold = Cvar_Get( "joy_threshold", "0.15", CVAR_ARCHIVE );
+	in_joystick = Cvar_Get( "in_joystick", "1", CVAR_ARCHIVE|CVAR_LATCH );
+	in_joystickThreshold = Cvar_Get( "joy_threshold", "0.02", CVAR_ARCHIVE );
+	in_haptic = Cvar_Get( "in_haptic", "1", CVAR_ARCHIVE|CVAR_LATCH );
 
 	SDL_StartTextInput( );
 
@@ -1307,6 +1420,7 @@ void IN_Init( void *windowData )
 	Cvar_SetValue( "com_minimized", appState & SDL_WINDOW_MINIMIZED );
 
 	IN_InitJoystick( );
+	IN_InitHaptic( );
 	Com_DPrintf( "------------------------------------\n" );
 }
 
@@ -1323,6 +1437,7 @@ void IN_Shutdown( void )
 	mouseAvailable = false;
 
 	IN_ShutdownJoystick( );
+	IN_ShutdownHaptic( );
 
 	SDL_window = NULL;
 }
@@ -1335,5 +1450,6 @@ IN_Restart
 void IN_Restart( void )
 {
 	IN_ShutdownJoystick( );
+	IN_ShutdownHaptic( );
 	IN_Init( SDL_window );
 }

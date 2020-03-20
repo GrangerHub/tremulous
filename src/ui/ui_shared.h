@@ -406,6 +406,7 @@ typedef struct {
     void (*keynumToStringBuf)(int keynum, char *buf, int buflen);
     void (*getBindingBuf)(int keynum, char *buf, int buflen);
     void (*setBinding)(int keynum, const char *binding);
+    qboolean (*isDown)(int keynum);
     void (*executeText)(int exec_when, const char *text);
     void (*Error)(int level, const char *error, ...) __attribute__((noreturn, format(printf, 2, 3)));
     void (*Print)(const char *msg, ...) __attribute__((format(printf, 1, 2)));
@@ -538,6 +539,7 @@ int trap_Parse_SourceFileAndLine(int handle, char *filename, int *line);
 void BindingFromName(const char *cvar);
 extern char g_nameBind1[32];
 extern char g_nameBind2[32];
+extern char g_nameBind3[32];
 
 typedef enum
 {

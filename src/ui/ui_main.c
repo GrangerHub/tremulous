@@ -2730,9 +2730,10 @@ static qboolean UI_OwnerDrawVisible(int flags)
 
 static qboolean UI_NetSource_HandleKey(int key)
 {
-    if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER)
+    if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER
+        || key == K_PAD0_A || key == K_PAD0_B)
     {
-        if (key == K_MOUSE2)
+        if (key == K_MOUSE2 || key == K_PAD0_B)
         {
             ui_netSource.integer--;
 
@@ -4200,7 +4201,7 @@ static qboolean UI_PartialGetEnteredPartialNameFromBuffer(
         entered_partial_name[j] = s[0];
         lower_case_entered_partial_name[j] = tolower(s[0]);
 
-    
+
 
         if(
             entered_partial_name[0] &&
@@ -4251,7 +4252,7 @@ static void UI_TabCompleteName(
         int uncleaned_entered_partial_name_length;
 
         // check that the name isn't already complete in the buffer doesn't already
-        // complete 
+        // complete
 
         if(UI_PartialGetEnteredPartialNameFromBuffer(
             at_pos, buffer, n2, entered_partial_name, sizeof(entered_partial_name),
@@ -4559,7 +4560,7 @@ static void UI_RunMenuScript(char **args)
                                 va( "m \"%s\" \"%s\"\n", clantagDecolored, buffer));
                             } else {
                                 //string isnt long enough
-                                Com_Printf ( 
+                                Com_Printf (
                                     "^3Error:your ui_clantag has to be between 3 and 10 characters long. current value is:^7 %s^7\n",
                                     clantagDecolored );
                                 key_pressed_onCharEntry = K_NONE;
@@ -4778,7 +4779,7 @@ static void UI_RunMenuScript(char **args)
 
                                     partial_completion[j] = '\0';
 
-                                    //check if we can have a partial tab name 
+                                    //check if we can have a partial tab name
                                     //completion to the left of the string
                                     for(
                                         s_ptr = start - 1;
@@ -5932,6 +5933,7 @@ void UI_Init(qboolean inGameLoad)
     uiInfo.uiDC.feederInitialise = &UI_FeederInitialise;
     uiInfo.uiDC.setBinding = &trap_Key_SetBinding;
     uiInfo.uiDC.getBindingBuf = &trap_Key_GetBindingBuf;
+    uiInfo.uiDC.isDown = &trap_Key_IsDown;
     uiInfo.uiDC.keynumToStringBuf = &trap_Key_KeynumToStringBuf;
     uiInfo.uiDC.executeText = &trap_Cmd_ExecuteText;
     uiInfo.uiDC.Error = &Com_Error;
@@ -6003,7 +6005,8 @@ void UI_KeyEvent(int key, qboolean down)
 
         if (menu)
         {
-            if (key == K_ESCAPE && down && !Menus_AnyFullScreenVisible())
+            if ( (key == K_ESCAPE || key == K_PAD0_BACK || key == K_PAD0_GUIDE || key == K_PAD0_B)
+                    && down && !Menus_AnyFullScreenVisible() && !Display_KeyBindPending() )
                 Menus_CloseAll();
             else
                 Menu_HandleKey(menu, key, down);

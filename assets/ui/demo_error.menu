@@ -25,6 +25,7 @@
     style WINDOW_STYLE_FILLED
     border WINDOW_BORDER_FULL
     popup
+    onOpen { setfocus exit }
     onClose { uiScript clearDemoError }
     onESC
     {

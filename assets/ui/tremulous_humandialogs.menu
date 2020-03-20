@@ -26,6 +26,7 @@
     focusColor HUMANS_WINDOW_FOCUSCOLOR
     style WINDOW_STYLE_EMPTY
     popup
+    onOpen { setfocus human_dialog_exit }
 
     itemDef
     {
@@ -79,7 +80,7 @@
 
     itemDef
     {
-      name human_dialog
+      name human_dialog_exit
       text "OK"
       type ITEM_TYPE_BUTTON
       style WINDOW_STYLE_EMPTY

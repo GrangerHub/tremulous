@@ -1636,6 +1636,187 @@
         play "sound/misc/menu1.wav";
       }
     }
+
+//////// JOYSTICK
+
+    itemDef
+    {
+      name controls
+      text "Joystick"
+      group optionsGrp
+      style WINDOW_STYLE_EMPTY
+      rect 0 ((2*BORDER)+TOPBUTT_H+(4*SIDEBUTT_H)) SIDEBUTT_W SIDEBUTT_H
+      type ITEM_TYPE_BUTTON
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+      action
+      {
+        play "sound/misc/menu1.wav";
+        hide optionsGrp;
+        show controls;
+        show joystick
+      }
+    }
+
+    itemDef
+    {
+      name joystick
+      group optionsGrp
+      type ITEM_TYPE_YESNO
+      text "Use Joystick/Gamepad:"
+      cvar "in_joystick"
+      rect SCONTENT_X (SCONTENT_Y+(0*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+      action
+      {
+        play "sound/misc/menu1.wav";
+      }
+    }
+
+    itemDef
+    {
+      name joystick
+      group optionsGrp
+      type ITEM_TYPE_YESNO
+      text "Use analog capabilities:"
+      cvar "in_joystickUseAnalog"
+      rect SCONTENT_X (SCONTENT_Y+(1*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+      action
+      {
+        play "sound/misc/menu1.wav";
+      }
+    }
+
+    itemDef
+    {
+      name joystick
+      group optionsGrp
+      type ITEM_TYPE_SLIDER
+      text "Dead zone threshold:"
+      cvarfloat "joy_threshold" 0.02 0 0.1
+      rect SCONTENT_X (SCONTENT_Y+(2*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+    }
+
+    itemDef
+    {
+      name joystick
+      group optionsGrp
+      type ITEM_TYPE_SLIDER
+      text "Pitch sensibility:"
+      cvarfloat "j_pitch" 0.022 0 0.1
+      rect SCONTENT_X (SCONTENT_Y+(3*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+    }
+
+    itemDef
+    {
+      name joystick
+      group optionsGrp
+      type ITEM_TYPE_SLIDER
+      text "Yaw sensibility:"
+      cvarfloat "j_yaw" -0.022 -0 -0.1
+      rect SCONTENT_X (SCONTENT_Y+(4*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+    }
+
+    itemDef
+    {
+      name joystick
+      group optionsGrp
+      type ITEM_TYPE_SLIDER
+      text "Forward/Backward sensibility:"
+      cvarfloat "j_forward" -0.022 -0 -0.1
+      rect SCONTENT_X (SCONTENT_Y+(5*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+    }
+
+    itemDef
+    {
+      name joystick
+      group optionsGrp
+      type ITEM_TYPE_SLIDER
+      text "Left/Right sensibility:"
+      cvarfloat "j_side" 0.022 0 0.1
+      rect SCONTENT_X (SCONTENT_Y+(6*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+    }
+
+    itemDef
+    {
+      name joystick
+      group optionsGrp
+      type ITEM_TYPE_SLIDER
+      text "Up/Down sensibility:"
+      cvarfloat "j_up" 0.022 0 0.1
+      rect SCONTENT_X (SCONTENT_Y+(7*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+    }
+
+    itemDef
+    {
+      name joystick
+      group optionsGrp
+      type ITEM_TYPE_BUTTON
+      text "APPLY"
+      textscale .25
+      style WINDOW_STYLE_EMPTY
+      rect SCONTENT_X (SCONTENT_Y+(13*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_CENTER
+      textvalign VALIGN_CENTER
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+      action
+      {
+        play "sound/misc/menu1.wav";
+        exec "vid_restart"
+      }
+    }
+
 //////// SYSTEM
 
     //System menu

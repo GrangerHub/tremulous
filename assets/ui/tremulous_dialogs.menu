@@ -26,6 +26,7 @@
     focusColor WINDOW_FOCUSCOLOR
     style WINDOW_STYLE_EMPTY
     popup
+    onOpen { setfocus default_dialog_exit }
 
     itemDef
     {
@@ -79,7 +80,7 @@
 
     itemDef
     {
-      name default_dialog
+      name default_dialog_exit
       text "OK"
       type ITEM_TYPE_BUTTON
       style WINDOW_STYLE_EMPTY
