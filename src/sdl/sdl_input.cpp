@@ -54,6 +54,7 @@ static cvar_t *in_joystickUseAnalog = NULL;
 
 static cvar_t *in_haptic          = NULL;
 static cvar_t *in_hapticNo        = NULL;
+static int hapticRumbleSupported = NULL;
 
 static int vidRestartTime = 0;
 static int in_eventTime = 0;
@@ -607,7 +608,8 @@ static void IN_InitHaptic( void )
 	int i = 0;
 	int total = 0;
 	char buf[16384] = "";
-	int rumbleSupported;
+
+	hapticRumbleSupported = NULL;
 
 	if (haptic)
 		SDL_HapticClose(haptic);
@@ -654,22 +656,27 @@ static void IN_InitHaptic( void )
 		return;
 	}
 
-	rumbleSupported = SDL_HapticRumbleSupported( haptic );
-	if (rumbleSupported == SDL_TRUE)
+	hapticRumbleSupported = SDL_HapticRumbleSupported( haptic );
+	if (hapticRumbleSupported == SDL_TRUE)
 	{
 		if ( SDL_HapticRumbleInit( haptic ) == 0 )
 			SDL_HapticRumblePlay(haptic, 1.0f, 300);
 		else
+		{
 			Com_Printf( "Can't initialize haptic's rumble effect: %s\n", SDL_GetError() );
+			SDL_HapticClose( in_hapticNo->integer );
+			haptic = NULL;
+			hapticRumbleSupported = NULL;
+		}
 	}
-	else if (rumbleSupported < 0)
+	else if (hapticRumbleSupported < 0)
 	{
 		Com_Printf( "Error when querring haptic's rumble effect: %s\n", SDL_GetError() );
 	}
 
 
 	Com_Printf( "Haptic %d opened\n", in_hapticNo->integer );
-	Com_Printf( "Rumble:     %s\n", rumbleSupported == SDL_TRUE ? "Yes" : "No" );
+	Com_Printf( "Rumble:     %s\n", hapticRumbleSupported == SDL_TRUE ? "Yes" : "No" );
 	Com_Printf( "Axes:       %d\n", SDL_HapticNumAxes(haptic) );
 	Com_Printf( "Effects:    %d\n", SDL_HapticNumEffects(haptic) );
 }
@@ -699,15 +706,8 @@ static void IN_ShutdownJoystick( void )
 		stick = NULL;
 	}
 
-	if (haptic)
-	{
-		SDL_HapticClose(haptic);
-		haptic = NULL;
-	}
-
 	SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
 	SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
-	SDL_QuitSubSystem(SDL_INIT_HAPTIC);
 }
 
 /*
@@ -719,6 +719,13 @@ static void IN_ShutdownHaptic( void )
 {
 	if ( !SDL_WasInit( SDL_INIT_HAPTIC ) )
 		return;
+
+	if (haptic)
+	{
+		SDL_HapticClose(haptic);
+		haptic = NULL;
+		hapticRumbleSupported = NULL;
+	}
 
 	SDL_QuitSubSystem(SDL_INIT_HAPTIC);
 }
