@@ -745,10 +745,6 @@ static bool KeyToAxisAndSign(int keynum, int *outAxis, int *outSign)
 	if (!keynum)
 		return false;
 
-	// Let the UI access to analogs as keys
-	if ( Key_GetCatcher( ) & KEYCATCH_UI )
-		return false;
-
 	const char* bind = Key_GetBinding(keynum);
 
 	if (!bind || *bind != '+')
@@ -817,6 +813,8 @@ IN_GamepadMove
 */
 static void IN_GamepadMove( void )
 {
+	static bool beenCaught = false;
+	bool isCaught = ( Key_GetCatcher( ) & KEYCATCH_UI );  // Let the UI access to analogs as keys
 	int i;
 	int translatedAxes[MAX_JOYSTICK_AXIS];
 	bool translatedAxesSet[MAX_JOYSTICK_AXIS];
@@ -841,7 +839,7 @@ static void IN_GamepadMove( void )
 		for (i = 0; i < MAX_JOYSTICK_AXIS; i++)
 		{
 			translatedAxes[i] = 0;
-			translatedAxesSet[i] = false;
+			translatedAxesSet[i] = !beenCaught && isCaught;  // Reset it if was caught, once
 		}
 	}
 
@@ -868,7 +866,7 @@ static void IN_GamepadMove( void )
 			int negKey = negMap[i];
 			int posKey = posMap[i];
 
-			if (in_joystickUseAnalog->integer)
+			if (in_joystickUseAnalog->integer && !isCaught)
 			{
 				int posAxis = 0, posSign = 0, negAxis = 0, negSign = 0;
 
@@ -936,6 +934,9 @@ static void IN_GamepadMove( void )
 				Com_QueueEvent(in_eventTime, SE_JOYSTICK_AXIS, i, translatedAxes[i], 0, NULL);
 		}
 	}
+
+	if (beenCaught != isCaught)
+		beenCaught = isCaught;	
 }
 
 
