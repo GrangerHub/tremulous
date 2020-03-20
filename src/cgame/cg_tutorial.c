@@ -572,7 +572,7 @@ static void CG_HumanText( char *text, playerState_t *ps )
   {
     case BA_H_ARMOURY:
       Q_strcat( text, MAX_TUTORIAL_TEXT,
-          va( "Press %s to buy equipment upgrades at the %s.\n",
+          va( "Press %s to buy equipment upgrades at the %s\n",
             CG_KeyNameForCommand( "+button7", ps ),
             BG_Buildable( cg.nearUsableBuildable )->humanName ) );
       break;
