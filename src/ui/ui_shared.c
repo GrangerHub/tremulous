@@ -2350,62 +2350,12 @@ static void UI_Text_Paint_Generic(
                         else
                             ofs = 2;
 
-                        colorBlack[3] = newColor[3] * 4 / 8 / 6;
-                        DC->setColor(colorBlack);
-                        DC->drawHandlePic(
-                          x + ofs - 0.2f, y + ofs - 0.2f - yadj,
-                          (emoticonW * emoticonWidth), emoticonH,
-                          emoticonHandle);
-                        DC->drawHandlePic(
-                          x + ofs + 0.2f, y + ofs - 0.2f - yadj,
-                          (emoticonW * emoticonWidth), emoticonH,
-                          emoticonHandle);
-                        DC->drawHandlePic(
-                          x + ofs - 0.2f, y + ofs + 0.2f - yadj,
-                          (emoticonW * emoticonWidth), emoticonH,
-                          emoticonHandle);
-                        DC->drawHandlePic(
-                          x + ofs + 0.2f, y + ofs + 0.2f - yadj,
-                          (emoticonW * emoticonWidth), emoticonH,
-                          emoticonHandle);
-                        colorBlack[3] = newColor[3] * 3 / 8 / 6;
-                        DC->setColor(colorBlack);
-                        DC->drawHandlePic(
-                          x + ofs - 0.4f, y + ofs - 0.4f - yadj,
-                          (emoticonW * emoticonWidth), emoticonH,
-                          emoticonHandle);
-                        DC->drawHandlePic(
-                          x + ofs + 0.4f, y + ofs - 0.4f - yadj,
-                          (emoticonW * emoticonWidth), emoticonH,
-                          emoticonHandle);
-                        DC->drawHandlePic(
-                          x + ofs - 0.4f, y + ofs + 0.4f - yadj,
-                          (emoticonW * emoticonWidth), emoticonH,
-                          emoticonHandle);
-                        DC->drawHandlePic(
-                          x + ofs + 0.4f, y + ofs + 0.4f - yadj,
-                          (emoticonW * emoticonWidth), emoticonH,
-                          emoticonHandle);
-                        colorBlack[3] = newColor[3] * 1 / 8 / 6;
-                        DC->setColor(colorBlack);
-                        DC->drawHandlePic(
-                          x + ofs - 0.6f, y + ofs - 0.6f - yadj,
-                          (emoticonW * emoticonWidth), emoticonH,
-                          emoticonHandle);
-                        DC->drawHandlePic(
-                          x + ofs + 0.6f, y + ofs - 0.6f - yadj,
-                          (emoticonW * emoticonWidth), emoticonH,
-                          emoticonHandle);
-                        DC->drawHandlePic(
-                          x + ofs - 0.6f, y + ofs + 0.6f - yadj,
-                          (emoticonW * emoticonWidth), emoticonH,
-                          emoticonHandle);
-                        DC->drawHandlePic(
-                          x + ofs + 0.6f, y + ofs + 0.6f - yadj,
-                          (emoticonW * emoticonWidth), emoticonH,
-                          emoticonHandle);
+                        colorBlack[3] = newColor[3] * 0.85;
 
+                        DC->setColor(colorBlack);
+                        DC->drawHandlePic(x + ofs, y + ofs - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
                         DC->setColor(NULL);
+
                         colorBlack[3] = 1.0f;
                     }
                     colorWhite[3] = newColor[3];
@@ -2446,38 +2396,12 @@ static void UI_Text_Paint_Generic(
             else
                 ofs = 2;
 
-            colorBlack[3] = newColor[3] * 4 / 8 / 6;
-            DC->setColor(colorBlack);
-            UI_Text_PaintChar(
-                x + ofs - 0.2f, y + ofs - 0.2f, useScale, glyph, 0.0f);
-            UI_Text_PaintChar(
-                x + ofs + 0.2f, y + ofs - 0.2f, useScale, glyph, 0.0f);
-            UI_Text_PaintChar(
-                x + ofs - 0.2f, y + ofs + 0.2f, useScale, glyph, 0.0f);
-            UI_Text_PaintChar(
-                x + ofs + 0.2f, y + ofs + 0.2f, useScale, glyph, 0.0f);
-            colorBlack[3] = newColor[3] * 3 / 8 / 6;
-            DC->setColor(colorBlack);
-            UI_Text_PaintChar(
-                x + ofs - 0.4f, y + ofs - 0.4f, useScale, glyph, 0.0f);
-            UI_Text_PaintChar(
-                x + ofs + 0.4f, y + ofs - 0.4f, useScale, glyph, 0.0f);
-            UI_Text_PaintChar(
-                x + ofs - 0.4f, y + ofs + 0.4f, useScale, glyph, 0.0f);
-            UI_Text_PaintChar(
-                x + ofs + 0.4f, y + ofs + 0.4f, useScale, glyph, 0.0f);
-            colorBlack[3] = newColor[3] * 1 / 8 / 6;
-            DC->setColor(colorBlack);
-            UI_Text_PaintChar(
-                x + ofs - 0.6f, y + ofs - 0.6f, useScale, glyph, 0.0f);
-            UI_Text_PaintChar(
-                x + ofs + 0.6f, y + ofs - 0.6f, useScale, glyph, 0.0f);
-            UI_Text_PaintChar(
-                x + ofs - 0.6f, y + ofs + 0.6f, useScale, glyph, 0.0f);
-            UI_Text_PaintChar(
-                x + ofs + 0.6f, y + ofs + 0.6f, useScale, glyph, 0.0f);
+            colorBlack[3] = newColor[3] * 0.85;
 
+            DC->setColor(colorBlack);
+            UI_Text_PaintChar(x + ofs, y + ofs, useScale, glyph, 0.0f);
             DC->setColor(newColor);
+
             colorBlack[3] = 1.0f;
         }
         else if (style == ITEM_TEXTSTYLE_NEON)
