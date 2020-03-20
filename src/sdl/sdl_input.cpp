@@ -528,28 +528,28 @@ static void IN_InitJoystick( void )
 	// indicating SDL_INIT_JOYSTICK should be initialized automatically.
 	if (!SDL_WasInit(SDL_INIT_JOYSTICK))
 	{
-		Com_DPrintf("Calling SDL_Init(SDL_INIT_JOYSTICK)...\n");
+		Com_Printf("Calling SDL_Init(SDL_INIT_JOYSTICK)...\n");
 		if (SDL_Init(SDL_INIT_JOYSTICK) != 0)
 		{
-			Com_DPrintf("SDL_Init(SDL_INIT_JOYSTICK) failed: %s\n", SDL_GetError());
+			Com_Printf("SDL_Init(SDL_INIT_JOYSTICK) failed: %s\n", SDL_GetError());
 			return;
 		}
-		Com_DPrintf("SDL_Init(SDL_INIT_JOYSTICK) passed.\n");
+		Com_Printf("SDL_Init(SDL_INIT_JOYSTICK) passed.\n");
 	}
 
 	if (!SDL_WasInit(SDL_INIT_GAMECONTROLLER))
 	{
-		Com_DPrintf("Calling SDL_Init(SDL_INIT_GAMECONTROLLER)...\n");
+		Com_Printf("Calling SDL_Init(SDL_INIT_GAMECONTROLLER)...\n");
 		if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0)
 		{
-			Com_DPrintf("SDL_Init(SDL_INIT_GAMECONTROLLER) failed: %s\n", SDL_GetError());
+			Com_Printf("SDL_Init(SDL_INIT_GAMECONTROLLER) failed: %s\n", SDL_GetError());
 			return;
 		}
-		Com_DPrintf("SDL_Init(SDL_INIT_GAMECONTROLLER) passed.\n");
+		Com_Printf("SDL_Init(SDL_INIT_GAMECONTROLLER) passed.\n");
 	}
 
 	total = SDL_NumJoysticks();
-	Com_DPrintf("%d possible joysticks\n", total);
+	Com_Printf("%d possible joysticks\n", total);
 
 	// Print list and build cvar to allow ui to select joystick.
 	for (i = 0; i < total; i++)
@@ -561,7 +561,7 @@ static void IN_InitJoystick( void )
 	Cvar_Get( "in_availableJoysticks", buf, CVAR_ROM );
 
 	if( !in_joystick->integer ) {
-		Com_DPrintf( "Joystick is not active.\n" );
+		Com_Printf( "Joystick is not active.\n" );
 		SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
 		return;
 	}
@@ -575,22 +575,22 @@ static void IN_InitJoystick( void )
 	stick = SDL_JoystickOpen( in_joystickNo->integer );
 
 	if (stick == NULL) {
-		Com_DPrintf( "No joystick opened: %s\n", SDL_GetError() );
+		Com_Printf( "No joystick opened: %s\n", SDL_GetError() );
 		return;
 	}
 
 	if (SDL_IsGameController(in_joystickNo->integer))
 		gamepad = SDL_GameControllerOpen(in_joystickNo->integer);
 
-	Com_DPrintf( "Joystick %d opened\n", in_joystickNo->integer );
-	Com_DPrintf( "Name:       %s\n", SDL_JoystickNameForIndex(in_joystickNo->integer) );
-	Com_DPrintf( "Axes:       %d\n", SDL_JoystickNumAxes(stick) );
-	Com_DPrintf( "Hats:       %d\n", SDL_JoystickNumHats(stick) );
-	Com_DPrintf( "Buttons:    %d\n", SDL_JoystickNumButtons(stick) );
-	Com_DPrintf( "Balls:      %d\n", SDL_JoystickNumBalls(stick) );
-	Com_DPrintf( "Use Analog: %s\n", in_joystickUseAnalog->integer ? "Yes" : "No" );
-	Com_DPrintf( "Is gamepad: %s\n", gamepad ? "Yes" : "No" );
-	Com_DPrintf( "Is haptic: %s\n", SDL_JoystickIsHaptic(stick) ? "Yes" : "No" );
+	Com_Printf( "Joystick %d opened\n", in_joystickNo->integer );
+	Com_Printf( "Name:       %s\n", SDL_JoystickNameForIndex(in_joystickNo->integer) );
+	Com_Printf( "Axes:       %d\n", SDL_JoystickNumAxes(stick) );
+	Com_Printf( "Hats:       %d\n", SDL_JoystickNumHats(stick) );
+	Com_Printf( "Buttons:    %d\n", SDL_JoystickNumButtons(stick) );
+	Com_Printf( "Balls:      %d\n", SDL_JoystickNumBalls(stick) );
+	Com_Printf( "Use Analog: %s\n", in_joystickUseAnalog->integer ? "Yes" : "No" );
+	Com_Printf( "Is gamepad: %s\n", gamepad ? "Yes" : "No" );
+	Com_Printf( "Is haptic: %s\n", SDL_JoystickIsHaptic(stick) ? "Yes" : "No" );
 
 	SDL_JoystickEventState(SDL_QUERY);
 	SDL_GameControllerEventState(SDL_QUERY);
@@ -616,17 +616,17 @@ static void IN_InitHaptic( void )
 
 	if (!SDL_WasInit(SDL_INIT_HAPTIC))
 	{
-		Com_DPrintf("Calling SDL_Init(SDL_INIT_HAPTIC)...\n");
+		Com_Printf("Calling SDL_Init(SDL_INIT_HAPTIC)...\n");
 		if (SDL_Init(SDL_INIT_HAPTIC) != 0)
 		{
-			Com_DPrintf("SDL_Init(SDL_INIT_HAPTIC) failed: %s\n", SDL_GetError());
+			Com_Printf("SDL_Init(SDL_INIT_HAPTIC) failed: %s\n", SDL_GetError());
 			return;
 		}
-		Com_DPrintf("SDL_Init(SDL_INIT_HAPTIC) passed.\n");
+		Com_Printf("SDL_Init(SDL_INIT_HAPTIC) passed.\n");
 	}
 
 	total = SDL_NumHaptics();
-	Com_DPrintf("%d possible haptics\n", total);
+	Com_Printf("%d possible haptics\n", total);
 
 	// Print list and build cvar to allow ui to select joystick.
 	for (i = 0; i < total; i++)
@@ -638,7 +638,7 @@ static void IN_InitHaptic( void )
 	Cvar_Get( "in_availableHaptics", buf, CVAR_ROM );
 
 	if( !in_haptic->integer ) {
-		Com_DPrintf( "Haptic is not active.\n" );
+		Com_Printf( "Haptic is not active.\n" );
 		SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
 		return;
 	}
@@ -650,7 +650,7 @@ static void IN_InitHaptic( void )
 	haptic = SDL_HapticOpen( in_hapticNo->integer );
 
 	if (haptic == NULL) {
-		Com_DPrintf( "No haptic opened: %s\n", SDL_GetError() );
+		Com_Printf( "No haptic opened: %s\n", SDL_GetError() );
 		return;
 	}
 
@@ -660,18 +660,18 @@ static void IN_InitHaptic( void )
 		if ( SDL_HapticRumbleInit( haptic ) == 0 )
 			SDL_HapticRumblePlay(haptic, 1.0f, 300);
 		else
-			Com_DPrintf( "Can't initialize haptic's rumble effect: %s\n", SDL_GetError() );
+			Com_Printf( "Can't initialize haptic's rumble effect: %s\n", SDL_GetError() );
 	}
 	else if (rumbleSupported < 0)
 	{
-		Com_DPrintf( "Error when querring haptic's rumble effect: %s\n", SDL_GetError() );
+		Com_Printf( "Error when querring haptic's rumble effect: %s\n", SDL_GetError() );
 	}
 
 
-	Com_DPrintf( "Haptic %d opened\n", in_hapticNo->integer );
-	Com_DPrintf( "Rumble:     %s\n", rumbleSupported == SDL_TRUE ? "Yes" : "No" );
-	Com_DPrintf( "Axes:       %d\n", SDL_HapticNumAxes(haptic) );
-	Com_DPrintf( "Effects:    %d\n", SDL_HapticNumEffects(haptic) );
+	Com_Printf( "Haptic %d opened\n", in_hapticNo->integer );
+	Com_Printf( "Rumble:     %s\n", rumbleSupported == SDL_TRUE ? "Yes" : "No" );
+	Com_Printf( "Axes:       %d\n", SDL_HapticNumAxes(haptic) );
+	Com_Printf( "Effects:    %d\n", SDL_HapticNumEffects(haptic) );
 }
 
 /*
@@ -1395,7 +1395,7 @@ void IN_Init( void *windowData )
 
 	SDL_window = (SDL_Window *)windowData;
 
-	Com_DPrintf( "\n------- Input Initialization -------\n" );
+	Com_Printf( "\n------- Input Initialization -------\n" );
 
 	in_keyboardDebug = Cvar_Get( "in_keyboardDebug", "0", CVAR_ARCHIVE );
 
@@ -1418,7 +1418,7 @@ void IN_Init( void *windowData )
 
 	IN_InitJoystick( );
 	IN_InitHaptic( );
-	Com_DPrintf( "------------------------------------\n" );
+	Com_Printf( "------------------------------------\n" );
 }
 
 /*
