@@ -2400,6 +2400,7 @@ static void UI_Text_Paint_Generic(
                 else
                 {
                     float yadj = useScale * glyph->top;
+                    forceColor[3] = newColor[3];
 
                     DC->setColor(NULL);
 
@@ -2416,6 +2417,8 @@ static void UI_Text_Paint_Generic(
 
                         DC->setColor(colorBlack);
                         DC->drawHandlePic(x + ofs, y + ofs - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
+                        if (emoticonColorHandle)
+                          DC->drawHandlePic(x + ofs, y + ofs - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonColorHandle);
                         DC->setColor(NULL);
 
                         colorBlack[3] = 1.0f;
