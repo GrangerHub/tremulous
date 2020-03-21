@@ -5587,28 +5587,28 @@ typedef struct {
     int bind3;
 } bind_t;
 
-static bind_t g_bindings[] = {{"+scores", K_TAB, -1, -1, -1, -1, -1, -1}, {"+button2", K_ENTER, -1, -1, -1, -1, -1, -1},
-    {"+speed", K_SHIFT, -1, -1, -1, -1, -1, -1}, {"+button6", 'z', -1, -1, -1, -1, -1, -1},  // human dodging
-    {"+button8", 'x', -1, -1, -1, -1, -1, -1}, {"+forward", K_UPARROW, -1, -1, -1, -1, -1, -1}, {"+back", K_DOWNARROW, -1, -1, -1, -1, -1, -1},
-    {"+moveleft", ',', -1, -1, -1, -1, -1, -1}, {"+moveright", '.', -1, -1, -1, -1, -1, -1}, {"+moveup", K_SPACE, -1, -1, -1, -1, -1, -1},
-    {"+movedown", 'c', -1, -1, -1, -1, -1, -1}, {"+left", K_LEFTARROW, -1, -1, -1, -1, -1, -1},
-    {"+right", K_RIGHTARROW, -1, -1, -1, -1, -1, -1}, {"+strafe", K_ALT, -1, -1, -1, -1, -1, -1}, {"+lookup", K_PGDN, -1, -1, -1, -1, -1, -1},
-    {"+lookdown", K_DEL, -1, -1, -1, -1, -1, -1}, {"+mlook", '/', -1, -1, -1, -1, -1, -1}, {"centerview", K_END, -1, -1, -1, -1, -1, -1},
+static bind_t g_bindings[] = {{"+scores", K_TAB, K_PAD0_Y, -1, -1, -1, -1, -1}, {"+button2", K_ENTER, K_PAD0_DPAD_UP, -1, -1, -1, -1, -1},
+    {"+speed", K_SHIFT, -1, -1, -1, -1, -1, -1}, {"+button6", 'z', K_PAD0_RIGHTSTICK_CLICK, -1, -1, -1, -1, -1},  // human dodging
+    {"+button8", 'x', K_PAD0_LEFTSTICK_CLICK, -1, -1, -1, -1, -1}, {"+forward", K_UPARROW, K_PAD0_LEFTSTICK_UP, -1, -1, -1, -1, -1}, {"+back", K_DOWNARROW, K_PAD0_LEFTSTICK_DOWN, -1, -1, -1, -1, -1},
+    {"+moveleft", ',', K_PAD0_LEFTSTICK_LEFT, -1, -1, -1, -1, -1}, {"+moveright", '.', K_PAD0_LEFTSTICK_RIGHT, -1, -1, -1, -1, -1}, {"+moveup", K_SPACE, K_PAD0_RIGHTTRIGGER, -1, -1, -1, -1, -1},
+    {"+movedown", 'c', K_PAD0_LEFTTRIGGER, -1, -1, -1, -1, -1}, {"+left", K_LEFTARROW, K_PAD0_RIGHTSTICK_LEFT, -1, -1, -1, -1, -1},
+    {"+right", K_RIGHTARROW, K_PAD0_RIGHTSTICK_RIGHT, -1, -1, -1, -1, -1}, {"+strafe", K_ALT, -1, -1, -1, -1, -1, -1}, {"+lookup", K_PGDN, K_PAD0_RIGHTSTICK_UP, -1, -1, -1, -1, -1},
+    {"+lookdown", K_DEL, K_PAD0_RIGHTSTICK_DOWN, -1, -1, -1, -1, -1}, {"+mlook", '/', -1, -1, -1, -1, -1, -1}, {"centerview", K_END, -1, -1, -1, -1, -1, -1},
     {"+zoom", -1, -1, -1, -1, -1, -1, -1}, {"weapon 1", '1', -1, -1, -1, -1, -1, -1}, {"weapon 2", '2', -1, -1, -1, -1, -1, -1},
     {"weapon 3", '3', -1, -1, -1, -1, -1, -1}, {"weapon 4", '4', -1, -1, -1, -1, -1, -1}, {"weapon 5", '5', -1, -1, -1, -1, -1, -1},
     {"weapon 6", '6', -1, -1, -1, -1, -1, -1}, {"weapon 7", '7', -1, -1, -1, -1, -1, -1}, {"weapon 8", '8', -1, -1, -1, -1, -1, -1},
     {"weapon 9", '9', -1, -1, -1, -1, -1, -1}, {"weapon 10", '0', -1, -1, -1, -1, -1, -1}, {"weapon 11", -1, -1, -1, -1, -1, -1, -1},
-    {"weapon 12", -1, -1, -1, -1, -1, -1, -1}, {"weapon 13", -1, -1, -1, -1, -1, -1, -1}, {"+attack", K_MOUSE1, -1, -1, -1, -1, -1, -1},
-    {"+button5", K_MOUSE2, -1, -1, -1, -1, -1, -1},  // secondary attack
+    {"weapon 12", -1, -1, -1, -1, -1, -1, -1}, {"weapon 13", -1, -1, -1, -1, -1, -1, -1}, {"+attack", K_MOUSE1, K_PAD0_RIGHTSHOULDER, K_PAD0_A, -1, -1, -1, -1},
+    {"+button5", K_MOUSE2, K_PAD0_LEFTSHOULDER, -1, -1, -1, -1, -1},  // secondary attack
     {"reload", 'r', -1, -1, -1, -1, -1, -1},  // reload
     {"buy ammo", 'b', -1, -1, -1, -1, -1, -1},  // buy ammo
-    {"itemact medkit", 'm', -1, -1, -1, -1, -1, -1},  // use medkit
+    {"itemact medkit", 'm', K_PAD0_DPAD_DOWN, -1, -1, -1, -1, -1},  // use medkit
     {"rotatebuildleft", ',', -1, -1, -1, -1, -1, -1},  // Rotate ghost build to left
     {"rotatebuildright", '.', -1, -1, -1, -1, -1, -1},  // Rotate ghost build to right
     {"rotatebuild", 'l', -1, -1, -1, -1, -1, -1},  // Reset ghost build rotation
-    {"+button7", 'q', -1, -1, -1, -1, -1, -1},  // buildable use
-    {"deconstruct", 'e', -1, -1, -1, -1, -1, -1},  // buildable destroy
-    {"weapprev", '[', -1, -1, -1, -1, -1, -1}, {"weapnext", ']', -1, -1, -1, -1, -1, -1}, {"+button3", K_MOUSE3, -1, -1, -1, -1, -1, -1},
+    {"+button7", 'q', K_PAD0_X, -1, -1, -1, -1, -1},  // buildable use
+    {"deconstruct", 'e', K_PAD0_B, -1, -1, -1, -1, -1},  // buildable destroy
+    {"weapprev", '[', K_PAD0_DPAD_LEFT, -1, -1, -1, -1, -1}, {"weapnext", ']', K_PAD0_DPAD_RIGHT, -1, -1, -1, -1, -1}, {"+button3", K_MOUSE3, -1, -1, -1, -1, -1, -1},
     {"+button4", K_MOUSE4, -1, -1, -1, -1, -1, -1}, {"vote yes", K_F1, -1, -1, -1, -1, -1, -1}, {"vote no", K_F2, -1, -1, -1, -1, -1, -1},
     {"teamvote yes", K_F3, -1, -1, -1, -1, -1, -1}, {"teamvote no", K_F4, -1, -1, -1, -1, -1, -1}, {"ready", K_F5, -1, -1, -1, -1, -1, -1},
     {"scoresUp", K_KP_PGUP, -1, -1, -1, -1, -1, -1}, {"scoresDown", K_KP_PGDN, -1, -1, -1, -1, -1, -1},
