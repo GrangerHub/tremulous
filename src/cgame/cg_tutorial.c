@@ -757,7 +757,7 @@ const char *CG_TutorialText( void )
 
   if( !cg.demoPlayback )
   {
-    Q_strcat( text, MAX_TUTORIAL_TEXT, va("Press [^%cESC^7] or [^%cK_PAD0_GUIDE^7] for the menu",
+    Q_strcat( text, MAX_TUTORIAL_TEXT, va("Press [^%cESC^7] or [^%cPAD0_GUIDE^7] for the menu",
         CG_GetForceColor(ps), CG_GetForceColor(ps) ) );
   }
 
