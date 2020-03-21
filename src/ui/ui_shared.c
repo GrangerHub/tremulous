@@ -2064,12 +2064,15 @@ qboolean UI_Text_IsEmoticon(const char *s, qboolean *escaped, int *length, qhand
       Q_strcat(emoticon, MAX_EMOTICON_NAME_LEN, "-ol");  // Overlay
 
       for (j = 0; j < DC->Assets.emoticonCount; j++)
-          if (!Q_stricmp(DC->Assets.emoticons[j].name, emoticon))
+          if (Q_stristr(DC->Assets.emoticons[j].name, "-ol")
+                  && UI_EmoticonMatch(DC->Assets.emoticons[j].name, emoticon))
               break;
 
       if (j != DC->Assets.emoticonCount
           && DC->Assets.emoticons[i].width == DC->Assets.emoticons[j].width)
         *hColor = DC->Assets.emoticons[j].shader;
+      else
+        *hColor = 0;
     }
 
     (*length) += 2;
