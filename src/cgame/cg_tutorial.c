@@ -113,6 +113,47 @@ char CG_GetForceColorFromPlayerState( playerState_t *ps )
 
 /*
 ===============
+CG_GetAllowedKeys
+===============
+*/
+static tutorialMode_t CG_getTutorialMode( void )
+{
+  tutorialMode_t mode = cg_tutorial.integer;
+
+  if (mode == TUTO_AUTOMATIC)
+    mode = in_joystickCount.integer ? TUTO_GAMEPAD : TUTO_MOUSE;
+  else if (mode > TUTO_AUTOMATIC || mode < TUTO_DISABLED)
+    mode = TUTO_ALL;
+  return (mode);
+}
+
+/*
+===============
+CG_GetAllowedKeys
+===============
+*/
+static void CG_GetAllowedKeys( int *keys, int i )
+{
+  int j, k;
+  int key;
+  tutorialMode_t mode = CG_getTutorialMode();
+
+  k = 0;
+  for( j = 0; j < 3; j++ )
+  {
+    key = bindings[ i ].keys[ j ];
+    if( key == K_NONE )
+      break;
+    if ( mode == TUTO_ALL || (mode == TUTO_GAMEPAD && key >= K_PAD0_A)
+        || (mode == TUTO_MOUSE && key < K_PAD0_A) )
+      keys[k++] = key;
+  }
+  while (k < 3)
+    keys[k++] = -1;
+}
+
+/*
+===============
 CG_KeyNameForCommand
 ===============
 */
@@ -122,6 +163,7 @@ static const char *CG_KeyNameForCommand( const char *command, playerState_t *ps 
   static char buffer[ MAX_STRING_CHARS ];
   char        keyBuffer[ MAX_STRING_CHARS ];
   char        forceColorChar;
+  int         keys[3];
 
   forceColorChar = CG_GetForceColorFromPlayerState( ps );
   buffer[ 0 ] = '\0';
@@ -130,18 +172,19 @@ static const char *CG_KeyNameForCommand( const char *command, playerState_t *ps 
   {
     if( !Q_stricmp( command, bindings[ i ].command ) )
     {
+      CG_GetAllowedKeys(keys, i);
       for( j = 0; j < 3; j++ )
       {
-        if( bindings[ i ].keys[ j ] != K_NONE )
+        if( keys[ j ] != K_NONE )
         {
-          trap_Key_KeynumToStringBuf( bindings[ i ].keys[ j ],
+          trap_Key_KeynumToStringBuf( keys[ j ],
               keyBuffer, MAX_STRING_CHARS );
           Q_strupr(keyBuffer);
 
-          if( j < 2 && bindings[ i ].keys[ j + 1 ] != K_NONE )
+          if( j < 2 && keys[ j + 1 ] != K_NONE )
             Com_sprintf( buffer, MAX_STRING_CHARS, "%s[^%c%s^7]%s ",
                 buffer, forceColorChar, keyBuffer,
-                (j < 1 && bindings[ i ].keys[ j + 2 ] != K_NONE ) ? "," : " or" );
+                (j < 1 && keys[ j + 2 ] != K_NONE ) ? "," : " or" );
           else
             Com_sprintf( buffer, MAX_STRING_CHARS, "%s[^%c%s^7]",
                 buffer, forceColorChar, keyBuffer);
@@ -678,9 +721,11 @@ Returns context help for the current class/weapon
 */
 const char *CG_TutorialText( void )
 {
-  playerState_t *ps;
-  static char   text[ MAX_TUTORIAL_TEXT ];
-  static int    refreshBindings = 0;
+  playerState_t   *ps;
+  static char     text[ MAX_TUTORIAL_TEXT ];
+  static int      refreshBindings = 0;
+  tutorialMode_t  mode = CG_getTutorialMode();
+  char            forceColorChar;
 
   if( refreshBindings == 0 )
     CG_GetBindings( );
@@ -689,6 +734,7 @@ const char *CG_TutorialText( void )
 
   text[ 0 ] = '\0';
   ps = &cg.snap->ps;
+  forceColorChar = CG_GetForceColorFromPlayerState(ps);
 
   if( !cg.intermissionStarted && !cg.demoPlayback )
   {
@@ -767,8 +813,17 @@ const char *CG_TutorialText( void )
 
   if( !cg.demoPlayback )
   {
-    Q_strcat( text, MAX_TUTORIAL_TEXT, va("Press [^%cESC^7] or [^%cPAD0_GUIDE^7] for the menu",
-        CG_GetForceColorFromPlayerState(ps), CG_GetForceColorFromPlayerState(ps) ) );
+    Q_strcat( text, MAX_TUTORIAL_TEXT,
+      va("Press %s for the menu",
+        (mode == TUTO_ALL) ?
+          (va("[^%cESC^7] or [^%cPAD0_GUIDE^7]", forceColorChar, forceColorChar)) :
+          (
+            (mode == TUTO_MOUSE) ?
+            (va("[^%cESC^7]", forceColorChar)) :
+            (va("[^%cPAD0_GUIDE^7]", forceColorChar))
+          )
+      )
+    );
   }
 
   return text;

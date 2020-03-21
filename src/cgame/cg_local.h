@@ -113,6 +113,15 @@ typedef enum
   JPS_ASCENDING
 } jetPackState_t;
 
+typedef enum
+{
+  TUTO_DISABLED = 0,
+  TUTO_ALL,
+  TUTO_GAMEPAD,
+  TUTO_MOUSE,
+  TUTO_AUTOMATIC
+} tutorialMode_t;
+
 //======================================================================
 
 // when changing animation, set animationTime to frameTime + lerping time
@@ -1607,6 +1616,8 @@ extern  vmCvar_t    cg_killMsgHeight;
 
 extern  vmCvar_t    thz_radar;
 extern  vmCvar_t    thz_radarrange;
+
+extern  vmCvar_t    in_joystickCount;
 
 //
 // cg_main.c

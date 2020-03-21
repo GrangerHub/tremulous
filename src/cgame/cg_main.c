@@ -248,6 +248,8 @@ vmCvar_t  cg_killMsgHeight;
 vmCvar_t  thz_radar;
 vmCvar_t  thz_radarrange;
 
+vmCvar_t  in_joystickCount;
+
 typedef struct
 {
   vmCvar_t  *vmCvar;
@@ -334,7 +336,7 @@ static cvarTable_t cvarTable[ ] =
   { &cg_disableBuildDialogs, "cg_disableBuildDialogs", "0", CVAR_ARCHIVE },
   { &cg_disableCommandDialogs, "cg_disableCommandDialogs", "0", CVAR_ARCHIVE },
   { &cg_disableScannerPlane, "cg_disableScannerPlane", "1", CVAR_ARCHIVE },
-  { &cg_tutorial, "cg_tutorial", "1", CVAR_ARCHIVE },
+  { &cg_tutorial, "cg_tutorial", "4", CVAR_ARCHIVE },
 
   { &cg_rangeMarkerDrawSurface, "cg_rangeMarkerDrawSurface", "1", CVAR_ARCHIVE },
   { &cg_rangeMarkerDrawIntersection, "cg_rangeMarkerDrawIntersection", "0", CVAR_ARCHIVE },
@@ -410,6 +412,8 @@ static cvarTable_t cvarTable[ ] =
   { &thz_radar, "thz_radar", "0", CVAR_CHEAT},
   { &thz_radarrange, "thz_radarrange", "600", CVAR_ARCHIVE},
 
+  // Input stuff
+  { &in_joystickCount, "in_joystickCount", "0", CVAR_ROM },
 };
 
 static size_t cvarTableSize = ARRAY_LEN( cvarTable );

@@ -253,9 +253,10 @@
     {
       name player
       group optionsGrp
-      type ITEM_TYPE_YESNO
+      type ITEM_TYPE_MULTI
       text "Tutorial Mode:"
       cvar "cg_tutorial"
+      cvarFloatList { "Disabled" 0 "All" 1 "Gamepad only" 2 "Mouse/Keyboard only" 3 "Automatic" 4 }
       rect CONTENT_X (CONTENT_Y+(4*ELEM_H)) CONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER

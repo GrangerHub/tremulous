@@ -48,6 +48,7 @@ static cvar_t *in_mouse             = NULL;
 static cvar_t *in_nograb;
 
 static cvar_t *in_joystick          = NULL;
+static cvar_t *in_joystickCount     = NULL;
 static cvar_t *in_joystickThreshold = NULL;
 static cvar_t *in_joystickNo        = NULL;
 static cvar_t *in_joystickUseAnalog = NULL;
@@ -560,6 +561,7 @@ static void IN_InitJoystick( void )
 	}
 
 	Cvar_Get( "in_availableJoysticks", buf, CVAR_ROM );
+	Cvar_SetValue( "in_joystickCount", total );
 
 	if( !in_joystick->integer ) {
 		Com_Printf( "Joystick is not active.\n" );
@@ -936,7 +938,7 @@ static void IN_GamepadMove( void )
 	}
 
 	if (beenCaught != isCaught)
-		beenCaught = isCaught;	
+		beenCaught = isCaught;
 }
 
 
@@ -1421,6 +1423,7 @@ void IN_Init( void *windowData )
 	in_nograb = Cvar_Get( "in_nograb", "0", CVAR_ARCHIVE );
 
 	in_joystick = Cvar_Get( "in_joystick", "1", CVAR_ARCHIVE|CVAR_LATCH );
+	in_joystickCount = Cvar_Get( "in_joystickCount", "0", CVAR_ROM );
 	in_joystickThreshold = Cvar_Get( "joy_threshold", "0.02", CVAR_ARCHIVE );
 	in_haptic = Cvar_Get( "in_haptic", "1", CVAR_ARCHIVE|CVAR_LATCH );
 
