@@ -2061,7 +2061,7 @@ qboolean UI_Text_IsEmoticon(const char *s, qboolean *escaped, int *length, qhand
 
     if (hColor)
     {
-      Q_strcat(emoticon, MAX_EMOTICON_NAME_LEN, "-overlay");
+      Q_strcat(emoticon, MAX_EMOTICON_NAME_LEN, "-ol");  // Overlay
 
       for (j = 0; j < DC->Assets.emoticonCount; j++)
           if (!Q_stricmp(DC->Assets.emoticons[j].name, emoticon))
