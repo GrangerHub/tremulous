@@ -9,7 +9,7 @@
 #define MAIN_W    (W-(2*BORDER))
 
 //#define TUTORIAL_X (W-(BORDER*MAIN_W))
-#define TUTORIAL_X  260
+#define TUTORIAL_X  320
 
 #define KILLFEED_X (BORDER)
 #define KILLFEED_Y (410)
