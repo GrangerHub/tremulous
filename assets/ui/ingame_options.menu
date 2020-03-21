@@ -1706,10 +1706,30 @@
     {
       name joystick
       group optionsGrp
+      type ITEM_TYPE_YESNO
+      text "Use haptic feedback :"
+      cvar "in_haptic"
+      rect SCONTENT_X (SCONTENT_Y+(2*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+      action
+      {
+        play "sound/misc/menu1.wav";
+      }
+    }
+
+    itemDef
+    {
+      name joystick
+      group optionsGrp
       type ITEM_TYPE_SLIDER
       text "Dead zone threshold:"
       cvarfloat "joy_threshold" 0.02 0 0.1
-      rect SCONTENT_X (SCONTENT_Y+(2*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(3*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
@@ -1725,7 +1745,7 @@
       type ITEM_TYPE_SLIDER
       text "Pitch sensibility:"
       cvarfloat "j_pitch" 0.022 0 0.1
-      rect SCONTENT_X (SCONTENT_Y+(3*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(4*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
@@ -1741,7 +1761,7 @@
       type ITEM_TYPE_SLIDER
       text "Yaw sensibility:"
       cvarfloat "j_yaw" -0.022 -0 -0.1
-      rect SCONTENT_X (SCONTENT_Y+(4*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(5*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
@@ -1757,7 +1777,7 @@
       type ITEM_TYPE_SLIDER
       text "Forward/Backward sensibility:"
       cvarfloat "j_forward" -0.022 -0 -0.1
-      rect SCONTENT_X (SCONTENT_Y+(5*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(6*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
@@ -1773,7 +1793,7 @@
       type ITEM_TYPE_SLIDER
       text "Left/Right sensibility:"
       cvarfloat "j_side" 0.022 0 0.1
-      rect SCONTENT_X (SCONTENT_Y+(6*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(7*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
@@ -1789,7 +1809,23 @@
       type ITEM_TYPE_SLIDER
       text "Up/Down sensibility:"
       cvarfloat "j_up" 0.022 0 0.1
-      rect SCONTENT_X (SCONTENT_Y+(7*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(8*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+    }
+
+    itemDef
+    {
+      name joystick
+      group optionsGrp
+      type ITEM_TYPE_SLIDER
+      text "Haptic feedback intensity:"
+      cvarfloat "in_hapticIntensity" 0.5 0.0 1.0
+      rect SCONTENT_X (SCONTENT_Y+(9*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
