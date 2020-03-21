@@ -3431,9 +3431,11 @@ static void CG_DrawVote( team_t team )
 
   if( cg_tutorial.integer )
   {
-    Com_sprintf( yeskey, sizeof( yeskey ), "[%s]",
+    Com_sprintf( yeskey, sizeof( yeskey ), "[^%c%s^7]",
+      CG_GetForceColor( team ),
       CG_KeyBinding( va( "%svote yes", team == TEAM_NONE ? "" : "team" ) ) );
-    Com_sprintf( nokey, sizeof( nokey ), "[%s]",
+    Com_sprintf( nokey, sizeof( nokey ), "[^%c%s^7]",
+      CG_GetForceColor( team ),
       CG_KeyBinding( va( "%svote no", team == TEAM_NONE ? "" : "team" ) ) );
   }
 

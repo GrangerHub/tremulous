@@ -91,14 +91,24 @@ static void CG_GetBindings( void )
 CG_GetForceColor
 ===============
 */
-static char CG_GetForceColor( playerState_t *ps )
+char CG_GetForceColor( team_t team )
 {
-  if (ps->stats[ STAT_TEAM ] == TEAM_ALIENS)
+  if (team == TEAM_ALIENS)
     return COLOR_RED;
-  else if (ps->stats[ STAT_TEAM ] == TEAM_HUMANS)
+  else if (team == TEAM_HUMANS)
     return COLOR_CYAN;
   else
     return COLOR_YELLOW;
+}
+
+/*
+===============
+CG_GetForceColorFromPlayerState
+===============
+*/
+char CG_GetForceColorFromPlayerState( playerState_t *ps )
+{
+  return CG_GetForceColor(ps->stats[ STAT_TEAM ]);
 }
 
 /*
@@ -113,7 +123,7 @@ static const char *CG_KeyNameForCommand( const char *command, playerState_t *ps 
   char        keyBuffer[ MAX_STRING_CHARS ];
   char        forceColorChar;
 
-  forceColorChar = CG_GetForceColor( ps );
+  forceColorChar = CG_GetForceColorFromPlayerState( ps );
   buffer[ 0 ] = '\0';
 
   for( i = 0; i < numBindings; i++ )
@@ -758,7 +768,7 @@ const char *CG_TutorialText( void )
   if( !cg.demoPlayback )
   {
     Q_strcat( text, MAX_TUTORIAL_TEXT, va("Press [^%cESC^7] or [^%cPAD0_GUIDE^7] for the menu",
-        CG_GetForceColor(ps), CG_GetForceColor(ps) ) );
+        CG_GetForceColorFromPlayerState(ps), CG_GetForceColorFromPlayerState(ps) ) );
   }
 
   return text;

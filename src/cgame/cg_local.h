@@ -1942,6 +1942,8 @@ void  CG_WritePTRCode( int code );
 //
 // cg_tutorial.c
 //
+char CG_GetForceColor( team_t team );
+char CG_GetForceColorFromPlayerState( playerState_t *ps );
 const char *CG_TutorialText( void );
 
 // cg_main.c
