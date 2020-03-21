@@ -2068,6 +2068,8 @@ qboolean UI_Text_IsEmoticon(const char *s, qboolean *escaped, int *length, qhand
                   && UI_EmoticonMatch(DC->Assets.emoticons[j].name, emoticon))
               break;
 
+      // It could solve some bug to return only one assets with both layer merged
+      // Or rendering it then apply opacity once
       if (j != DC->Assets.emoticonCount
           && DC->Assets.emoticons[i].width == DC->Assets.emoticons[j].width)
         *hColor = DC->Assets.emoticons[j].shader;
