@@ -511,7 +511,6 @@ qboolean UI_OutOfMemory(void);
 
 void Controls_GetConfig(void);
 void Controls_SetConfig(qboolean restart);
-void Controls_SetDefaults(void);
 
 void trap_R_SetClipRegion(const float *region);
 

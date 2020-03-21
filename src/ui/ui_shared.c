@@ -5579,41 +5579,38 @@ void Item_Cycle_Paint(itemDef_t *item)
 typedef struct {
     char *command;
     int id;
-    int defaultbind1;
-    int defaultbind2;
-    int defaultbind3;
     int bind1;
     int bind2;
     int bind3;
 } bind_t;
 
-static bind_t g_bindings[] = {{"+scores", K_TAB, K_PAD0_Y, -1, -1, -1, -1, -1}, {"+button2", K_ENTER, K_PAD0_DPAD_UP, -1, -1, -1, -1, -1},
-    {"+speed", K_SHIFT, -1, -1, -1, -1, -1, -1}, {"+button6", 'z', K_PAD0_RIGHTSTICK_CLICK, -1, -1, -1, -1, -1},  // human dodging
-    {"+button8", 'x', K_PAD0_LEFTSTICK_CLICK, -1, -1, -1, -1, -1}, {"+forward", K_UPARROW, K_PAD0_LEFTSTICK_UP, -1, -1, -1, -1, -1}, {"+back", K_DOWNARROW, K_PAD0_LEFTSTICK_DOWN, -1, -1, -1, -1, -1},
-    {"+moveleft", ',', K_PAD0_LEFTSTICK_LEFT, -1, -1, -1, -1, -1}, {"+moveright", '.', K_PAD0_LEFTSTICK_RIGHT, -1, -1, -1, -1, -1}, {"+moveup", K_SPACE, K_PAD0_RIGHTTRIGGER, -1, -1, -1, -1, -1},
-    {"+movedown", 'c', K_PAD0_LEFTTRIGGER, -1, -1, -1, -1, -1}, {"+left", K_LEFTARROW, K_PAD0_RIGHTSTICK_LEFT, -1, -1, -1, -1, -1},
-    {"+right", K_RIGHTARROW, K_PAD0_RIGHTSTICK_RIGHT, -1, -1, -1, -1, -1}, {"+strafe", K_ALT, -1, -1, -1, -1, -1, -1}, {"+lookup", K_PGDN, K_PAD0_RIGHTSTICK_UP, -1, -1, -1, -1, -1},
-    {"+lookdown", K_DEL, K_PAD0_RIGHTSTICK_DOWN, -1, -1, -1, -1, -1}, {"+mlook", '/', -1, -1, -1, -1, -1, -1}, {"centerview", K_END, -1, -1, -1, -1, -1, -1},
-    {"+zoom", -1, -1, -1, -1, -1, -1, -1}, {"weapon 1", '1', -1, -1, -1, -1, -1, -1}, {"weapon 2", '2', -1, -1, -1, -1, -1, -1},
-    {"weapon 3", '3', -1, -1, -1, -1, -1, -1}, {"weapon 4", '4', -1, -1, -1, -1, -1, -1}, {"weapon 5", '5', -1, -1, -1, -1, -1, -1},
-    {"weapon 6", '6', -1, -1, -1, -1, -1, -1}, {"weapon 7", '7', -1, -1, -1, -1, -1, -1}, {"weapon 8", '8', -1, -1, -1, -1, -1, -1},
-    {"weapon 9", '9', -1, -1, -1, -1, -1, -1}, {"weapon 10", '0', -1, -1, -1, -1, -1, -1}, {"weapon 11", -1, -1, -1, -1, -1, -1, -1},
-    {"weapon 12", -1, -1, -1, -1, -1, -1, -1}, {"weapon 13", -1, -1, -1, -1, -1, -1, -1}, {"+attack", K_MOUSE1, K_PAD0_RIGHTSHOULDER, K_PAD0_A, -1, -1, -1, -1},
-    {"+button5", K_MOUSE2, K_PAD0_LEFTSHOULDER, -1, -1, -1, -1, -1},  // secondary attack
-    {"reload", 'r', -1, -1, -1, -1, -1, -1},  // reload
-    {"buy ammo", 'b', -1, -1, -1, -1, -1, -1},  // buy ammo
-    {"itemact medkit", 'm', K_PAD0_DPAD_DOWN, -1, -1, -1, -1, -1},  // use medkit
-    {"rotatebuildleft", ',', -1, -1, -1, -1, -1, -1},  // Rotate ghost build to left
-    {"rotatebuildright", '.', -1, -1, -1, -1, -1, -1},  // Rotate ghost build to right
-    {"rotatebuild", 'l', -1, -1, -1, -1, -1, -1},  // Reset ghost build rotation
-    {"+button7", 'q', K_PAD0_X, -1, -1, -1, -1, -1},  // buildable use
-    {"deconstruct", 'e', K_PAD0_B, -1, -1, -1, -1, -1},  // buildable destroy
-    {"weapprev", '[', K_PAD0_DPAD_LEFT, -1, -1, -1, -1, -1}, {"weapnext", ']', K_PAD0_DPAD_RIGHT, -1, -1, -1, -1, -1}, {"+button3", K_MOUSE3, -1, -1, -1, -1, -1, -1},
-    {"+button4", K_MOUSE4, -1, -1, -1, -1, -1, -1}, {"vote yes", K_F1, -1, -1, -1, -1, -1, -1}, {"vote no", K_F2, -1, -1, -1, -1, -1, -1},
-    {"teamvote yes", K_F3, -1, -1, -1, -1, -1, -1}, {"teamvote no", K_F4, -1, -1, -1, -1, -1, -1}, {"ready", K_F5, -1, -1, -1, -1, -1, -1},
-    {"scoresUp", K_KP_PGUP, -1, -1, -1, -1, -1, -1}, {"scoresDown", K_KP_PGDN, -1, -1, -1, -1, -1, -1},
-    {"screenshotJPEG", -1, -1, -1, -1, -1, -1, -1}, {"messagemode", -1, -1, -1, -1, -1, -1, -1}, {"messagemode2", -1, -1, -1, -1, -1, -1, -1},
-    {"messagemode5", -1, -1, -1, -1, -1, -1, -1}, {"messagemode6", -1, -1, -1, -1, -1, -1, -1}};
+static bind_t g_bindings[] = {{"+scores", -1, -1, -1, -1}, {"+button2", -1, -1, -1, -1},
+    {"+speed", -1, -1, -1, -1}, {"+button6", -1, -1, -1, -1},  // human dodging
+    {"+button8", -1, -1, -1, -1}, {"+forward", -1, -1, -1, -1}, {"+back", -1, -1, -1, -1},
+    {"+moveleft", -1, -1, -1, -1}, {"+moveright", -1, -1, -1, -1}, {"+moveup", -1, -1, -1, -1},
+    {"+movedown", -1, -1, -1, -1}, {"+left", -1, -1, -1, -1},
+    {"+right", -1, -1, -1, -1}, {"+strafe", -1, -1, -1, -1}, {"+lookup", -1, -1, -1, -1},
+    {"+lookdown", -1, -1, -1, -1}, {"+mlook", -1, -1, -1, -1}, {"centerview", -1, -1, -1, -1},
+    {"+zoom", -1, -1, -1, -1}, {"weapon 1", -1, -1, -1, -1}, {"weapon 2", -1, -1, -1, -1},
+    {"weapon 3", -1, -1, -1, -1}, {"weapon 4", -1, -1, -1, -1}, {"weapon 5", -1, -1, -1, -1},
+    {"weapon 6", -1, -1, -1, -1}, {"weapon 7", -1, -1, -1, -1}, {"weapon 8", -1, -1, -1, -1},
+    {"weapon 9", -1, -1, -1, -1}, {"weapon 10", -1, -1, -1, -1}, {"weapon 11", -1, -1, -1, -1},
+    {"weapon 12", -1, -1, -1, -1}, {"weapon 13", -1, -1, -1, -1}, {"+attack", -1, -1, -1, -1},
+    {"+button5", -1, -1, -1, -1},  // secondary attack
+    {"reload", -1, -1, -1, -1},  // reload
+    {"buy ammo", -1, -1, -1, -1},  // buy ammo
+    {"itemact medkit", -1, -1, -1, -1},  // use medkit
+    {"rotatebuildleft", -1, -1, -1, -1},  // Rotate ghost build to left
+    {"rotatebuildright", -1, -1, -1, -1},  // Rotate ghost build to right
+    {"rotatebuild", -1, -1, -1, -1},  // Reset ghost build rotation
+    {"+button7", -1, -1, -1, -1},  // buildable use
+    {"deconstruct", -1, -1, -1, -1},  // buildable destroy
+    {"weapprev", -1, -1, -1, -1}, {"weapnext", -1, -1, -1, -1}, {"+button3", -1, -1, -1, -1},
+    {"+button4", -1, -1, -1, -1}, {"vote yes", -1, -1, -1, -1}, {"vote no", -1, -1, -1, -1},
+    {"teamvote yes", -1, -1, -1, -1}, {"teamvote no", -1, -1, -1, -1}, {"ready", -1, -1, -1, -1},
+    {"scoresUp", -1, -1, -1, -1}, {"scoresDown", -1, -1, -1, -1},
+    {"screenshotJPEG", -1, -1, -1, -1}, {"messagemode", -1, -1, -1, -1}, {"messagemode2", -1, -1, -1, -1},
+    {"messagemode5", -1, -1, -1, -1}, {"messagemode6", -1, -1, -1, -1}};
 
 static const size_t g_bindCount = ARRAY_LEN(g_bindings);
 
@@ -5699,24 +5696,6 @@ void Controls_SetConfig(qboolean restart)
     }
 
     DC->executeText(EXEC_APPEND, "in_restart\n");
-}
-
-/*
-=================
-Controls_SetDefaults
-
-Iterate each command, set its default binding
-=================
-*/
-void Controls_SetDefaults(void)
-{
-    unsigned int i;
-    for (i = 0; i < g_bindCount; i++)
-    {
-        g_bindings[i].bind1 = g_bindings[i].defaultbind1;
-        g_bindings[i].bind2 = g_bindings[i].defaultbind2;
-        g_bindings[i].bind3 = g_bindings[i].defaultbind3;
-    }
 }
 
 int BindingIDFromName(const char *name)
