@@ -1572,8 +1572,8 @@ typedef enum {
 #define MAX_PINGREQUESTS					32
 #define MAX_SERVERSTATUSREQUESTS	16
 
-#define MAX_EMOTICON_NAME_LEN 16
-#define MAX_EMOTICONS 64
+#define MAX_EMOTICON_NAME_LEN 32
+#define MAX_EMOTICONS 128
 
 typedef struct
 {
