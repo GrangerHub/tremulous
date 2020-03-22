@@ -3072,6 +3072,9 @@ void CL_Frame(int msec)
     // update audio
     S_Update();
 
+    // update any feedback
+    FB_Update();
+
 #ifdef USE_VOIP
     CL_CaptureVoip();
 #endif
@@ -4838,6 +4841,7 @@ void CL_Init(void)
     }
 
     CL_InitInput();
+    FB_Init();
 
     //
     // register our variables
@@ -5093,6 +5097,7 @@ void CL_Shutdown(const char *finalmsg, bool disconnect, bool quit)
     Cmd_RemoveCommand("stopvideo");
 
     CL_ShutdownInput();
+    FB_Shutdown();
     Con_Shutdown();
 
     Cvar_Set("cl_running", "0");

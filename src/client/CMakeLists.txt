@@ -50,6 +50,7 @@ add_executable(
     cl_scrn.cpp
     cl_ui.cpp
     cl_updates.cpp
+    cl_feedback.cpp
     libmumblelink.cpp
     qal.cpp
     snd_adpcm.cpp
@@ -176,7 +177,7 @@ include_directories(
     ${OPENAL_INCLUDE_DIR}
     )
 
-# TODO: Turn this into a macro 
+# TODO: Turn this into a macro
 if (USE_INTERNAL_SDL2)
 add_custom_command(
     TARGET tremulous

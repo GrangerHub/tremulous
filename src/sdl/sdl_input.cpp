@@ -506,6 +506,47 @@ struct
 
 /*
 ===============
+IN_ResetJoystickInputs
+===============
+*/
+static void IN_ResetJoystickInputs( void )
+{
+	int i, total;
+
+	for (i = 0; i < 16; i++)
+		Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[i], false, 0, NULL );
+	for (i = K_PAD0_A; i <= K_PAD0_RIGHTTRIGGER; i++)
+		Com_QueueEvent(in_eventTime, SE_KEY, i, false, 0, NULL );
+	for (i = 0; i < MAX_JOYSTICK_AXIS; i++)
+		Com_QueueEvent(in_eventTime, SE_JOYSTICK_AXIS, i, 0, 0, NULL);
+
+
+	// Sometime the controller (IE PS3 Dualshock) are "not connected"
+	// since their aren't powered on (the PS button had to be pressed)
+	// while GetAttached return true
+	// So we ignore the initial state of the gamepad and wait for any motion
+	if (gamepad && SDL_GameControllerGetAttached(gamepad) == SDL_TRUE)
+	{
+		for (i = 0; i < SDL_CONTROLLER_AXIS_MAX; i++)
+			stick_state.oldaaxes[i] =
+					SDL_GameControllerGetAxis(gamepad, (SDL_GameControllerAxis)(SDL_CONTROLLER_AXIS_LEFTX + i));
+	}
+	if (stick && SDL_JoystickGetAttached(stick) == SDL_TRUE)
+	{
+		total = SDL_JoystickNumAxes(stick);
+		if (total > 0)
+		{
+			if (total > MAX_JOYSTICK_AXIS)
+				total = MAX_JOYSTICK_AXIS;
+			for (i = 0; i < total; i++)
+				stick_state.oldaaxes[i] = SDL_JoystickGetAxis(stick, i);
+		}
+	}
+}
+
+
+/*
+===============
 IN_InitJoystick
 ===============
 */
@@ -598,6 +639,7 @@ static void IN_InitJoystick( void )
 
 	SDL_JoystickEventState(SDL_QUERY);
 	SDL_GameControllerEventState(SDL_QUERY);
+	IN_ResetJoystickInputs( );
 }
 
 
@@ -662,9 +704,7 @@ static void IN_InitHaptic( void )
 	hapticRumbleSupported = SDL_HapticRumbleSupported( haptic );
 	if (hapticRumbleSupported == SDL_TRUE)
 	{
-		if ( SDL_HapticRumbleInit( haptic ) == 0 )
-			IN_HapticFeedback(1.0f, 300);
-		else
+		if ( SDL_HapticRumbleInit( haptic ) != 0 )
 		{
 			Com_Printf( "Can't initialize haptic's rumble effect: %s\n", SDL_GetError() );
 			SDL_HapticClose( haptic );
@@ -711,6 +751,8 @@ static void IN_ShutdownJoystick( void )
 
 	SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
 	SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
+
+	IN_ResetJoystickInputs();
 }
 
 /*
@@ -725,7 +767,6 @@ static void IN_ShutdownHaptic( void )
 
 	if (haptic)
 	{
-		SDL_HapticRumbleStop(haptic);
 		SDL_HapticStopAll(haptic);
 		SDL_HapticClose(haptic);
 		haptic = NULL;
@@ -738,6 +779,9 @@ static void IN_ShutdownHaptic( void )
 void IN_HapticFeedback( float strength, uint32_t length )
 {
 	in_hapticIntensity = Cvar_Get( "in_hapticIntensity", "0.5", CVAR_ARCHIVE );
+
+	if (strength > 1)
+		strength = 1;
 
 	if (in_haptic->integer && haptic && hapticRumbleSupported == SDL_TRUE && length)
 		SDL_HapticRumblePlay( haptic, strength * in_hapticIntensity->value, length );
@@ -814,13 +858,14 @@ static bool KeyToAxisAndSign(int keynum, int *outAxis, int *outSign)
 IN_GamepadMove
 ===============
 */
-static void IN_GamepadMove( void )
+static bool IN_GamepadMove( bool isCaught )
 {
-	static bool beenCaught = false;
-	bool isCaught = ( Key_GetCatcher( ) & KEYCATCH_UI );  // Let the UI access to analogs as keys
 	int i;
 	int translatedAxes[MAX_JOYSTICK_AXIS];
 	bool translatedAxesSet[MAX_JOYSTICK_AXIS];
+
+	if (!gamepad || SDL_GameControllerGetAttached(gamepad) == SDL_FALSE)
+		return false;
 
 	SDL_GameControllerUpdate();
 
@@ -837,12 +882,12 @@ static void IN_GamepadMove( void )
 
 	// must defer translated axes until all real axes are processed
 	// must be done this way to prevent a later mapped axis from zeroing out a previous one
-	if (in_joystickUseAnalog->integer)
+	if (in_joystickUseAnalog->integer && !isCaught)
 	{
 		for (i = 0; i < MAX_JOYSTICK_AXIS; i++)
 		{
 			translatedAxes[i] = 0;
-			translatedAxesSet[i] = !beenCaught && isCaught;  // Reset it if was caught, once
+			translatedAxesSet[i] = false;
 		}
 	}
 
@@ -929,7 +974,7 @@ static void IN_GamepadMove( void )
 	}
 
 	// set translated axes
-	if (in_joystickUseAnalog->integer)
+	if (in_joystickUseAnalog->integer && !isCaught)
 	{
 		for (i = 0; i < MAX_JOYSTICK_AXIS; i++)
 		{
@@ -938,8 +983,7 @@ static void IN_GamepadMove( void )
 		}
 	}
 
-	if (beenCaught != isCaught)
-		beenCaught = isCaught;
+	return true;
 }
 
 
@@ -948,20 +992,14 @@ static void IN_GamepadMove( void )
 IN_JoyMove
 ===============
 */
-static void IN_JoyMove( void )
+static void IN_JoyMove( bool isCaught )
 {
 	unsigned int axes = 0;
 	unsigned int hats = 0;
 	int total = 0;
 	int i = 0;
 
-	if (gamepad)
-	{
-		IN_GamepadMove();
-		return;
-	}
-
-	if (!stick)
+	if (!stick || SDL_JoystickGetAttached(stick) == SDL_FALSE)
 		return;
 
 	SDL_JoystickUpdate();
@@ -1102,7 +1140,7 @@ static void IN_JoyMove( void )
 	total = SDL_JoystickNumAxes(stick);
 	if (total > 0)
 	{
-		if (in_joystickUseAnalog->integer)
+		if (in_joystickUseAnalog->integer && !isCaught)
 		{
 			if (total > MAX_JOYSTICK_AXIS) total = MAX_JOYSTICK_AXIS;
 			for (i = 0; i < total; i++)
@@ -1346,11 +1384,22 @@ IN_Frame
 */
 void IN_Frame( void )
 {
+	static bool beenCaught = false;
+	bool isCaught = ( Key_GetCatcher( ) & KEYCATCH_UI );  // Let the UI access to analogs as keys
 	bool loading;
 	bool cursorShowing;
 	int x, y;
 
-	IN_JoyMove( );
+	if (beenCaught != isCaught)
+	{
+		IN_ResetJoystickInputs( );
+		beenCaught = isCaught;
+	}
+
+	// Don't allow joystick in the UI nor when using gamepad
+	if (!IN_GamepadMove( isCaught ))
+		IN_JoyMove( isCaught );
+
 
 	// If not DISCONNECTED (main menu) or ACTIVE (in game), we're loading
 	loading = ( clc.state != CA_DISCONNECTED && clc.state != CA_ACTIVE );
@@ -1454,8 +1503,8 @@ void IN_Shutdown( void )
 	IN_DeactivateMouse( );
 	mouseAvailable = false;
 
-	IN_ShutdownJoystick( );
 	IN_ShutdownHaptic( );
+	IN_ShutdownJoystick( );
 
 	SDL_window = NULL;
 }

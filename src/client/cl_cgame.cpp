@@ -574,7 +574,7 @@ intptr_t CL_CgameSystemCalls( intptr_t *args )
             S_StartBackgroundTrack( (const char*)VMA(1), (const char*)VMA(2) );
             return 0;
         case CG_IN_FEEDBACKEFFECT:
-            IN_HapticFeedback( (float)args[1], (uint32_t)args[2] );
+            IN_HapticFeedback( VMF(1), (uint32_t)args[2] );
             return 0;
         case CG_R_LOADWORLDMAP:
             re.LoadWorld( (const char*)VMA(1) );

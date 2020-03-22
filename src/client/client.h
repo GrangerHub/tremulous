@@ -710,6 +710,13 @@ bool CL_CloseAVI(void);
 bool CL_VideoRecording(void);
 
 //
+// cl_feedback.c
+//
+void FB_Init( void );
+void FB_Update( void );
+void FB_Shutdown( void );
+
+//
 // cl_main.c
 //
 void CL_WriteDemoMessage(msg_t *msg, int headerBytes);

@@ -436,7 +436,7 @@ ifeq ($(PLATFORM),darwin)
   OPTIMIZEVM=
   #CXXFLAGS+=-stdlib=libc++
 
-  # FIXME This is probably bad idea to comment this out 
+  # FIXME This is probably bad idea to comment this out
   #BASE_CFLAGS += -mmacosx-version-min=10.7 -DMAC_OS_X_VERSION_MIN_REQUIRED=1070
 
   GRANGER_LIBS = -framework Cocoa -framework Security
@@ -522,7 +522,7 @@ ifeq ($(PLATFORM),darwin)
   SHLIBCFLAGS=-fPIC -fno-common
   #SHLIBLDFLAGS=-dynamiclib $(LDFLAGS) -Wl,-U,_com_altivec
   SHLIBLDFLAGS=-dynamiclib -Wl,-U,_com_altivec
- 
+
   NOTSHLIBCFLAGS=-mdynamic-no-pic
 
 else # ifeq darwin
@@ -604,7 +604,7 @@ ifdef MINGW
       CLIENT_LDFLAGS += $(OPENAL_LDFLAGS)
     endif
     ifeq ($(USE_LOCAL_HEADERS),1)
-    CLIENT_CFLAGS += -I$(ALHDIR) 
+    CLIENT_CFLAGS += -I$(ALHDIR)
     endif
   endif
 
@@ -1470,7 +1470,7 @@ ifeq ($(ARCH),x86)
 endif
 endif
 
-GRANGER_CFLAGS += $(ARCHFLAG) -fPIC -fpic $(LUACFLAGS) 
+GRANGER_CFLAGS += $(ARCHFLAG) -fPIC -fpic $(LUACFLAGS)
 
 ifeq ($(PLATFORM),darwin)
 GRANGER_CFLAGS += -DLUA_USE_MACOSX
@@ -1556,7 +1556,7 @@ endef
   $(Q)$(call EXEC_CC,-std=gnu99 -DGRANGER ${GRANGER_CFLAGS} ${OPTIMIZE},'$@','$<')
   $(Q)$(call LOG_CC,granger,-std=gnu99 ${GRANGER_CFLAGS} ${OPTIMIZE},$@,$<)
 endef
- 
+
 $(B)/granger.dir/src/lua/%.o: $(LUADIR)/%.c
 	$(DO_GRANGER_CC)
 
@@ -1574,7 +1574,7 @@ $(B)/granger.dir/src/%.o: $(GRANGERDIR)/%.cpp
 
 $(B)/granger$(FULLBINEXT): $(GRANGEROBJ)
 	$(echo_cmd) "LD $@"
-	$(Q)$(CC) $(LDFLAGS) -o $@ $(GRANGEROBJ) $(GRANGER_LIBS) 
+	$(Q)$(CC) $(LDFLAGS) -o $@ $(GRANGEROBJ) $(GRANGER_LIBS)
 
 ifneq ($(BUILD_GRANGER),0)
 TARGETS += $(B)/granger$(FULLBINEXT)
@@ -1734,7 +1734,7 @@ $(B)/nettle/%.o: $(NETTLEDIR)/nettle/%.c
 	$(DO_NETTLE_CC)
 
 #############################################################################
-# Semver 
+# Semver
 #############################################################################
 
 SEMVERCFLAGS=$(ARCHFLAG) -fPIC -fpic -I$(SEMVERDIR)/src/include
@@ -1773,6 +1773,7 @@ Q3OBJ = \
   $(B)/client/cl_scrn.o \
   $(B)/client/cl_ui.o \
   $(B)/client/cl_updates.o \
+  $(B)/client/cl_feedback.o \
   $(B)/client/cl_rest.o \
   $(B)/client/cl_avi.o \
   \
@@ -2274,7 +2275,7 @@ ifneq ($(USE_RENDERER_DLOPEN),0)
 $(B)/$(CLIENTBIN)$(FULLBINEXT): $(Q3OBJ) $(LIBSDLMAIN)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CXX) -std=c++1y $(CXXFLAGS) $(CLIENT_LDFLAGS) $(LDFLAGS) $(Q3OBJ) \
-		$(LIBSDLMAIN) $(CLIENT_LIBS) $(LIBS) -o $@ 
+		$(LIBSDLMAIN) $(CLIENT_LIBS) $(LIBS) -o $@
 
 $(B)/renderer_opengl1$(SHLIBNAME): $(Q3ROBJ) $(JPGOBJ)
 	$(echo_cmd) "LD $@"
@@ -2618,7 +2619,7 @@ $(B)/$(BASEGAME)_11/vm/ui.qvm: $(UIVMOBJ11) $(UIDIR)/ui_syscalls_11.asm $(Q3ASM)
 $(B)/$(BASEGAME)/vms-gpp-$(VERSION).pk3: $(B)/$(BASEGAME)/vm/ui.qvm $(B)/$(BASEGAME)/vm/cgame.qvm $(B)/$(BASEGAME)/vm/game.qvm
 	@(cd $(B)/$(BASEGAME) && zip -r vms-$(VERSION).pk3 vm/)
 
-$(B)/$(BASEGAME)_11/vms-1.1.0-$(VERSION).pk3: $(B)/$(BASEGAME)_11/vm/ui.qvm $(B)/$(BASEGAME)_11/vm/cgame.qvm 
+$(B)/$(BASEGAME)_11/vms-1.1.0-$(VERSION).pk3: $(B)/$(BASEGAME)_11/vm/ui.qvm $(B)/$(BASEGAME)_11/vm/cgame.qvm
 	@(cd $(B)/$(BASEGAME)_11 && zip -r vms-$(VERSION).pk3 vm/)
 
 

@@ -1832,6 +1832,10 @@
       textscale .25
       forecolor 1 1 1 1
       visible MENU_FALSE
+      action
+      {
+        exec "hapticfeedback 1 100"
+      }
     }
 
     itemDef
@@ -1850,7 +1854,7 @@
       action
       {
         play "sound/misc/menu1.wav";
-        exec "vid_restart"
+        exec "in_restart\nhapticfeedback 0.5 300"
       }
     }
 
