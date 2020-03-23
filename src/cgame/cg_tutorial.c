@@ -34,21 +34,23 @@ typedef struct
 
 static bind_t bindings[ ] =
 {
-  { "+button2",       "Activate Upgrade",       { -1, -1, -1 } },
-  { "+speed",         "Run/Walk",               { -1, -1, -1 } },
-  { "+button6",       "Dodge",                  { -1, -1, -1 } },
-  { "+button8",       "Sprint",                 { -1, -1, -1 } },
-  { "+moveup",        "Jump",                   { -1, -1, -1 } },
-  { "+movedown",      "Crouch",                 { -1, -1, -1 } },
-  { "+attack",        "Primary Attack",         { -1, -1, -1 } },
-  { "+button5",       "Secondary Attack",       { -1, -1, -1 } },
-  { "reload",         "Reload",                 { -1, -1, -1 } },
-  { "buy ammo",       "Buy Ammo",               { -1, -1, -1 } },
-  { "itemact medkit", "Use Medkit",             { -1, -1, -1 } },
-  { "+button7",       "Use Structure/Evolve",   { -1, -1, -1 } },
-  { "deconstruct",    "Deconstruct Structure",  { -1, -1, -1 } },
-  { "weapprev",       "Previous Upgrade",       { -1, -1, -1 } },
-  { "weapnext",       "Next Upgrade",           { -1, -1, -1 } }
+  { "+button2",         "Activate Upgrade",       { -1, -1, -1 } },
+  { "+speed",           "Run/Walk",               { -1, -1, -1 } },
+  { "+button6",         "Dodge",                  { -1, -1, -1 } },
+  { "+button8",         "Sprint",                 { -1, -1, -1 } },
+  { "+moveup",          "Jump",                   { -1, -1, -1 } },
+  { "+movedown",        "Crouch",                 { -1, -1, -1 } },
+  { "+attack",          "Primary Attack",         { -1, -1, -1 } },
+  { "+button5",         "Secondary Attack",       { -1, -1, -1 } },
+  { "reload",           "Reload",                 { -1, -1, -1 } },
+  { "buy ammo",         "Buy Ammo",               { -1, -1, -1 } },
+  { "itemact medkit",   "Use Medkit",             { -1, -1, -1 } },
+  { "+button7",         "Use Structure/Evolve",   { -1, -1, -1 } },
+  { "deconstruct",      "Deconstruct Structure",  { -1, -1, -1 } },
+  { "weapprev",         "Previous Upgrade",       { -1, -1, -1 } },
+  { "weapnext",         "Next Upgrade",           { -1, -1, -1 } },
+  { "rotatebuildleft",  "Rotate Build Left",      { -1, -1, -1 } },
+  { "rotatebuildright", "Rotate Build Right",     { -1, -1, -1 } }
 };
 
 static const size_t numBindings = ARRAY_LEN( bindings );
@@ -263,11 +265,10 @@ static void CG_AlienBuilderText( char *text, playerState_t *ps )
           BG_Buildable( buildable )->humanName ) );
 
     Q_strcat( text, MAX_TUTORIAL_TEXT,
-        va( "Press %s or %s to rotate the %s and %s to reset\n",
+        va( "Press %s or %s to rotate the %s\n",
           CG_KeyNameForCommand( "rotatebuildleft", ps ),
           CG_KeyNameForCommand( "rotatebuildright", ps ),
-          BG_Buildable( buildable )->humanName,
-          CG_KeyNameForCommand( "rotatebuild", ps ) ) );
+          BG_Buildable( buildable )->humanName ) );
   }
   else
   {
@@ -446,11 +447,10 @@ static void CG_HumanCkitText( char *text, playerState_t *ps )
           BG_Buildable( buildable )->humanName ) );
 
     Q_strcat( text, MAX_TUTORIAL_TEXT,
-        va( "Press %s or %s to rotate the %s and %s to reset\n",
+        va( "Press %s or %s to rotate the %s\n",
           CG_KeyNameForCommand( "rotatebuildleft", ps ),
           CG_KeyNameForCommand( "rotatebuildright", ps ),
-          BG_Buildable( buildable )->humanName,
-          CG_KeyNameForCommand( "rotatebuild", ps ) ) );
+          BG_Buildable( buildable )->humanName ) );
   }
   else
   {

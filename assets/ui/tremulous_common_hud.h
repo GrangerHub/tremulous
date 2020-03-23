@@ -1,3 +1,4 @@
+#define W         640
 #define BORDER    10
 
 #define STAT_W    45
@@ -8,8 +9,10 @@
 #define CONSOLE_H 180
 #define MAIN_W    (W-(2*BORDER))
 
-//#define TUTORIAL_X (W-(BORDER*MAIN_W))
-#define TUTORIAL_X  320
+#define TUTORIAL_X  (W / 2)
+#define TUTORIAL_Y  275
+#define TUTORIAL_W  (W - TUTORIAL_X)
+#define TUTORIAL_H  130
 
 #define KILLFEED_X (BORDER)
 #define KILLFEED_Y (410)
@@ -35,7 +38,7 @@ itemDef
 itemDef
 {
   name "tutorial"
-  rect TUTORIAL_X 275 MAIN_W 130
+  rect TUTORIAL_X TUTORIAL_Y TUTORIAL_W TUTORIAL_H
   aspectBias ALIGN_LEFT
   style WINDOW_STYLE_EMPTY
   visible MENU_TRUE
