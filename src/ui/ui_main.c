@@ -101,6 +101,8 @@ vmCvar_t in_joystickNo;
 vmCvar_t in_availableHaptics;
 vmCvar_t in_hapticCount;
 vmCvar_t in_hapticNo;
+vmCvar_t j_threshold;
+vmCvar_t j_outMovmentThreshold;
 
 
 static cvarTable_t cvarTable[] = {{&ui_browserShowFull, "ui_browserShowFull", "1", CVAR_ARCHIVE},
@@ -130,7 +132,9 @@ static cvarTable_t cvarTable[] = {{&ui_browserShowFull, "ui_browserShowFull", "1
     { &in_joystickNo, "in_joystickNo", "0", CVAR_ARCHIVE },
     { &in_availableHaptics, "in_availableHaptics", "", CVAR_ROM },
     { &in_hapticCount, "in_hapticCount", "0", CVAR_ROM },
-    { &in_hapticNo, "in_hapticNo", "0", CVAR_ARCHIVE }};
+    { &in_hapticNo, "in_hapticNo", "0", CVAR_ARCHIVE },
+    { &j_threshold, "j_threshold", "0.02", CVAR_ARCHIVE },
+    { &j_outMovmentThreshold, "j_outMovmentThreshold", "0.02", CVAR_ARCHIVE }};
 
 static size_t cvarTableSize = ARRAY_LEN(cvarTable);
 
@@ -313,6 +317,48 @@ void UI_DrawRoundedRect( float x, float y, float width, float height, float size
   UI_DrawSides( x, y + size * 4, width, height - size * 8, size );
   UI_DrawCorners( x, y, width, height, size * 4, style, uiInfo.uiDC.Assets.cornerOut );
 
+  trap_R_SetColor( NULL );
+}
+
+/*
+==================
+UI_DrawGraph
+
+Return false if the infostring contains nonprinting characters,
+ or if the hostname is blank/undefined
+==================
+*/
+static void UI_DrawGraph(float function(float), float x, float y, float w, float h, vec4_t foreColor, vec4_t backColor, float borderSize)
+{
+  int i, samples;
+  float val;
+
+  UI_DrawRect(x, y, w, h, borderSize, backColor);
+
+  UI_AdjustFrom640(&x, &y, &w, &h);
+  x += borderSize;
+  y += borderSize;
+  w -= borderSize*2;
+  h -= borderSize*2;
+
+  trap_R_SetColor( colorBlack );
+  trap_R_DrawStretchPic( x, y, w, h, 0, 0, 0, 0, uiInfo.uiDC.whiteShader );
+
+  trap_R_SetColor( foreColor );
+
+  samples = w;
+  for( i = 1; i < samples; i++ )
+  {
+    val = (*function)((float)i / (float)samples);
+    trap_R_DrawStretchPic(
+        x + ( i / (float)samples ) * w,
+        y + ( 1 - val ) * h,
+        w / (float)samples,
+        val * h,
+        0, 0, 0, 0,
+        uiInfo.uiDC.whiteShader
+    );
+  }
   trap_R_SetColor( NULL );
 }
 
@@ -2517,6 +2563,31 @@ static void UI_DrawGLInfo(rectDef_t *rect, float scale, int textalign, int textv
     UI_DrawTextBlock(rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, buffer);
 }
 
+static float UI_AdjustJoystickToValue(float input, float ceil)
+{
+  float cropped;
+
+  cropped = ((fabs(input) / 32767.0f) - j_threshold.value)
+      / (1.0f - j_threshold.value - j_outMovmentThreshold.value);
+
+  if (cropped < 0.0f)
+    cropped = 0.0f;
+  if (cropped > 1.0f)
+    cropped = 1.0f;
+
+  return (ceil * ((input < 0) ? -cropped : cropped));
+}
+
+static float UI_DrawJoyThresholdGraphFunction(float input)
+{
+  return UI_AdjustJoystickToValue(input * 32767.0f, 1.0f);
+}
+
+static void UI_DrawJoyThresholdGraph(rectDef_t *rect, vec4_t foreColor, vec4_t backColor, float borderSize)
+{
+  UI_DrawGraph(&UI_DrawJoyThresholdGraphFunction, rect->x, rect->y, rect->w, rect->h, foreColor, backColor, borderSize);
+}
+
 // FIXME: table drive
 //
 static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float text_y, int ownerDraw,
@@ -2640,6 +2711,10 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
 
         case UI_GLINFO:
             UI_DrawGLInfo(&rect, scale, textalign, textvalign, foreColor, textStyle, text_x, text_y);
+            break;
+
+        case UI_JOYTHRESHOLDGRAPH:
+            UI_DrawJoyThresholdGraph(&rect, foreColor, backColor, borderSize);
             break;
 
         default:
