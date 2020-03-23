@@ -40,7 +40,7 @@ itemDef
   style WINDOW_STYLE_EMPTY
   visible MENU_TRUE
   decoration
-  forecolor 1 1 1 0.65
+  forecolor 1 1 1 0.75
   textalign ALIGN_LEFT
   textvalign VALIGN_CENTER
   textscale 0.3
