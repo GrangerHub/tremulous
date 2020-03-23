@@ -1686,17 +1686,22 @@
     {
       name joystick
       group optionsGrp
-      type ITEM_TYPE_YESNO
-      text "Use analog capabilities:"
-      cvar "in_joystickUseAnalog"
       rect SCONTENT_X (SCONTENT_Y+(1*ELEM_H)) SCONTENT_W ELEM_H
-      textalign ALIGN_RIGHT
-      textvalign VALIGN_CENTER
-      textalignx SCONTENT_OFF
+      type ITEM_TYPE_COMBOBOX
+      style WINDOW_STYLE_FILLED
+      elementwidth ((SCONTENT_W/2)-(2*BORDER))
+      elementheight ELEM_H
+      dropitems 5
       textscale .25
+      elementtype LISTBOX_TEXT
+      feeder FEEDER_JOYSTICKS
+      border WINDOW_BORDER_FULL
+      borderColor 0.5 0.5 0.5 1
       forecolor 1 1 1 1
-      visible MENU_FALSE
-      action
+      backcolor 0 0 0 1
+      outlinecolor 0.1 0.1 0.1 0.5
+      visible MENU_TRUE
+      doubleclick
       {
         play "sound/misc/menu1.wav";
       }
@@ -1707,8 +1712,8 @@
       name joystick
       group optionsGrp
       type ITEM_TYPE_YESNO
-      text "Use haptic feedback :"
-      cvar "in_haptic"
+      text "Use analog capabilities:"
+      cvar "in_joystickUseAnalog"
       rect SCONTENT_X (SCONTENT_Y+(2*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
@@ -1822,10 +1827,99 @@
     {
       name joystick
       group optionsGrp
+      type ITEM_TYPE_BUTTON
+      text "APPLY"
+      textscale .25
+      style WINDOW_STYLE_EMPTY
+      rect SCONTENT_X (SCONTENT_Y+(13*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_CENTER
+      textvalign VALIGN_CENTER
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+      action
+      {
+        play "sound/misc/menu1.wav";
+        exec "in_restart"
+      }
+    }
+
+//////// JOYSTICK
+
+    itemDef
+    {
+      name controls
+      text "Feedback"
+      group optionsGrp
+      style WINDOW_STYLE_EMPTY
+      rect 0 ((2*BORDER)+TOPBUTT_H+(5*SIDEBUTT_H)) SIDEBUTT_W SIDEBUTT_H
+      type ITEM_TYPE_BUTTON
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+      action
+      {
+        play "sound/misc/menu1.wav";
+        hide optionsGrp;
+        show controls;
+        show feedback
+      }
+    }
+
+    itemDef
+    {
+      name feedback
+      group optionsGrp
+      type ITEM_TYPE_YESNO
+      text "Use haptic feedback :"
+      cvar "in_haptic"
+      rect SCONTENT_X (SCONTENT_Y+(0*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+      action
+      {
+        play "sound/misc/menu1.wav";
+      }
+    }
+
+    itemDef
+    {
+      name feedback
+      group optionsGrp
+      rect SCONTENT_X (SCONTENT_Y+(1*ELEM_H)) SCONTENT_W ELEM_H
+      type ITEM_TYPE_COMBOBOX
+      style WINDOW_STYLE_FILLED
+      elementwidth ((SCONTENT_W/2)-(2*BORDER))
+      elementheight ELEM_H
+      dropitems 5
+      textscale .25
+      elementtype LISTBOX_TEXT
+      feeder FEEDER_HAPTICS
+      border WINDOW_BORDER_FULL
+      borderColor 0.5 0.5 0.5 1
+      forecolor 1 1 1 1
+      backcolor 0 0 0 1
+      outlinecolor 0.1 0.1 0.1 0.5
+      visible MENU_TRUE
+      doubleclick
+      {
+        play "sound/misc/menu1.wav";
+      }
+    }
+
+    itemDef
+    {
+      name feedback
+      group optionsGrp
       type ITEM_TYPE_SLIDER
       text "Haptic feedback intensity:"
       cvarfloat "in_hapticIntensity" 0.5 0.0 1.0
-      rect SCONTENT_X (SCONTENT_Y+(9*ELEM_H)) SCONTENT_W ELEM_H
+      rect SCONTENT_X (SCONTENT_Y+(2*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
       textalignx SCONTENT_OFF
@@ -1840,7 +1934,7 @@
 
     itemDef
     {
-      name joystick
+      name feedback
       group optionsGrp
       type ITEM_TYPE_BUTTON
       text "APPLY"
@@ -1940,6 +2034,7 @@
       textscale .25
       forecolor 1 1 1 1
       visible MENU_TRUE
+      decoration
     }
 
     itemDef

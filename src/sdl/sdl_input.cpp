@@ -37,7 +37,7 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 
 static cvar_t *in_keyboardDebug     = NULL;
 
-static SDL_GameController *gamepad = NULL;
+static SDL_GameController *gamepad	= NULL;
 static SDL_Joystick *stick = NULL;
 static SDL_Haptic *haptic = NULL;
 
@@ -48,20 +48,21 @@ static cvar_t *in_mouse             = NULL;
 static cvar_t *in_nograb;
 
 static cvar_t *in_joystick          = NULL;
-static cvar_t *in_joystickCount     = NULL;
-static cvar_t *in_joystickThreshold = NULL;
 static cvar_t *in_joystickNo        = NULL;
 static cvar_t *in_joystickUseAnalog = NULL;
+static cvar_t *in_joystickThreshold = NULL;
+static cvar_t *in_joystickCount     = NULL;
 
-static cvar_t *in_haptic          = NULL;
-static cvar_t *in_hapticNo        = NULL;
-static cvar_t *in_hapticIntensity = NULL;
-static int hapticRumbleSupported 	= SDL_FALSE;
+static cvar_t *in_haptic          	= NULL;
+static cvar_t *in_hapticNo       		= NULL;
+static cvar_t *in_hapticIntensity 	= NULL;
+static cvar_t *in_hapticCount 			= NULL;
+static int hapticRumbleSupported 		= SDL_FALSE;
 
 static int vidRestartTime = 0;
 static int in_eventTime = 0;
 
-static SDL_Window *SDL_window = NULL;
+static SDL_Window *SDL_window 			= NULL;
 
 #define CTRL(a) ((a)-'a'+1)
 
@@ -672,6 +673,7 @@ static void IN_InitJoystick( void )
 	{
 		if (i)
 			Q_strcat(buf, sizeof(buf), "\n");
+		Q_strcat(buf, sizeof(buf), SDL_IsGameController(i) ? "[gamepad] " : "[joystick] ");
 		Q_strcat(buf, sizeof(buf), SDL_JoystickNameForIndex(i));
 	}
 
@@ -754,6 +756,7 @@ static void IN_InitHaptic( void )
 	}
 
 	Cvar_Set( "in_availableHaptics", buf );
+	Cvar_SetValue( "in_hapticCount", total );
 
 	if( in_hapticNo->integer < 0 || in_hapticNo->integer >= total )
 		Cvar_Set( "in_hapticNo", "0" );
@@ -1534,8 +1537,9 @@ void IN_Init( void *windowData )
 	in_joystickThreshold = Cvar_Get( "joy_threshold", "0.02", CVAR_ARCHIVE );
 	in_joystickCount = Cvar_Get( "in_joystickCount", "0", CVAR_ROM );
 	in_haptic = Cvar_Get( "in_haptic", "1", CVAR_ARCHIVE|CVAR_LATCH );
-	in_hapticNo = Cvar_Get( "in_haptickNo", "0", CVAR_ARCHIVE );
+	in_hapticNo = Cvar_Get( "in_hapticNo", "0", CVAR_ARCHIVE );
 	in_hapticIntensity = Cvar_Get( "in_hapticIntensity", "0.5", CVAR_ARCHIVE );
+	in_hapticCount = Cvar_Get( "in_hapticCount", "0", CVAR_ROM );
 
 	SDL_StartTextInput( );
 

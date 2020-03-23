@@ -95,6 +95,14 @@ vmCvar_t ui_winner;
 vmCvar_t ui_chatCommands;
 vmCvar_t ui_clantag;
 
+vmCvar_t in_availableJoysticks;
+vmCvar_t in_joystickCount;
+vmCvar_t in_joystickNo;
+vmCvar_t in_availableHaptics;
+vmCvar_t in_hapticCount;
+vmCvar_t in_hapticNo;
+
+
 static cvarTable_t cvarTable[] = {{&ui_browserShowFull, "ui_browserShowFull", "1", CVAR_ARCHIVE},
     {&ui_browserShowEmpty, "ui_browserShowEmpty", "1", CVAR_ARCHIVE},
 
@@ -116,7 +124,13 @@ static cvarTable_t cvarTable[] = {{&ui_browserShowFull, "ui_browserShowFull", "1
     {&ui_developer, "ui_developer", "0", CVAR_ARCHIVE | CVAR_CHEAT},
     {&ui_emoticons, "cg_emoticons", "1", CVAR_LATCH | CVAR_ARCHIVE}, {&ui_winner, "ui_winner", "", CVAR_ROM},
     { &ui_chatCommands, "ui_chatCommands", "1", CVAR_ARCHIVE },
-    { &ui_clantag, "ui_clantag", "", CVAR_ARCHIVE }};
+    { &ui_clantag, "ui_clantag", "", CVAR_ARCHIVE },
+    { &in_availableJoysticks, "in_availableJoysticks", "", CVAR_ROM },
+    { &in_joystickCount, "in_joystickCount", "0", CVAR_ROM },
+    { &in_joystickNo, "in_joystickNo", "0", CVAR_ARCHIVE },
+    { &in_availableHaptics, "in_availableHaptics", "", CVAR_ROM },
+    { &in_hapticCount, "in_hapticCount", "0", CVAR_ROM },
+    { &in_hapticNo, "in_hapticNo", "0", CVAR_ARCHIVE }};
 
 static size_t cvarTableSize = ARRAY_LEN(cvarTable);
 
@@ -1476,7 +1490,7 @@ void UI_Refresh(int realtime)
 UI_Shutdown
 =================
 */
-void UI_Shutdown(void) { 
+void UI_Shutdown(void) {
   BG_Bucket_Destroy_All_Buckets( );
   trap_LAN_SaveCachedServers();
 }
@@ -5294,6 +5308,10 @@ static int UI_FeederCount(int feederID)
         else
             return uiInfo.numResolutions;
     }
+    else if (feederID == FEEDER_JOYSTICKS)
+        return in_joystickCount.integer;
+    else if (feederID == FEEDER_HAPTICS)
+        return in_hapticCount.integer;
     else if (feederID == FEEDER_TREMVOICECMD)
         return uiInfo.voiceCmdCount;
 
@@ -5604,6 +5622,46 @@ static const char *UI_FeederItemText(int feederID, int index, int column, qhandl
 
         return resolution;
     }
+    else if (feederID == FEEDER_JOYSTICKS)
+    {
+        static char joystick[MAX_STRING_CHARS];
+        char *joysticksCpy = in_availableJoysticks.string;
+        int num = 0;
+        int length = 0;
+
+        while (num < index)
+        {
+            while (*joysticksCpy && *joysticksCpy != '\n')
+                joysticksCpy++;
+            num++;
+            if (*joysticksCpy)
+                joysticksCpy++;
+        }
+        while (joysticksCpy[length] && joysticksCpy[length] != '\n' && length < MAX_STRING_CHARS)
+            length++;
+        Q_strncpyz(joystick, joysticksCpy, length + 1);
+        return joystick;
+    }
+    else if (feederID == FEEDER_HAPTICS)
+    {
+        static char feedback[MAX_STRING_CHARS];
+        char *hapticsCpy = in_availableHaptics.string;
+        int num = 0;
+        int length = 0;
+
+        while (num < index)
+        {
+            while (*hapticsCpy && *hapticsCpy != '\n')
+                hapticsCpy++;
+            num++;
+            if (*hapticsCpy)
+                hapticsCpy++;
+        }
+        while (hapticsCpy[length] && hapticsCpy[length] != '\n' && length < MAX_STRING_CHARS)
+            length++;
+        Q_strncpyz(feedback, hapticsCpy, length + 1);
+        return feedback;
+    }
     else if (feederID == FEEDER_TREMVOICECMD)
     {
         if (index >= 0 && index < uiInfo.voiceCmdCount)
@@ -5742,6 +5800,10 @@ static void UI_FeederSelection(int feederID, int index)
 
         uiInfo.resolutionIndex = index;
     }
+    else if (feederID == FEEDER_JOYSTICKS)
+        trap_Cvar_SetValue( "in_joystickNo", index );
+    else if (feederID == FEEDER_HAPTICS)
+        trap_Cvar_SetValue( "in_hapticNo", index );
     else if (feederID == FEEDER_TREMVOICECMD)
         uiInfo.voiceCmdIndex = index;
 }

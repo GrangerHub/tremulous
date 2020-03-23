@@ -118,9 +118,11 @@ enum
   FEEDER_TREMHUMANBUILD,       // human buildables
   FEEDER_IGNORE_LIST,          // ignored players
   FEEDER_HELP_LIST,            // help topics
-  FEEDER_RESOLUTIONS,           // display resolutions
-  FEEDER_TREMVOICECMD,      // voice commands
-  FEEDER_GITHUB_RELEASE           // latest update info
+  FEEDER_RESOLUTIONS,          // display resolutions
+  FEEDER_JOYSTICKS,            // joysticks / gamepad devices
+  FEEDER_HAPTICS,              // haptic feedback devices
+  FEEDER_TREMVOICECMD,         // voice commands
+  FEEDER_GITHUB_RELEASE        // latest update info
 };
 
 // display flags
