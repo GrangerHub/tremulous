@@ -59,8 +59,8 @@ static cvar_t *in_hapticIntensity 	= NULL;
 static cvar_t *in_hapticCount 			= NULL;
 static int hapticRumbleSupported 		= SDL_FALSE;
 
-static cvar_t *in_haptic          = NULL;
-static cvar_t *in_hapticNo        = NULL;
+static cvar_t *in_haptic          	= NULL;
+static cvar_t *in_hapticNo        	= NULL;
 
 static int vidRestartTime = 0;
 static int in_eventTime = 0;
