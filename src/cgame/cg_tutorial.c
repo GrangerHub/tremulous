@@ -144,8 +144,8 @@ static void CG_GetAllowedKeys( int *keys, int i )
     key = bindings[ i ].keys[ j ];
     if( key == K_NONE )
       break;
-    if ( mode == TUTO_ALL || (mode == TUTO_GAMEPAD && key >= K_PAD0_A)
-        || (mode == TUTO_MOUSE && key < K_PAD0_A) )
+    if ( mode == TUTO_ALL || (mode == TUTO_GAMEPAD && key >= K_FIRST_GAMEPAD_KEY && key < K_LAST_GAMEPAD_KEY)
+        || (mode == TUTO_MOUSE && key < K_FIRST_GAMEPAD_KEY) )
       keys[k++] = key;
   }
   while (k < 3)

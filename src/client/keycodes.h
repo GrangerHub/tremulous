@@ -309,4 +309,7 @@ typedef enum {
 // distinguished by or'ing in K_CHAR_FLAG (ugly)
 #define	K_CHAR_FLAG		1024
 
+#define K_FIRST_GAMEPAD_KEY K_PAD0_A
+#define K_LAST_GAMEPAD_KEY K_PAD0_RIGHTTRIGGER
+
 #endif

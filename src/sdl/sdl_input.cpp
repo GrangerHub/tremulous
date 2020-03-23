@@ -469,8 +469,14 @@ static void IN_DeactivateMouse( void )
 	}
 }
 
+/*
+===============
+Joystick and Gamepad
+===============
+*/
+
 // We translate axes movement into keypresses
-static int joy_keys[16] = {
+static const int joyKeys[16] = {
 	K_LEFTARROW, K_RIGHTARROW,
 	K_UPARROW, K_DOWNARROW,
 	K_JOY17, K_JOY18,
@@ -481,9 +487,11 @@ static int joy_keys[16] = {
 	K_JOY27, K_JOY28
 };
 
+#define joyKeysCount ARRAY_LEN(joyKeys)
+
 // translate hat events into keypresses
 // the 4 highest buttons are used for the first hat ...
-static int hat_keys[16] = {
+static const int hatKeys[16] = {
 	K_JOY29, K_JOY30,
 	K_JOY31, K_JOY32,
 	K_JOY25, K_JOY26,
@@ -494,54 +502,112 @@ static int hat_keys[16] = {
 	K_JOY19, K_JOY20
 };
 
+#define hatKeysCount ARRAY_LEN(hatKeys)
+
+// Mapping analogs input as keys, groupped by sign
+static const int negKeys[SDL_CONTROLLER_AXIS_MAX] = {
+  K_PAD0_LEFTSTICK_LEFT,
+  K_PAD0_LEFTSTICK_UP,
+  K_PAD0_RIGHTSTICK_LEFT,
+  K_PAD0_RIGHTSTICK_UP
+};
+static const int posKeys[SDL_CONTROLLER_AXIS_MAX] = {
+  K_PAD0_LEFTSTICK_RIGHT,
+  K_PAD0_LEFTSTICK_DOWN,
+  K_PAD0_RIGHTSTICK_RIGHT,
+  K_PAD0_RIGHTSTICK_DOWN,
+  K_PAD0_LEFTTRIGGER,
+  K_PAD0_RIGHTTRIGGER
+};
+
 
 struct
 {
-	bool buttons[SDL_CONTROLLER_BUTTON_MAX + 1]; // +1 because old max was 16, current SDL_CONTROLLER_BUTTON_MAX is 15
-	unsigned int oldaxes;
-	int oldaaxes[MAX_JOYSTICK_AXIS];
-	unsigned int oldhats;
+	bool oldButtons[SDL_CONTROLLER_BUTTON_MAX + 1]; // +1 because old max was 16, current SDL_CONTROLLER_BUTTON_MAX is 15
+	unsigned int oldAxes;
+	int oldAxis[MAX_JOYSTICK_AXIS];
+  int oldTranslatedAxis[MAX_JOYSTICK_AXIS];
+	unsigned int oldHats;
 } stick_state;
+
+static bool IN_GamepadMove( bool isCaught );
+static void IN_JoyMove( bool isCaught );
+
+
+/*
+===============
+IN_GetGamecontrollerAxis
+===============
+*/
+static int IN_GetGamecontrollerAxis(int axis)
+{
+	int value;
+	float croppedValue;
+
+	if (!gamepad)
+		return 0;
+
+	value = SDL_GameControllerGetAxis(gamepad, (SDL_GameControllerAxis)(SDL_CONTROLLER_AXIS_LEFTX + axis));
+
+	// Smoothly ramp from dead zone to maximum value
+	croppedValue = ((float)abs(value) / 32767.0f - in_joystickThreshold->value) / (1.0f - in_joystickThreshold->value);
+
+	if (croppedValue < 0.0f)
+		croppedValue = 0.0f;
+
+	return (int)(32767 * ((value < 0) ? -croppedValue : croppedValue));
+}
+
+
+/*
+===============
+IN_GetJoycontrollerAxis
+===============
+*/
+static int IN_GetJoycontrollerAxis(int axis)
+{
+	int value;
+	float croppedValue;
+
+	if (!stick)
+		return 0;
+
+	value = SDL_JoystickGetAxis(stick, axis);
+	// Smoothly ramp from dead zone to maximum value
+	croppedValue = ((float)abs(value) / 32767.0f - in_joystickThreshold->value) / (1.0f - in_joystickThreshold->value);
+
+	if (croppedValue < 0.0f)
+		croppedValue = 0.0f;
+
+	return (int)(32767 * ((value < 0) ? -croppedValue : croppedValue));
+}
 
 
 /*
 ===============
 IN_ResetJoystickInputs
+
+Sometime the controller (ie PS3 Dualshock) are "not connected"
+since their aren't powered on (the PS button had to be pressed)
+while GetAttached return true
+So we ignore the initial state of the gamepad and wait for any motion
 ===============
 */
 static void IN_ResetJoystickInputs( void )
 {
-	int i, total;
+	int i;
 
-	for (i = 0; i < 16; i++)
-		Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[i], false, 0, NULL );
-	for (i = K_PAD0_A; i <= K_PAD0_RIGHTTRIGGER; i++)
+	// So we begin by initializing "old values"
+	if (!IN_GamepadMove( false ))
+		IN_JoyMove( false );
+
+	// And in all case, reset any keys or axis
+	for (i = 0; i < hatKeysCount; i++)
+		Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[i], false, 0, NULL );
+	for (i = K_FIRST_GAMEPAD_KEY; i <= K_LAST_GAMEPAD_KEY; i++)
 		Com_QueueEvent(in_eventTime, SE_KEY, i, false, 0, NULL );
 	for (i = 0; i < MAX_JOYSTICK_AXIS; i++)
 		Com_QueueEvent(in_eventTime, SE_JOYSTICK_AXIS, i, 0, 0, NULL);
-
-
-	// Sometime the controller (IE PS3 Dualshock) are "not connected"
-	// since their aren't powered on (the PS button had to be pressed)
-	// while GetAttached return true
-	// So we ignore the initial state of the gamepad and wait for any motion
-	if (gamepad && SDL_GameControllerGetAttached(gamepad) == SDL_TRUE)
-	{
-		for (i = 0; i < SDL_CONTROLLER_AXIS_MAX; i++)
-			stick_state.oldaaxes[i] =
-					SDL_GameControllerGetAxis(gamepad, (SDL_GameControllerAxis)(SDL_CONTROLLER_AXIS_LEFTX + i));
-	}
-	if (stick && SDL_JoystickGetAttached(stick) == SDL_TRUE)
-	{
-		total = SDL_JoystickNumAxes(stick);
-		if (total > 0)
-		{
-			if (total > MAX_JOYSTICK_AXIS)
-				total = MAX_JOYSTICK_AXIS;
-			for (i = 0; i < total; i++)
-				stick_state.oldaaxes[i] = SDL_JoystickGetAxis(stick, i);
-		}
-	}
 }
 
 
@@ -554,17 +620,23 @@ static void IN_InitJoystick( void )
 {
 	int i = 0;
 	int total = 0;
-	char buf[16384] = "";
+	char buf[2048] = "";
 
 	if (gamepad)
 		SDL_GameControllerClose(gamepad);
 
-	if (stick != NULL)
+	if (stick)
 		SDL_JoystickClose(stick);
 
 	stick = NULL;
 	gamepad = NULL;
 	memset(&stick_state, '\0', sizeof (stick_state));
+
+	if( !in_joystick->integer )
+	{
+		Com_DPrintf( "Joystick is disabled.\n" );
+		return;
+	}
 
 	// SDL 2.0.4 requires SDL_INIT_JOYSTICK to be initialized separately from
 	// SDL_INIT_GAMECONTROLLER for SDL_JoystickOpen() to work correctly,
@@ -598,33 +670,25 @@ static void IN_InitJoystick( void )
 	// Print list and build cvar to allow ui to select joystick.
 	for (i = 0; i < total; i++)
 	{
+		if (i)
+			Q_strcat(buf, sizeof(buf), "\n");
 		Q_strcat(buf, sizeof(buf), SDL_JoystickNameForIndex(i));
-		Q_strcat(buf, sizeof(buf), "\n");
 	}
 
-	Cvar_Get( "in_availableJoysticks", buf, CVAR_ROM );
+	Cvar_Set( "in_availableJoysticks", buf );
 	Cvar_SetValue( "in_joystickCount", total );
 
-	if( !in_joystick->integer ) {
-		Com_DPrintf( "Joystick is not active.\n" );
-		SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
-		return;
-	}
-
-	in_joystickNo = Cvar_Get( "in_joystickNo", "0", CVAR_ARCHIVE );
-	if( in_joystickNo->integer < 0 || in_joystickNo->integer >= total )
+	if ( in_joystickNo->integer < 0 || in_joystickNo->integer >= total )
 		Cvar_Set( "in_joystickNo", "0" );
 
-	in_joystickUseAnalog = Cvar_Get( "in_joystickUseAnalog", "1", CVAR_ARCHIVE );
 
-	stick = SDL_JoystickOpen( in_joystickNo->integer );
-
-	if (stick == NULL) {
+	if ( !(stick = SDL_JoystickOpen(in_joystickNo->integer)) )
+	{
 		Com_DPrintf( "No joystick opened: %s\n", SDL_GetError() );
 		return;
 	}
 
-	if (SDL_IsGameController(in_joystickNo->integer))
+	if ( SDL_IsGameController(in_joystickNo->integer) )
 		gamepad = SDL_GameControllerOpen(in_joystickNo->integer);
 
 	Com_DPrintf( "Joystick %d opened\n", in_joystickNo->integer );
@@ -652,7 +716,7 @@ static void IN_InitHaptic( void )
 {
 	int i = 0;
 	int total = 0;
-	char buf[16384] = "";
+	char buf[2048] = "";
 
 	hapticRumbleSupported = SDL_FALSE;
 
@@ -660,6 +724,12 @@ static void IN_InitHaptic( void )
 		SDL_HapticClose(haptic);
 
 	haptic = NULL;
+
+	if( !in_haptic->integer )
+	{
+		Com_DPrintf( "Haptic is disabled.\n" );
+		return;
+	}
 
 	if (!SDL_WasInit(SDL_INIT_HAPTIC))
 	{
@@ -678,31 +748,23 @@ static void IN_InitHaptic( void )
 	// Print list and build cvar to allow ui to select joystick.
 	for (i = 0; i < total; i++)
 	{
+		if (i)
+			Q_strcat(buf, sizeof(buf), "\n");
 		Q_strcat(buf, sizeof(buf), SDL_HapticName(i));
-		Q_strcat(buf, sizeof(buf), "\n");
 	}
 
-	Cvar_Get( "in_availableHaptics", buf, CVAR_ROM );
+	Cvar_Set( "in_availableHaptics", buf );
 
-	if( !in_haptic->integer ) {
-		Com_DPrintf( "Haptic is not active.\n" );
-		SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
-		return;
-	}
-
-	in_hapticNo = Cvar_Get( "in_haptickNo", "0", CVAR_ARCHIVE );
 	if( in_hapticNo->integer < 0 || in_hapticNo->integer >= total )
 		Cvar_Set( "in_hapticNo", "0" );
 
-	haptic = SDL_HapticOpen( in_hapticNo->integer );
-
-	if (haptic == NULL) {
+	if ( !(haptic = SDL_HapticOpen( in_hapticNo->integer )) )
+	{
 		Com_DPrintf( "No haptic opened: %s\n", SDL_GetError() );
 		return;
 	}
 
-	hapticRumbleSupported = SDL_HapticRumbleSupported( haptic );
-	if (hapticRumbleSupported == SDL_TRUE)
+	if ( (hapticRumbleSupported = SDL_HapticRumbleSupported( haptic )) == SDL_TRUE )
 	{
 		if ( SDL_HapticRumbleInit( haptic ) != 0 )
 		{
@@ -710,11 +772,16 @@ static void IN_InitHaptic( void )
 			SDL_HapticClose( haptic );
 			haptic = NULL;
 			hapticRumbleSupported = SDL_FALSE;
+			return;
 		}
 	}
 	else if (hapticRumbleSupported < 0)
 	{
 		Com_Printf( "Error when querying haptic's rumble effect: %s\n", SDL_GetError() );
+		SDL_HapticClose( haptic );
+		haptic = NULL;
+		hapticRumbleSupported = SDL_FALSE;
+		return;
 	}
 
 
@@ -737,6 +804,8 @@ static void IN_ShutdownJoystick( void )
 	if ( !SDL_WasInit( SDL_INIT_JOYSTICK ) )
 		return;
 
+	IN_ResetJoystickInputs();
+
 	if (gamepad)
 	{
 		SDL_GameControllerClose(gamepad);
@@ -751,8 +820,6 @@ static void IN_ShutdownJoystick( void )
 
 	SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
 	SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
-
-	IN_ResetJoystickInputs();
 }
 
 /*
@@ -776,10 +843,13 @@ static void IN_ShutdownHaptic( void )
 	SDL_QuitSubSystem(SDL_INIT_HAPTIC);
 }
 
+/*
+===============
+IN_HapticFeedback
+===============
+*/
 void IN_HapticFeedback( float strength, uint32_t length )
 {
-	in_hapticIntensity = Cvar_Get( "in_hapticIntensity", "0.5", CVAR_ARCHIVE );
-
 	if (strength > 1)
 		strength = 1;
 
@@ -787,7 +857,12 @@ void IN_HapticFeedback( float strength, uint32_t length )
 		SDL_HapticRumblePlay( haptic, strength * in_hapticIntensity->value, length );
 }
 
-static bool KeyToAxisAndSign(int keynum, int *outAxis, int *outSign)
+/*
+===============
+IN_KeyToDirection
+===============
+*/
+static bool IN_KeyToDirection(int keynum, int *outAxis, int *outSign)
 {
 	if (!keynum)
 		return false;
@@ -861,8 +936,12 @@ IN_GamepadMove
 static bool IN_GamepadMove( bool isCaught )
 {
 	int i;
-	int translatedAxes[MAX_JOYSTICK_AXIS];
-	bool translatedAxesSet[MAX_JOYSTICK_AXIS];
+	int translatedAxis[MAX_JOYSTICK_AXIS] = {};
+	bool translatedAxisSet[MAX_JOYSTICK_AXIS] = {};
+	bool posAnalog, negAnalog;
+	int negKey, posKey;
+	int posAxis, posSign, negAxis, negSign;
+	int axisValue, oldAxisValue;
 
 	if (!gamepad || SDL_GameControllerGetAttached(gamepad) == SDL_FALSE)
 		return false;
@@ -873,113 +952,93 @@ static bool IN_GamepadMove( bool isCaught )
 	for (i = 0; i < SDL_CONTROLLER_BUTTON_MAX; i++)
 	{
 		bool pressed = SDL_GameControllerGetButton(gamepad, (SDL_GameControllerButton)(SDL_CONTROLLER_BUTTON_A + i));
-		if (pressed != stick_state.buttons[i])
+		if (pressed != stick_state.oldButtons[i])
 		{
 			Com_QueueEvent(in_eventTime, SE_KEY, K_PAD0_A + i, pressed, 0, NULL);
-			stick_state.buttons[i] = pressed;
-		}
-	}
-
-	// must defer translated axes until all real axes are processed
-	// must be done this way to prevent a later mapped axis from zeroing out a previous one
-	if (in_joystickUseAnalog->integer && !isCaught)
-	{
-		for (i = 0; i < MAX_JOYSTICK_AXIS; i++)
-		{
-			translatedAxes[i] = 0;
-			translatedAxesSet[i] = false;
+			stick_state.oldButtons[i] = pressed;
 		}
 	}
 
 	// check axes
 	for (i = 0; i < SDL_CONTROLLER_AXIS_MAX; i++)
 	{
-		int axis = SDL_GameControllerGetAxis(gamepad, (SDL_GameControllerAxis)(SDL_CONTROLLER_AXIS_LEFTX + i));
-		int oldAxis = stick_state.oldaaxes[i];
+		posKey = posKeys[i];
+		negKey = negKeys[i];
+		axisValue = IN_GetGamecontrollerAxis(i);
+		oldAxisValue = stick_state.oldAxis[i];
 
-		// Smoothly ramp from dead zone to maximum value
-		float f = ((float)abs(axis) / 32767.0f - in_joystickThreshold->value) / (1.0f - in_joystickThreshold->value);
-
-		if (f < 0.0f)
-			f = 0.0f;
-
-		axis = (int)(32767 * ((axis < 0) ? -f : f));
-
-		if (axis != oldAxis)
+		if (in_joystickUseAnalog->integer && !isCaught)
 		{
-			const int negMap[SDL_CONTROLLER_AXIS_MAX] = { K_PAD0_LEFTSTICK_LEFT,  K_PAD0_LEFTSTICK_UP,   K_PAD0_RIGHTSTICK_LEFT,  K_PAD0_RIGHTSTICK_UP, 0, 0 };
-			const int posMap[SDL_CONTROLLER_AXIS_MAX] = { K_PAD0_LEFTSTICK_RIGHT, K_PAD0_LEFTSTICK_DOWN, K_PAD0_RIGHTSTICK_RIGHT, K_PAD0_RIGHTSTICK_DOWN, K_PAD0_LEFTTRIGGER, K_PAD0_RIGHTTRIGGER };
+			posAxis = posSign = negAxis = negSign = 0;
 
-			bool posAnalog = false, negAnalog = false;
-			int negKey = negMap[i];
-			int posKey = posMap[i];
+			// get axis and axis signs for keys if available
+			posAnalog = IN_KeyToDirection(posKey, &posAxis, &posSign);
+			negAnalog = IN_KeyToDirection(negKey, &negAxis, &negSign);
 
-			if (in_joystickUseAnalog->integer && !isCaught)
+			// positive to negative/neutral -> keyup if axis hasn't yet been set
+			if (posAnalog && !translatedAxisSet[posAxis] && oldAxisValue > 0 && axisValue <= 0)
 			{
-				int posAxis = 0, posSign = 0, negAxis = 0, negSign = 0;
-
-				// get axes and axes signs for keys if available
-				posAnalog = KeyToAxisAndSign(posKey, &posAxis, &posSign);
-				negAnalog = KeyToAxisAndSign(negKey, &negAxis, &negSign);
-
-				// positive to negative/neutral -> keyup if axis hasn't yet been set
-				if (posAnalog && !translatedAxesSet[posAxis] && oldAxis > 0 && axis <= 0)
-				{
-					translatedAxes[posAxis] = 0;
-					translatedAxesSet[posAxis] = true;
-				}
-
-				// negative to positive/neutral -> keyup if axis hasn't yet been set
-				if (negAnalog && !translatedAxesSet[negAxis] && oldAxis < 0 && axis >= 0)
-				{
-					translatedAxes[negAxis] = 0;
-					translatedAxesSet[negAxis] = true;
-				}
-
-				// negative/neutral to positive -> keydown
-				if (posAnalog && axis > 0)
-				{
-					translatedAxes[posAxis] = axis * posSign;
-					translatedAxesSet[posAxis] = true;
-				}
-
-				// positive/neutral to negative -> keydown
-				if (negAnalog && axis < 0)
-				{
-					translatedAxes[negAxis] = -axis * negSign;
-					translatedAxesSet[negAxis] = true;
-				}
+				translatedAxis[posAxis] = 0;
+				translatedAxisSet[posAxis] = true;
 			}
 
-			// keyups first so they get overridden by keydowns later
+			// negative to positive/neutral -> keyup if axis hasn't yet been set
+			if (negAnalog && !translatedAxisSet[negAxis] && oldAxisValue < 0 && axisValue >= 0)
+			{
+				translatedAxis[negAxis] = 0;
+				translatedAxisSet[negAxis] = true;
+			}
 
+			// negative/neutral to positive -> keydown
+			if (posAnalog && axisValue > 0)
+			{
+				translatedAxis[posAxis] += axisValue * posSign;
+				translatedAxisSet[posAxis] = true;
+			}
+
+			// positive/neutral to negative -> keydown
+			if (negAnalog && axisValue < 0)
+			{
+				translatedAxis[negAxis] += -axisValue * negSign;
+				translatedAxisSet[negAxis] = true;
+			}
+		}
+
+		// If a direction is not used, use it as button
+		// keyups first so they get overridden by keydowns later
+		if (oldAxisValue != axisValue)
+		{
 			// positive to negative/neutral -> keyup
-			if (!posAnalog && posKey && oldAxis > 0 && axis <= 0)
+			if (!posAnalog && posKey && oldAxisValue > 0 && axisValue <= 0)
 				Com_QueueEvent(in_eventTime, SE_KEY, posKey, false, 0, NULL);
 
 			// negative to positive/neutral -> keyup
-			if (!negAnalog && negKey && oldAxis < 0 && axis >= 0)
+			if (!negAnalog && negKey && oldAxisValue < 0 && axisValue >= 0)
 				Com_QueueEvent(in_eventTime, SE_KEY, negKey, false, 0, NULL);
 
 			// negative/neutral to positive -> keydown
-			if (!posAnalog && posKey && oldAxis <= 0 && axis > 0)
+			if (!posAnalog && posKey && oldAxisValue <= 0 && axisValue > 0)
 				Com_QueueEvent(in_eventTime, SE_KEY, posKey, true, 0, NULL);
 
 			// positive/neutral to negative -> keydown
-			if (!negAnalog && negKey && oldAxis >= 0 && axis < 0)
+			if (!negAnalog && negKey && oldAxisValue >= 0 && axisValue < 0)
 				Com_QueueEvent(in_eventTime, SE_KEY, negKey, true, 0, NULL);
 
-			stick_state.oldaaxes[i] = axis;
+
+			stick_state.oldAxis[i] = axisValue;
 		}
 	}
 
-	// set translated axes
+	// set translated axis
 	if (in_joystickUseAnalog->integer && !isCaught)
 	{
 		for (i = 0; i < MAX_JOYSTICK_AXIS; i++)
 		{
-			if (translatedAxesSet[i])
-				Com_QueueEvent(in_eventTime, SE_JOYSTICK_AXIS, i, translatedAxes[i], 0, NULL);
+			if (translatedAxisSet[i] && stick_state.oldTranslatedAxis[i] != translatedAxis[i])
+			{
+				Com_QueueEvent(in_eventTime, SE_JOYSTICK_AXIS, i, translatedAxis[i], 0, NULL);
+				stick_state.oldTranslatedAxis[i] = translatedAxis[i];
+			}
 		}
 	}
 
@@ -1034,15 +1093,15 @@ static void IN_JoyMove( bool isCaught )
 	total = SDL_JoystickNumButtons(stick);
 	if (total > 0)
 	{
-		if (total > ARRAY_LEN(stick_state.buttons))
-			total = ARRAY_LEN(stick_state.buttons);
+		if (total > ARRAY_LEN(stick_state.oldButtons))
+			total = ARRAY_LEN(stick_state.oldButtons);
 		for (i = 0; i < total; i++)
 		{
 			bool pressed = (SDL_JoystickGetButton(stick, i) != 0);
-			if (pressed != stick_state.buttons[i])
+			if (pressed != stick_state.oldButtons[i])
 			{
 				Com_QueueEvent(in_eventTime, SE_KEY, K_JOY1 + i, pressed, 0, NULL );
-				stick_state.buttons[i] = pressed;
+				stick_state.oldButtons[i] = pressed;
 			}
 		}
 	}
@@ -1059,39 +1118,39 @@ static void IN_JoyMove( bool isCaught )
 	}
 
 	// update hat state
-	if (hats != stick_state.oldhats)
+	if (hats != stick_state.oldHats)
 	{
 		for( i = 0; i < 4; i++ ) {
-			if( ((Uint8 *)&hats)[i] != ((Uint8 *)&stick_state.oldhats)[i] ) {
+			if( ((Uint8 *)&hats)[i] != ((Uint8 *)&stick_state.oldHats)[i] ) {
 				// release event
-				switch( ((Uint8 *)&stick_state.oldhats)[i] ) {
+				switch( ((Uint8 *)&stick_state.oldHats)[i] ) {
 					case SDL_HAT_UP:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 0], false, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 0], false, 0, NULL );
 						break;
 					case SDL_HAT_RIGHT:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 1], false, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 1], false, 0, NULL );
 						break;
 					case SDL_HAT_DOWN:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 2], false, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 2], false, 0, NULL );
 						break;
 					case SDL_HAT_LEFT:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 3], false, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 3], false, 0, NULL );
 						break;
 					case SDL_HAT_RIGHTUP:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 0], false, 0, NULL );
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 1], false, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 0], false, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 1], false, 0, NULL );
 						break;
 					case SDL_HAT_RIGHTDOWN:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 2], false, 0, NULL );
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 1], false, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 2], false, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 1], false, 0, NULL );
 						break;
 					case SDL_HAT_LEFTUP:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 0], false, 0, NULL );
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 3], false, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 0], false, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 3], false, 0, NULL );
 						break;
 					case SDL_HAT_LEFTDOWN:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 2], false, 0, NULL );
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 3], false, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 2], false, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 3], false, 0, NULL );
 						break;
 					default:
 						break;
@@ -1099,32 +1158,32 @@ static void IN_JoyMove( bool isCaught )
 				// press event
 				switch( ((Uint8 *)&hats)[i] ) {
 					case SDL_HAT_UP:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 0], true, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 0], true, 0, NULL );
 						break;
 					case SDL_HAT_RIGHT:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 1], true, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 1], true, 0, NULL );
 						break;
 					case SDL_HAT_DOWN:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 2], true, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 2], true, 0, NULL );
 						break;
 					case SDL_HAT_LEFT:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 3], true, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 3], true, 0, NULL );
 						break;
 					case SDL_HAT_RIGHTUP:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 0], true, 0, NULL );
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 1], true, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 0], true, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 1], true, 0, NULL );
 						break;
 					case SDL_HAT_RIGHTDOWN:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 2], true, 0, NULL );
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 1], true, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 2], true, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 1], true, 0, NULL );
 						break;
 					case SDL_HAT_LEFTUP:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 0], true, 0, NULL );
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 3], true, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 0], true, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 3], true, 0, NULL );
 						break;
 					case SDL_HAT_LEFTDOWN:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 2], true, 0, NULL );
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4*i + 3], true, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 2], true, 0, NULL );
+						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 3], true, 0, NULL );
 						break;
 					default:
 						break;
@@ -1134,7 +1193,7 @@ static void IN_JoyMove( bool isCaught )
 	}
 
 	// save hat state
-	stick_state.oldhats = hats;
+	stick_state.oldHats = hats;
 
 	// finally, look at the axes...
 	total = SDL_JoystickNumAxes(stick);
@@ -1145,15 +1204,12 @@ static void IN_JoyMove( bool isCaught )
 			if (total > MAX_JOYSTICK_AXIS) total = MAX_JOYSTICK_AXIS;
 			for (i = 0; i < total; i++)
 			{
-				Sint16 axis = SDL_JoystickGetAxis(stick, i);
-				float f = ( (float) abs(axis) ) / 32767.0f;
+				int axisValue = IN_GetJoycontrollerAxis(i);
 
-				if( f < in_joystickThreshold->value ) axis = 0;
-
-				if ( axis != stick_state.oldaaxes[i] )
+				if ( axisValue != stick_state.oldAxis[i] )
 				{
-					Com_QueueEvent(in_eventTime, SE_JOYSTICK_AXIS, i, axis, 0, NULL );
-					stick_state.oldaaxes[i] = axis;
+					Com_QueueEvent(in_eventTime, SE_JOYSTICK_AXIS, i, axisValue, 0, NULL );
+					stick_state.oldAxis[i] = axisValue;
 				}
 			}
 		}
@@ -1162,11 +1218,11 @@ static void IN_JoyMove( bool isCaught )
 			if (total > 16) total = 16;
 			for (i = 0; i < total; i++)
 			{
-				Sint16 axis = SDL_JoystickGetAxis(stick, i);
-				float f = ( (float) axis ) / 32767.0f;
-				if( f < -in_joystickThreshold->value ) {
+				int axisValue = SDL_JoystickGetAxis(stick, i);
+				float axisValueRatio = ( (float) axisValue ) / 32767.0f;
+				if( axisValueRatio < -in_joystickThreshold->value ) {
 					axes |= ( 1 << ( i * 2 ) );
-				} else if( f > in_joystickThreshold->value ) {
+				} else if( axisValueRatio > in_joystickThreshold->value ) {
 					axes |= ( 1 << ( ( i * 2 ) + 1 ) );
 				}
 			}
@@ -1174,21 +1230,21 @@ static void IN_JoyMove( bool isCaught )
 	}
 
 	/* Time to update axes state based on old vs. new. */
-	if (axes != stick_state.oldaxes)
+	if (axes != stick_state.oldAxes)
 	{
 		for( i = 0; i < 16; i++ ) {
-			if( ( axes & ( 1 << i ) ) && !( stick_state.oldaxes & ( 1 << i ) ) ) {
-				Com_QueueEvent(in_eventTime, SE_KEY, joy_keys[i], true, 0, NULL );
+			if( ( axes & ( 1 << i ) ) && !( stick_state.oldAxes & ( 1 << i ) ) ) {
+				Com_QueueEvent(in_eventTime, SE_KEY, joyKeys[i], true, 0, NULL );
 			}
 
-			if( !( axes & ( 1 << i ) ) && ( stick_state.oldaxes & ( 1 << i ) ) ) {
-				Com_QueueEvent(in_eventTime, SE_KEY, joy_keys[i], false, 0, NULL );
+			if( !( axes & ( 1 << i ) ) && ( stick_state.oldAxes & ( 1 << i ) ) ) {
+				Com_QueueEvent(in_eventTime, SE_KEY, joyKeys[i], false, 0, NULL );
 			}
 		}
 	}
 
 	/* Save for future generations. */
-	stick_state.oldaxes = axes;
+	stick_state.oldAxes = axes;
 }
 
 /*
@@ -1473,9 +1529,13 @@ void IN_Init( void *windowData )
 	in_nograb = Cvar_Get( "in_nograb", "0", CVAR_ARCHIVE );
 
 	in_joystick = Cvar_Get( "in_joystick", "1", CVAR_ARCHIVE|CVAR_LATCH );
-	in_joystickCount = Cvar_Get( "in_joystickCount", "0", CVAR_ROM );
+	in_joystickNo = Cvar_Get( "in_joystickNo", "0", CVAR_ARCHIVE );
+	in_joystickUseAnalog = Cvar_Get( "in_joystickUseAnalog", "1", CVAR_ARCHIVE );
 	in_joystickThreshold = Cvar_Get( "joy_threshold", "0.02", CVAR_ARCHIVE );
+	in_joystickCount = Cvar_Get( "in_joystickCount", "0", CVAR_ROM );
 	in_haptic = Cvar_Get( "in_haptic", "1", CVAR_ARCHIVE|CVAR_LATCH );
+	in_hapticNo = Cvar_Get( "in_haptickNo", "0", CVAR_ARCHIVE );
+	in_hapticIntensity = Cvar_Get( "in_hapticIntensity", "0.5", CVAR_ARCHIVE );
 
 	SDL_StartTextInput( );
 
