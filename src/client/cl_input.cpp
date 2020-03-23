@@ -65,11 +65,11 @@ bool in_mlooking;
 static void IN_CenterView(void)
 {
     cl.viewangles[PITCH] = -SHORT2ANGLE( (clc.netchan.alternateProtocol == 2
-                                            ? cl.snap.alternatePs.delta_angles 
+                                            ? cl.snap.alternatePs.delta_angles
                                             : cl.snap.ps.delta_angles)[PITCH] );
 }
 
-static void IN_MLookDown(void) 
+static void IN_MLookDown(void)
 {
     in_mlooking = true;
 }
@@ -358,15 +358,9 @@ static void CL_KeyMove(usercmd_t *cmd)
     // even during acceleration and develeration
     //
     if (in_speed.active ^ cl_run->integer)
-    {
         movespeed = 127;
-        cmd->buttons &= ~BUTTON_WALKING;
-    }
     else
-    {
-        cmd->buttons |= BUTTON_WALKING;
         movespeed = 64;
-    }
 
     forward = 0;
     side = 0;
@@ -431,55 +425,98 @@ void CL_JoystickEvent(int axis, int value, int time)
 
 /*
 =================
+CL_SimpleJoystickDeadzone
+
+Apply a simple deadzone
+=================
+*/
+static float CL_SimpleJoystickDeadzone(float input)
+{
+  float cropped;
+
+  cropped = ((fabs(input) / 32767.0f) - j_threshold->value)
+      / (1.0f - j_threshold->value);
+
+  if (cropped < 0.0f)
+    cropped = 0.0f;
+  if (cropped > 1.0f)
+    cropped = 1.0f;
+
+  return (32767.0f * ((input < 0) ? -cropped : cropped));
+}
+
+/*
+=================
+CL_AdjustJoystickToValue
+
+Scale input value according to thresholds and clamp it
+=================
+*/
+static float CL_AdjustJoystickToValue(float input, float ceil)
+{
+  float cropped;
+
+  cropped = ((fabs(input) / 32767.0f) - j_threshold->value)
+      / (1.0f - j_threshold->value - j_outMovmentThreshold->value);
+
+  if (cropped < 0.0f)
+    cropped = 0.0f;
+  if (cropped > 1.0f)
+    cropped = 1.0f;
+
+  return (ceil * ((input < 0) ? -cropped : cropped));
+}
+
+/*
+=================
 CL_JoystickMove
 =================
 */
 static void CL_JoystickMove(usercmd_t *cmd)
 {
-    float anglespeed;
+    float movespeed, anglespeed;
 
-    float yaw = j_yaw->value * cl.joystickAxis[j_yaw_axis->integer];
-    float right = j_side->value * cl.joystickAxis[j_side_axis->integer];
-    float forward = j_forward->value * cl.joystickAxis[j_forward_axis->integer];
-    float pitch = j_pitch->value * cl.joystickAxis[j_pitch_axis->integer];
-    float up = j_up->value * cl.joystickAxis[j_up_axis->integer];
-
-    if (!(in_speed.active ^ cl_run->integer))
-    {
-        cmd->buttons |= BUTTON_WALKING;
-    }
+    float yaw = cl.joystickAxis[j_yaw_axis->integer];
+    float pitch = cl.joystickAxis[j_pitch_axis->integer];
+    float right = cl.joystickAxis[j_side_axis->integer];
+    float forward = cl.joystickAxis[j_forward_axis->integer];
+    float up = cl.joystickAxis[j_up_axis->integer];
 
     if (in_speed.active)
-    {
         anglespeed = 0.001 * cls.frametime * cl_anglespeedkey->value;
-    }
     else
-    {
         anglespeed = 0.001 * cls.frametime;
-    }
 
-    if (!in_strafe.active)
+    if (in_speed.active ^ cl_run->integer)
+      movespeed = 127;
+    else
+      movespeed = 64;
+
+    if (in_strafe.active)
     {
-        cl.viewangles[YAW] += anglespeed * yaw;
-        cmd->rightmove = ClampChar(cmd->rightmove + (int)right);
+      cl.viewangles[YAW] += anglespeed * CL_SimpleJoystickDeadzone(right) * j_yaw->value;
+      right = CL_AdjustJoystickToValue(yaw, movespeed);
     }
     else
     {
-        cl.viewangles[YAW] += anglespeed * right;
-        cmd->rightmove = ClampChar(cmd->rightmove + (int)yaw);
+      cl.viewangles[YAW] += anglespeed * CL_SimpleJoystickDeadzone(yaw) * j_yaw->value;
+      right = CL_AdjustJoystickToValue(right, movespeed);
     }
+    cmd->rightmove = ClampChar(cmd->rightmove + (int)right);
 
-    if (in_mlooking)
+    if ((in_mlooking || cl_freelook->integer) && !in_strafe.active)
     {
-        cl.viewangles[PITCH] += anglespeed * forward;
-        cmd->forwardmove = ClampChar(cmd->forwardmove + (int)pitch);
+      cl.viewangles[PITCH] += anglespeed * CL_SimpleJoystickDeadzone(pitch) * j_pitch->value;
+      forward = CL_AdjustJoystickToValue(forward, movespeed);
     }
     else
     {
-        cl.viewangles[PITCH] += anglespeed * pitch;
-        cmd->forwardmove = ClampChar(cmd->forwardmove + (int)forward);
+      cl.viewangles[PITCH] += anglespeed * CL_SimpleJoystickDeadzone(-forward) * j_pitch->value;
+      forward = CL_AdjustJoystickToValue(-pitch, movespeed);
     }
+    cmd->forwardmove = ClampChar(cmd->forwardmove + (int)forward);
 
+    up = CL_AdjustJoystickToValue(up, movespeed);
     cmd->upmove = ClampChar(cmd->upmove + (int)up);
 }
 
@@ -615,6 +652,25 @@ CL_FinishMove
 static void CL_FinishMove(usercmd_t *cmd)
 {
     int i;
+    int speed;
+
+    // If the user want to walk, correct some possible previous calculation errors
+    // Note: Final speed will be sum of both composant squared
+    if (!(in_speed.active ^ cl_run->integer))
+    {
+      if (cmd->forwardmove > 64)
+        cmd->forwardmove = 64;
+      if (cmd->forwardmove < -64)
+        cmd->forwardmove = -64;
+      if (cmd->rightmove > 64)
+        cmd->rightmove = 64;
+      if (cmd->rightmove < -64)
+        cmd->rightmove = -64;
+    }
+
+    // Walking or running ?
+    if( abs( cmd->forwardmove ) > 64 || abs( cmd->rightmove ) > 64 )
+        cmd->buttons &= ~BUTTON_WALKING;
 
     // copy the state that the cgame is currently sending
     cmd->weapon = cl.cgameUserCmdValue;
@@ -646,6 +702,11 @@ static usercmd_t CL_CreateCmd(void)
 
     ::memset(&cmd, 0, sizeof(cmd));
 
+    // Walking by default
+    // It will be determined if we run or not later
+    // depending of the speed
+    cmd.buttons |= BUTTON_WALKING;
+
     CL_CmdButtons(&cmd);
 
     // get basic movement from keyboard
@@ -667,7 +728,7 @@ static usercmd_t CL_CreateCmd(void)
         cl.viewangles[PITCH] = oldAngles[PITCH] - 90;
     }
 
-    // store out the final values
+    // adjust max walking speed (and add according flag) and store out the final values
     CL_FinishMove(&cmd);
 
     // draw debug graphs of turning for mouse testing

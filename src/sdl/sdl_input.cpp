@@ -50,7 +50,6 @@ static cvar_t *in_nograb;
 static cvar_t *in_joystick          = NULL;
 static cvar_t *in_joystickNo        = NULL;
 static cvar_t *in_joystickUseAnalog = NULL;
-static cvar_t *in_joystickThreshold = NULL;
 static cvar_t *in_joystickCount     = NULL;
 
 static cvar_t *in_haptic          	= NULL;
@@ -527,6 +526,7 @@ struct
 	bool oldButtons[SDL_CONTROLLER_BUTTON_MAX + 1]; // +1 because old max was 16, current SDL_CONTROLLER_BUTTON_MAX is 15
 	unsigned int oldAxes;
 	int oldAxis[MAX_JOYSTICK_AXIS];
+	int oldCroppedAxis[MAX_JOYSTICK_AXIS];
   int oldTranslatedAxis[MAX_JOYSTICK_AXIS];
 	unsigned int oldHats;
 } stick_state;
@@ -543,20 +543,11 @@ IN_GetGamecontrollerAxis
 static int IN_GetGamecontrollerAxis(int axis)
 {
 	int value;
-	float croppedValue;
 
 	if (!gamepad)
 		return 0;
 
-	value = SDL_GameControllerGetAxis(gamepad, (SDL_GameControllerAxis)(SDL_CONTROLLER_AXIS_LEFTX + axis));
-
-	// Smoothly ramp from dead zone to maximum value
-	croppedValue = ((float)abs(value) / 32767.0f - in_joystickThreshold->value) / (1.0f - in_joystickThreshold->value);
-
-	if (croppedValue < 0.0f)
-		croppedValue = 0.0f;
-
-	return (int)(32767 * ((value < 0) ? -croppedValue : croppedValue));
+	return SDL_GameControllerGetAxis(gamepad, (SDL_GameControllerAxis)(SDL_CONTROLLER_AXIS_LEFTX + axis));
 }
 
 
@@ -568,19 +559,11 @@ IN_GetJoycontrollerAxis
 static int IN_GetJoycontrollerAxis(int axis)
 {
 	int value;
-	float croppedValue;
 
 	if (!stick)
 		return 0;
 
-	value = SDL_JoystickGetAxis(stick, axis);
-	// Smoothly ramp from dead zone to maximum value
-	croppedValue = ((float)abs(value) / 32767.0f - in_joystickThreshold->value) / (1.0f - in_joystickThreshold->value);
-
-	if (croppedValue < 0.0f)
-		croppedValue = 0.0f;
-
-	return (int)(32767 * ((value < 0) ? -croppedValue : croppedValue));
+	return SDL_JoystickGetAxis(stick, axis);
 }
 
 
@@ -588,6 +571,7 @@ static int IN_GetJoycontrollerAxis(int axis)
 ===============
 IN_ResetJoystickInputs
 
+Reset any movements
 Sometime the controller (ie PS3 Dualshock) are "not connected"
 since their aren't powered on (the PS button had to be pressed)
 while GetAttached return true
@@ -880,22 +864,22 @@ static bool IN_KeyToDirection(int keynum, int *outAxis, int *outSign)
 	if (Q_stricmp(bind, "+forward") == 0)
 	{
 		*outAxis = j_forward_axis->integer;
-		*outSign = j_forward->value > 0.0f ? 1 : -1;
+		*outSign = 1;
 	}
 	else if (Q_stricmp(bind, "+back") == 0)
 	{
 		*outAxis = j_forward_axis->integer;
-		*outSign = j_forward->value > 0.0f ? -1 : 1;
+		*outSign = -1;
 	}
 	else if (Q_stricmp(bind, "+moveleft") == 0)
 	{
 		*outAxis = j_side_axis->integer;
-		*outSign = j_side->value > 0.0f ? -1 : 1;
+		*outSign = -1;
 	}
 	else if (Q_stricmp(bind, "+moveright") == 0)
 	{
 		*outAxis = j_side_axis->integer;
-		*outSign = j_side->value > 0.0f ? 1 : -1;
+		*outSign = 1;
 	}
 	else if (Q_stricmp(bind, "+lookup") == 0)
 	{
@@ -920,16 +904,37 @@ static bool IN_KeyToDirection(int keynum, int *outAxis, int *outSign)
 	else if (Q_stricmp(bind, "+moveup") == 0)
 	{
 		*outAxis = j_up_axis->integer;
-		*outSign = j_up->value > 0.0f ? 1 : -1;
+		*outSign = 1;
 	}
 	else if (Q_stricmp(bind, "+movedown") == 0)
 	{
 		*outAxis = j_up_axis->integer;
-		*outSign = j_up->value > 0.0f ? -1 : 1;
+		*outSign = -1;
 	}
 
 	return *outSign != 0;
 }
+
+/*
+===============
+IN_SimpleJoystickDeadzone
+===============
+*/
+static float IN_SimpleJoystickDeadzone(float input)
+{
+  float cropped;
+
+  cropped = ((fabs(input) / 32767.0f) - j_threshold->value)
+      / (1.0f - j_threshold->value);
+
+  if (cropped < 0.0f)
+    cropped = 0.0f;
+  if (cropped > 1.0f)
+    cropped = 1.0f;
+
+  return (32767.0f * ((input < 0) ? -cropped : cropped));
+}
+
 
 /*
 ===============
@@ -944,7 +949,7 @@ static bool IN_GamepadMove( bool isCaught )
 	bool posAnalog, negAnalog;
 	int negKey, posKey;
 	int posAxis, posSign, negAxis, negSign;
-	int axisValue, oldAxisValue;
+	int axisValue, oldAxisValue, axisCroppedValue, oldAxisCroppedValue;
 
 	if (!gamepad || SDL_GameControllerGetAttached(gamepad) == SDL_FALSE)
 		return false;
@@ -968,7 +973,9 @@ static bool IN_GamepadMove( bool isCaught )
 		posKey = posKeys[i];
 		negKey = negKeys[i];
 		axisValue = IN_GetGamecontrollerAxis(i);
+		axisCroppedValue = IN_SimpleJoystickDeadzone(axisValue);
 		oldAxisValue = stick_state.oldAxis[i];
+		oldAxisCroppedValue = stick_state.oldCroppedAxis[i];
 
 		if (in_joystickUseAnalog->integer && !isCaught)
 		{
@@ -1009,30 +1016,33 @@ static bool IN_GamepadMove( bool isCaught )
 
 		// If a direction is not used, use it as button
 		// keyups first so they get overridden by keydowns later
-		if (oldAxisValue != axisValue)
+		if (oldAxisCroppedValue != axisCroppedValue)
 		{
 			// positive to negative/neutral -> keyup
-			if (!posAnalog && posKey && oldAxisValue > 0 && axisValue <= 0)
+			if (!posAnalog && posKey && oldAxisCroppedValue > 0 && axisCroppedValue <= 0)
 				Com_QueueEvent(in_eventTime, SE_KEY, posKey, false, 0, NULL);
 
 			// negative to positive/neutral -> keyup
-			if (!negAnalog && negKey && oldAxisValue < 0 && axisValue >= 0)
+			if (!negAnalog && negKey && oldAxisCroppedValue < 0 && axisCroppedValue >= 0)
 				Com_QueueEvent(in_eventTime, SE_KEY, negKey, false, 0, NULL);
 
 			// negative/neutral to positive -> keydown
-			if (!posAnalog && posKey && oldAxisValue <= 0 && axisValue > 0)
+			if (!posAnalog && posKey && oldAxisCroppedValue <= 0 && axisCroppedValue > 0)
 				Com_QueueEvent(in_eventTime, SE_KEY, posKey, true, 0, NULL);
 
 			// positive/neutral to negative -> keydown
-			if (!negAnalog && negKey && oldAxisValue >= 0 && axisValue < 0)
+			if (!negAnalog && negKey && oldAxisCroppedValue >= 0 && axisCroppedValue < 0)
 				Com_QueueEvent(in_eventTime, SE_KEY, negKey, true, 0, NULL);
 
 
 			stick_state.oldAxis[i] = axisValue;
+			stick_state.oldCroppedAxis[i] = axisCroppedValue;
 		}
 	}
 
 	// set translated axis
+	// Note : we send all raw axis data
+	// We manage thresholds later in analog mode
 	if (in_joystickUseAnalog->integer && !isCaught)
 	{
 		for (i = 0; i < MAX_JOYSTICK_AXIS; i++)
@@ -1223,9 +1233,9 @@ static void IN_JoyMove( bool isCaught )
 			{
 				int axisValue = SDL_JoystickGetAxis(stick, i);
 				float axisValueRatio = ( (float) axisValue ) / 32767.0f;
-				if( axisValueRatio < -in_joystickThreshold->value ) {
+				if( axisValueRatio < -j_threshold->value ) {
 					axes |= ( 1 << ( i * 2 ) );
-				} else if( axisValueRatio > in_joystickThreshold->value ) {
+				} else if( axisValueRatio > j_threshold->value ) {
 					axes |= ( 1 << ( ( i * 2 ) + 1 ) );
 				}
 			}
@@ -1531,10 +1541,11 @@ void IN_Init( void *windowData )
 	in_mouse = Cvar_Get( "in_mouse", "1", CVAR_ARCHIVE );
 	in_nograb = Cvar_Get( "in_nograb", "0", CVAR_ARCHIVE );
 
+	j_threshold = Cvar_Get( "j_threshold", "0.02", CVAR_ARCHIVE );
+	j_outMovmentThreshold = Cvar_Get( "j_outMovmentThreshold", "0.02", CVAR_ARCHIVE );
 	in_joystick = Cvar_Get( "in_joystick", "1", CVAR_ARCHIVE|CVAR_LATCH );
 	in_joystickNo = Cvar_Get( "in_joystickNo", "0", CVAR_ARCHIVE );
 	in_joystickUseAnalog = Cvar_Get( "in_joystickUseAnalog", "1", CVAR_ARCHIVE );
-	in_joystickThreshold = Cvar_Get( "joy_threshold", "0.02", CVAR_ARCHIVE );
 	in_joystickCount = Cvar_Get( "in_joystickCount", "0", CVAR_ROM );
 	in_haptic = Cvar_Get( "in_haptic", "1", CVAR_ARCHIVE|CVAR_LATCH );
 	in_hapticNo = Cvar_Get( "in_hapticNo", "0", CVAR_ARCHIVE );
