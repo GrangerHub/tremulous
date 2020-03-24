@@ -3518,9 +3518,9 @@ static void UI_LoadHumanArmouryBuys(void)
 
     uiInfo.humanArmouryBuyCount = 0;
 
-    // Critical (ammo mainly)
-    UI_LoadHumanArmouryBuysWeapon(0, &j, stage, sellingBudget, credits, criticalBuilds);
+    // Critical (ammo mainly) - Make upgrade first since ammo is lit more important than ckit
     UI_LoadHumanArmouryBuysUpgrade(0, &j, stage, upgrSlots, credits);
+    UI_LoadHumanArmouryBuysWeapon(0, &j, stage, sellingBudget, credits, criticalBuilds);
 
     // Available to buy
     UI_LoadHumanArmouryBuysWeapon(1, &j, stage, sellingBudget, credits, criticalBuilds);
