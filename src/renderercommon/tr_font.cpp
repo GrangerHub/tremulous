@@ -81,7 +81,8 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #include FT_IMAGE_H
 #include FT_OUTLINE_H
 
-#define CANVAS_SIZE 512
+#define CANVAS_SIZE 1024
+#define DPI 72*2  // Rendering other than 72 doesn't works now
 
 #define _FLOOR(x)  ((x) & -64)
 #define _CEIL(x)   (((x)+63) & -64)
@@ -197,7 +198,7 @@ static glyphInfo_t *RE_ConstructGlyphInfo(unsigned char *imageOut, int *xOut, in
 	int i;
 	static glyphInfo_t glyph;
 	unsigned char *src, *dst;
-	float scaled_width, scaled_height;
+	int scaled_width, scaled_height;
 	FT_Bitmap *bitmap = NULL;
 
 	Com_Memset(&glyph, 0, sizeof(glyphInfo_t));
@@ -345,7 +346,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 	image_t *image;
 	qhandle_t h;
 	float max;
-	float dpi = 72;
+	float dpi = (float)DPI;
 	float glyphScale;
 #endif
 	void *faceData;
