@@ -104,6 +104,8 @@ void IN_Frame( void );
 void IN_Shutdown( void );
 void IN_Restart( void );
 void IN_HapticFeedback( float strength, uint32_t length );
+void IN_RunHapticEffect( int effectId );
+void IN_StopHapticEffect( int effectId );
 
 #ifdef __cplusplus
 }

@@ -33,6 +33,7 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #endif
 
 #include "client/client.h"
+#include "game/tremulous.h"
 #include "sys/sys_local.h"
 
 static cvar_t *in_keyboardDebug     = NULL;
@@ -531,6 +532,17 @@ struct
 	unsigned int oldHats;
 } stick_state;
 
+typedef struct
+{
+	int length;
+	int attack_length;
+	int attack_level;
+	int period;
+	float magnitude;
+	float large_magnitude;
+	float small_magnitude;
+} effectgen_t;
+
 static bool IN_GamepadMove( bool isCaught );
 static void IN_JoyMove( bool isCaught );
 
@@ -693,6 +705,111 @@ static void IN_InitJoystick( void )
 }
 
 
+static int hapticEffectId[CG_FB_EFFECT_COUNT];
+static SDL_HapticEffect hapticEffect[CG_FB_EFFECT_COUNT];
+
+/*
+===============
+IN_HapticGenerateEffect
+===============
+*/
+SDL_HapticEffect *IN_HapticGenerateEffect(effectgen_t *efxGen, SDL_HapticEffect *efx)
+{
+	unsigned int support = SDL_HapticQuery(haptic);
+	memset(efx, 0, sizeof(efx));
+
+	if (support & SDL_HAPTIC_SINE) {
+		efx->type = SDL_HAPTIC_SINE;
+		efx->periodic.length = efxGen->length;
+		efx->periodic.attack_length = efxGen->attack_length;
+		efx->periodic.attack_level = efxGen->attack_level;
+		efx->periodic.direction.type = SDL_HAPTIC_CARTESIAN;
+		efx->periodic.period = efxGen->period ? efxGen->period : 500;
+		efx->periodic.magnitude = 32767.0f * efxGen->magnitude * in_hapticIntensity->value;
+	} else if (support & SDL_HAPTIC_LEFTRIGHT) {
+		efx->type = SDL_HAPTIC_LEFTRIGHT;
+		efx->leftright.length = efxGen->length;
+		efx->leftright.large_magnitude = 32767.0f * efxGen->large_magnitude * in_hapticIntensity->value;
+		efx->leftright.small_magnitude = 32767.0f * efxGen->small_magnitude * in_hapticIntensity->value;
+	}
+
+	return efx;
+}
+
+
+/*
+===============
+IN_HapticInitEffects
+===============
+*/
+void IN_HapticInitEffects( void )
+{
+	effectgen_t lcannonEfx;
+	memset(&lcannonEfx, 0, sizeof(lcannonEfx));
+
+	lcannonEfx.attack_length = lcannonEfx.length = LCANNON_CHARGE_TIME_MAX;
+	lcannonEfx.magnitude = 0.5;
+	lcannonEfx.small_magnitude = 0.25;
+
+	hapticEffectId[CG_FB_EFFECT_LCANNON]
+			= SDL_HapticNewEffect( haptic,
+					IN_HapticGenerateEffect(&lcannonEfx, &hapticEffect[CG_FB_EFFECT_LCANNON]) );
+
+	effectgen_t lcannonWarnEfx;
+	memset(&lcannonWarnEfx, 0, sizeof(lcannonWarnEfx));
+
+	lcannonWarnEfx.length = LCANNON_CHARGE_TIME_MAX - LCANNON_CHARGE_TIME_WARN;
+	lcannonWarnEfx.magnitude = 0.8;
+	lcannonWarnEfx.large_magnitude = 0.8;
+	lcannonWarnEfx.small_magnitude = 0.8;
+
+	hapticEffectId[CG_FB_EFFECT_LCANNONWARN]
+			= SDL_HapticNewEffect( haptic,
+					IN_HapticGenerateEffect(&lcannonWarnEfx, &hapticEffect[CG_FB_EFFECT_LCANNONWARN]) );
+}
+
+
+/*
+===============
+IN_HapticResetEffects
+===============
+*/
+static void IN_HapticResetEffects( void )
+{
+	int i;
+
+	for (i = 0; i < CG_FB_EFFECT_COUNT; i++)
+		hapticEffectId[i] = -1;
+}
+
+
+/*
+===============
+IN_RunHapticEffect
+===============
+*/
+void IN_RunHapticEffect(int id)
+{
+	if ( !in_haptic->integer || !haptic || id >= CG_FB_EFFECT_COUNT )
+		return;
+
+	SDL_HapticRunEffect( haptic, hapticEffectId[id], 1 );
+}
+
+
+/*
+===============
+IN_StopHapticEffect
+===============
+*/
+void IN_StopHapticEffect(int id)
+{
+	if ( !haptic || id >= CG_FB_EFFECT_COUNT || !SDL_HapticGetEffectStatus(haptic, hapticEffectId[id]) )
+		return;
+
+	SDL_HapticStopEffect( haptic, hapticEffectId[id] );
+}
+
 /*
 ===============
 IN_InitHaptic
@@ -709,6 +826,7 @@ static void IN_InitHaptic( void )
 	if (haptic)
 		SDL_HapticClose(haptic);
 
+	IN_HapticResetEffects();
 	haptic = NULL;
 
 	if( !in_haptic->integer )
@@ -771,6 +889,7 @@ static void IN_InitHaptic( void )
 		return;
 	}
 
+	IN_HapticInitEffects( );
 
 	Com_DPrintf( "Haptic %d opened\n", in_hapticNo->integer );
 	Com_DPrintf( "Rumble:     %s\n", hapticRumbleSupported == SDL_TRUE ? "Yes" : "No" );
@@ -805,6 +924,7 @@ static void IN_ShutdownJoystick( void )
 		stick = NULL;
 	}
 
+	IN_HapticResetEffects();
 	SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
 	SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
 }
@@ -837,12 +957,13 @@ IN_HapticFeedback
 */
 void IN_HapticFeedback( float strength, uint32_t length )
 {
-	if (strength > 1)
+	if ( strength > 1 )
 		strength = 1;
 
-	if (in_haptic->integer && haptic && hapticRumbleSupported == SDL_TRUE && length)
+	if ( in_haptic->integer && haptic && hapticRumbleSupported == SDL_TRUE && length )
 		SDL_HapticRumblePlay( haptic, strength * in_hapticIntensity->value, length );
 }
+
 
 /*
 ===============

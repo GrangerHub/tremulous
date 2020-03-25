@@ -100,7 +100,9 @@ equ trap_GetDemoName                  -97
 equ trap_Key_KeynumToStringBuf        -98
 equ trap_Key_GetBindingBuf            -99
 equ trap_Key_SetBinding               -100
-equ trap_IN_FeedbackEffect            -101
+equ trap_IN_HapticFeedbackEffect      -101
+equ trap_IN_RunHapticEffect           -102
+equ trap_IN_StopHapticEffect          -103
 
 equ memset                            -201
 equ memcpy                            -202

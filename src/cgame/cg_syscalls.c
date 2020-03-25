@@ -277,9 +277,19 @@ void  trap_S_StopLoopingSound( int entityNum )
   syscall( CG_S_STOPLOOPINGSOUND, entityNum );
 }
 
-void  trap_IN_FeedbackEffect( float strength, uint32_t length )
+void  trap_IN_HapticFeedbackEffect( float strength, uint32_t length )
 {
-  syscall( CG_IN_FEEDBACKEFFECT, PASSFLOAT( strength ), length );
+  syscall( CG_IN_HAPTICFEEDBACKEFFECT, PASSFLOAT( strength ), length );
+}
+
+void  trap_IN_RunHapticEffect( int id )
+{
+  syscall( CG_IN_RUNHAPTICEFFECT, id );
+}
+
+void  trap_IN_StopHapticEffect( int id )
+{
+  syscall( CG_IN_STOPHAPTICEFFECT, id );
 }
 
 void  trap_S_UpdateEntityPosition( int entityNum, const vec3_t origin )

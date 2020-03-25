@@ -2448,6 +2448,7 @@ CGOBJ_ = \
   $(B)/$(BASEGAME)/cgame/cg_particles.o \
   $(B)/$(BASEGAME)/cgame/cg_tutorial.o \
   $(B)/$(BASEGAME)/cgame/cg_rangemarker.o \
+  $(B)/$(BASEGAME)/cgame/cg_feedback.o \
   $(B)/$(BASEGAME)/cgame/ui_shared.o \
   \
   $(B)/$(BASEGAME)/qcommon/q_math.o \
@@ -2498,6 +2499,7 @@ CGOBJ11_ = \
   $(B)/$(BASEGAME)/cgame/cg_particles.o \
   $(B)/$(BASEGAME)/cgame/cg_tutorial.o \
   $(B)/$(BASEGAME)/cgame/cg_rangemarker.o \
+  $(B)/$(BASEGAME)/cgame/cg_feedback.o \
   $(B)/$(BASEGAME)/cgame/ui_shared.o \
   \
   $(B)/$(BASEGAME)/qcommon/q_math.o \

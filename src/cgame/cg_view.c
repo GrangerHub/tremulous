@@ -313,10 +313,10 @@ void CG_OffsetThirdPersonView( void )
   if( range < 30.0f ) range = 30.0f;
 
   // Calculate the angle of the camera's position around the player.
-  // Unless in demo, PLAYING in third person, or in dead-third-person cam, allow the player 
+  // Unless in demo, PLAYING in third person, or in dead-third-person cam, allow the player
   // to control camera position offsets using the mouse position.
-  if( cg.demoPlayback || 
-    ( ( cg.snap->ps.pm_flags & PMF_FOLLOW ) && 
+  if( cg.demoPlayback ||
+    ( ( cg.snap->ps.pm_flags & PMF_FOLLOW ) &&
       ( cg.predictedPlayerState.stats[ STAT_HEALTH ] > 0 ) ) )
   {
     // Collect our input values from the mouse.
@@ -342,7 +342,7 @@ void CG_OffsetThirdPersonView( void )
 
     // Set the rotation angles to be the view angles offset by the mouse input
     // Ignore the original pitch though; it's too jerky otherwise
-    if( !cg_thirdPersonPitchFollow.integer ) 
+    if( !cg_thirdPersonPitchFollow.integer )
       cg.refdefViewAngles[ PITCH ] = 0.0f;
 
     for( i = 0; i < 3; i++ )
@@ -353,9 +353,9 @@ void CG_OffsetThirdPersonView( void )
 
     // Don't let pitch go too high/too low or the camera flips around and
     // that's really annoying.
-    // However, when we're not on the floor or ceiling (wallwalk) pitch 
+    // However, when we're not on the floor or ceiling (wallwalk) pitch
     // may not be pitch, so just let it go.
-    if( surfNormal[ 2 ] > 0.5f || surfNormal[ 2 ] < -0.5f ) 
+    if( surfNormal[ 2 ] > 0.5f || surfNormal[ 2 ] < -0.5f )
     {
       if( rotationAngles[ PITCH ] > 85.0f )
         rotationAngles[ PITCH ] = 85.0f;
@@ -373,7 +373,7 @@ void CG_OffsetThirdPersonView( void )
     // Convert the new axis back to angles.
     AxisToAngles( rotaxis, rotationAngles );
   }
-  else 
+  else
   {
     if( cg.predictedPlayerState.stats[ STAT_HEALTH ] > 0 )
     {
@@ -449,9 +449,9 @@ void CG_OffsetShoulderView( void )
   classConfig_t* classConfig;
 
   // Ignore following pitch; it's too jerky otherwise.
-  if( !cg_thirdPersonPitchFollow.integer ) 
+  if( !cg_thirdPersonPitchFollow.integer )
     cg.refdefViewAngles[ PITCH ] = 0.0f;
-    
+
   AngleVectors( cg.refdefViewAngles, forward, right, up );
 
   classConfig = BG_ClassConfig( cg.snap->ps.stats[ STAT_CLASS ] );
@@ -467,7 +467,7 @@ void CG_OffsetShoulderView( void )
     return;
   }
 
-  // Get mouse input for camera rotation. 
+  // Get mouse input for camera rotation.
   cmdNum = trap_GetCurrentCmdNumber();
   trap_GetUserCmd( cmdNum, &cmd );
   trap_GetUserCmd( cmdNum - 1, &oldCmd );
@@ -737,7 +737,7 @@ void CG_OffsetFirstPersonView( void )
       !( cg.snap->ps.pm_flags & PMF_FOLLOW ) )
   {
     float scale, fraction, pitchFraction;
-    
+
     scale = 1.0f - (float)( cg.time - cg.poisonedTime ) /
             BG_PlayerPoisonCloudTime( &cg.predictedPlayerState );
     if( scale < 0.0f )
@@ -852,7 +852,7 @@ static int CG_CalcFov( void )
   // switch follow modes if necessary: cycle between free -> follow -> third-person follow
   if( cmd.buttons & BUTTON_USE_HOLDABLE && !( oldcmd.buttons & BUTTON_USE_HOLDABLE ) )
   {
-    if ( cg.snap->ps.pm_flags & PMF_FOLLOW ) 
+    if ( cg.snap->ps.pm_flags & PMF_FOLLOW )
     {
       if( !cg.chaseFollow )
         cg.chaseFollow = qtrue;
@@ -867,7 +867,7 @@ static int CG_CalcFov( void )
   }
 
   if( cg.predictedPlayerState.pm_type == PM_INTERMISSION ||
-      ( cg.snap->ps.persistant[ PERS_SPECSTATE ] != SPECTATOR_NOT ) || 
+      ( cg.snap->ps.persistant[ PERS_SPECSTATE ] != SPECTATOR_NOT ) ||
       ( cg.renderingThirdPerson ) )
   {
     // if in intermission or third person, use a fixed value
@@ -916,7 +916,7 @@ static int CG_CalcFov( void )
         if( !( cmd.buttons & BUTTON_ATTACK2 ) )
         {
           cg.zoomed   = qfalse;
-          cg.zoomTime = MIN( cg.time, 
+          cg.zoomTime = MIN( cg.time,
               cg.time + cg.time - cg.zoomTime - ZOOM_TIME );
         }
       }
@@ -933,7 +933,7 @@ static int CG_CalcFov( void )
         if( cmd.buttons & BUTTON_ATTACK2 )
         {
           cg.zoomed   = qtrue;
-          cg.zoomTime = MIN( cg.time, 
+          cg.zoomTime = MIN( cg.time,
               cg.time + cg.time - cg.zoomTime - ZOOM_TIME );
         }
       }
@@ -965,7 +965,7 @@ static int CG_CalcFov( void )
   {
     float scale = 1.0f - (float)( cg.time - cg.poisonedTime ) /
                   BG_PlayerPoisonCloudTime( &cg.predictedPlayerState );
-      
+
     phase = ( cg.time - cg.poisonedTime ) / 1000.0f * PCLOUD_ZOOM_FREQUENCY * M_PI * 2.0f;
     v = PCLOUD_ZOOM_AMPLITUDE * sin( phase ) * scale;
     fov_x += v;
@@ -1408,7 +1408,7 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
   CG_PredictPlayerState( );
 
   // decide on third person view
-  cg.renderingThirdPerson = ( cg_thirdPerson.integer || ( cg.snap->ps.stats[ STAT_HEALTH ] <= 0 ) || 
+  cg.renderingThirdPerson = ( cg_thirdPerson.integer || ( cg.snap->ps.stats[ STAT_HEALTH ] <= 0 ) ||
                             ( cg.chaseFollow && cg.snap->ps.pm_flags & PMF_FOLLOW) );
 
   // update speedometer
@@ -1483,6 +1483,8 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 
   // actually issue the rendering calls
   CG_DrawActive( stereoView );
+
+  CG_UpdateFeedbacks( );
 
   if( cg_stats.integer )
     CG_Printf( "cg.clientFrame:%i\n", cg.clientFrame );

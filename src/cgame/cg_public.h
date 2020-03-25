@@ -59,6 +59,12 @@ typedef struct {
 
 enum { CGAME_EVENT_NONE, CGAME_EVENT_TEAMMENU, CGAME_EVENT_SCOREBOARD, CGAME_EVENT_EDITHUD };
 
+enum {
+  CG_FB_EFFECT_LCANNON,
+  CG_FB_EFFECT_LCANNONWARN,
+  CG_FB_EFFECT_COUNT
+};
+
 /*
 ==================================================================
 
@@ -191,7 +197,10 @@ typedef enum {
     CG_S_SOUNDDURATION,
     CG_FIELD_COMPLETELIST,
 #endif
-    CG_IN_FEEDBACKEFFECT,
+
+    CG_IN_HAPTICFEEDBACKEFFECT,
+    CG_IN_RUNHAPTICEFFECT,
+    CG_IN_STOPHAPTICEFFECT,
 
     CG_MEMSET = 200,
     CG_MEMCPY,

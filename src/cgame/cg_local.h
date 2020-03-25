@@ -1957,6 +1957,11 @@ char CG_GetForceColor( team_t team );
 char CG_GetForceColorFromPlayerState( playerState_t *ps );
 const char *CG_TutorialText( void );
 
+//
+// cg_feedback.c
+//
+void CG_UpdateFeedbacks( void );
+
 // cg_main.c
 qboolean    CG_GetRangeMarkerPreferences( qboolean *drawSurface, qboolean *drawIntersection,
                                           qboolean *drawFrontline, float *surfaceOpacity,
@@ -2079,7 +2084,9 @@ void          trap_S_AddRealLoopingSound( int entityNum, const vec3_t origin, co
 void          trap_S_UpdateEntityPosition( int entityNum, const vec3_t origin );
 
 // feedback
-void          trap_IN_FeedbackEffect( float strength, uint32_t length );
+void          trap_IN_HapticFeedbackEffect( float strength, uint32_t length );
+void          trap_IN_RunHapticEffect( int id );
+void          trap_IN_StopHapticEffect( int id );
 
 // respatialize recalculates the volumes of sound as they should be heard by the
 // given entityNum and position

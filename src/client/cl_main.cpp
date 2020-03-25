@@ -3071,9 +3071,6 @@ void CL_Frame(int msec)
     // update audio
     S_Update();
 
-    // update any feedback
-    FB_Update();
-
 #ifdef USE_VOIP
     CL_CaptureVoip();
 #endif

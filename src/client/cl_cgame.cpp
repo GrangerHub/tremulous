@@ -573,8 +573,14 @@ intptr_t CL_CgameSystemCalls( intptr_t *args )
         case CG_S_STARTBACKGROUNDTRACK:
             S_StartBackgroundTrack( (const char*)VMA(1), (const char*)VMA(2) );
             return 0;
-        case CG_IN_FEEDBACKEFFECT:
+        case CG_IN_HAPTICFEEDBACKEFFECT:
             IN_HapticFeedback( VMF(1), (uint32_t)args[2] );
+            return 0;
+        case CG_IN_RUNHAPTICEFFECT:
+            IN_RunHapticEffect( args[1] );
+            return 0;
+        case CG_IN_STOPHAPTICEFFECT:
+            IN_StopHapticEffect( args[1] );
             return 0;
         case CG_R_LOADWORLDMAP:
             re.LoadWorld( (const char*)VMA(1) );

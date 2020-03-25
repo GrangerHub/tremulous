@@ -712,7 +712,6 @@ bool CL_VideoRecording(void);
 // cl_feedback.c
 //
 void FB_Init( void );
-void FB_Update( void );
 void FB_Shutdown( void );
 
 //

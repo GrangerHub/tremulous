@@ -1,10 +1,10 @@
 #
-##  ____                                           _      
-## / ___|__ _  __ _ _ __ ___   ___    ___ ___   __| | ___ 
+##  ____                                           _
+## / ___|__ _  __ _ _ __ ___   ___    ___ ___   __| | ___
 ##| |   / _` |/ _` | '_ ` _ \ / _ \  / __/ _ \ / _` |/ _ \
 ##| |__| (_| | (_| | | | | | |  __/ | (_| (_) | (_| |  __/
 ## \____\__, |\__,_|_| |_| |_|\___|  \___\___/ \__,_|\___|
-##      |___/                                             
+##      |___/
 #
 
 set(CMAKE_INSTALL_NAME_DIR ${PROJECT_BINARY_DIR}/gpp)
@@ -44,6 +44,7 @@ set( CGAME_SOURCES
     cg_playerstate.c
     cg_predict.c
     cg_rangemarker.c
+    cg_feedback.c
     cg_scanner.c
     cg_servercmds.c
     cg_snapshot.c
