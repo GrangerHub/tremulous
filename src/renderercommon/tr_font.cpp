@@ -22,52 +22,52 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 ===========================================================================
 */
 // tr_font.c
-// 
+//
 //
 // The font system uses FreeType 2.x to render TrueType fonts for use within the game.
-// As of this writing ( Nov, 2000 ) Team Arena uses these fonts for all of the ui and 
-// about 90% of the cgame presentation. A few areas of the CGAME were left uses the old 
+// As of this writing ( Nov, 2000 ) Team Arena uses these fonts for all of the ui and
+// about 90% of the cgame presentation. A few areas of the CGAME were left uses the old
 // fonts since the code is shared with standard Q3A.
 //
 // If you include this font rendering code in a commercial product you MUST include the
 // following somewhere with your product, see www.freetype.org for specifics or changes.
-// The Freetype code also uses some hinting techniques that MIGHT infringe on patents 
+// The Freetype code also uses some hinting techniques that MIGHT infringe on patents
 // held by apple so be aware of that also.
 //
 // As of Q3A 1.25+ and Team Arena, we are shipping the game with the font rendering code
-// disabled. This removes any potential patent issues and it keeps us from having to 
+// disabled. This removes any potential patent issues and it keeps us from having to
 // distribute an actual TrueTrype font which is 1. expensive to do and 2. seems to require
-// an act of god to accomplish. 
+// an act of god to accomplish.
 //
 // What we did was pre-render the fonts using FreeType ( which is why we leave the FreeType
-// credit in the credits ) and then saved off the glyph data and then hand touched up the 
+// credit in the credits ) and then saved off the glyph data and then hand touched up the
 // font bitmaps so they scale a bit better in GL.
 //
-// There are limitations in the way fonts are saved and reloaded in that it is based on 
+// There are limitations in the way fonts are saved and reloaded in that it is based on
 // point size and not name. So if you pre-render Helvetica in 18 point and Impact in 18 point
-// you will end up with a single 18 point data file and image set. Typically you will want to 
+// you will end up with a single 18 point data file and image set. Typically you will want to
 // choose 3 sizes to best approximate the scaling you will be doing in the ui scripting system
-// 
+//
 // In the UI Scripting code, a scale of 1.0 is equal to a 48 point font. In Team Arena, we
-// use three or four scales, most of them exactly equaling the specific rendered size. We 
-// rendered three sizes in Team Arena, 12, 16, and 20. 
+// use three or four scales, most of them exactly equaling the specific rendered size. We
+// rendered three sizes in Team Arena, 12, 16, and 20.
 //
 // To generate new font data you need to go through the following steps.
 // 1. delete the fontImage_x_xx.tga files and fontImage_xx.dat files from the fonts path.
-// 2. in a ui script, specificy a font, smallFont, and bigFont keyword with font name and 
+// 2. in a ui script, specificy a font, smallFont, and bigFont keyword with font name and
 //    point size. the original TrueType fonts must exist in fonts at this point.
 // 3. run the game, you should see things normally.
-// 4. Exit the game and there will be three dat files and at least three tga files. The 
-//    tga's are in 256x256 pages so if it takes three images to render a 24 point font you 
+// 4. Exit the game and there will be three dat files and at least three tga files. The
+//    tga's are in 256x256 pages so if it takes three images to render a 24 point font you
 //    will end up with fontImage_0_24.tga through fontImage_2_24.tga
 // 5. In future runs of the game, the system looks for these images and data files when a s
-//    specific point sized font is rendered and loads them for use. 
+//    specific point sized font is rendered and loads them for use.
 // 6. Because of the original beta nature of the FreeType code you will probably want to hand
 //    touch the font bitmaps.
-// 
-// Currently a define in the project turns on or off the FreeType code which is currently 
-// defined out. To pre-render new fonts you need enable the define ( BUILD_FREETYPE ) and 
-// uncheck the exclude from build check box in the FreeType2 area of the Renderer project. 
+//
+// Currently a define in the project turns on or off the FreeType code which is currently
+// defined out. To pre-render new fonts you need enable the define ( BUILD_FREETYPE ) and
+// uncheck the exclude from build check box in the FreeType2 area of the Renderer project.
 
 #include "tr_common.h"
 
@@ -81,11 +81,14 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #include FT_IMAGE_H
 #include FT_OUTLINE_H
 
+#define CANVAS_SIZE 512
+
 #define _FLOOR(x)  ((x) & -64)
 #define _CEIL(x)   (((x)+63) & -64)
 #define _TRUNC(x)  ((x) >> 6)
 
-FT_Library ftLibrary = NULL;  
+FT_Library ftLibrary = NULL;
+
 #endif
 
 #define MAX_FONTS 6
@@ -112,16 +115,16 @@ FT_Bitmap *R_RenderGlyph(FT_GlyphSlot glyph, glyphInfo_t* glyphOut) {
 	R_GetGlyphInfo(glyph, &left, &right, &width, &top, &bottom, &height, &pitch);
 
 	if ( glyph->format == ft_glyph_format_outline ) {
-		size   = pitch*height; 
+		size   = pitch*height;
 
-		bit2 = ri.Malloc(sizeof(FT_Bitmap));
+		bit2 = (FT_Bitmap*)ri.Malloc(sizeof(FT_Bitmap));
 
 		bit2->width      = width;
 		bit2->rows       = height;
 		bit2->pitch      = pitch;
 		bit2->pixel_mode = ft_pixel_mode_grays;
 		//bit2->pixel_mode = ft_pixel_mode_mono;
-		bit2->buffer     = ri.Malloc(pitch*height);
+		bit2->buffer     = (byte*)ri.Malloc(pitch*height);
 		bit2->num_grays = 256;
 
 		Com_Memset( bit2->buffer, 0, size );
@@ -149,7 +152,7 @@ void WriteTGA (char *filename, byte *data, int width, int height) {
 	unsigned char  *flip;
 	unsigned char  *src, *dst;
 
-	buffer = ri.Malloc(width*height*4 + 18);
+	buffer = (byte*)ri.Malloc(width*height*4 + 18);
 	Com_Memset (buffer, 0, 18);
 	buffer[2] = 2;		// uncompressed type
 	buffer[12] = width&255;
@@ -219,7 +222,7 @@ static glyphInfo_t *RE_ConstructGlyphInfo(unsigned char *imageOut, int *xOut, in
 		}
 
 /*
-		// need to convert to power of 2 sizes so we do not get 
+		// need to convert to power of 2 sizes so we do not get
 		// any scaling from the gl upload
 		for (scaled_width = 1 ; scaled_width < glyph.pitch ; scaled_width<<=1)
 			;
@@ -231,12 +234,12 @@ static glyphInfo_t *RE_ConstructGlyphInfo(unsigned char *imageOut, int *xOut, in
 		scaled_height = glyph.height;
 
 		// we need to make sure we fit
-		if (*xOut + scaled_width + 1 >= 255) {
+		if (*xOut + scaled_width + 1 >= (CANVAS_SIZE - 1)) {
 			*xOut = 0;
 			*yOut += *maxHeight + 1;
 		}
 
-		if (*yOut + *maxHeight + 1 >= 255) {
+		if (*yOut + *maxHeight + 1 >= (CANVAS_SIZE - 1)) {
 			*yOut = -1;
 			*xOut = -1;
 			ri.Free(bitmap->buffer);
@@ -246,7 +249,7 @@ static glyphInfo_t *RE_ConstructGlyphInfo(unsigned char *imageOut, int *xOut, in
 
 
 		src = bitmap->buffer;
-		dst = imageOut + (*yOut * 256) + *xOut;
+		dst = imageOut + (*yOut * CANVAS_SIZE) + *xOut;
 
 		if (bitmap->pixel_mode == ft_pixel_mode_mono) {
 			for (i = 0; i < glyph.height; i++) {
@@ -271,25 +274,25 @@ static glyphInfo_t *RE_ConstructGlyphInfo(unsigned char *imageOut, int *xOut, in
 				}
 
 				src += glyph.pitch;
-				dst += 256;
+				dst += CANVAS_SIZE;
 			}
 		} else {
 			for (i = 0; i < glyph.height; i++) {
 				Com_Memcpy(dst, src, glyph.pitch);
 				src += glyph.pitch;
-				dst += 256;
+				dst += CANVAS_SIZE;
 			}
 		}
 
-		// we now have an 8 bit per pixel grey scale bitmap 
+		// we now have an 8 bit per pixel grey scale bitmap
 		// that is width wide and pf->ftSize->metrics.y_ppem tall
 
 		glyph.imageHeight = scaled_height;
 		glyph.imageWidth = scaled_width;
-		glyph.s = (float)*xOut / 256;
-		glyph.t = (float)*yOut / 256;
-		glyph.s2 = glyph.s + (float)scaled_width / 256;
-		glyph.t2 = glyph.t + (float)scaled_height / 256;
+		glyph.s = (float)*xOut / CANVAS_SIZE;
+		glyph.t = (float)*yOut / CANVAS_SIZE;
+		glyph.s2 = glyph.s + (float)scaled_width / CANVAS_SIZE;
+		glyph.t2 = glyph.t + (float)scaled_height / CANVAS_SIZE;
 
 		*xOut += scaled_width + 1;
 
@@ -305,7 +308,7 @@ static int fdOffset;
 static byte	*fdFile;
 
 int readInt( void ) {
-	int i = fdFile[fdOffset]+(fdFile[fdOffset+1]<<8)+(fdFile[fdOffset+2]<<16)+(fdFile[fdOffset+3]<<24);
+	int i = ((unsigned int)fdFile[fdOffset] | ((unsigned int)fdFile[fdOffset+1]<<8) | ((unsigned int)fdFile[fdOffset+2]<<16) | ((unsigned int)fdFile[fdOffset+3]<<24));
 	fdOffset += 4;
 	return i;
 }
@@ -422,7 +425,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 	}
 
 	// allocate on the stack first in case we fail
-	if (FT_New_Memory_Face( ftLibrary, faceData, len, 0, &face )) {
+	if (FT_New_Memory_Face( ftLibrary, (const FT_Byte*)faceData, len, 0, &face )) {
 		ri.Printf(PRINT_WARNING, "RE_RegisterFont: FreeType, unable to allocate new face.\n");
 		return;
 	}
@@ -435,15 +438,15 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 
 	//*font = &registeredFonts[registeredFontCount++];
 
-	// make a 256x256 image buffer, once it is full, register it, clean it and keep going 
+	// make a 256x256 image buffer, once it is full, register it, clean it and keep going
 	// until all glyphs are rendered
 
-	out = ri.Malloc(256*256);
+	out = (unsigned char*)ri.Malloc(CANVAS_SIZE*CANVAS_SIZE);
 	if (out == NULL) {
 		ri.Printf(PRINT_WARNING, "RE_RegisterFont: ri.Malloc failure during output image creation.\n");
 		return;
 	}
-	Com_Memset(out, 0, 256*256);
+	Com_Memset(out, 0, CANVAS_SIZE*CANVAS_SIZE);
 
 	maxHeight = 0;
 
@@ -469,11 +472,11 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 		if (xOut == -1 || yOut == -1)  {
 			// ran out of room
 			// we need to create an image from the bitmap, set all the handles in the glyphs to this point
-			// 
+			//
 
-			scaledSize = 256*256;
+			scaledSize = CANVAS_SIZE*CANVAS_SIZE;
 			newSize = scaledSize * 4;
-			imageBuff = ri.Malloc(newSize);
+			imageBuff = (unsigned char*)ri.Malloc(newSize);
 			left = 0;
 			max = 0;
 			for ( k = 0; k < (scaledSize) ; k++ ) {
@@ -495,19 +498,19 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 			}
 
 			Com_sprintf (name, sizeof(name), "fonts/fontImage_%i_%i.tga", imageNumber++, pointSize);
-			if (r_saveFontData->integer) { 
-				WriteTGA(name, imageBuff, 256, 256);
+			if (r_saveFontData->integer) {
+				WriteTGA(name, imageBuff, CANVAS_SIZE, CANVAS_SIZE);
 			}
 
 			//Com_sprintf (name, sizeof(name), "fonts/fontImage_%i_%i", imageNumber++, pointSize);
-			image = R_CreateImage(name, imageBuff, 256, 256, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE, 0 );
+			image = R_CreateImage(name, imageBuff, CANVAS_SIZE, CANVAS_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE, 0 );
 			h = RE_RegisterShaderFromImage(name, LIGHTMAP_2D, image, qfalse);
 			for (j = lastStart; j < i; j++) {
 				font->glyphs[j].glyph = h;
 				Q_strncpyz(font->glyphs[j].shaderName, name, sizeof(font->glyphs[j].shaderName));
 			}
 			lastStart = i;
-			Com_Memset(out, 0, 256*256);
+			Com_Memset(out, 0, CANVAS_SIZE*CANVAS_SIZE);
 			xOut = 0;
 			yOut = 0;
 			ri.Free(imageBuff);
