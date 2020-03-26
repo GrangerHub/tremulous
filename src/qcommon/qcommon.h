@@ -164,6 +164,16 @@ typedef struct {
 	void			*evPtr;			// this must be manually freed if not NULL
 } sysEvent_t;
 
+#ifdef NEW_FILESYSTEM
+// Different client configurations for multiprotocol servers (shared between server and filesystem)
+typedef enum {
+	CLIENT_PROFILE_1_1,
+	CLIENT_PROFILE_GPP,
+	CLIENT_PROFILE_1_3,
+	CLIENT_PROFILE_COUNT
+} clientProfile_t;
+#endif
+
 void		Com_QueueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength, void *ptr );
 int			Com_EventLoop( void );
 sysEvent_t	Com_GetSystemEvent( void );

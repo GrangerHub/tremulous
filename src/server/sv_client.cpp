@@ -467,6 +467,12 @@ gotnewcl:
 
 	Cvar_Set( va( "sv_clAltProto%i", clientNum ), ( version == 69 ? "2" : version == 70 ? "1" : "0" ) );
 
+#ifdef NEW_FILESYSTEM
+	// save the client version profile
+	newcl->clientProfile = ( version == 69 ? CLIENT_PROFILE_1_1 : version == 70 ? CLIENT_PROFILE_GPP :
+		CLIENT_PROFILE_1_3 );
+#endif
+
 	// save the challenge
 	newcl->challenge = challenge;
 
@@ -543,6 +549,10 @@ void SV_FreeClient(client_t *client)
 	client->queuedVoipPackets = 0;
 #endif
 
+#ifdef NEW_FILESYSTEM
+	fs_free_client_download_map(client->downloadMap);
+#endif
+
 	SV_Netchan_FreeQueue(client);
 	SV_CloseDownload(client);
 }
@@ -607,7 +617,9 @@ void SV_DropClient( client_t *drop, const char *reason ) {
 	}
 }
 
+#ifndef NEW_FILESYSTEM
 extern char alternateInfos[2][2][BIG_INFO_STRING];
+#endif
 
 /*
 ================
@@ -635,6 +647,13 @@ static void SV_SendClientGameState( client_t *client ) {
 	client->gotCP = false;
 #endif
 
+#ifdef NEW_FILESYSTEM
+	// Store download map for the client so all the pk3s in the gamestate will be available
+	// for the client to download even if the global download list changed during the client
+	// download sequence
+	fs_update_client_download_map(client->clientProfile, client->downloadMap);
+#endif
+
 	// when we receive the first packet from the client, we will
 	// notice that it is from a different serverid and that the
 	// gamestate message was not just sent, forcing a retransmit
@@ -658,8 +677,13 @@ static void SV_SendClientGameState( client_t *client ) {
 
 	// write the configstrings
 	for ( start = 0 ; start < MAX_CONFIGSTRINGS ; start++ ) {
+#ifdef NEW_FILESYSTEM
+		if ( start <= CS_SYSTEMINFO ) {
+			configstring = sv.versionedConfigstrings[start][client->clientProfile];
+#else
 		if ( start <= CS_SYSTEMINFO && client->netchan.alternateProtocol != 0 ) {
 			configstring = alternateInfos[start][ client->netchan.alternateProtocol - 1 ];
+#endif
 		} else {
 			configstring = sv.configstrings[start].s;
 		}
@@ -860,9 +884,8 @@ static qboolean SV_OpenDownload(client_t *cl, msg_t *msg) {
 				"Set autodownload to No in your settings and you might be able to join the game anyway.\n", cl->downloadName));
 		return qfalse; }
 
-	cl->download = fs_open_download_pak(cl->downloadName, (unsigned int *)&cl->downloadSize);
+	cl->download = fs_open_download_pak(cl->downloadMap, cl->downloadName, (unsigned int *)&cl->downloadSize);
 	if(!cl->download) {
-		// This could happen if the map changed during a client's download sequence
 		Com_Printf("clientDownload: %d : \"%s\" failed to load download pk3\n", (int) (cl - svs.clients), cl->downloadName);
 		SV_OpenDownloadError(cl, msg, va("File \"%s\" not available on server for downloading.\n"
 				"Try reconnecting to the server.\n", cl->downloadName));

@@ -659,8 +659,8 @@ void fs_startup(void)
     fs_read_inactive_mods = Cvar_Get("fs_read_inactive_mods", "1", CVAR_ARCHIVE);
     fs_list_inactive_mods = Cvar_Get("fs_list_inactive_mods", "1", CVAR_ARCHIVE);
     fs_download_manifest =
-        Cvar_Get("fs_download_manifest", "*mod_paks *cgame_pak *ui_pak *currentmap_pak *referenced_paks", CVAR_ARCHIVE);
-    fs_pure_manifest = Cvar_Get("fs_pure_manifest", "*mod_paks *base_paks *inactivemod_paks", CVAR_ARCHIVE);
+        Cvar_Get("fs_download_manifest", "#mod_paks #cgame_pak #ui_pak #currentmap_pak #referenced_paks", CVAR_ARCHIVE);
+    fs_pure_manifest = Cvar_Get("fs_pure_manifest", "#mod_paks #base_paks #inactivemod_paks", CVAR_ARCHIVE);
     fs_redownload_across_mods = Cvar_Get("fs_redownload_across_mods", "1", CVAR_ARCHIVE);
     fs_full_pure_validation = Cvar_Get("fs_full_pure_validation", "0", CVAR_ARCHIVE);
     fs_saveto_dlfolder = Cvar_Get("fs_saveto_dlfolder", "0", CVAR_ARCHIVE);

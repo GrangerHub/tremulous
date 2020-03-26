@@ -21,6 +21,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
+#include <string>
+#include "../qcommon/qcommon.h"
 #include "../qcommon/q_shared.h"
 
 /* ******************************************************************************** */
@@ -355,15 +357,29 @@ DEF_PUBLIC( int fs_estimate_remaining_downloads(void) )
 DEF_PUBLIC( void fs_finalize_download(void) )
 
 /* ******************************************************************************** */
-// Referenced Pak Tracking
+// Reference List Handling
 /* ******************************************************************************** */
+
+struct FS_ReferenceProfile {
+    // Defines reference-related constants for a particular client profile
+    std::string profile_description;
+    std::string download_hashes_cvar;
+    std::string download_names_cvar;
+    std::string pure_hashes_cvar;
+    std::string pure_names_cvar;
+    FS_ReferenceProfile(clientProfile_t profile);
+};
+
+class FS_DownloadMapShared;
 
 DEF_LOCAL( void fs_register_reference(const fsc_file_t *file) )
 DEF_PUBLIC( void FS_ClearPakReferences( int flags ) )
 DEF_PUBLIC( const char *FS_ReferencedPakNames( void ) )
 DEF_PUBLIC( const char *FS_ReferencedPakPureChecksums( void ) )
 DEF_PUBLIC( void fs_generate_reference_lists(void) )
-DEF_PUBLIC( fileHandle_t fs_open_download_pak(const char *path, unsigned int *size_out) )
+DEF_PUBLIC( void fs_update_client_download_map(clientProfile_t client_profile, FS_DownloadMapShared *&download_map) )
+DEF_PUBLIC( void fs_free_client_download_map(FS_DownloadMapShared *&download_map) )
+DEF_PUBLIC( fileHandle_t fs_open_download_pak(FS_DownloadMapShared *download_map, const char *path, unsigned int *size_out) )
 
 /* ******************************************************************************** */
 // Misc

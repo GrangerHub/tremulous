@@ -101,6 +101,9 @@ struct server_t {
     int snapshotCounter;  // incremented for each snapshot built
     int timeResidual;  // <= 1000 / sv_frame->value
     int nextFrameTime;  // when time > nextFrameTime, process world
+#ifdef NEW_FILESYSTEM
+    char versionedConfigstrings[2][CLIENT_PROFILE_COUNT][BIG_INFO_STRING];
+#endif
     configString_t configstrings[MAX_CONFIGSTRINGS];
     svEntity_t svEntities[MAX_GENTITIES];
 
@@ -152,6 +155,9 @@ struct client_t {
     clientState_t state;
     char userinfo[MAX_INFO_STRING];  // name, etc
     char userinfobuffer[MAX_INFO_STRING];  ///< used for buffering of user info
+#ifdef NEW_FILESYSTEM
+    clientProfile_t clientProfile;  // version profile for info strings, pak references, etc.
+#endif
 
     char reliableCommands[MAX_RELIABLE_COMMANDS][MAX_STRING_CHARS];
     int reliableSequence;  // last added reliable message, not necesarily sent or acknowledged yet
@@ -170,6 +176,9 @@ struct client_t {
     char name[MAX_NAME_LENGTH];  // extracted from userinfo, high bits masked
 
     // downloading
+#ifdef NEW_FILESYSTEM
+    FS_DownloadMapShared *downloadMap;  // used to match client download request to actual file
+#endif
     char downloadName[MAX_QPATH];  // if not empty string, we are downloading
     fileHandle_t download;  // file being downloaded
     int downloadSize;  // total bytes (can't use EOF because of paks)
