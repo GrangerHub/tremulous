@@ -29,6 +29,7 @@ itemDef
   textalign ALIGN_LEFT
   textvalign VALIGN_TOP
   textscale 0.35
+  textfont FONT_CHAT
   textstyle ITEM_TEXTSTYLE_SHADOWED
   ownerdraw CG_CONSOLE
 }
@@ -46,6 +47,7 @@ itemDef
   textalign ALIGN_LEFT
   textvalign VALIGN_CENTER
   textscale 0.3
+  textfont FONT_CHAT
   textstyle ITEM_TEXTSTYLE_SHADOWED
   ownerdraw CG_TUTORIAL
 }

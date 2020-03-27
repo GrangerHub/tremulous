@@ -2146,7 +2146,35 @@ static ID_INLINE fontInfo_t *UI_FontForScale(float scale)
         return &DC->Assets.textFont;
 }
 
-float UI_Char_Width(const char **text, float scale)
+static ID_INLINE fontInfo_t *UI_AutoSelectFont(float scale, int font)
+{
+  switch (font) {
+    case FONT_SMALL:
+      return &DC->Assets.smallFont;
+    case FONT_STANDARD:
+      return &DC->Assets.textFont;
+    case FONT_BIG:
+      return &DC->Assets.bigFont;
+    case FONT_CHAT:
+      if (DC->Assets.chatFontRegistered)
+        return &DC->Assets.chatFont;
+      else
+        break;
+    case FONT_ALIEN:
+      if (DC->Assets.alienFontRegistered)
+        return &DC->Assets.alienFont;
+      else
+        break;
+    case FONT_HUMAN:
+      if (DC->Assets.humanFontRegistered)
+        return &DC->Assets.humanFont;
+      else
+        break;
+  }
+  return UI_FontForScale(scale);
+}
+
+float UI_Char_Width(const char **text, float scale, int textfont)
 {
     glyphInfo_t *glyph;
     fontInfo_t *font;
@@ -2170,7 +2198,7 @@ float UI_Char_Width(const char **text, float scale)
             return 0.0f;
         }
 
-        font = UI_FontForScale(scale);
+        font = UI_AutoSelectFont(scale, textfont);
 
         if (UI_Text_IsEmoticon(*text, &emoticonEscaped, &emoticonLen, NULL, NULL, &emoticonWidth, NULL))
         {
@@ -2192,7 +2220,7 @@ float UI_Char_Width(const char **text, float scale)
     return 0.0f;
 }
 
-float UI_Text_Width(const char *text, float scale)
+float UI_Text_Width(const char *text, float scale, int font)
 {
     float out;
     const char *s = text;
@@ -2205,19 +2233,19 @@ float UI_Text_Width(const char *text, float scale)
         indentWidth = UI_Parse_Indent(&s);
 
         while (*s)
-            out += UI_Char_Width(&s, scale);
+            out += UI_Char_Width(&s, scale, font);
     }
 
     return out + indentWidth;
 }
 
-float UI_Text_Height(const char *text, float scale)
+float UI_Text_Height(const char *text, float scale, int textfont)
 {
     float max;
     glyphInfo_t *glyph;
     float useScale;
     const char *s = text;
-    fontInfo_t *font = UI_FontForScale(scale);
+    fontInfo_t *font = UI_AutoSelectFont(scale, textfont);
 
     useScale = scale * font->glyphScale;
     max = 0;
@@ -2249,9 +2277,9 @@ float UI_Text_Height(const char *text, float scale)
     return max * useScale;
 }
 
-float UI_Text_EmWidth(float scale) { return UI_Text_Width("M", scale); }
+float UI_Text_EmWidth(float scale, int font) { return UI_Text_Width("M", scale, font); }
 
-float UI_Text_EmHeight(float scale) { return UI_Text_Height("M", scale); }
+float UI_Text_EmHeight(float scale, int font) { return UI_Text_Height("M", scale, font); }
 
 /*
 ================
@@ -2319,15 +2347,16 @@ static void UI_Text_PaintChar(float x, float y, float scale, glyphInfo_t *glyph,
 }
 
 static void UI_Text_Paint_Generic(
-    float x, float y, float scale, float gapAdjust, const char *text,
-    vec4_t color, int style, int limit, float *maxX, int cursorPos, char cursor)
+    float x, float y, float scale, int textfont, float gapAdjust,
+    const char *text, vec4_t color, int style, int limit, float *maxX,
+    int cursorPos, char cursor)
 {
     const char  *s = text;
     int         len;
     int         count = 0;
     vec4_t      newColor;
     vec4_t      forceColor;
-    fontInfo_t  *font = UI_FontForScale(scale);
+    fontInfo_t  *font = UI_AutoSelectFont(scale);
     glyphInfo_t *glyph;
     float       useScale;
     qhandle_t   emoticonHandle = 0;
@@ -2359,7 +2388,7 @@ static void UI_Text_Paint_Generic(
     while (s && *s && count < len)
     {
         const char *t = s;
-        float charWidth = UI_Char_Width(&t, scale);
+        float charWidth = UI_Char_Width(&t, scale, textfont);
         glyph = &font->glyphs[(int)*s];
 
         if (maxX && charWidth + x > *maxX)
@@ -2538,20 +2567,20 @@ static void UI_Text_Paint_Generic(
 }
 
 void UI_Text_Paint_Limit(
-    float *maxX, float x, float y, float scale, vec4_t color, const char *text, float adjust, int limit)
+    float *maxX, float x, float y, float scale, int font, vec4_t color, const char *text, float adjust, int limit)
 {
-    UI_Text_Paint_Generic(x, y, scale, adjust, text, color, ITEM_TEXTSTYLE_NORMAL, limit, maxX, -1, 0);
+    UI_Text_Paint_Generic(x, y, scale, font, adjust, text, color, ITEM_TEXTSTYLE_NORMAL, limit, maxX, -1, 0);
 }
 
-void UI_Text_Paint(float x, float y, float scale, vec4_t color, const char *text, float adjust, int limit, int style)
+void UI_Text_Paint(float x, float y, float scale, int font, vec4_t color, const char *text, float adjust, int limit, int style)
 {
-    UI_Text_Paint_Generic(x, y, scale, adjust, text, color, style, limit, NULL, -1, 0);
+    UI_Text_Paint_Generic(x, y, scale, font, adjust, text, color, style, limit, NULL, -1, 0);
 }
 
 void UI_Text_PaintWithCursor(
-    float x, float y, float scale, vec4_t color, const char *text, int cursorPos, char cursor, int limit, int style)
+    float x, float y, float scale, int font, vec4_t color, const char *text, int cursorPos, char cursor, int limit, int style)
 {
-    UI_Text_Paint_Generic(x, y, scale, 0.0, text, color, style, limit, NULL, cursorPos, cursor);
+    UI_Text_Paint_Generic(x, y, scale, font, 0.0, text, color, style, limit, NULL, cursorPos, cursor);
 }
 
 commandDef_t commandList[] = {
@@ -3609,7 +3638,7 @@ static void Item_TextField_CalcPaintOffset(itemDef_t *item, char *buff)
 
             if (buff[item->cursorPos + 1] == '\0')
             {
-                while (UI_Text_Width(&buff[editPtr->paintOffset], item->textscale) <=
+                while (UI_Text_Width(&buff[editPtr->paintOffset], item->textscale, item->textfont) <=
                            (editPtr->maxFieldWidth - EDIT_CURSOR_WIDTH) &&
                        editPtr->paintOffset > 0)
                     editPtr->paintOffset--;
@@ -3619,7 +3648,7 @@ static void Item_TextField_CalcPaintOffset(itemDef_t *item, char *buff)
 
             // Shift paintOffset so that the cursor is visible
 
-            while (UI_Text_Width(&buff[editPtr->paintOffset], item->textscale) >
+            while (UI_Text_Width(&buff[editPtr->paintOffset], item->textscale, item->textfont) >
                    (editPtr->maxFieldWidth - EDIT_CURSOR_WIDTH))
                 editPtr->paintOffset++;
         }
@@ -4960,14 +4989,14 @@ void Item_SetTextExtents(itemDef_t *item, const char *text)
             {
                 char buff[MAX_CVAR_VALUE_STRING];
                 DC->getCVarString(item->cvar, buff, sizeof(buff));
-                originalWidth = UI_Text_Width(item->text, item->textscale) + UI_Text_Width(buff, item->textscale);
+                originalWidth = UI_Text_Width(item->text, item->textscale, item->textfont) + UI_Text_Width(buff, item->textscale, item->textfont);
             }
             else
-                originalWidth = UI_Text_Width(item->text, item->textscale);
+                originalWidth = UI_Text_Width(item->text, item->textscale, item->textfont);
         }
 
-        item->textRect.w = UI_Text_Width(textPtr, item->textscale);
-        item->textRect.h = UI_Text_Height(textPtr, item->textscale);
+        item->textRect.w = UI_Text_Width(textPtr, item->textscale, item->textfont);
+        item->textRect.h = UI_Text_EmHeight(item->textscale, item->textfont);
 
         if (item->textvalignment == VALIGN_BOTTOM)
             item->textRect.y = item->textaligny + item->window.rect.h;
@@ -5066,7 +5095,7 @@ static void SkipWhiteSpace(const char **text, char *lastColor)
     }
 }
 
-const char *Item_Text_Wrap(const char *text, float scale, float width)
+const char *Item_Text_Wrap(const char *text, float scale, int font, float width)
 {
     static char out[8192] = "";
     char *paint = out;
@@ -5125,7 +5154,7 @@ const char *Item_Text_Wrap(const char *text, float scale, float width)
             if (!previousCharIsSpace && isspace(*q))
                 eol = q;
 
-            textWidth += UI_Char_Width(&q, scale);
+            textWidth += UI_Char_Width(&q, scale, font);
         }
 
         // No split has taken place, so just split mid-word
@@ -5197,6 +5226,7 @@ typedef struct {
     char text[MAX_WRAP_TEXT * MAX_WRAP_LINES];
     rectDef_t rect;
     float scale;
+    int font;
     char lines[MAX_WRAP_LINES][MAX_WRAP_TEXT];
     float lineCoords[MAX_WRAP_LINES][2];
     int numLines;
@@ -5208,7 +5238,7 @@ static int cacheWriteIndex = 0;
 static int cacheReadIndex = 0;
 static int cacheReadLineNum = 0;
 
-static void UI_CreateCacheEntry(const char *text, const rectDef_t *rect, float scale)
+static void UI_CreateCacheEntry(const char *text, const rectDef_t *rect, float scale, int font)
 {
     wrapCache_t *cacheEntry = &wrapCache[cacheWriteIndex];
 
@@ -5221,6 +5251,7 @@ static void UI_CreateCacheEntry(const char *text, const rectDef_t *rect, float s
     strcpy(cacheEntry->text, text);
     cacheEntry->rect = *rect;
     cacheEntry->scale = scale;
+    cacheEntry->font = font;
     cacheEntry->numLines = 0;
 }
 
@@ -5255,7 +5286,7 @@ static void UI_FinishCacheEntry(void)
         cacheWriteIndex = (cacheWriteIndex + 1) % MAX_WRAP_CACHE;
 }
 
-static qboolean UI_CheckWrapCache(const char *text, const rectDef_t *rect, float scale)
+static qboolean UI_CheckWrapCache(const char *text, const rectDef_t *rect, float scale, int font)
 {
     int i;
 
@@ -5270,7 +5301,7 @@ static qboolean UI_CheckWrapCache(const char *text, const rectDef_t *rect, float
         if (strcmp(text, cacheEntry->text))
             continue;
 
-        if (cacheEntry->scale != scale)
+        if (cacheEntry->scale != scale || cacheEntry->font != font)
             continue;
 
         cacheReadIndex = i;
@@ -5325,18 +5356,18 @@ void Item_Text_Wrapped_Paint(itemDef_t *item)
     Item_TextColor(item, &color);
 
     // Check if this block is cached
-    if (useWrapCache && UI_CheckWrapCache(textPtr, &item->window.rect, item->textscale))
+    if (useWrapCache && UI_CheckWrapCache(textPtr, &item->window.rect, item->textscale, item->textfont))
     {
         while (UI_NextWrapLine(&p, &x, &y))
         {
-            UI_Text_Paint(x, y, item->textscale, color, p, 0, 0, item->textStyle);
+            UI_Text_Paint(x, y, item->textscale, item->textfont, color, p, 0, 0, item->textStyle);
         }
     }
     else
     {
         char buff[1024];
-        float fontHeight = UI_Text_EmHeight(item->textscale);
-        const float lineSpacing = fontHeight * 0.4f;
+        float fontHeight = UI_Text_EmHeight(item->textscale, item->textfont);
+        const float lineSpacing = fontHeight * 0.4f; // Change this factor if overlap
         float lineHeight = fontHeight + lineSpacing;
         float textHeight;
         int textLength;
@@ -5345,14 +5376,14 @@ void Item_Text_Wrapped_Paint(itemDef_t *item)
         int i;
 
         if (useWrapCache)
-            UI_CreateCacheEntry(textPtr, &item->window.rect, item->textscale);
+            UI_CreateCacheEntry(textPtr, &item->window.rect, item->textscale, item->textfont);
 
         x = item->window.rect.x + item->textalignx;
         y = item->window.rect.y + item->textaligny;
         w = item->window.rect.w - (2.0f * item->textalignx);
         h = item->window.rect.h - (2.0f * item->textaligny);
 
-        textPtr = Item_Text_Wrap(textPtr, item->textscale, w);
+        textPtr = Item_Text_Wrap(textPtr, item->textscale, item->textfont, w);
         textLength = strlen(textPtr);
 
         // Count lines
@@ -5422,6 +5453,7 @@ void Item_Text_Wrapped_Paint(itemDef_t *item)
 
                 lineItem.type = ITEM_TYPE_TEXT;
                 lineItem.textscale = item->textscale;
+                lineItem.textfont = item->textfont;
                 lineItem.textStyle = item->textStyle;
                 lineItem.text = buff;
                 lineItem.textalignment = item->textalignment;
@@ -5449,7 +5481,7 @@ void Item_Text_Wrapped_Paint(itemDef_t *item)
                 }
 
                 Item_SetTextExtents(&lineItem, buff);
-                UI_Text_Paint(lineItem.textRect.x, lineItem.textRect.y, lineItem.textscale, color, buff, 0, 0,
+                UI_Text_Paint(lineItem.textRect.x, lineItem.textRect.y, lineItem.textscale, lineItem.textfont, color, buff, 0, 0,
                     lineItem.textStyle);
 
                 if (useWrapCache)
@@ -5469,8 +5501,8 @@ void Item_Text_Wrapped_Paint(itemDef_t *item)
 UI_DrawTextBlock
 ==============
 */
-void UI_DrawTextBlock(rectDef_t *rect, float text_x, float text_y, vec4_t color, float scale, int textalign,
-    int textvalign, int textStyle, const char *text)
+void UI_DrawTextBlock(rectDef_t *rect, float text_x, float text_y, vec4_t color, float scale,
+      int font, int textalign, int textvalign, int textStyle, const char *text)
 {
     static menuDef_t dummyParent;
     static itemDef_t textItem;
@@ -5496,6 +5528,7 @@ void UI_DrawTextBlock(rectDef_t *rect, float text_x, float text_y, vec4_t color,
     textItem.textalignx = text_x;
     textItem.textaligny = text_y;
     textItem.textscale = scale;
+    textItem.textfont = font;
     textItem.textStyle = textStyle;
 
     // Utilise existing wrap code
@@ -5535,7 +5568,7 @@ void Item_Text_Paint(itemDef_t *item)
 
     Item_TextColor(item, &color);
 
-    UI_Text_Paint(item->textRect.x, item->textRect.y, item->textscale, color, textPtr, 0, 0, item->textStyle);
+    UI_Text_Paint(item->textRect.x, item->textRect.y, item->textscale, item->textfont, color, textPtr, 0, 0, item->textStyle);
 }
 
 void Item_TextField_Paint(itemDef_t *item)
@@ -5571,7 +5604,7 @@ void Item_TextField_Paint(itemDef_t *item)
         editPtr->paintOffset = 0;
 
     // Shorten string to max viewable
-    while (UI_Text_Width(buff + editPtr->paintOffset, item->textscale) > (editPtr->maxFieldWidth - cursorWidth) &&
+    while (UI_Text_Width(buff + editPtr->paintOffset, item->textscale, item->textfont) > (editPtr->maxFieldWidth - cursorWidth) &&
            strlen(buff) > 0)
         buff[strlen(buff) - 1] = '\0';
 
@@ -5584,13 +5617,13 @@ void Item_TextField_Paint(itemDef_t *item)
 
     if (editing)
     {
-        UI_Text_PaintWithCursor(item->textRect.x + item->textRect.w + offset, item->textRect.y, item->textscale,
+        UI_Text_PaintWithCursor(item->textRect.x + item->textRect.w + offset, item->textRect.y, item->textscale, item->textfont,
             newColor, buff + editPtr->paintOffset, item->cursorPos - editPtr->paintOffset, cursor,
             editPtr->maxPaintChars, item->textStyle);
     }
     else
     {
-        UI_Text_Paint(item->textRect.x + item->textRect.w + offset, item->textRect.y, item->textscale, newColor,
+        UI_Text_Paint(item->textRect.x + item->textRect.w + offset, item->textRect.y, item->textscale, item->textfont, newColor,
             buff + editPtr->paintOffset, 0, editPtr->maxPaintChars, item->textStyle);
     }
 }
@@ -5614,11 +5647,11 @@ void Item_YesNo_Paint(itemDef_t *item)
     if (item->text)
     {
         Item_Text_Paint(item);
-        UI_Text_Paint(item->textRect.x + item->textRect.w + offset, item->textRect.y, item->textscale, newColor,
+        UI_Text_Paint(item->textRect.x + item->textRect.w + offset, item->textRect.y, item->textscale, item->textfont, newColor,
             (value != 0) ? "Yes" : "No", 0, 0, item->textStyle);
     }
     else
-        UI_Text_Paint(item->textRect.x, item->textRect.y, item->textscale, newColor, (value != 0) ? "Yes" : "No", 0, 0,
+        UI_Text_Paint(item->textRect.x, item->textRect.y, item->textscale, item->textfont, newColor, (value != 0) ? "Yes" : "No", 0, 0,
             item->textStyle);
 }
 
@@ -5638,11 +5671,11 @@ void Item_Multi_Paint(itemDef_t *item)
     if (item->text)
     {
         Item_Text_Paint(item);
-        UI_Text_Paint(item->textRect.x + item->textRect.w + ITEM_VALUE_OFFSET, item->textRect.y, item->textscale,
+        UI_Text_Paint(item->textRect.x + item->textRect.w + ITEM_VALUE_OFFSET, item->textRect.y, item->textscale, item->textfont,
             newColor, text, 0, 0, item->textStyle);
     }
     else
-        UI_Text_Paint(item->textRect.x, item->textRect.y, item->textscale, newColor, text, 0, 0, item->textStyle);
+        UI_Text_Paint(item->textRect.x, item->textRect.y, item->textscale, item->textfont, newColor, text, 0, 0, item->textStyle);
 }
 
 void Item_Cycle_Paint(itemDef_t *item)
@@ -5662,11 +5695,11 @@ void Item_Cycle_Paint(itemDef_t *item)
     if (item->text)
     {
         Item_Text_Paint(item);
-        UI_Text_Paint(item->textRect.x + item->textRect.w + ITEM_VALUE_OFFSET, item->textRect.y, item->textscale,
+        UI_Text_Paint(item->textRect.x + item->textRect.w + ITEM_VALUE_OFFSET, item->textRect.y, item->textscale, item->textfont,
             newColor, text, 0, 0, item->textStyle);
     }
     else
-        UI_Text_Paint(item->textRect.x, item->textRect.y, item->textscale, newColor, text, 0, 0, item->textStyle);
+        UI_Text_Paint(item->textRect.x, item->textRect.y, item->textscale, item->textfont, newColor, text, 0, 0, item->textStyle);
 }
 
 typedef struct {
@@ -5922,18 +5955,18 @@ void Item_Bind_Paint(itemDef_t *item)
 
         if (g_bindItem == item && g_waitingForKey)
         {
-            UI_Text_Paint(item->textRect.x + item->textRect.w + ITEM_VALUE_OFFSET, item->textRect.y, item->textscale,
+            UI_Text_Paint(item->textRect.x + item->textRect.w + ITEM_VALUE_OFFSET, item->textRect.y, item->textscale, item->textfont,
                 newColor, "Press key", 0, maxChars, item->textStyle);
         }
         else
         {
             BindingFromName(item->cvar);
-            UI_Text_Paint(item->textRect.x + item->textRect.w + ITEM_VALUE_OFFSET, item->textRect.y, item->textscale,
+            UI_Text_Paint(item->textRect.x + item->textRect.w + ITEM_VALUE_OFFSET, item->textRect.y, item->textscale, item->textfont,
                 newColor, g_nameBind1, 0, maxChars, item->textStyle);
         }
     }
     else
-        UI_Text_Paint(item->textRect.x, item->textRect.y, item->textscale, newColor, (value != 0) ? "FIXME" : "FIXME",
+        UI_Text_Paint(item->textRect.x, item->textRect.y, item->textscale, item->textfont, newColor, (value != 0) ? "FIXME" : "FIXME",
             0, maxChars, item->textStyle);
 }
 
@@ -6193,7 +6226,7 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
     }
     else
     {
-        const float m = UI_Text_EmHeight(item->textscale);
+        const float m = UI_Text_EmHeight(item->textscale, item->textfont);
         char text[MAX_STRING_CHARS];
         qhandle_t optionalImage;
         Vector4Copy(item->window.outlineColor, hightlightColor);
@@ -6241,7 +6274,7 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
                 {
                     float alignOffset = 0.0f, tw;
 
-                    tw = UI_Text_Width(text, item->textscale);
+                    tw = UI_Text_Width(text, item->textscale, item->textfont);
 
                     switch (listPtr->columnInfo[j].align)
                     {
@@ -6262,7 +6295,7 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
                     }
 
                     UI_Text_Paint(x + columnPos + alignOffset, y + m + ((listPtr->elementHeight - m) / 2.0f),
-                        item->textscale, (highlight ? menu->focusColor : item->window.foreColor), text, 0, 0, item->textStyle);
+                        item->textscale, item->textfont, (highlight ? menu->focusColor : item->window.foreColor), text, 0, 0, item->textStyle);
                 }
 
                 UI_ClearClipRegion();
@@ -6285,7 +6318,7 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
                 DC->drawHandlePic(x + offset, y, listPtr->elementHeight, listPtr->elementHeight, optionalImage);
             else if (text[0])
             {
-                UI_Text_Paint(x + offset, y + m + ((listPtr->elementHeight - m) / 2.0f), item->textscale,
+                UI_Text_Paint(x + offset, y + m + ((listPtr->elementHeight - m) / 2.0f), item->textscale, item->textfont,
                     (highlight ? menu->focusColor : item->window.foreColor), text, 0, 0, item->textStyle);
             }
 
@@ -6442,7 +6475,7 @@ void Item_OwnerDraw_Paint(itemDef_t *item)
                 Item_Text_Paint(item);
 
                 UI_Text_Paint(item->textRect.x + item->textRect.w + ITEM_VALUE_OFFSET, item->textRect.y,
-                    item->textscale, color, text, 0, 0, item->textStyle);
+                    item->textscale, item->textfont, color, text, 0, 0, item->textStyle);
             }
             else
             {
@@ -6456,7 +6489,7 @@ void Item_OwnerDraw_Paint(itemDef_t *item)
             DC->ownerDrawItem(item->window.rect.x, item->window.rect.y, item->window.rect.w, item->window.rect.h,
                 item->textalignx, item->textaligny, item->window.ownerDraw, item->window.ownerDrawFlags,
                 item->alignment, item->textalignment, item->textvalignment, item->window.borderSize, item->textscale,
-                color, item->window.backColor, item->window.background, item->textStyle);
+                item->textfont, color, item->window.backColor, item->window.background, item->textStyle);
         }
     }
 }
@@ -7556,6 +7589,14 @@ qboolean ItemParse_textscale(itemDef_t *item, int handle)
     return qtrue;
 }
 
+qboolean ItemParse_textfont(itemDef_t *item, int handle)
+{
+    if (!PC_Int_Parse(handle, &item->textfont))
+        return qfalse;
+
+    return qtrue;
+}
+
 qboolean ItemParse_textstyle(itemDef_t *item, int handle)
 {
     if (!PC_Int_Parse(handle, &item->textStyle))
@@ -7987,6 +8028,7 @@ keywordHash_t itemParseKeywords[] = {{"name", ItemParse_name, TYPE_ANY, NULL}, {
     {"textalign", ItemParse_textalign, TYPE_ANY, NULL}, {"textvalign", ItemParse_textvalign, TYPE_ANY, NULL},
     {"textalignx", ItemParse_textalignx, TYPE_ANY, NULL}, {"textaligny", ItemParse_textaligny, TYPE_ANY, NULL},
     {"textscale", ItemParse_textscale, TYPE_ANY, NULL}, {"textstyle", ItemParse_textstyle, TYPE_ANY, NULL},
+    {"textfont", ItemParse_textfont, TYPE_ANY, NULL},
     {"backcolor", ItemParse_backcolor, TYPE_ANY, NULL}, {"forecolor", ItemParse_forecolor, TYPE_ANY, NULL},
     {"bordercolor", ItemParse_bordercolor, TYPE_ANY, NULL}, {"borderstyle", ItemParse_borderstyle, TYPE_ANY, NULL},
     {"outlinecolor", ItemParse_outlinecolor, TYPE_ANY, NULL},
@@ -8633,7 +8675,7 @@ void Menu_PaintAll(void)
     if (DC->getCVarValue("ui_developer"))
     {
         vec4_t v = {1, 1, 1, 1};
-        UI_Text_Paint(5, 25, .5, v, va("fps: %f", DC->FPS), 0, 0, 0);
+        UI_Text_Paint(5, 25, .5, FONT_AUTO, v, va("fps: %f", DC->FPS), 0, 0, 0);
     }
 }
 

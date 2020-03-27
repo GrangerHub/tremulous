@@ -1228,6 +1228,7 @@ qboolean CG_Asset_Parse( int handle )
 {
   pc_token_t token;
   const char *tempStr;
+  const char *tempStr2;
 
   if( !trap_Parse_ReadToken( handle, &token ) )
     return qfalse;
@@ -1251,7 +1252,10 @@ qboolean CG_Asset_Parse( int handle )
       if( !PC_String_Parse( handle, &tempStr ) || !PC_Int_Parse( handle, &pointSize ) )
         return qfalse;
 
-      cgDC.registerFont( tempStr, pointSize, &cgDC.Assets.textFont );
+      if (PC_String_Parse(handle, &tempStr2))
+        cgDC.registerNewFont( tempStr, tempStr2, pointSize, &cgDC.Assets.textFont );
+      else
+        cgDC.registerFont( tempStr, pointSize, &cgDC.Assets.textFont );
       continue;
     }
 
@@ -1263,19 +1267,67 @@ qboolean CG_Asset_Parse( int handle )
       if( !PC_String_Parse( handle, &tempStr ) || !PC_Int_Parse( handle, &pointSize ) )
         return qfalse;
 
-      cgDC.registerFont( tempStr, pointSize, &cgDC.Assets.smallFont );
+      if (PC_String_Parse(handle, &tempStr2))
+        cgDC.registerNewFont( tempStr, tempStr2, pointSize, &cgDC.Assets.smallFont );
+      else
+        cgDC.registerFont( tempStr, pointSize, &cgDC.Assets.smallFont );
       continue;
     }
 
-    // font
-    if( Q_stricmp( token.string, "bigfont" ) == 0 )
+    // bigFont
+    if( Q_stricmp( token.string, "bigFont" ) == 0 )
     {
       int pointSize;
 
       if( !PC_String_Parse( handle, &tempStr ) || !PC_Int_Parse( handle, &pointSize ) )
         return qfalse;
 
-      cgDC.registerFont( tempStr, pointSize, &cgDC.Assets.bigFont );
+      if (PC_String_Parse(handle, &tempStr2))
+        cgDC.registerNewFont( tempStr, tempStr2, pointSize, &cgDC.Assets.bigFont );
+      else
+        cgDC.registerFont( tempStr, pointSize, &cgDC.Assets.bigFont );
+      continue;
+    }
+
+    // chatFont
+    if( Q_stricmp( token.string, "chatFont" ) == 0 )
+    {
+      int pointSize;
+
+      if( !PC_String_Parse( handle, &tempStr ) || !PC_Int_Parse( handle, &pointSize )
+          || !PC_String_Parse(handle, &tempStr2) )
+        return qfalse;
+
+      cgDC.registerNewFont( tempStr, tempStr2, pointSize, &cgDC.Assets.chatFont );
+      cgDC.Assets.chatFontRegistered = qtrue;
+      continue;
+    }
+
+    // alienFont
+    if( Q_stricmp( token.string, "alienFont" ) == 0 )
+    {
+      int pointSize;
+
+      if( !PC_String_Parse( handle, &tempStr ) || !PC_Int_Parse( handle, &pointSize )
+          || !PC_String_Parse(handle, &tempStr2) )
+        return qfalse;
+
+      cgDC.registerNewFont( tempStr, tempStr2, pointSize, &cgDC.Assets.alienFont );
+      cgDC.Assets.alienFontRegistered = qtrue;
+      continue;
+    }
+
+    // humanFont
+    if( Q_stricmp( token.string, "humanFont" ) == 0 )
+    {
+      int pointSize;
+
+      if( !PC_String_Parse( handle, &tempStr ) || !PC_Int_Parse( handle, &pointSize )
+          || !PC_String_Parse(handle, &tempStr2) )
+        return qfalse;
+
+      cgDC.registerNewFont( tempStr, tempStr2, pointSize, &cgDC.Assets.humanFont );
+      cgDC.Assets.humanFontRegistered = qtrue;
       continue;
     }
 
@@ -1754,18 +1806,18 @@ static float CG_Cvar_Get( const char *cvar )
   return atof( buff );
 }
 
-void CG_Text_PaintWithCursor( float x, float y, float scale, vec4_t color, const char *text,
+void CG_Text_PaintWithCursor( float x, float y, float scale, int font, vec4_t color, const char *text,
                               int cursorPos, char cursor, int limit, int style )
 {
-  UI_Text_Paint( x, y, scale, color, text, 0, limit, style );
+  UI_Text_Paint( x, y, scale, font, color, text, 0, limit, style );
 }
 
-static int CG_OwnerDrawWidth( int ownerDraw, float scale )
+static int CG_OwnerDrawWidth( int ownerDraw, float scale, int font )
 {
   switch( ownerDraw )
   {
     case CG_KILLER:
-      return UI_Text_Width( CG_GetKillerText( ), scale );
+      return UI_Text_Width( CG_GetKillerText( ), scale, font );
       break;
   }
 
@@ -1833,6 +1885,7 @@ void CG_LoadHudMenu( void )
   cgDC.addRefEntityToScene  = &trap_R_AddRefEntityToScene;
   cgDC.renderScene          = &trap_R_RenderScene;
   cgDC.registerFont         = &trap_R_RegisterFont;
+  cgDC.registerNewFont      = &trap_R_RegisterNewFont;
   cgDC.ownerDrawItem        = &CG_OwnerDraw;
   cgDC.getValue             = &CG_GetValue;
   cgDC.ownerDrawVisible     = &CG_OwnerDrawVisible;

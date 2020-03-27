@@ -53,6 +53,7 @@
       textvalign VALIGN_CENTER
       textstyle ITEM_TEXTSTYLE_SHADOWED
       textscale .4
+      textfont FONT_CHAT
       forecolor 0.93 0.93 0.92 1
       visible MENU_TRUE
       onCharEntry
@@ -189,6 +190,7 @@
       textvalign VALIGN_CENTER
       textstyle ITEM_TEXTSTYLE_SHADOWED
       textscale .4
+      textfont FONT_CHAT
       forecolor 0.93 0.93 0.92 1
       visible MENU_TRUE
       onCharEntry
@@ -325,6 +327,7 @@
       textvalign VALIGN_CENTER
       textstyle ITEM_TEXTSTYLE_SHADOWED
       textscale .4
+      textfont FONT_CHAT
       forecolor 0.93 0.93 0.92 1
       visible MENU_TRUE
       onCharEntry
@@ -461,6 +464,7 @@
       textvalign VALIGN_CENTER
       textstyle ITEM_TEXTSTYLE_SHADOWED
       textscale .4
+      textfont FONT_CHAT
       forecolor 0.93 0.93 0.92 1
       visible MENU_TRUE
       onCharEntry

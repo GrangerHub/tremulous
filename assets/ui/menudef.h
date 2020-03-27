@@ -39,6 +39,17 @@ enum
 
 enum
 {
+  FONT_AUTO = 0,  // Default font based on textscale
+  FONT_SMALL,     // Small font
+  FONT_STANDARD,  // Simple font
+  FONT_BIG,       // Big font
+  FONT_CHAT,       // Big font
+  FONT_ALIEN,     // Font dedicated for aliens UI
+  FONT_HUMAN     // Font dedicated for humans UI
+};
+
+enum
+{
   ITEM_TEXTSTYLE_NORMAL,          // normal text
   ITEM_TEXTSTYLE_BLINK,           // fast blinking
   ITEM_TEXTSTYLE_PULSE,           // slow pulsing

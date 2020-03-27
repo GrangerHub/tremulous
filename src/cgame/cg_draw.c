@@ -30,7 +30,8 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 
 menuDef_t *menuScoreboard = NULL;
 
-static void CG_AlignText( rectDef_t *rect, const char *text, float scale,
+static void CG_AlignText( rectDef_t *rect, const char *text,
+                          float scale, int font,
                           float w, float h,
                           int align, int valign,
                           float *x, float *y )
@@ -39,8 +40,8 @@ static void CG_AlignText( rectDef_t *rect, const char *text, float scale,
 
   if( scale > 0.0f )
   {
-    w = UI_Text_Width( text, scale );
-    h = UI_Text_Height( text, scale );
+    w = UI_Text_Width( text, scale, font );
+    h = UI_Text_Height( text, scale, font );
   }
 
   switch( align )
@@ -241,7 +242,7 @@ void CG_DrawField( float x, float y, int width, float cw, float ch, int value )
 }
 
 static void CG_DrawNewProgressBar( rectDef_t *rect, vec4_t color,
-                                vec4_t backColor, float scale, int align,
+                                vec4_t backColor, float scale, int font, int align,
                                 int textalign, int textStyle, float borderSize,
                                 float progress )
 {
@@ -286,9 +287,9 @@ static void CG_DrawNewProgressBar( rectDef_t *rect, vec4_t color,
   if( scale > 0.0 )
   {
     Com_sprintf( textBuffer, sizeof( textBuffer ), "%d%%", (int)( progress * 100 ) );
-    CG_AlignText( rect, textBuffer, scale, 0.0f, 0.0f, textalign, VALIGN_CENTER, &tx, &ty );
+    CG_AlignText( rect, textBuffer, scale, font, 0.0f, 0.0f, textalign, VALIGN_CENTER, &tx, &ty );
 
-    UI_Text_Paint( tx, ty, scale, color, textBuffer, 0, 0, textStyle );
+    UI_Text_Paint( tx, ty, scale, font, color, textBuffer, 0, 0, textStyle );
   }
 }
 
@@ -347,9 +348,9 @@ static void CG_DrawProgressBar( rectDef_t *rect, vec4_t color, float scale,
   if( scale > 0.0 )
   {
     Com_sprintf( textBuffer, sizeof( textBuffer ), "%d%%", (int)( progress * 100 ) );
-    CG_AlignText( rect, textBuffer, scale, 0.0f, 0.0f, textalign, VALIGN_CENTER, &tx, &ty );
+    CG_AlignText( rect, textBuffer, scale, FONT_AUTO, 0.0f, 0.0f, textalign, VALIGN_CENTER, &tx, &ty );
 
-    UI_Text_Paint( tx, ty, scale, color, textBuffer, 0, 0, textStyle );
+    UI_Text_Paint( tx, ty, scale, FONT_AUTO, color, textBuffer, 0, 0, textStyle );
   }
 }
 
@@ -682,7 +683,7 @@ static void CG_DrawPlayerWallclimbing( rectDef_t *rect, vec4_t backColor, vec4_t
   trap_R_SetColor( NULL );
 }
 
-static void CG_DrawPlayerAmmoValue( rectDef_t *rect, vec4_t color )
+static void CG_DrawPlayerAmmoValue( rectDef_t *rect, vec4_t color, int font )
 {
   int value;
   int valueMarked = -1;
@@ -745,8 +746,8 @@ static void CG_DrawPlayerAmmoValue( rectDef_t *rect, vec4_t color )
     else
       scale = 0.31;
 
-    CG_AlignText( rect, text, scale, 0.0f, 0.0f, ALIGN_RIGHT, VALIGN_CENTER, &tx, &ty );
-    UI_Text_Paint( tx + 1, ty, scale, color, text, 0, 0, ITEM_TEXTSTYLE_NORMAL );
+    CG_AlignText( rect, text, scale, font, 0.0f, 0.0f, ALIGN_RIGHT, VALIGN_CENTER, &tx, &ty );
+    UI_Text_Paint( tx + 1, ty, scale, font, color, text, 0, 0, ITEM_TEXTSTYLE_NORMAL );
     trap_R_SetColor( NULL );
   }
 }
@@ -1123,68 +1124,68 @@ static void CG_DrawPlayerChargeBar( rectDef_t *rect, vec4_t ref_color,
 }
 
 static void CG_DrawProgressLabel( rectDef_t *rect, float text_x, float text_y, vec4_t color,
-                                  float scale, int textalign, int textvalign,
+                                  float scale, int font, int textalign, int textvalign,
                                   const char *s, float fraction )
 {
   vec4_t white = { 1.0f, 1.0f, 1.0f, 1.0f };
   float tx, ty;
 
-  CG_AlignText( rect, s, scale, 0.0f, 0.0f, textalign, textvalign, &tx, &ty );
+  CG_AlignText( rect, s, scale, font, 0.0f, 0.0f, textalign, textvalign, &tx, &ty );
 
   if( fraction < 1.0f )
-    UI_Text_Paint( text_x + tx, text_y + ty, scale, white,
+    UI_Text_Paint( text_x + tx, text_y + ty, scale, font, white,
       s, 0, 0, ITEM_TEXTSTYLE_NORMAL );
   else
-    UI_Text_Paint( text_x + tx, text_y + ty, scale, color,
+    UI_Text_Paint( text_x + tx, text_y + ty, scale, font, color,
       s, 0, 0, ITEM_TEXTSTYLE_NEON );
 }
 
 static void CG_DrawMediaProgress( rectDef_t *rect, vec4_t color, vec4_t backColor, float scale,
-                                  int align, int textalign, int textStyle,
+                                  int font, int align, int textalign, int textStyle,
                                   float borderSize )
 {
-  CG_DrawNewProgressBar( rect, color, backColor, scale, align, textalign, textStyle,
+  CG_DrawNewProgressBar( rect, color, backColor, scale, font, align, textalign, textStyle,
                       borderSize, cg.mediaFraction );
 }
 
 static void CG_DrawMediaProgressLabel( rectDef_t *rect, float text_x, float text_y,
-                                       vec4_t color, float scale, int textalign, int textvalign )
+                                       vec4_t color, float scale, int font, int textalign, int textvalign )
 {
-  CG_DrawProgressLabel( rect, text_x, text_y, color, scale, textalign, textvalign,
+  CG_DrawProgressLabel( rect, text_x, text_y, color, scale, font, textalign, textvalign,
                         "Map and Textures", cg.mediaFraction );
 }
 
 static void CG_DrawBuildablesProgress( rectDef_t *rect, vec4_t color, vec4_t backColor,
-                                       float scale, int align, int textalign,
+                                       float scale, int font, int align, int textalign,
                                        int textStyle, float borderSize )
 {
-  CG_DrawNewProgressBar( rect, color, backColor, scale, align, textalign, textStyle,
+  CG_DrawNewProgressBar( rect, color, backColor, scale, font, align, textalign, textStyle,
                       borderSize, cg.buildablesFraction );
 }
 
 static void CG_DrawBuildablesProgressLabel( rectDef_t *rect, float text_x, float text_y,
-                                            vec4_t color, float scale, int textalign, int textvalign )
+                                            vec4_t color, float scale, int font, int textalign, int textvalign )
 {
-  CG_DrawProgressLabel( rect, text_x, text_y, color, scale, textalign, textvalign,
+  CG_DrawProgressLabel( rect, text_x, text_y, color, scale, font, textalign, textvalign,
                         "Buildable Models", cg.buildablesFraction );
 }
 
 static void CG_DrawCharModelProgress( rectDef_t *rect, vec4_t color, vec4_t backColor,
-                                      float scale, int align, int textalign,
+                                      float scale, int font, int align, int textalign,
                                       int textStyle, float borderSize )
 {
-  CG_DrawNewProgressBar( rect, color, backColor, scale, align, textalign, textStyle,
+  CG_DrawNewProgressBar( rect, color, backColor, scale, font, align, textalign, textStyle,
                       borderSize, cg.charModelFraction );
 }
 
 static void CG_DrawCharModelProgressLabel( rectDef_t *rect, float text_x, float text_y,
-                                           vec4_t color, float scale, int textalign, int textvalign )
+                                           vec4_t color, float scale, int font, int textalign, int textvalign )
 {
-  CG_DrawProgressLabel( rect, text_x, text_y, color, scale, textalign, textvalign,
+  CG_DrawProgressLabel( rect, text_x, text_y, color, scale, font, textalign, textvalign,
                         "Character Models", cg.charModelFraction );
 }
 
-static void CG_DrawOverallProgress( rectDef_t *rect, vec4_t color, vec4_t backColor, float scale,
+static void CG_DrawOverallProgress( rectDef_t *rect, vec4_t color, vec4_t backColor, float scale, int font,
                                     int align, int textalign, int textStyle,
                                     float borderSize )
 {
@@ -1193,7 +1194,7 @@ static void CG_DrawOverallProgress( rectDef_t *rect, vec4_t color, vec4_t backCo
   total = cg.charModelFraction + cg.buildablesFraction + cg.mediaFraction;
   total /= 3.0f;
 
-  CG_DrawNewProgressBar( rect, color, backColor, scale, align, textalign, textStyle,
+  CG_DrawNewProgressBar( rect, color, backColor, scale, font, align, textalign, textStyle,
                       borderSize, total );
 }
 
@@ -1220,18 +1221,18 @@ static void CG_DrawLevelShot( rectDef_t *rect )
 }
 
 static void CG_DrawLevelName( rectDef_t *rect, float text_x, float text_y,
-                              vec4_t color, float scale,
+                              vec4_t color, float scale, int font,
                               int textalign, int textvalign, int textStyle )
 {
   const char  *s;
 
   s = CG_ConfigString( CS_MESSAGE );
 
-  UI_DrawTextBlock( rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, s );
+  UI_DrawTextBlock( rect, text_x, text_y, color, scale, font, textalign, textvalign, textStyle, s );
 }
 
 static void CG_DrawMOTD( rectDef_t *rect, float text_x, float text_y,
-                         vec4_t color, float scale,
+                         vec4_t color, float scale, int font,
                          int textalign, int textvalign, int textStyle )
 {
   const char  *s;
@@ -1241,11 +1242,11 @@ static void CG_DrawMOTD( rectDef_t *rect, float text_x, float text_y,
 
   Q_ParseNewlines( parsed, s, sizeof( parsed ) );
 
-  UI_DrawTextBlock( rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, parsed );
+  UI_DrawTextBlock( rect, text_x, text_y, color, scale, font, textalign, textvalign, textStyle, parsed );
 }
 
 static void CG_DrawHostname( rectDef_t *rect, float text_x, float text_y,
-                             vec4_t color, float scale,
+                             vec4_t color, float scale, int font,
                              int textalign, int textvalign, int textStyle )
 {
   char buffer[ 1024 ];
@@ -1256,7 +1257,7 @@ static void CG_DrawHostname( rectDef_t *rect, float text_x, float text_y,
   UI_EscapeEmoticons( buffer, Info_ValueForKey( info, "sv_hostname" ), sizeof( buffer ) );
   Q_CleanStr( buffer );
 
-  UI_DrawTextBlock( rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, buffer );
+  UI_DrawTextBlock( rect, text_x, text_y, color, scale, font, textalign, textvalign, textStyle, buffer );
 }
 
 /*
@@ -1361,15 +1362,15 @@ const char *CG_GetKillerText( )
 }
 
 
-static void CG_DrawKiller( rectDef_t *rect, float scale, vec4_t color,
+static void CG_DrawKiller( rectDef_t *rect, float scale, int font, vec4_t color,
                            qhandle_t shader, int textStyle )
 {
   // fragged by ... line
  if( cg.killerName[ 0 ] )
  {
    int x = rect->x + rect->w / 2;
-   UI_Text_Paint( x - UI_Text_Width( CG_GetKillerText( ), scale ) / 2,
-     rect->y + rect->h, scale, color, CG_GetKillerText( ), 0, 0, textStyle );
+   UI_Text_Paint( x - UI_Text_Width( CG_GetKillerText( ), scale, font ) / 2,
+     rect->y + rect->h, scale, font, color, CG_GetKillerText( ), 0, 0, textStyle );
   }
 }
 
@@ -1381,13 +1382,13 @@ static void CG_DrawKiller( rectDef_t *rect, float scale, vec4_t color,
 CG_DrawTeamSpectators
 ==================
 */
-static void CG_DrawTeamSpectators( rectDef_t *rect, float scale, int textvalign, vec4_t color, qhandle_t shader )
+static void CG_DrawTeamSpectators( rectDef_t *rect, float scale, int font, int textvalign, vec4_t color, qhandle_t shader )
 {
   float y;
   char  *text = cg.spectatorList;
-  float textWidth = UI_Text_Width( text, scale );
+  float textWidth = UI_Text_Width( text, scale, font );
 
-  CG_AlignText( rect, text, scale, 0.0f, 0.0f, ALIGN_LEFT, textvalign, NULL, &y );
+  CG_AlignText( rect, text, scale, font, 0.0f, 0.0f, ALIGN_LEFT, textvalign, NULL, &y );
 
   if( textWidth > rect->w )
   {
@@ -1397,8 +1398,8 @@ static void CG_DrawTeamSpectators( rectDef_t *rect, float scale, int textvalign,
 
     CG_SetClipRegion( rect->x, rect->y, rect->w, rect->h );
 
-    UI_Text_Paint( rect->x - cg.spectatorOffset, y, scale, color, text, 0, 0, 0 );
-    UI_Text_Paint( rect->x + textWidth - cg.spectatorOffset, y, scale, color, text, 0, 0, 0 );
+    UI_Text_Paint( rect->x - cg.spectatorOffset, y, scale, font, color, text, 0, 0, 0 );
+    UI_Text_Paint( rect->x + textWidth - cg.spectatorOffset, y, scale, font, color, text, 0, 0, 0 );
 
     CG_ClearClipRegion( );
 
@@ -1411,7 +1412,7 @@ static void CG_DrawTeamSpectators( rectDef_t *rect, float scale, int textvalign,
   }
   else
   {
-    UI_Text_Paint( rect->x, y, scale, color, text, 0, 0, 0 );
+    UI_Text_Paint( rect->x, y, scale, font, color, text, 0, 0, 0 );
   }
 }
 
@@ -1424,7 +1425,7 @@ CG_DrawFollow
 ==================
 */
 static void CG_DrawFollow( rectDef_t *rect, float text_x, float text_y,
-    vec4_t color, float scale, int textalign, int textvalign, int textStyle )
+    vec4_t color, float scale, int font, int textalign, int textvalign, int textStyle )
 {
   float tx, ty;
 
@@ -1439,8 +1440,8 @@ static void CG_DrawFollow( rectDef_t *rect, float text_x, float text_y,
 
     strcat( buffer, cgs.clientinfo[ cg.snap->ps.clientNum ].name );
 
-    CG_AlignText( rect, buffer, scale, 0, 0, textalign, textvalign, &tx, &ty );
-    UI_Text_Paint( text_x + tx, text_y + ty, scale, color, buffer, 0, 0,
+    CG_AlignText( rect, buffer, scale, font, 0, 0, textalign, textvalign, &tx, &ty );
+    UI_Text_Paint( text_x + tx, text_y + ty, scale, font, color, buffer, 0, 0,
                    textStyle );
   }
 }
@@ -1451,7 +1452,7 @@ CG_DrawTeamLabel
 ==================
 */
 static void CG_DrawTeamLabel( rectDef_t *rect, team_t team, float text_x, float text_y,
-    vec4_t color, float scale, int textalign, int textvalign, int textStyle )
+    vec4_t color, float scale, int font, int textalign, int textvalign, int textStyle )
 {
   char  *t;
   char  stage[ MAX_TOKEN_CHARS ];
@@ -1491,8 +1492,8 @@ static void CG_DrawTeamLabel( rectDef_t *rect, team_t team, float text_x, float 
       break;
   }
 
-  CG_AlignText( rect, s, scale, 0.0f, 0.0f, textalign, textvalign, &tx, &ty );
-  UI_Text_Paint( text_x + tx, text_y + ty, scale, color, s, 0, 0, textStyle );
+  CG_AlignText( rect, s, scale, font, 0.0f, 0.0f, textalign, textvalign, &tx, &ty );
+  UI_Text_Paint( text_x + tx, text_y + ty, scale, font, color, s, 0, 0, textStyle );
 }
 
 /*
@@ -1501,7 +1502,7 @@ CG_DrawTeamStatus
 ==================
 */
 static void CG_DrawTeamStatus( rectDef_t *rect, float text_x, float text_y,
-    vec4_t color, float scale, int textalign, int textvalign, int textStyle )
+    vec4_t color, float scale, int font, int textalign, int textvalign, int textStyle )
 {
   char  s[ MAX_TOKEN_CHARS ];
   float tx, ty;
@@ -1551,9 +1552,9 @@ static void CG_DrawTeamStatus( rectDef_t *rect, float text_x, float text_y,
       );
   }
 
-  CG_AlignText( rect, s, scale, 0.0f, 0.0f, textalign, textvalign, &tx, &ty );
+  CG_AlignText( rect, s, scale, font, 0.0f, 0.0f, textalign, textvalign, &tx, &ty );
 
-  UI_Text_Paint( text_x + tx, text_y + ty, scale, color, s, 0, 0, textStyle );
+  UI_Text_Paint( text_x + tx, text_y + ty, scale, font, color, s, 0, 0, textStyle );
 }
 
 
@@ -1563,7 +1564,7 @@ CG_DrawStageReport
 ==================
 */
 static void CG_DrawStageReport( rectDef_t *rect, float text_x, float text_y,
-    vec4_t color, float scale, int textalign, int textvalign, int textStyle )
+    vec4_t color, float scale, int font, int textalign, int textvalign, int textStyle )
 {
   char  s[ MAX_TOKEN_CHARS ];
   float tx, ty;
@@ -1606,9 +1607,9 @@ static void CG_DrawStageReport( rectDef_t *rect, float text_x, float text_y,
           cgs.humanStage + 1, credits );
   }
 
-  CG_AlignText( rect, s, scale, 0.0f, 0.0f, textalign, textvalign, &tx, &ty );
+  CG_AlignText( rect, s, scale, font, 0.0f, 0.0f, textalign, textvalign, &tx, &ty );
 
-  UI_Text_Paint( text_x + tx, text_y + ty, scale, color, s, 0, 0, textStyle );
+  UI_Text_Paint( text_x + tx, text_y + ty, scale, font, color, s, 0, 0, textStyle );
 }
 
 /*
@@ -1619,7 +1620,7 @@ CG_DrawFPS
 #define FPS_FRAMES  20
 #define FPS_STRING  "fps"
 static void CG_DrawFPS( rectDef_t *rect, float text_x, float text_y,
-                        float scale, vec4_t color,
+                        float scale, int font, vec4_t color,
                         int textalign, int textvalign, int textStyle,
                         qboolean scalableText )
 {
@@ -1660,12 +1661,12 @@ static void CG_DrawFPS( rectDef_t *rect, float text_x, float text_y,
     fps = 1000 * FPS_FRAMES / total;
 
     s = va( "%d", fps );
-    w = UI_Text_Width( "0", scale );
-    h = UI_Text_Height( "0", scale );
+    w = UI_Text_Width( "0", scale, font );
+    h = UI_Text_Height( "0", scale, font );
     strLength = CG_DrawStrlen( s );
-    totalWidth = UI_Text_Width( FPS_STRING, scale ) + w * strLength;
+    totalWidth = UI_Text_Width( FPS_STRING, scale, font ) + w * strLength;
 
-    CG_AlignText( rect, s, 0.0f, totalWidth, h, textalign, textvalign, &tx, &ty );
+    CG_AlignText( rect, s, 0.0f, font, totalWidth, h, textalign, textvalign, &tx, &ty );
 
     if( scalableText )
     {
@@ -1676,10 +1677,10 @@ static void CG_DrawFPS( rectDef_t *rect, float text_x, float text_y,
         c[ 0 ] = s[ i ];
         c[ 1 ] = '\0';
 
-        UI_Text_Paint( text_x + tx + i * w, text_y + ty, scale, color, c, 0, 0, textStyle );
+        UI_Text_Paint( text_x + tx + i * w, text_y + ty, scale, font, color, c, 0, 0, textStyle );
       }
 
-      UI_Text_Paint( text_x + tx + i * w, text_y + ty, scale, color, FPS_STRING, 0, 0, textStyle );
+      UI_Text_Paint( text_x + tx + i * w, text_y + ty, scale, font, color, FPS_STRING, 0, 0, textStyle );
     }
     else
     {
@@ -1747,7 +1748,7 @@ CG_DrawTimer
 =================
 */
 static void CG_DrawTimer( rectDef_t *rect, float text_x, float text_y,
-                          float scale, vec4_t color,
+                          float scale, int font, vec4_t color,
                           int textalign, int textvalign, int textStyle )
 {
   const char    *s;
@@ -1769,12 +1770,12 @@ static void CG_DrawTimer( rectDef_t *rect, float text_x, float text_y,
   seconds -= tens * 10;
 
   s = va( "%d:%d%d", mins, tens, seconds );
-  w = UI_Text_Width( "0", scale );
-  h = UI_Text_Height( "0", scale );
+  w = UI_Text_Width( "0", scale, font );
+  h = UI_Text_Height( "0", scale, font );
   strLength = CG_DrawStrlen( s );
   totalWidth = w * strLength;
 
-  CG_AlignText( rect, s, 0.0f, totalWidth, h, textalign, textvalign, &tx, &ty );
+  CG_AlignText( rect, s, 0.0f, font, totalWidth, h, textalign, textvalign, &tx, &ty );
 
   for( i = 0; i < strLength; i++ )
   {
@@ -1783,7 +1784,7 @@ static void CG_DrawTimer( rectDef_t *rect, float text_x, float text_y,
     c[ 0 ] = s[ i ];
     c[ 1 ] = '\0';
 
-    UI_Text_Paint( text_x + tx + i * w, text_y + ty, scale, color, c, 0, 0, textStyle );
+    UI_Text_Paint( text_x + tx + i * w, text_y + ty, scale, font, color, c, 0, 0, textStyle );
   }
 }
 
@@ -1839,7 +1840,7 @@ static int QDECL SortWeaponClass( const void *a, const void *b )
   return( out );
 }
 
-static void CG_DrawTeamOverlay( rectDef_t *rect, float scale, vec4_t color )
+static void CG_DrawTeamOverlay( rectDef_t *rect, float scale, int font, vec4_t color )
 {
   const char              *s;
   int               i;
@@ -2009,13 +2010,13 @@ static void CG_DrawTeamOverlay( rectDef_t *rect, float scale, vec4_t color )
     nameMaxX = nameMaxXCp = x + 2.0f * iconSize +
                             leftMargin + midSep + nameWidth;
     UI_Text_Paint_Limit( &nameMaxXCp, x + 2.0f * iconSize + leftMargin + midSep,
-                         y + iconSize - iconTopMargin, fontScale, tcolor, name,
+                         y + iconSize - iconTopMargin, fontScale, font, tcolor, name,
                          0, 0 );
 
     maxXCp = maxX;
 
     UI_Text_Paint_Limit( &maxXCp, nameMaxX, y + iconSize - iconTopMargin,
-                         fontScale, tcolor, s, 0, 0 );
+                         fontScale, font, tcolor, s, 0, 0 );
     y += iconSize;
     displayCount++;
   }
@@ -2027,7 +2028,7 @@ CG_DrawClock
 =================
 */
 static void CG_DrawClock( rectDef_t *rect, float text_x, float text_y,
-                          float scale, vec4_t color,
+                          float scale, int font, vec4_t color,
                           int textalign, int textvalign, int textStyle )
 {
   const char    *s;
@@ -2063,12 +2064,12 @@ static void CG_DrawClock( rectDef_t *rect, float text_x, float text_y,
 
     s = va( "%d%s%02d%s", h, ( qt.tm_sec % 2 ) ? ":" : " ", qt.tm_min, pm );
   }
-  w = UI_Text_Width( "0", scale );
-  h = UI_Text_Height( "0", scale );
+  w = UI_Text_Width( "0", scale, font );
+  h = UI_Text_Height( "0", scale, font );
   strLength = CG_DrawStrlen( s );
   totalWidth = w * strLength;
 
-  CG_AlignText( rect, s, 0.0f, totalWidth, h, textalign, textvalign, &tx, &ty );
+  CG_AlignText( rect, s, 0.0f, font, totalWidth, h, textalign, textvalign, &tx, &ty );
 
   for( i = 0; i < strLength; i++ )
   {
@@ -2077,7 +2078,7 @@ static void CG_DrawClock( rectDef_t *rect, float text_x, float text_y,
     c[ 0 ] = s[ i ];
     c[ 1 ] = '\0';
 
-    UI_Text_Paint( text_x + tx + i * w, text_y + ty, scale, color, c, 0, 0, textStyle );
+    UI_Text_Paint( text_x + tx + i * w, text_y + ty, scale, font, color, c, 0, 0, textStyle );
   }
 }
 
@@ -2087,7 +2088,7 @@ CG_DrawSnapshot
 ==================
 */
 static void CG_DrawSnapshot( rectDef_t *rect, float text_x, float text_y,
-                             float scale, vec4_t color,
+                             float scale, int font, vec4_t color,
                              int textalign, int textvalign, int textStyle )
 {
   const char    *s;
@@ -2099,9 +2100,9 @@ static void CG_DrawSnapshot( rectDef_t *rect, float text_x, float text_y,
   s = va( "time:%d snap:%d cmd:%d", cg.snap->serverTime,
     cg.latestSnapshotNum, cgs.serverCommandSequence );
 
-  CG_AlignText( rect, s, scale, 0.0f, 0.0f, textalign, textvalign, &tx, &ty );
+  CG_AlignText( rect, s, scale, font, 0.0f, 0.0f, textalign, textvalign, &tx, &ty );
 
-  UI_Text_Paint( text_x + tx, text_y + ty, scale, color, s, 0, 0, textStyle );
+  UI_Text_Paint( text_x + tx, text_y + ty, scale, font, color, s, 0, 0, textStyle );
 }
 
 /*
@@ -2118,7 +2119,7 @@ CG_DrawKillMsg
 ==================
 */
 static void CG_DrawKillMsg( rectDef_t *rect, float text_x, float text_y,
-                           float scale, vec4_t color,
+                           float scale, int font, vec4_t color,
                            int textalign, int textvalign, int textStyle )
 {
    int     i;
@@ -2145,10 +2146,10 @@ static void CG_DrawKillMsg( rectDef_t *rect, float text_x, float text_y,
             int x = 0, w;
             int j = i % chatHeight;
 
-            w = UI_Text_Width( cgs.killMsgKillers[j], scale );
+            w = UI_Text_Width( cgs.killMsgKillers[j], scale, font );
             UI_Text_Paint( rect->x + TINYCHAR_WIDTH,
                            rect->y - (cgs.killMsgPos - i)*20,
-                           scale, color, cgs.killMsgKillers[j],
+                           scale, font, color, cgs.killMsgKillers[j],
                            0, 0, textStyle );
             x += w + 3;
 
@@ -2160,10 +2161,10 @@ static void CG_DrawKillMsg( rectDef_t *rect, float text_x, float text_y,
                             cg_weapons[cgs.killMsgWeapons[j]].weaponIcon );
                 x += 16 + 2;
 
-                w = UI_Text_Width( cgs.killMsgVictims[j], scale );
+                w = UI_Text_Width( cgs.killMsgVictims[j], scale, font );
                 UI_Text_Paint( rect->x + TINYCHAR_WIDTH + x,
                                rect->y - (cgs.killMsgPos - i)*20,
-                               scale, color, cgs.killMsgVictims[j],
+                               scale, font, color, cgs.killMsgVictims[j],
                                0, 0, textStyle );
             }
        }
@@ -2279,8 +2280,8 @@ static void CG_DrawDisconnect( void )
 
   // also add text in center of screen
   s = "Connection Interrupted";
-  w = UI_Text_Width( s, 0.7f );
-  UI_Text_Paint( 320 - w / 2, 100, 0.7f, color, s, 0, 0, ITEM_TEXTSTYLE_SHADOWED );
+  w = UI_Text_Width( s, 0.7f, FONT_AUTO );
+  UI_Text_Paint( 320 - w / 2, 100, 0.7f, FONT_AUTO, color, s, 0, 0, ITEM_TEXTSTYLE_SHADOWED );
 
   // blink the icon
   if( ( cg.time >> 9 ) & 1 )
@@ -2302,7 +2303,7 @@ CG_DrawLagometer
 ==============
 */
 static void CG_DrawLagometer( rectDef_t *rect, float text_x, float text_y,
-    float scale, vec4_t textColor )
+    float scale, int font, vec4_t textColor )
 {
   int     a, x, y, i;
   float   v;
@@ -2437,13 +2438,13 @@ static void CG_DrawLagometer( rectDef_t *rect, float text_x, float text_y,
   else
     ping = va( "%d", cg.ping );
   ax = rect->x + ( rect->w / 2.0f ) -
-       ( UI_Text_Width( ping, scale ) / 2.0f ) + text_x;
+       ( UI_Text_Width( ping, scale, font ) / 2.0f ) + text_x;
   ay = rect->y + ( rect->h / 2.0f ) +
-       ( UI_Text_Height( ping, scale ) / 2.0f ) + text_y;
+       ( UI_Text_Height( ping, scale, font ) / 2.0f ) + text_y;
 
   Vector4Copy( textColor, adjustedColor );
   adjustedColor[ 3 ] = 0.5f;
-  UI_Text_Paint( ax, ay, scale, adjustedColor, ping, 0, 0,
+  UI_Text_Paint( ax, ay, scale, font, adjustedColor, ping, 0, 0,
                  ITEM_TEXTSTYLE_NORMAL );
 
   CG_DrawDisconnect( );
@@ -2582,7 +2583,7 @@ CG_DrawSpeedText
 ===================
 */
 static void CG_DrawSpeedText( rectDef_t *rect, float text_x, float text_y,
-                              float scale, vec4_t foreColor )
+                              float scale, int font, vec4_t foreColor )
 {
   char speedstr[ 16 ];
   float val;
@@ -2604,9 +2605,9 @@ static void CG_DrawSpeedText( rectDef_t *rect, float text_x, float text_y,
   Com_sprintf( speedstr, sizeof( speedstr ), "%d / %d", (int)val, (int)speedSamples[ maxSpeedSampleInWindow ] );
 
   UI_Text_Paint(
-      rect->x + ( rect->w - UI_Text_Width( speedstr, scale ) ) / 2.0f,
-      rect->y + ( rect->h + UI_Text_Height( speedstr, scale ) ) / 2.0f,
-      scale, color, speedstr, 0, 0, ITEM_TEXTSTYLE_NORMAL );
+      rect->x + ( rect->w - UI_Text_Width( speedstr, scale, font ) ) / 2.0f,
+      rect->y + ( rect->h + UI_Text_Height( speedstr, scale, font ) ) / 2.0f,
+      scale, font, color, speedstr, 0, 0, ITEM_TEXTSTYLE_NORMAL );
 }
 
 /*
@@ -2615,12 +2616,12 @@ CG_DrawSpeed
 ===================
 */
 static void CG_DrawSpeed( rectDef_t *rect, float text_x, float text_y,
-                          float scale, vec4_t foreColor, vec4_t backColor )
+                          float scale, int font, vec4_t foreColor, vec4_t backColor )
 {
   if( cg_drawSpeed.integer & SPEEDOMETER_DRAW_GRAPH )
     CG_DrawSpeedGraph( rect, foreColor, backColor );
   if( cg_drawSpeed.integer & SPEEDOMETER_DRAW_TEXT )
-    CG_DrawSpeedText( rect, text_x, text_y, scale, foreColor );
+    CG_DrawSpeedText( rect, text_x, text_y, scale, font, foreColor );
 }
 
 /*
@@ -2629,9 +2630,9 @@ CG_DrawConsole
 ===================
 */
 static void CG_DrawConsole( rectDef_t *rect, float text_x, float text_y, vec4_t color,
-                            float scale, int textalign, int textvalign, int textStyle )
+                            float scale, int font, int textalign, int textvalign, int textStyle )
 {
-  UI_DrawTextBlock( rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, cg.consoleText );
+  UI_DrawTextBlock( rect, text_x, text_y, color, scale, font, textalign, textvalign, textStyle, cg.consoleText );
 }
 
 /*
@@ -2640,12 +2641,12 @@ CG_DrawTutorial
 ===================
 */
 static void CG_DrawTutorial( rectDef_t *rect, float text_x, float text_y, vec4_t color,
-                            float scale, int textalign, int textvalign, int textStyle )
+                            float scale, int font, int textalign, int textvalign, int textStyle )
 {
   if( !cg_tutorial.integer )
     return;
 
-  UI_DrawTextBlock( rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, CG_TutorialText( ) );
+  UI_DrawTextBlock( rect, text_x, text_y, color, scale, font, textalign, textvalign, textStyle, CG_TutorialText( ) );
 }
 
 /*
@@ -2838,7 +2839,7 @@ static void CG_ScanForCrosshairEntity( void )
 CG_DrawLocation
 =====================
 */
-static void CG_DrawLocation( rectDef_t *rect, float scale, int textalign, vec4_t color )
+static void CG_DrawLocation( rectDef_t *rect, float scale, int font, int textalign, vec4_t color )
 {
   const char    *location;
   centity_t     *locent;
@@ -2857,15 +2858,15 @@ static void CG_DrawLocation( rectDef_t *rect, float scale, int textalign, vec4_t
     location = CG_ConfigString( CS_LOCATIONS );
 
   // need to skip horiz. align if it's too long, but valign must be run either way
-  if( UI_Text_Width( location, scale ) < rect->w )
+  if( UI_Text_Width( location, scale, font ) < rect->w )
   {
-    CG_AlignText( rect, location, scale, 0.0f, 0.0f, textalign, VALIGN_CENTER, &tx, &ty );
-    UI_Text_Paint( tx, ty, scale, color, location, 0, 0, ITEM_TEXTSTYLE_NORMAL );
+    CG_AlignText( rect, location, scale, font, 0.0f, 0.0f, textalign, VALIGN_CENTER, &tx, &ty );
+    UI_Text_Paint( tx, ty, scale, font, color, location, 0, 0, ITEM_TEXTSTYLE_NORMAL );
   }
   else
   {
-    CG_AlignText( rect, location, scale, 0.0f, 0.0f, ALIGN_NONE, VALIGN_CENTER, &tx, &ty );
-    UI_Text_Paint_Limit( &maxX, tx, ty, scale, color, location, 0, 0 );
+    CG_AlignText( rect, location, scale, font, 0.0f, 0.0f, ALIGN_NONE, VALIGN_CENTER, &tx, &ty );
+    UI_Text_Paint_Limit( &maxX, tx, ty, scale, font, color, location, 0, 0 );
   }
 
   trap_R_SetColor( NULL );
@@ -2876,7 +2877,7 @@ static void CG_DrawLocation( rectDef_t *rect, float scale, int textalign, vec4_t
 CG_DrawCrosshairNames
 =====================
 */
-static void CG_DrawCrosshairNames( rectDef_t *rect, float scale, int textStyle )
+static void CG_DrawCrosshairNames( rectDef_t *rect, float scale, int font, int textStyle )
 {
   float   *color;
   const char    *name;
@@ -2911,9 +2912,9 @@ static void CG_DrawCrosshairNames( rectDef_t *rect, float scale, int textStyle )
                cgs.clientinfo[ cg.crosshairClientNum ].health );
   }
 
-  w = UI_Text_Width( name, scale );
+  w = UI_Text_Width( name, scale, font );
   x = rect->x + rect->w / 2.0f;
-  UI_Text_Paint( x - w / 2.0f, rect->y + rect->h, scale, color, name, 0, 0, textStyle );
+  UI_Text_Paint( x - w / 2.0f, rect->y + rect->h, scale, font, color, name, 0, 0, textStyle );
   trap_R_SetColor( NULL );
 }
 
@@ -2927,7 +2928,7 @@ Draw an owner drawn item
 void CG_OwnerDraw( float x, float y, float w, float h, float text_x,
                    float text_y, int ownerDraw, int ownerDrawFlags,
                    int align, int textalign, int textvalign, float borderSize,
-                   float scale, vec4_t foreColor, vec4_t backColor,
+                   float scale, int font, vec4_t foreColor, vec4_t backColor,
                    qhandle_t shader, int textStyle )
 {
   rectDef_t rect;
@@ -2958,7 +2959,7 @@ void CG_OwnerDraw( float x, float y, float w, float h, float text_x,
       CG_DrawPlayerStaminaBolt( &rect, backColor, foreColor, shader );
       break;
     case CG_PLAYER_AMMO_VALUE:
-      CG_DrawPlayerAmmoValue( &rect, foreColor );
+      CG_DrawPlayerAmmoValue( &rect, foreColor, font );
       break;
     case CG_PLAYER_CLIPS_VALUE:
       CG_DrawPlayerClipsValue( &rect, foreColor );
@@ -3006,7 +3007,7 @@ void CG_OwnerDraw( float x, float y, float w, float h, float text_x,
       CG_DrawUsableBuildable( &rect, shader, foreColor );
       break;
     case CG_KILLER:
-      CG_DrawKiller( &rect, scale, foreColor, shader, textStyle );
+      CG_DrawKiller( &rect, scale, font, foreColor, shader, textStyle );
       break;
     case CG_PLAYER_SELECT:
       CG_DrawItemSelect( &rect, foreColor );
@@ -3015,35 +3016,35 @@ void CG_OwnerDraw( float x, float y, float w, float h, float text_x,
       CG_DrawWeaponIcon( &rect, foreColor );
       break;
     case CG_PLAYER_SELECTTEXT:
-      CG_DrawItemSelectText( &rect, scale, textStyle );
+      CG_DrawItemSelectText( &rect, scale, font, textStyle );
       break;
     case CG_SPECTATORS:
-      CG_DrawTeamSpectators( &rect, scale, textvalign, foreColor, shader );
+      CG_DrawTeamSpectators( &rect, scale, font, textvalign, foreColor, shader );
       break;
     case CG_PLAYER_LOCATION:
-      CG_DrawLocation( &rect, scale, textalign, foreColor );
+      CG_DrawLocation( &rect, scale, font, textalign, foreColor );
       break;
     case CG_FOLLOW:
-      CG_DrawFollow( &rect, text_x, text_y, foreColor, scale,
+      CG_DrawFollow( &rect, text_x, text_y, foreColor, scale, font,
                      textalign, textvalign, textStyle );
       break;
     case CG_PLAYER_CROSSHAIRNAMES:
-      CG_DrawCrosshairNames( &rect, scale, textStyle );
+      CG_DrawCrosshairNames( &rect, scale, font, textStyle );
       break;
     case CG_PLAYER_CROSSHAIR:
       CG_DrawCrosshair( &rect, foreColor );
       break;
     case CG_TEAM_STATUS:
-      CG_DrawTeamStatus( &rect, text_x, text_y, foreColor, scale, textalign, textvalign, textStyle );
+      CG_DrawTeamStatus( &rect, text_x, text_y, foreColor, scale, font, textalign, textvalign, textStyle );
       break;
     case CG_STAGE_REPORT_TEXT:
-      CG_DrawStageReport( &rect, text_x, text_y, foreColor, scale, textalign, textvalign, textStyle );
+      CG_DrawStageReport( &rect, text_x, text_y, foreColor, scale, font, textalign, textvalign, textStyle );
       break;
     case CG_ALIENS_SCORE_LABEL:
-      CG_DrawTeamLabel( &rect, TEAM_ALIENS, text_x, text_y, foreColor, scale, textalign, textvalign, textStyle );
+      CG_DrawTeamLabel( &rect, TEAM_ALIENS, text_x, text_y, foreColor, scale, font, textalign, textvalign, textStyle );
       break;
     case CG_HUMANS_SCORE_LABEL:
-      CG_DrawTeamLabel( &rect, TEAM_HUMANS, text_x, text_y, foreColor, scale, textalign, textvalign, textStyle );
+      CG_DrawTeamLabel( &rect, TEAM_HUMANS, text_x, text_y, foreColor, scale, font, textalign, textvalign, textStyle );
       break;
 
     //loading screen
@@ -3051,51 +3052,51 @@ void CG_OwnerDraw( float x, float y, float w, float h, float text_x,
       CG_DrawLevelShot( &rect );
       break;
     case CG_LOAD_MEDIA:
-      CG_DrawMediaProgress( &rect, foreColor, backColor, scale, align, textalign, textStyle,
+      CG_DrawMediaProgress( &rect, foreColor, backColor, scale, font, align, textalign, textStyle,
                             borderSize );
       break;
     case CG_LOAD_MEDIA_LABEL:
-      CG_DrawMediaProgressLabel( &rect, text_x, text_y, foreColor, scale, textalign, textvalign );
+      CG_DrawMediaProgressLabel( &rect, text_x, text_y, foreColor, scale, font, textalign, textvalign );
       break;
     case CG_LOAD_BUILDABLES:
-      CG_DrawBuildablesProgress( &rect, foreColor, backColor, scale, align, textalign,
+      CG_DrawBuildablesProgress( &rect, foreColor, backColor, scale, font, align, textalign,
                                  textStyle, borderSize );
       break;
     case CG_LOAD_BUILDABLES_LABEL:
-      CG_DrawBuildablesProgressLabel( &rect, text_x, text_y, foreColor, scale, textalign, textvalign );
+      CG_DrawBuildablesProgressLabel( &rect, text_x, text_y, foreColor, scale, font, textalign, textvalign );
       break;
     case CG_LOAD_CHARMODEL:
-      CG_DrawCharModelProgress( &rect, foreColor, backColor, scale, align, textalign,
+      CG_DrawCharModelProgress( &rect, foreColor, backColor, scale, font, align, textalign,
                                 textStyle, borderSize );
       break;
     case CG_LOAD_CHARMODEL_LABEL:
-      CG_DrawCharModelProgressLabel( &rect, text_x, text_y, foreColor, scale, textalign, textvalign );
+      CG_DrawCharModelProgressLabel( &rect, text_x, text_y, foreColor, scale, font, textalign, textvalign );
       break;
     case CG_LOAD_OVERALL:
-      CG_DrawOverallProgress( &rect, foreColor, backColor, scale, align, textalign, textStyle,
+      CG_DrawOverallProgress( &rect, foreColor, backColor, scale, font, align, textalign, textStyle,
                               borderSize );
       break;
     case CG_LOAD_LEVELNAME:
-      CG_DrawLevelName( &rect, text_x, text_y, foreColor, scale, textalign, textvalign, textStyle );
+      CG_DrawLevelName( &rect, text_x, text_y, foreColor, scale, font, textalign, textvalign, textStyle );
       break;
     case CG_LOAD_MOTD:
-      CG_DrawMOTD( &rect, text_x, text_y, foreColor, scale, textalign, textvalign, textStyle );
+      CG_DrawMOTD( &rect, text_x, text_y, foreColor, scale, font, textalign, textvalign, textStyle );
       break;
     case CG_LOAD_HOSTNAME:
-      CG_DrawHostname( &rect, text_x, text_y, foreColor, scale, textalign, textvalign, textStyle );
+      CG_DrawHostname( &rect, text_x, text_y, foreColor, scale, font, textalign, textvalign, textStyle );
       break;
 
     case CG_FPS:
-      CG_DrawFPS( &rect, text_x, text_y, scale, foreColor, textalign, textvalign, textStyle, qtrue );
+      CG_DrawFPS( &rect, text_x, text_y, scale, font, foreColor, textalign, textvalign, textStyle, qtrue );
       break;
     case CG_FPS_FIXED:
-      CG_DrawFPS( &rect, text_x, text_y, scale, foreColor, textalign, textvalign, textStyle, qfalse );
+      CG_DrawFPS( &rect, text_x, text_y, scale, font, foreColor, textalign, textvalign, textStyle, qfalse );
       break;
     case CG_TIMER:
-      CG_DrawTimer( &rect, text_x, text_y, scale, foreColor, textalign, textvalign, textStyle );
+      CG_DrawTimer( &rect, text_x, text_y, scale, font, foreColor, textalign, textvalign, textStyle );
       break;
     case CG_CLOCK:
-      CG_DrawClock( &rect, text_x, text_y, scale, foreColor, textalign, textvalign, textStyle );
+      CG_DrawClock( &rect, text_x, text_y, scale, font, foreColor, textalign, textvalign, textStyle );
       break;
     case CG_TIMER_MINS:
       CG_DrawTimerMins( &rect, foreColor );
@@ -3104,16 +3105,16 @@ void CG_OwnerDraw( float x, float y, float w, float h, float text_x,
       CG_DrawTimerSecs( &rect, foreColor );
       break;
     case CG_SNAPSHOT:
-      CG_DrawSnapshot( &rect, text_x, text_y, scale, foreColor, textalign, textvalign, textStyle );
+      CG_DrawSnapshot( &rect, text_x, text_y, scale, font, foreColor, textalign, textvalign, textStyle );
       break;
     case CG_LAGOMETER:
-      CG_DrawLagometer( &rect, text_x, text_y, scale, foreColor );
+      CG_DrawLagometer( &rect, text_x, text_y, scale, font, foreColor );
       break;
     case CG_TEAMOVERLAY:
-      CG_DrawTeamOverlay( &rect, scale, foreColor );
+      CG_DrawTeamOverlay( &rect, scale, font, foreColor );
       break;
     case CG_SPEEDOMETER:
-      CG_DrawSpeed( &rect, text_x, text_y, scale, foreColor, backColor );
+      CG_DrawSpeed( &rect, text_x, text_y, scale, font, foreColor, backColor );
       break;
 
     case CG_DEMO_PLAYBACK:
@@ -3124,15 +3125,15 @@ void CG_OwnerDraw( float x, float y, float w, float h, float text_x,
       break;
 
     case CG_CONSOLE:
-      CG_DrawConsole( &rect, text_x, text_y, foreColor, scale, textalign, textvalign, textStyle );
+      CG_DrawConsole( &rect, text_x, text_y, foreColor, scale, font, textalign, textvalign, textStyle );
       break;
 
     case CG_TUTORIAL:
-      CG_DrawTutorial( &rect, text_x, text_y, foreColor, scale, textalign, textvalign, textStyle );
+      CG_DrawTutorial( &rect, text_x, text_y, foreColor, scale, font, textalign, textvalign, textStyle );
       break;
 
     case CG_KILLFEED:
-      CG_DrawKillMsg( &rect, text_x, text_y, scale, foreColor, textalign, textvalign, textStyle );
+      CG_DrawKillMsg( &rect, text_x, text_y, scale, font, foreColor, textalign, textvalign, textStyle );
       break;
 
     case CG_PLAYER_THZ_SCANNER:
@@ -3305,7 +3306,7 @@ Called for important messages that should stay in the center of the screen
 for a few moments
 ==============
 */
-void CG_CenterPrint( const char *str, int y, int charWidth )
+void CG_CenterPrint( const char *str, int y, int charWidth, int font )
 {
   char  *s;
   char newlineParsed[ MAX_STRING_CHARS ];
@@ -3314,13 +3315,14 @@ void CG_CenterPrint( const char *str, int y, int charWidth )
 
   Q_ParseNewlines( newlineParsed, str, sizeof( newlineParsed ) );
 
-  wrapped = Item_Text_Wrap( newlineParsed, 0.5f, maxWidth );
+  wrapped = Item_Text_Wrap( newlineParsed, 0.5f, font, maxWidth );
 
   Q_strncpyz( cg.centerPrint, wrapped, sizeof( cg.centerPrint ) );
 
   cg.centerPrintTime = cg.time;
   cg.centerPrintY = y;
   cg.centerPrintCharWidth = charWidth;
+  cg.centerPrintFont = font;
 
   // count the number of lines for centering
   cg.centerPrintLines = 1;
@@ -3375,10 +3377,10 @@ static void CG_DrawCenterString( void )
 
     linebuffer[ l ] = 0;
 
-    w = UI_Text_Width( linebuffer, 0.5 );
-    h = UI_Text_Height( linebuffer, 0.5 );
+    w = UI_Text_Width( linebuffer, 0.5, FONT_AUTO );
+    h = UI_Text_Height( linebuffer, 0.5, FONT_AUTO );
     x = ( SCREEN_WIDTH - w ) / 2;
-    UI_Text_Paint( x, y + h, 0.5, color, linebuffer, 0, 0, ITEM_TEXTSTYLE_SHADOWEDMORE );
+    UI_Text_Paint( x, y + h, 0.5, cg.centerPrintFont, color, linebuffer, 0, 0, ITEM_TEXTSTYLE_SHADOWEDMORE );
     y += h + 6;
 
     while( *start && ( *start != '\n' ) )
@@ -3445,18 +3447,18 @@ static void CG_DrawVote( team_t team )
   s = va( "%sVOTE(%i): %s",
     team == TEAM_NONE ? "" : "TEAM", sec, cgs.voteString[ team ] );
 
-  UI_Text_Paint( 8, 300 + offset, 0.3f, white, s, 0, 0,
+  UI_Text_Paint( 8, 300 + offset, 0.3f, FONT_AUTO, white, s, 0, 0,
     ITEM_TEXTSTYLE_NORMAL );
 
   s = va( "  Called by: \"%s\"", cgs.voteCaller[ team ] );
 
-  UI_Text_Paint( 8, 320 + offset, 0.3f, white, s, 0, 0,
+  UI_Text_Paint( 8, 320 + offset, 0.3f, FONT_AUTO, white, s, 0, 0,
     ITEM_TEXTSTYLE_NORMAL );
 
   s = va( "  %sYes:%i %sNo:%i",
     yeskey, cgs.voteYes[ team ], nokey, cgs.voteNo[ team ] );
 
-  UI_Text_Paint( 8, 340 + offset, 0.3f, white, s, 0, 0,
+  UI_Text_Paint( 8, 340 + offset, 0.3f, FONT_AUTO, white, s, 0, 0,
     ITEM_TEXTSTYLE_NORMAL );
 }
 
@@ -3566,8 +3568,8 @@ static qboolean CG_DrawQueue( void )
   Com_sprintf( buffer, MAX_STRING_CHARS, "You are %d%s in the spawn queue",
                position, ordinal );
 
-  w = UI_Text_Width( buffer, 0.7f );
-  UI_Text_Paint( 320 - w / 2, 360, 0.7f, color, buffer, 0, 0, ITEM_TEXTSTYLE_SHADOWED );
+  w = UI_Text_Width( buffer, 0.7f, FONT_AUTO );
+  UI_Text_Paint( 320 - w / 2, 360, 0.7f, FONT_AUTO, color, buffer, 0, 0, ITEM_TEXTSTYLE_SHADOWED );
 
   if( cg.snap->ps.persistant[ PERS_SPAWNS ] == 0 )
     Com_sprintf( buffer, MAX_STRING_CHARS, "There are no spawns remaining" );
@@ -3577,8 +3579,8 @@ static qboolean CG_DrawQueue( void )
     Com_sprintf( buffer, MAX_STRING_CHARS, "There are %d spawns remaining",
                  cg.snap->ps.persistant[ PERS_SPAWNS ] );
 
-  w = UI_Text_Width( buffer, 0.7f );
-  UI_Text_Paint( 320 - w / 2, 400, 0.7f, color, buffer, 0, 0, ITEM_TEXTSTYLE_SHADOWED );
+  w = UI_Text_Width( buffer, 0.7f, FONT_AUTO );
+  UI_Text_Paint( 320 - w / 2, 400, 0.7f, FONT_AUTO, color, buffer, 0, 0, ITEM_TEXTSTYLE_SHADOWED );
 
   return qtrue;
 }
@@ -3595,6 +3597,7 @@ static void CG_DrawWarmup( void )
   int    w;
   int    h;
   float  size = 0.5f;
+  int    font = FONT_AUTO;
   char   text[ MAX_STRING_CHARS ] = "Warmup Time:";
 
   if( !cg.warmupTime )
@@ -3605,14 +3608,14 @@ static void CG_DrawWarmup( void )
   if( sec < 0 )
     return;
 
-  w = UI_Text_Width( text, size );
-  h = UI_Text_Height( text, size );
-  UI_Text_Paint( 320 - w / 2, 200, size, colorWhite, text, 0, 0, ITEM_TEXTSTYLE_SHADOWED );
+  w = UI_Text_Width( text, size, font );
+  h = UI_Text_Height( text, size, font );
+  UI_Text_Paint( 320 - w / 2, 200, size, font, colorWhite, text, 0, 0, ITEM_TEXTSTYLE_SHADOWED );
 
   Com_sprintf( text, sizeof( text ), "%s", sec ? va( "%d", sec ) : "FIGHT!" );
 
-  w = UI_Text_Width( text, size );
-  UI_Text_Paint( 320 - w / 2, 200 + 1.5f * h, size, colorWhite, text, 0, 0, ITEM_TEXTSTYLE_SHADOWED );
+  w = UI_Text_Width( text, size, font );
+  UI_Text_Paint( 320 - w / 2, 200 + 1.5f * h, size, font, colorWhite, text, 0, 0, ITEM_TEXTSTYLE_SHADOWED );
 }
 
 //==================================================================================

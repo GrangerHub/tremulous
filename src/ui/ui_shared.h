@@ -263,6 +263,7 @@ typedef struct itemDef_s {
     float textalignx;  // ( optional ) text alignment x coord
     float textaligny;  // ( optional ) text alignment x coord
     float textscale;  // scale percentage from 72pts
+    int textfont;  // ( optional ) font, small / standard / big / alien / human / ...
     int textStyle;  // ( optional ) style, normal and shadowed are it for now
     const char *text;  // display text
     void *parent;  // menu owner
@@ -326,6 +327,12 @@ typedef struct {
     fontInfo_t textFont;
     fontInfo_t smallFont;
     fontInfo_t bigFont;
+    fontInfo_t chatFont;
+    fontInfo_t alienFont;
+    fontInfo_t humanFont;
+    qboolean chatFontRegistered;
+    qboolean alienFontRegistered;
+    qboolean humanFontRegistered;
     qhandle_t cursor;
     qhandle_t gradientBar;
     qhandle_t scrollBarArrowUp;
@@ -383,8 +390,9 @@ typedef struct {
     void (*addRefEntityToScene)(const refEntity_t *re);
     void (*renderScene)(const refdef_t *fd);
     void (*registerFont)(const char *pFontname, int pointSize, fontInfo_t *font);
+    void (*registerNewFont)(const char *pFontname, const char *simpleName, int pointSize, fontInfo_t *font);
     void (*ownerDrawItem)(float x, float y, float w, float h, float text_x, float text_y, int ownerDraw,
-        int ownerDrawFlags, int align, int textalign, int textvalign, float borderSize, float scale, vec4_t foreColor,
+        int ownerDrawFlags, int align, int textalign, int textvalign, float borderSize, float scale, int font, vec4_t foreColor,
         vec4_t backColor, qhandle_t shader, int textStyle);
     float (*getValue)(int ownerDraw);
     qboolean (*ownerDrawVisible)(int flags);
@@ -412,7 +420,7 @@ typedef struct {
     void (*Error)(int level, const char *error, ...) __attribute__((noreturn, format(printf, 2, 3)));
     void (*Print)(const char *msg, ...) __attribute__((format(printf, 1, 2)));
     void (*Pause)(qboolean b);
-    int (*ownerDrawWidth)(int ownerDraw, float scale);
+    int (*ownerDrawWidth)(int ownerDraw, float scale, int font);
     const char *(*ownerDrawText)(int ownerDraw);
     sfxHandle_t (*registerSound)(const char *name, qboolean compressed);
     void (*startBackgroundTrack)(const char *intro, const char *loop);
@@ -518,16 +526,16 @@ void trap_R_SetClipRegion(const float *region);
 
 // for cg_draw.c
 void Item_Text_Wrapped_Paint(itemDef_t *item);
-const char *Item_Text_Wrap(const char *text, float scale, float width);
-void UI_DrawTextBlock(rectDef_t *rect, float text_x, float text_y, vec4_t color, float scale, int textalign,
-    int textvalign, int textStyle, const char *text);
-void UI_Text_Paint(float x, float y, float scale, vec4_t color, const char *text, float adjust, int limit, int style);
+const char *Item_Text_Wrap(const char *text, float scale, int font, float width);
+void UI_DrawTextBlock(rectDef_t *rect, float text_x, float text_y, vec4_t color, float scale,
+    int font, int textalign, int textvalign, int textStyle, const char *text);
+void UI_Text_Paint(float x, float y, float scale, int font, vec4_t color, const char *text, float adjust, int limit, int style);
 void UI_Text_Paint_Limit(
-    float *maxX, float x, float y, float scale, vec4_t color, const char *text, float adjust, int limit);
-float UI_Text_Width(const char *text, float scale);
-float UI_Text_Height(const char *text, float scale);
-float UI_Text_EmWidth(float scale);
-float UI_Text_EmHeight(float scale);
+    float *maxX, float x, float y, float scale, int font, vec4_t color, const char *text, float adjust, int limit);
+float UI_Text_Width(const char *text, float scale, int font);
+float UI_Text_Height(const char *text, float scale, int font);
+float UI_Text_EmWidth(float scale, int font);
+float UI_Text_EmHeight(float scale, int font);
 qboolean UI_Text_IsEmoticon(const char *s, qboolean *escaped, int *length, qhandle_t *h, qhandle_t *hColor, int *width, vec4_t forceColor);
 void UI_EscapeEmoticons(char *dest, const char *src, int destsize);
 

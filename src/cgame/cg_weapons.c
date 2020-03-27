@@ -1520,7 +1520,7 @@ void CG_DrawItemSelect( rectDef_t *rect, vec4_t color )
 CG_DrawItemSelectText
 ===================
 */
-void CG_DrawItemSelectText( rectDef_t *rect, float scale, int textStyle )
+void CG_DrawItemSelectText( rectDef_t *rect, float scale, int font, int textStyle )
 {
   int x, w;
   char  *name;
@@ -1540,9 +1540,9 @@ void CG_DrawItemSelectText( rectDef_t *rect, float scale, int textStyle )
     {
       if( ( name = cg_weapons[ cg.weaponSelect ].humanName ) )
       {
-        w = UI_Text_Width( name, scale );
+        w = UI_Text_Width( name, scale, font );
         x = rect->x + rect->w / 2;
-        UI_Text_Paint( x - w / 2, rect->y + rect->h, scale, color, name, 0, 0, textStyle );
+        UI_Text_Paint( x - w / 2, rect->y + rect->h, scale, font, color, name, 0, 0, textStyle );
       }
     }
   }
@@ -1553,9 +1553,9 @@ void CG_DrawItemSelectText( rectDef_t *rect, float scale, int textStyle )
     {
       if( ( name = cg_upgrades[ cg.weaponSelect - 32 ].humanName ) )
       {
-        w = UI_Text_Width( name, scale );
+        w = UI_Text_Width( name, scale, font );
         x = rect->x + rect->w / 2;
-        UI_Text_Paint( x - w / 2, rect->y + rect->h, scale, color, name, 0, 0, textStyle );
+        UI_Text_Paint( x - w / 2, rect->y + rect->h, scale, font, color, name, 0, 0, textStyle );
       }
     }
   }
