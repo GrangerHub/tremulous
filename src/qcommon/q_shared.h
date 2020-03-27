@@ -1499,12 +1499,16 @@ typedef enum {
 
 // font support
 
+
+// DO NOT MOFIFY (old font compatibility)
 #define GLYPH_START 0
 #define GLYPH_END 255
 #define GLYPH_CHARSTART 32
 #define GLYPH_CHAREND 127
 #define GLYPHS_PER_FONT (GLYPH_END - GLYPH_START + 1)
 
+
+// DO NOT MODIFY (old font compatibility)
 typedef struct {
   int height;       // number of scan lines
   int top;          // top of glyph in buffer
@@ -1521,10 +1525,35 @@ typedef struct {
   char shaderName[32];
 } glyphInfo_t;
 
+
+// DO NOT MOFIFY (old font compatibility)
 typedef struct {
   glyphInfo_t glyphs [GLYPHS_PER_FONT];
   float glyphScale;
   char name[MAX_QPATH];
+} oldFontInfo_t;
+
+typedef struct {
+  glyphInfo_t glyphs [GLYPHS_PER_FONT];
+  qboolean available;
+} fontShadow_t;
+
+enum {
+  FONT_SHADOW = 0,
+  FONT_SHADOWMORE,
+  FONT_SHADOWNEON,
+  FONT_MAXSHADOW
+};
+
+// DO NOT MOFIFY over the separation (old font compatibility)
+typedef struct {
+  glyphInfo_t glyphs [GLYPHS_PER_FONT];
+  float glyphScale;
+  char name[MAX_QPATH];
+
+// ===== News implanted for 1.3 =====
+
+  // fontShadow_t shadows[FONT_MAXSHADOW];
 } fontInfo_t;
 
 #define Square(x) ((x)*(x))

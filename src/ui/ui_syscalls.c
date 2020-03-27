@@ -117,6 +117,11 @@ void trap_R_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font)
     syscall(UI_R_REGISTERFONT, fontName, pointSize, font);
 }
 
+void trap_R_RegisterNewFont(const char *fontName, const char *name, int pointSize, fontInfo_t *font)
+{
+    syscall(UI_R_REGISTERNEWFONT, fontName, name, pointSize, font);
+}
+
 qhandle_t trap_R_RegisterShaderNoMip(const char *name) { return syscall(UI_R_REGISTERSHADERNOMIP, name); }
 
 void trap_R_ClearScene(void) { syscall(UI_R_CLEARSCENE); }

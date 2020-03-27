@@ -1039,6 +1039,7 @@ typedef struct
   // centerprinting
   int           centerPrintTime;
   int           centerPrintCharWidth;
+  int           centerPrintFont;
   int           centerPrintY;
   char          centerPrint[ MAX_STRING_CHARS ];
   int           centerPrintLines;
@@ -1709,19 +1710,19 @@ void        CG_DrawRangeMarker( rangeMarkerType_t rmType, const vec3_t origin, c
 void        CG_AddLagometerFrameInfo( void );
 void        CG_AddLagometerSnapshotInfo( snapshot_t *snap );
 void        CG_AddSpeed( void );
-void        CG_CenterPrint( const char *str, int y, int charWidth );
+void        CG_CenterPrint( const char *str, int y, int charWidth, int font );
 void        CG_DrawActive( stereoFrame_t stereoView );
 void        CG_OwnerDraw( float x, float y, float w, float h, float text_x,
                           float text_y, int ownerDraw, int ownerDrawFlags,
                           int align, int textalign, int textvalign,
-                          float borderSize, float scale, vec4_t foreColor,
+                          float borderSize, float scale, int font, vec4_t foreColor,
                           vec4_t backColor, qhandle_t shader, int textStyle );
 float       CG_GetValue(int ownerDraw);
 void        CG_RunMenuScript(char **args);
 void        CG_SetPrintString( int type, const char *p );
 void        CG_GetTeamColor( vec4_t *color );
 const char  *CG_GetKillerText( void );
-void        CG_Text_PaintChar( float x, float y, float width, float height, float scale,
+void        CG_Text_PaintChar( float x, float y, float width, float height, float scale, int font,
                                float s, float t, float s2, float t2, qhandle_t hShader );
 void        CG_DrawLoadingScreen( void );
 void        CG_UpdateMediaFraction( float newFract );
@@ -1830,7 +1831,7 @@ void        CG_ShotgunFire( entityState_t *es );
 void        CG_AddViewWeapon (playerState_t *ps);
 void        CG_AddPlayerWeapon( refEntity_t *parent, playerState_t *ps, centity_t *cent );
 void        CG_DrawItemSelect( rectDef_t *rect, vec4_t color );
-void        CG_DrawItemSelectText( rectDef_t *rect, float scale, int textStyle );
+void        CG_DrawItemSelectText( rectDef_t *rect, float scale, int font, int textStyle );
 
 
 //
@@ -2304,6 +2305,7 @@ void          testPrintFloat( char *string, float f );
 
 int           trap_MemoryRemaining( void );
 void          trap_R_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
+void          trap_R_RegisterNewFont(const char *fontName, const char *name, int pointSize, fontInfo_t *font);
 qboolean      trap_Key_IsKeyDown( int keynum );
 int           trap_Key_GetCatcher( void );
 void          trap_Key_SetCatcher( int catcher );

@@ -1550,6 +1550,7 @@ qboolean Asset_Parse(int handle)
 {
     pc_token_t token;
     const char *tempStr;
+    const char *tempStr2;
 
     if (!trap_Parse_ReadToken(handle, &token))
         return qfalse;
@@ -1575,7 +1576,10 @@ qboolean Asset_Parse(int handle)
             if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize))
                 return qfalse;
 
-            trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.textFont);
+            if (PC_String_Parse(handle, &tempStr2))
+              trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.textFont);
+            else
+              trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.textFont);
             uiInfo.uiDC.Assets.fontRegistered = qtrue;
             continue;
         }
@@ -1587,7 +1591,10 @@ qboolean Asset_Parse(int handle)
             if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize))
                 return qfalse;
 
-            trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.smallFont);
+            if (PC_String_Parse(handle, &tempStr2))
+              trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.smallFont);
+            else
+              trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.smallFont);
             continue;
         }
 
@@ -1598,7 +1605,49 @@ qboolean Asset_Parse(int handle)
             if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize))
                 return qfalse;
 
-            trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.bigFont);
+            if (PC_String_Parse(handle, &tempStr2))
+              trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.bigFont);
+            else
+              trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.bigFont);
+            continue;
+        }
+
+        if (Q_stricmp(token.string, "chatFont") == 0)
+        {
+            int pointSize;
+
+            if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize)
+                    || !PC_String_Parse(handle, &tempStr2))
+                return qfalse;
+
+            trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.chatFont);
+            uiInfo.uiDC.Assets.chatFontRegistered = qtrue;
+            continue;
+        }
+
+        if (Q_stricmp(token.string, "alienFont") == 0)
+        {
+            int pointSize;
+
+            if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize)
+                    || !PC_String_Parse(handle, &tempStr2))
+                return qfalse;
+
+            trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.alienFont);
+            uiInfo.uiDC.Assets.alienFontRegistered = qtrue;
+            continue;
+        }
+
+        if (Q_stricmp(token.string, "humanFont") == 0)
+        {
+            int pointSize;
+
+            if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize)
+                    || !PC_String_Parse(handle, &tempStr2))
+                return qfalse;
+
+            trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.humanFont);
+            uiInfo.uiDC.Assets.humanFontRegistered = qtrue;
             continue;
         }
 
@@ -2003,9 +2052,9 @@ UI_DrawNewProgressBar
 ===============
 */
 static void UI_DrawNewProgressBar( rectDef_t *rect, vec4_t color,
-                                vec4_t backColor, float scale, int align,
-                                int textalign, int textStyle, float borderSize,
-                                float progress )
+                                vec4_t backColor, float scale, int font,
+                                int align, int textalign, int textStyle,
+                                float borderSize, float progress )
 {
   float   rimWidth;
   float   doneWidth, leftWidth;
@@ -2049,9 +2098,9 @@ static void UI_DrawNewProgressBar( rectDef_t *rect, vec4_t color,
   if( scale > 0.0 )
   {
     Com_sprintf( textBuffer, sizeof( textBuffer ), "%d%%", (int)( progress * 100 ) );
-    w = UI_Text_Width(textBuffer, scale);
-    h = UI_Text_Height(textBuffer, scale);
-    UI_Text_Paint( rect->x + (rect->w - w ) / 2.0, rect->y + h + ( rect->h - h ) / 2.0f, scale, color, textBuffer, 0, 0, textStyle );
+    w = UI_Text_Width(textBuffer, scale, font);
+    h = UI_Text_Height(textBuffer, scale, font);
+    UI_Text_Paint( rect->x + (rect->w - w ) / 2.0, rect->y + h + ( rect->h - h ) / 2.0f, scale, font, color, textBuffer, 0, 0, textStyle );
   }
 }
 
@@ -2060,7 +2109,8 @@ static void UI_DrawNewProgressBar( rectDef_t *rect, vec4_t color,
 UI_DrawDownloadOverall
 ===============
 */
-static void UI_DrawDownloadOverall( rectDef_t *rect, vec4_t color, vec4_t backColor, float scale,
+static void UI_DrawDownloadOverall( rectDef_t *rect, vec4_t color, vec4_t backColor,
+                                    float scale, int font,
                                     int align, int textalign, int textStyle,
                                     float borderSize )
 {
@@ -2076,7 +2126,7 @@ static void UI_DrawDownloadOverall( rectDef_t *rect, vec4_t color, vec4_t backCo
   downloadTotal = trap_Cvar_VariableValue("cl_downloadTotal");
   downloadDone = trap_Cvar_VariableValue("cl_downloadDone");
 
-  UI_DrawNewProgressBar( rect, color, backColor, scale, align, textalign, textStyle, borderSize,
+  UI_DrawNewProgressBar( rect, color, backColor, scale, font, align, textalign, textStyle, borderSize,
     (downloadSize ? ((float)downloadCount / downloadSize / downloadTotal) : 0) + (float)downloadDone / downloadTotal );
 }
 
@@ -2085,8 +2135,8 @@ static void UI_DrawDownloadOverall( rectDef_t *rect, vec4_t color, vec4_t backCo
 UI_DrawInfoPane
 ===============
 */
-static void UI_DrawInfoPane(menuItem_t *item, rectDef_t *rect, float text_x, float text_y, float scale, int textalign,
-    int textvalign, vec4_t color, int textStyle)
+static void UI_DrawInfoPane(menuItem_t *item, rectDef_t *rect, float text_x, float text_y, float scale, int font,
+    int textalign, int textvalign, vec4_t color, int textStyle)
 {
     int value = 0;
     const char *s = "";
@@ -2187,7 +2237,7 @@ static void UI_DrawInfoPane(menuItem_t *item, rectDef_t *rect, float text_x, flo
             break;
     }
 
-    UI_DrawTextBlock(rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, s);
+    UI_DrawTextBlock(rect, text_x, text_y, color, scale, font, textalign, textvalign, textStyle, s);
 }
 
 static void UI_PositionRotatedEntityOnTag( refEntity_t *entity, const refEntity_t *parent,
@@ -2416,12 +2466,12 @@ static void UI_DrawSelectedMapPreview(rectDef_t *rect, float scale, vec4_t color
     }
 }
 
-static void UI_DrawSelectedMapName(rectDef_t *rect, float scale, vec4_t color, int textStyle)
+static void UI_DrawSelectedMapName(rectDef_t *rect, float scale, int font, vec4_t color, int textStyle)
 {
     int map = ui_selectedMap.integer;
 
     if (map >= 0 && map < uiInfo.mapCount)
-        UI_Text_Paint(rect->x, rect->y, scale, color, uiInfo.mapList[map].mapName, 0, 0, textStyle);
+        UI_Text_Paint(rect->x, rect->y, scale, font, color, uiInfo.mapList[map].mapName, 0, 0, textStyle);
 }
 
 static const char *UI_OwnerDrawText(int ownerDraw)
@@ -2478,7 +2528,7 @@ static const char *UI_OwnerDrawText(int ownerDraw)
     return s;
 }
 
-static int UI_OwnerDrawWidth(int ownerDraw, float scale)
+static int UI_OwnerDrawWidth(int ownerDraw, float scale, int font)
 {
     const char *s = NULL;
 
@@ -2496,7 +2546,7 @@ static int UI_OwnerDrawWidth(int ownerDraw, float scale)
     }
 
     if (s)
-        return UI_Text_Width(s, scale);
+        return UI_Text_Width(s, scale, font);
 
     return 0;
 }
@@ -2554,7 +2604,7 @@ static void UI_BuildPlayerList(void)
     }
 }
 
-static void UI_DrawGLInfo(rectDef_t *rect, float scale, int textalign, int textvalign, vec4_t color, int textStyle,
+static void UI_DrawGLInfo(rectDef_t *rect, float scale, int font, int textalign, int textvalign, vec4_t color, int textStyle,
     float text_x, float text_y)
 {
     char buffer[8192];
@@ -2565,7 +2615,7 @@ static void UI_DrawGLInfo(rectDef_t *rect, float scale, int textalign, int textv
         uiInfo.uiDC.glconfig.vendor_string, uiInfo.uiDC.glconfig.renderer_string, uiInfo.uiDC.glconfig.colorBits,
         uiInfo.uiDC.glconfig.depthBits, uiInfo.uiDC.glconfig.stencilBits, uiInfo.uiDC.glconfig.extensions_string);
 
-    UI_DrawTextBlock(rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, buffer);
+    UI_DrawTextBlock(rect, text_x, text_y, color, scale, font, textalign, textvalign, textStyle, buffer);
 }
 
 static float UI_AdjustJoystickToValue(float input, float ceil)
@@ -2609,7 +2659,7 @@ static void UI_DrawJoyThresholdGraph(rectDef_t *rect, vec4_t foreColor, vec4_t b
 // FIXME: table drive
 //
 static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float text_y, int ownerDraw,
-    int ownerDrawFlags, int align, int textalign, int textvalign, float borderSize, float scale, vec4_t foreColor,
+    int ownerDrawFlags, int align, int textalign, int textvalign, float borderSize, float scale, int font, vec4_t foreColor,
     vec4_t backColor, qhandle_t shader, int textStyle)
 {
     rectDef_t rect;
@@ -2622,12 +2672,12 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
     switch (ownerDraw)
     {
         case UI_DOWNLOAD_OVERALL:
-            UI_DrawDownloadOverall(&rect, foreColor, backColor, scale, align, textalign,
-                textStyle, borderSize );
+            UI_DrawDownloadOverall(&rect, foreColor, backColor, scale, font,
+                align, textalign, textStyle, borderSize );
             break;
 
         case UI_TEAMINFOPANE:
-            UI_DrawInfoPane(&uiInfo.teamList[uiInfo.teamIndex], &rect, text_x, text_y, scale, textalign, textvalign,
+            UI_DrawInfoPane(&uiInfo.teamList[uiInfo.teamIndex], &rect, text_x, text_y, scale, font, textalign, textvalign,
                 foreColor, textStyle);
             break;
 
@@ -2636,12 +2686,12 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_VOICECMDINFOPANE:
-            UI_DrawInfoPane(&uiInfo.voiceCmdList[uiInfo.voiceCmdIndex], &rect, text_x, text_y, scale, textalign,
+            UI_DrawInfoPane(&uiInfo.voiceCmdList[uiInfo.voiceCmdIndex], &rect, text_x, text_y, scale, font, textalign,
                 textvalign, foreColor, textStyle);
             break;
 
         case UI_ACLASSINFOPANE:
-            UI_DrawInfoPane(&uiInfo.alienClassList[uiInfo.alienClassIndex], &rect, text_x, text_y, scale, textalign,
+            UI_DrawInfoPane(&uiInfo.alienClassList[uiInfo.alienClassIndex], &rect, text_x, text_y, scale, font, textalign,
                 textvalign, foreColor, textStyle);
             break;
 
@@ -2650,7 +2700,7 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_AUPGRADEINFOPANE:
-            UI_DrawInfoPane(&uiInfo.alienUpgradeList[uiInfo.alienUpgradeIndex], &rect, text_x, text_y, scale, textalign,
+            UI_DrawInfoPane(&uiInfo.alienUpgradeList[uiInfo.alienUpgradeIndex], &rect, text_x, text_y, scale, font, textalign,
                 textvalign, foreColor, textStyle);
             break;
 
@@ -2661,7 +2711,7 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_HITEMINFOPANE:
-            UI_DrawInfoPane(&uiInfo.humanItemList[uiInfo.humanItemIndex], &rect, text_x, text_y, scale, textalign,
+            UI_DrawInfoPane(&uiInfo.humanItemList[uiInfo.humanItemIndex], &rect, text_x, text_y, scale, font, textalign,
                 textvalign, foreColor, textStyle);
             break;
 
@@ -2670,7 +2720,7 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_HBUYINFOPANE:
-            UI_DrawInfoPane(&uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex], &rect, text_x, text_y, scale,
+            UI_DrawInfoPane(&uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex], &rect, text_x, text_y, scale, font,
                 textalign, textvalign, foreColor, textStyle);
             break;
 
@@ -2683,12 +2733,12 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_HSELLINFOPANE:
-            UI_DrawInfoPane(&uiInfo.humanArmourySellList[uiInfo.humanArmourySellIndex], &rect, text_x, text_y, scale,
+            UI_DrawInfoPane(&uiInfo.humanArmourySellList[uiInfo.humanArmourySellIndex], &rect, text_x, text_y, scale, font,
                 textalign, textvalign, foreColor, textStyle);
             break;
 
         case UI_ABUILDINFOPANE:
-            UI_DrawInfoPane(&uiInfo.alienBuildList[uiInfo.alienBuildIndex], &rect, text_x, text_y, scale, textalign,
+            UI_DrawInfoPane(&uiInfo.alienBuildList[uiInfo.alienBuildIndex], &rect, text_x, text_y, scale, font, textalign,
                 textvalign, foreColor, textStyle);
             break;
 
@@ -2699,7 +2749,7 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_HBUILDINFOPANE:
-            UI_DrawInfoPane(&uiInfo.humanBuildList[uiInfo.humanBuildIndex], &rect, text_x, text_y, scale, textalign,
+            UI_DrawInfoPane(&uiInfo.humanBuildList[uiInfo.humanBuildIndex], &rect, text_x, text_y, scale, font, textalign,
                 textvalign, foreColor, textStyle);
             break;
             break;
@@ -2711,7 +2761,7 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_HELPINFOPANE:
-            UI_DrawInfoPane(&uiInfo.helpList[uiInfo.helpIndex], &rect, text_x, text_y, scale, textalign, textvalign,
+            UI_DrawInfoPane(&uiInfo.helpList[uiInfo.helpIndex], &rect, text_x, text_y, scale, font, textalign, textvalign,
                 foreColor, textStyle);
             break;
 
@@ -2724,11 +2774,11 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_SELECTEDMAPNAME:
-            UI_DrawSelectedMapName(&rect, scale, foreColor, textStyle);
+            UI_DrawSelectedMapName(&rect, scale, font, foreColor, textStyle);
             break;
 
         case UI_GLINFO:
-            UI_DrawGLInfo(&rect, scale, textalign, textvalign, foreColor, textStyle, text_x, text_y);
+            UI_DrawGLInfo(&rect, scale, font, textalign, textvalign, foreColor, textStyle, text_x, text_y);
             break;
 
         case UI_JOYTHRESHOLDGRAPH:
@@ -6068,6 +6118,7 @@ void UI_Init(qboolean inGameLoad)
     uiInfo.uiDC.addRefEntityToScene = &trap_R_AddRefEntityToScene;
     uiInfo.uiDC.renderScene = &trap_R_RenderScene;
     uiInfo.uiDC.registerFont = &trap_R_RegisterFont;
+    uiInfo.uiDC.registerNewFont = &trap_R_RegisterNewFont;
     uiInfo.uiDC.ownerDrawItem = &UI_OwnerDraw;
     uiInfo.uiDC.getValue = &UI_GetValue;
     uiInfo.uiDC.ownerDrawVisible = &UI_OwnerDrawVisible;
@@ -6322,14 +6373,14 @@ static void UI_PrintTime(char *buf, int bufsize, int time)
 }
 
 // FIXME: move to ui_shared.c?
-void Text_PaintCenter(float x, float y, float scale, vec4_t color, const char *text, float adjust)
+void Text_PaintCenter(float x, float y, float scale, int font, vec4_t color, const char *text, float adjust)
 {
-    int len = UI_Text_Width(text, scale);
-    UI_Text_Paint(x - len / 2, y, scale, color, text, 0, 0, ITEM_TEXTSTYLE_SHADOWEDMORE);
+    int len = UI_Text_Width(text, scale, font);
+    UI_Text_Paint(x - len / 2, y, scale, font, color, text, 0, 0, ITEM_TEXTSTYLE_SHADOWEDMORE);
 }
 
 void Text_PaintCenter_AutoWrapped(
-    float x, float y, float xmax, float ystep, float scale, vec4_t color, const char *str, float adjust)
+    float x, float y, float xmax, float ystep, float scale, int font, vec4_t color, const char *str, float adjust)
 {
     int width;
     char *s1, *s2, *s3;
@@ -6353,7 +6404,7 @@ void Text_PaintCenter_AutoWrapped(
 
         *s3 = '\0';
 
-        width = UI_Text_Width(s1, scale);
+        width = UI_Text_Width(s1, scale, font);
 
         *s3 = c_bcp;
 
@@ -6366,7 +6417,7 @@ void Text_PaintCenter_AutoWrapped(
             }
 
             *s2 = '\0';
-            Text_PaintCenter(x, y, scale, color, s1, adjust);
+            Text_PaintCenter(x, y, scale, font, color, s1, adjust);
             y += ystep;
 
             if (c_bcp == '\0')
@@ -6378,7 +6429,7 @@ void Text_PaintCenter_AutoWrapped(
                 s2++;
 
                 if (*s2 != '\0')  // if we are printing an overflowing line we have s2 == s3
-                    Text_PaintCenter(x, y, scale, color, s2, adjust);
+                    Text_PaintCenter(x, y, scale, font, color, s2, adjust);
 
                 break;
             }
@@ -6393,7 +6444,7 @@ void Text_PaintCenter_AutoWrapped(
 
             if (c_bcp == '\0')  // we reached the end
             {
-                Text_PaintCenter(x, y, scale, color, s1, adjust);
+                Text_PaintCenter(x, y, scale, font, color, s1, adjust);
                 break;
             }
         }
@@ -6411,6 +6462,7 @@ static void UI_DisplayDownloadInfo(const char *downloadName, float centerPoint, 
     int xferRate;
     int leftWidth;
     const char *s;
+    const int font = FONT_AUTO;
 
     downloadSize = trap_Cvar_VariableValue("cl_downloadSize");
     downloadCount = trap_Cvar_VariableValue("cl_downloadCount");
@@ -6421,25 +6473,25 @@ static void UI_DisplayDownloadInfo(const char *downloadName, float centerPoint, 
     leftWidth = 320;
 
     UI_SetColor(colorWhite);
-    Text_PaintCenter(centerPoint, yStart + 112, scale, colorWhite, dlText, 0);
-    Text_PaintCenter(centerPoint, yStart + 192, scale, colorWhite, etaText, 0);
-    Text_PaintCenter(centerPoint, yStart + 248, scale, colorWhite, xferText, 0);
+    Text_PaintCenter(centerPoint, yStart + 112, scale, font, colorWhite, dlText, 0);
+    Text_PaintCenter(centerPoint, yStart + 192, scale, font, colorWhite, etaText, 0);
+    Text_PaintCenter(centerPoint, yStart + 248, scale, font, colorWhite, xferText, 0);
 
     if (downloadSize > 0)
         s = va("%s (%d%%, %d/%d)", downloadName, (int)((float)downloadCount * 100.0f / downloadSize), downloadDone + 1, downloadTotal);
     else
         s = downloadName;
 
-    Text_PaintCenter(centerPoint, yStart + 136, scale, colorWhite, s, 0);
+    Text_PaintCenter(centerPoint, yStart + 136, scale, font, colorWhite, s, 0);
 
     UI_ReadableSize(dlSizeBuf, sizeof dlSizeBuf, downloadCount);
     UI_ReadableSize(totalSizeBuf, sizeof totalSizeBuf, downloadSize);
 
     if (downloadCount < 4096 || !downloadTime)
     {
-        Text_PaintCenter(leftWidth, yStart + 216, scale, colorWhite, "estimating", 0);
+        Text_PaintCenter(leftWidth, yStart + 216, scale, font, colorWhite, "estimating", 0);
         Text_PaintCenter(
-            leftWidth, yStart + 160, scale, colorWhite, va("(%s of %s copied)", dlSizeBuf, totalSizeBuf), 0);
+            leftWidth, yStart + 160, scale, font, colorWhite, va("(%s of %s copied)", dlSizeBuf, totalSizeBuf), 0);
     }
     else
     {
@@ -6460,23 +6512,23 @@ static void UI_DisplayDownloadInfo(const char *downloadName, float centerPoint, 
             UI_PrintTime(
                 dlTimeBuf, sizeof dlTimeBuf, (n - (((downloadCount / 1024) * n) / (downloadSize / 1024))) * 1000);
 
-            Text_PaintCenter(leftWidth, yStart + 216, scale, colorWhite, dlTimeBuf, 0);
+            Text_PaintCenter(leftWidth, yStart + 216, scale, font, colorWhite, dlTimeBuf, 0);
             Text_PaintCenter(
-                leftWidth, yStart + 160, scale, colorWhite, va("(%s of %s copied)", dlSizeBuf, totalSizeBuf), 0);
+                leftWidth, yStart + 160, scale, font, colorWhite, va("(%s of %s copied)", dlSizeBuf, totalSizeBuf), 0);
         }
         else
         {
-            Text_PaintCenter(leftWidth, yStart + 216, scale, colorWhite, "estimating", 0);
+            Text_PaintCenter(leftWidth, yStart + 216, scale, font, colorWhite, "estimating", 0);
 
             if (downloadSize)
                 Text_PaintCenter(
-                    leftWidth, yStart + 160, scale, colorWhite, va("(%s of %s copied)", dlSizeBuf, totalSizeBuf), 0);
+                    leftWidth, yStart + 160, scale, font, colorWhite, va("(%s of %s copied)", dlSizeBuf, totalSizeBuf), 0);
             else
-                Text_PaintCenter(leftWidth, yStart + 160, scale, colorWhite, va("(%s copied)", dlSizeBuf), 0);
+                Text_PaintCenter(leftWidth, yStart + 160, scale, font, colorWhite, va("(%s copied)", dlSizeBuf), 0);
         }
 
         if (xferRate)
-            Text_PaintCenter(leftWidth, yStart + 272, scale, colorWhite, va("%s/Sec", xferRateBuf), 0);
+            Text_PaintCenter(leftWidth, yStart + 272, scale, font, colorWhite, va("%s/Sec", xferRateBuf), 0);
     }
 }
 
@@ -6492,6 +6544,7 @@ void UI_DrawConnectScreen()
     char info[MAX_INFO_VALUE];
     char text[256];
     float centerPoint = 320, yStart = 130, scale = 0.5f;
+    int font = FONT_AUTO;
 
     menuDef_t *menu = Menus_FindByName("Connect");
 
@@ -6505,22 +6558,22 @@ void UI_DrawConnectScreen()
 
     if (trap_GetConfigString(CS_SERVERINFO, info, sizeof(info)))
         Text_PaintCenter(
-            centerPoint, yStart, scale, colorWhite, va("Loading %s", Info_ValueForKey(info, "mapname")), 0);
+            centerPoint, yStart, scale, font, colorWhite, va("Loading %s", Info_ValueForKey(info, "mapname")), 0);
 
     if (!Q_stricmp(cstate.servername, "localhost"))
-        Text_PaintCenter(centerPoint, yStart + 48, scale, colorWhite, "Starting up...", ITEM_TEXTSTYLE_SHADOWEDMORE);
+        Text_PaintCenter(centerPoint, yStart + 48, scale, font, colorWhite, "Starting up...", ITEM_TEXTSTYLE_SHADOWEDMORE);
     else
     {
         Com_sprintf(text, sizeof(text), "Connecting to %s", cstate.servername);
-        Text_PaintCenter(centerPoint, yStart + 48, scale, colorWhite, text, ITEM_TEXTSTYLE_SHADOWEDMORE);
+        Text_PaintCenter(centerPoint, yStart + 48, scale, font, colorWhite, text, ITEM_TEXTSTYLE_SHADOWEDMORE);
     }
 
     // display global MOTD at bottom
-    Text_PaintCenter(centerPoint, 600, scale, colorWhite, Info_ValueForKey(cstate.updateInfoString, "motd"), 0);
+    Text_PaintCenter(centerPoint, 600, scale, font, colorWhite, Info_ValueForKey(cstate.updateInfoString, "motd"), 0);
 
     // print any server info (server full, bad version, etc)
     if (cstate.connState < CA_CONNECTED)
-        Text_PaintCenter(centerPoint, yStart + 176, scale, colorWhite, cstate.messageString, 0);
+        Text_PaintCenter(centerPoint, yStart + 176, scale, font, colorWhite, cstate.messageString, 0);
 
     if (lastConnState > cstate.connState)
         lastLoadingText[0] = '\0';
@@ -6572,7 +6625,7 @@ void UI_DrawConnectScreen()
     }
 
     if (Q_stricmp(cstate.servername, "localhost"))
-        Text_PaintCenter(centerPoint, yStart + 80, scale, colorWhite, s, 0);
+        Text_PaintCenter(centerPoint, yStart + 80, scale, font, colorWhite, s, 0);
 
     // password required / connection rejected information goes here
 }
@@ -6642,7 +6695,7 @@ void UI_UpdateNews(qboolean begin)
     trap_Cvar_VariableStringBuffer("cl_newsString", newsString, sizeof(newsString));
 
     // FIXME remove magic width constant
-    wrapped = Item_Text_Wrap(newsString, 0.25f, 325 * uiInfo.uiDC.aspectScale);
+    wrapped = Item_Text_Wrap(newsString, 0.25f, FONT_AUTO, 325 * uiInfo.uiDC.aspectScale);
 
     for (c = wrapped; *c != '\0'; ++c)
     {
@@ -6695,7 +6748,7 @@ void UI_UpdateGithubRelease()
     trap_Cvar_VariableStringBuffer("cl_latestRelease", newsString, sizeof(newsString));
 
     // FIXME remove magic width constant
-    wrapped = Item_Text_Wrap(newsString, 0.33f, 450 * uiInfo.uiDC.aspectScale);
+    wrapped = Item_Text_Wrap(newsString, 0.33f, FONT_AUTO, 450 * uiInfo.uiDC.aspectScale);
 
     for (c = wrapped; *c != '\0'; ++c)
     {

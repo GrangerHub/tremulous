@@ -139,6 +139,7 @@ typedef enum {
     UI_PARSE_SOURCE_FILE_AND_LINE,
     UI_GETNEWS,
 #endif
+    UI_R_REGISTERNEWFONT,
 
     // XXX THERE IS ROOM FOR _1_ (or 2? Did i count from 0?)
     // SYSCALL BETWEEN UI_GETNEWS and UI_MEMSET

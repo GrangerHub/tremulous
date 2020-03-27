@@ -68,7 +68,8 @@
       style WINDOW_STYLE_EMPTY
       elementwidth 120
       elementheight 16
-      textscale .25
+      textscale .25  // ALSO CHANGE IT in ui_main.c UI_UpdateNews
+      textfont FONT_AUTO  // ALSO CHANGE IT in ui_main.c UI_UpdateNews
       border WINDOW_BORDER_FULL
       bordersize 1
       bordercolor .5 .5 .5 1

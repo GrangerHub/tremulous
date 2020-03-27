@@ -282,7 +282,7 @@ static void CG_AnnounceAlienStageTransistion( stage_t from, stage_t to )
     return;
 
   trap_S_StartLocalSound( cgs.media.alienStageTransition, CHAN_ANNOUNCER );
-  CG_CenterPrint( "We have evolved!", 200, GIANTCHAR_WIDTH * 4 );
+  CG_CenterPrint( "We have evolved!", 200, GIANTCHAR_WIDTH * 4, FONT_ALIEN );
 }
 
 /*
@@ -296,7 +296,7 @@ static void CG_AnnounceHumanStageTransistion( stage_t from, stage_t to )
     return;
 
   trap_S_StartLocalSound( cgs.media.humanStageTransition, CHAN_ANNOUNCER );
-  CG_CenterPrint( "Reinforcements have arrived!", 200, GIANTCHAR_WIDTH * 4 );
+  CG_CenterPrint( "Reinforcements have arrived!", 200, GIANTCHAR_WIDTH * 4, FONT_HUMAN );
 }
 
 /*
@@ -1108,7 +1108,7 @@ static void CG_Say( int clientNum, saymode_t mode, const char *text )
       if( !ignore[0] )
       {
         CG_CenterPrint( va( "%sPrivate message from: " S_COLOR_WHITE "%s",
-                            color, name ), 200, GIANTCHAR_WIDTH * 4 );
+                            color, name ), 200, GIANTCHAR_WIDTH * 4, FONT_AUTO );
         if( clientNum < 0 || clientNum >= MAX_CLIENTS )
           clientNum = cg.clientNum;
         CG_Printf( ">> to reply, say: /m %d [your message] <<\n", clientNum );
@@ -1278,7 +1278,7 @@ CG_CenterPrint_f
 */
 void CG_CenterPrint_f( void )
 {
-  CG_CenterPrint( CG_Argv( 1 ), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH );
+  CG_CenterPrint( CG_Argv( 1 ), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH, FONT_AUTO );
 }
 
 /*

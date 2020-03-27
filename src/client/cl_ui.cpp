@@ -1094,6 +1094,10 @@ intptr_t CL_UISystemCalls(intptr_t *args)
             re.RegisterFont((const char *)VMA(1), args[2], (fontInfo_t *)VMA(3));
             return 0;
 
+        case UI_R_REGISTERNEWFONT:
+            re.RegisterNewFont((const char *)VMA(1), (const char *)VMA(2), args[3], (fontInfo_t *)VMA(4));
+            return 0;
+
         case UI_MEMSET:
             ::memset(VMA(1), args[2], args[3]);
             return 0;

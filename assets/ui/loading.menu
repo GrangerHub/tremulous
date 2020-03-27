@@ -22,7 +22,7 @@
 #define MOTD_H    ((BORDER+SHOT_H)-MOTD_Y)
 
 #define MAIN_W    (W-(2*BORDER))
-#define LABEL_W   180
+#define LABEL_W   195
 #define LABEL_X   (W-(LABEL_W+BORDER))
 #define BAR_H     ((H-((6*BORDER)+SHOT_H))/4)
 #define BAR_W     (MAIN_W-(LABEL_W+BORDER))
@@ -44,9 +44,12 @@
     shadowY  5          // y amount for shadow offset
     shadowColor 0.1 0.1 0.1 0.25      // shadow color
 
-    font "fonts/font" 26        // font
-    smallFont "fonts/smallfont" 20      // font
-    bigFont "fonts/bigfont" 34      // font
+    font "fonts/font" 26 "standard"         // standard font
+    smallFont "fonts/smallfont" 20 "small"  // small font (console mainly)
+    bigFont "fonts/bigfont" 34 "big"        // big font
+    chatFont "fonts/chat" 26 "chat"         // chat font
+    alienFont "fonts/alien" 34 "alien"      // alien's font
+    humanFont "fonts/human" 34 "human"      // human's font
   }
 
   menuDef
@@ -133,7 +136,7 @@
     {
       name "medialabel"
       style WINDOW_STYLE_EMPTY
-      textscale 0.6
+      textscale 0.5
       rect LABEL_X MEDIA_Y LABEL_W BAR_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
@@ -163,7 +166,7 @@
     {
       name "buildableslabel"
       style WINDOW_STYLE_EMPTY
-      textscale 0.6
+      textscale 0.5
       rect LABEL_X BUILD_Y LABEL_W BAR_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
@@ -192,7 +195,7 @@
     {
       name "charmodellabel"
       style WINDOW_STYLE_EMPTY
-      textscale 0.6
+      textscale 0.5
       rect LABEL_X CHAR_Y LABEL_W BAR_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
