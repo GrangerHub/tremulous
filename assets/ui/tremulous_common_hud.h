@@ -1,4 +1,3 @@
-#define W         640
 #define BORDER    10
 
 #define STAT_W    45
