@@ -406,7 +406,7 @@ typedef struct {
     void (*keynumToStringBuf)(int keynum, char *buf, int buflen);
     void (*getBindingBuf)(int keynum, char *buf, int buflen);
     void (*setBinding)(int keynum, const char *binding);
-    qboolean (*isDown)(int keynum);
+    qboolean (*isKeyDown)(int keynum);
     void (*executeText)(int exec_when, const char *text);
     void (*Error)(int level, const char *error, ...) __attribute__((noreturn, format(printf, 2, 3)));
     void (*Print)(const char *msg, ...) __attribute__((format(printf, 1, 2)));

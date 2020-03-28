@@ -37,7 +37,7 @@ equ trap_S_StartLocalSound            -34
 equ trap_Key_KeynumToStringBuf        -35
 equ trap_Key_GetBindingBuf            -36
 equ trap_Key_SetBinding               -37
-equ trap_Key_IsDown                   -38
+equ trap_Key_IsKeyDown                   -38
 equ trap_Key_GetOverstrikeMode        -39
 equ trap_Key_SetOverstrikeMode        -40
 equ trap_Key_ClearStates              -41

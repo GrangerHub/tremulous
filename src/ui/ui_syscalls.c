@@ -173,7 +173,7 @@ void trap_Key_GetBindingBuf(int keynum, char *buf, int buflen) { syscall(UI_KEY_
 
 void trap_Key_SetBinding(int keynum, const char *binding) { syscall(UI_KEY_SETBINDING, keynum, binding); }
 
-qboolean trap_Key_IsDown(int keynum) { return syscall(UI_KEY_ISDOWN, keynum); }
+qboolean trap_Key_IsKeyDown(int keynum) { return syscall(UI_KEY_ISKEYDOWN, keynum); }
 
 qboolean trap_Key_GetOverstrikeMode(void) { return syscall(UI_KEY_GETOVERSTRIKEMODE); }
 

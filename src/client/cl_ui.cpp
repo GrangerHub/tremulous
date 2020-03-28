@@ -980,7 +980,7 @@ intptr_t CL_UISystemCalls(intptr_t *args)
             Key_SetBinding(args[1], (const char *)VMA(2));
             return 0;
 
-        case UI_KEY_ISDOWN:
+        case UI_KEY_ISKEYDOWN:
             return Key_IsDown(args[1]);
 
         case UI_KEY_GETOVERSTRIKEMODE:

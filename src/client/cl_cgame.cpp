@@ -655,7 +655,7 @@ intptr_t CL_CgameSystemCalls( intptr_t *args )
             return 0;
         case CG_MEMORY_REMAINING:
             return Hunk_MemoryRemaining();
-        case CG_KEY_ISDOWN:
+        case CG_KEY_ISKEYDOWN:
             return Key_IsDown( args[1] );
         case CG_KEY_GETCATCHER:
             return Key_GetCatcher();

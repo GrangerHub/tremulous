@@ -379,7 +379,7 @@ sfxHandle_t trap_S_RegisterSound(const char *sample, qboolean compressed);
 void trap_Key_KeynumToStringBuf(int keynum, char *buf, int buflen);
 void trap_Key_GetBindingBuf(int keynum, char *buf, int buflen);
 void trap_Key_SetBinding(int keynum, const char *binding);
-qboolean trap_Key_IsDown(int keynum);
+qboolean trap_Key_IsKeyDown(int keynum);
 qboolean trap_Key_GetOverstrikeMode(void);
 void trap_Key_SetOverstrikeMode(qboolean state);
 void trap_Key_ClearStates(void);

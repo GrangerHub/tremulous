@@ -487,9 +487,9 @@ int trap_MemoryRemaining( void )
   return syscall( CG_MEMORY_REMAINING );
 }
 
-qboolean trap_Key_IsDown( int keynum )
+qboolean trap_Key_IsKeyDown( int keynum )
 {
-  return syscall( CG_KEY_ISDOWN, keynum );
+  return syscall( CG_KEY_ISKEYDOWN, keynum );
 }
 
 int trap_Key_GetCatcher( void )

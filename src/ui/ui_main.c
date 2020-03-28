@@ -6069,7 +6069,7 @@ void UI_Init(qboolean inGameLoad)
     uiInfo.uiDC.feederInitialise = &UI_FeederInitialise;
     uiInfo.uiDC.setBinding = &trap_Key_SetBinding;
     uiInfo.uiDC.getBindingBuf = &trap_Key_GetBindingBuf;
-    uiInfo.uiDC.isDown = &trap_Key_IsDown;
+    uiInfo.uiDC.isKeyDown = &trap_Key_IsKeyDown;
     uiInfo.uiDC.keynumToStringBuf = &trap_Key_KeynumToStringBuf;
     uiInfo.uiDC.executeText = &trap_Cmd_ExecuteText;
     uiInfo.uiDC.Error = &Com_Error;

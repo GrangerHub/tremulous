@@ -3409,7 +3409,7 @@ qboolean Item_Cycle_HandleKey(itemDef_t *item, int key)
         if (item->window.flags & WINDOW_HASFOCUS)
         {
             if ((mouseOver && (key == K_MOUSE1 || key == K_MWHEELDOWN))
-                || ((key == K_ENTER || key == K_KP_ENTER) && !DC->isDown(K_SHIFT))
+                || ((key == K_ENTER || key == K_KP_ENTER) && !DC->isKeyDown(K_SHIFT))
                 || key == K_KP_PLUS || key == K_PGUP || key == K_PAD0_RIGHTSHOULDER )
             {
                 if (count > 0)
@@ -3449,7 +3449,7 @@ qboolean Item_Multi_HandleKey(itemDef_t *item, int key)
             int current;
 
             if ((mouseOver && (key == K_MOUSE1 || key == K_MWHEELDOWN))
-                || ((key == K_ENTER || key == K_KP_ENTER ) && !DC->isDown(K_SHIFT))
+                || ((key == K_ENTER || key == K_KP_ENTER ) && !DC->isKeyDown(K_SHIFT))
                 || key == K_KP_PLUS || key == K_PGUP || key == K_PAD0_RIGHTSHOULDER )
             {
                 current = (Item_Multi_FindCvarByValue(item) + 1) % max;
@@ -4689,7 +4689,7 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
             break;
 
         case K_TAB:
-            if (DC->isDown(K_SHIFT))
+            if (DC->isKeyDown(K_SHIFT))
                 Menu_SetPrevCursorItem(menu);
             else
                 Menu_SetNextCursorItem(menu);
