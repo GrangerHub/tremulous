@@ -2358,6 +2358,7 @@ static void UI_Text_Paint_Generic(
     vec4_t      forceColor;
     fontInfo_t  *font = UI_AutoSelectFont(scale);
     glyphInfo_t *glyph;
+    glyphInfo_t *shadowGlyph;
     float       useScale;
     qhandle_t   emoticonHandle = 0;
     qhandle_t   emoticonColorHandle = 0;
@@ -2458,8 +2459,8 @@ static void UI_Text_Paint_Generic(
                     DC->drawHandlePic(x, y - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
                     if (emoticonColorHandle)
                     {
-                      DC->setColor(forceColor);
-                      DC->drawHandlePic(x, y - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonColorHandle);
+                        DC->setColor(forceColor);
+                        DC->drawHandlePic(x, y - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonColorHandle);
                     }
                     DC->setColor(newColor);
                     x += (emoticonW * emoticonWidth) + gapAdjust;
@@ -2488,50 +2489,53 @@ static void UI_Text_Paint_Generic(
         if (style == ITEM_TEXTSTYLE_SHADOWED ||
            style == ITEM_TEXTSTYLE_SHADOWEDMORE)
         {
-            int ofs;
+            int shadowLevel;
 
             if (style == ITEM_TEXTSTYLE_SHADOWED)
-                ofs = 1;
+                shadowLevel = FONT_SHADOW;
             else
-                ofs = 2;
+                shadowLevel = FONT_SHADOWMORE;
 
-            colorBlack[3] = newColor[3] * 0.85;
+            if (qtrue && font->shadows[shadowLevel].available) // could create a r_fontShadow option
+            {
+              int margin = font->shadows[shadowLevel].margin;
+              float shadowOffset = (-(float)margin * useScale) + ((float)shadowLevel + 1);
+              shadowGlyph = &font->shadows[shadowLevel].glyphs[(int)*s];
 
-            DC->setColor(colorBlack);
-            UI_Text_PaintChar(x + ofs, y + ofs, useScale, glyph, 0.0f);
-            DC->setColor(newColor);
+              DC->setColor(colorBlack);
+              UI_Text_PaintChar(x + shadowOffset, y + shadowOffset, useScale, shadowGlyph, 0.0f);
+              DC->setColor(newColor);
 
-            colorBlack[3] = 1.0f;
+            }
+            else
+            {
+                int ofs = shadowLevel + 1;
+
+                colorBlack[3] = newColor[3] * 0.85;
+
+                DC->setColor(colorBlack);
+                UI_Text_PaintChar(x + ofs, y + ofs, useScale, glyph, 0.0f);
+                DC->setColor(newColor);
+
+                colorBlack[3] = 1.0f;
+            }
         }
         else if (style == ITEM_TEXTSTYLE_NEON)
         {
-            vec4_t glow;
+            DC->setColor(newColor);
 
-            memcpy(&glow[0], &newColor[0], sizeof(vec4_t));
+            if (qtrue && font->shadows[FONT_SHADOWNEON].available) // could create a r_fontShadow option
+            {
+                int margin = font->shadows[FONT_SHADOWNEON].margin;
+                float shadowOffset = -(float)margin * useScale;
+                shadowGlyph = &font->shadows[FONT_SHADOWNEON].glyphs[(int)*s];
 
-            DC->setColor(glow);
-            UI_Text_PaintChar(x - 0.1f, y - 0.1f, useScale, glyph, 0.0f);
-            UI_Text_PaintChar(x + 0.1f, y - 0.1f, useScale, glyph, 0.0f);
-            UI_Text_PaintChar(x - 0.1f, y + 0.1f, useScale, glyph, 0.0f);
-            UI_Text_PaintChar(x + 0.1f, y + 0.1f, useScale, glyph, 0.0f);
-            glow[3] = newColor[3] * 4 / 8 / 4;
-            DC->setColor(glow);
-            UI_Text_PaintChar(x - 0.2f, y - 0.2f, useScale, glyph, 0.4f);
-            UI_Text_PaintChar(x + 0.2f, y - 0.2f, useScale, glyph, 0.4f);
-            UI_Text_PaintChar(x - 0.2f, y + 0.2f, useScale, glyph, 0.4f);
-            UI_Text_PaintChar(x + 0.2f, y + 0.2f, useScale, glyph, 0.4f);
-            glow[3] = newColor[3] * 3 / 8 / 4;
-            DC->setColor(glow);
-            UI_Text_PaintChar(x - 0.4f, y - 0.4f, useScale, glyph, 0.4f);
-            UI_Text_PaintChar(x + 0.4f, y - 0.4f, useScale, glyph, 0.4f);
-            UI_Text_PaintChar(x - 0.4f, y + 0.4f, useScale, glyph, 0.4f);
-            UI_Text_PaintChar(x + 0.4f, y + 0.4f, useScale, glyph, 0.4f);
-            glow[3] = newColor[3] * 1 / 8 / 4;
-            DC->setColor(glow);
-            UI_Text_PaintChar(x - 0.8f, y - 0.8f, useScale, glyph, 0.8f);
-            UI_Text_PaintChar(x + 0.8f, y - 0.8f, useScale, glyph, 0.8f);
-            UI_Text_PaintChar(x - 0.8f, y + 0.8f, useScale, glyph, 0.8f);
-            UI_Text_PaintChar(x + 0.8f, y + 0.8f, useScale, glyph, 0.8f);
+                UI_Text_PaintChar(x + shadowOffset, y + shadowOffset, useScale, shadowGlyph, 0.0f);
+            }
+            else
+            {
+                UI_Text_PaintChar(x, y, useScale, glyph, 1.4f);
+            }
 
             DC->setColor(colorWhite);
         }

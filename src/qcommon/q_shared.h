@@ -1535,7 +1535,8 @@ typedef struct {
 
 typedef struct {
   glyphInfo_t glyphs [GLYPHS_PER_FONT];
-  qboolean available;
+  int margin;
+  int available;
 } fontShadow_t;
 
 enum {
@@ -1553,7 +1554,7 @@ typedef struct {
 
 // ===== News implanted for 1.3 =====
 
-  // fontShadow_t shadows[FONT_MAXSHADOW];
+  fontShadow_t shadows[FONT_MAXSHADOW];
 } fontInfo_t;
 
 #define Square(x) ((x)*(x))
