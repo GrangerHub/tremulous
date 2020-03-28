@@ -68,7 +68,7 @@ qhandle_t R_RegisterMD3(const char *name, model_t *mod)
 		qhandle_t md3000;
 
 		strcpy(name3000, filename);
-		strncat(name3000, ".md3000", MAX_QPATH);
+		strncat(name3000, ".md3000", MAX_QPATH - 1);
 		if(md3000 = R_RegisterMD3(name3000, mod))
 			return md3000;
 	}
