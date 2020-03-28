@@ -2496,6 +2496,8 @@ static void UI_Text_Paint_Generic(
             else
                 shadowLevel = FONT_SHADOWMORE;
 
+            colorBlack[3] = newColor[3] * 0.85;
+
             if (qtrue && font->shadows[shadowLevel].available) // could create a r_fontShadow option
             {
               int margin = font->shadows[shadowLevel].margin;
@@ -2511,14 +2513,12 @@ static void UI_Text_Paint_Generic(
             {
                 int ofs = shadowLevel + 1;
 
-                colorBlack[3] = newColor[3] * 0.85;
-
                 DC->setColor(colorBlack);
                 UI_Text_PaintChar(x + ofs, y + ofs, useScale, glyph, 0.0f);
                 DC->setColor(newColor);
-
-                colorBlack[3] = 1.0f;
             }
+
+            colorBlack[3] = 1.0f;
         }
         else if (style == ITEM_TEXTSTYLE_NEON)
         {
@@ -2537,7 +2537,9 @@ static void UI_Text_Paint_Generic(
                 UI_Text_PaintChar(x, y, useScale, glyph, 1.4f);
             }
 
+            colorWhite[3] = newColor[3] * 0.85;
             DC->setColor(colorWhite);
+            colorWhite[3] = 1.0f;
         }
 
         UI_Text_PaintChar(x, y, useScale, glyph, 0.0f);
