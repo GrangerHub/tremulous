@@ -2924,10 +2924,19 @@ int Item_Slider_OverSlider(itemDef_t *item, float x, float y)
     rectDef_t r;
     float vScale = Item_Slider_VScale(item);
 
-    r.x = Item_Slider_ThumbPosition(item) - (SLIDER_THUMB_WIDTH / 2);
-    r.y = item->textRect.y - item->textRect.h + ((item->textRect.h - (SLIDER_THUMB_HEIGHT * vScale)) / 2.0f);
-    r.w = SLIDER_THUMB_WIDTH;
-    r.h = SLIDER_THUMB_HEIGHT * vScale;
+    r.w = SLIDER_WIDTH + SLIDER_THUMB_WIDTH;
+    r.h = SLIDER_HEIGHT * vScale;
+
+    if (item->text)
+    {
+        r.x = item->textRect.x + item->textRect.w + ITEM_VALUE_OFFSET - SLIDER_THUMB_WIDTH / 2;
+        r.y = item->textRect.y - item->textRect.h + ((item->textRect.h - (SLIDER_THUMB_HEIGHT * vScale)) / 2.0f);
+    }
+    else
+    {
+        r.x = item->window.rect.x;
+        r.y = item->window.rect.y;
+    }
 
     if (Rect_ContainsPoint(&r, x, y))
         return WINDOW_LB_THUMB;
