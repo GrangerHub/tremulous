@@ -1556,6 +1556,24 @@ static void Menus_Close(menuDef_t *menu)
 
 void Menus_CloseByName(const char *p) { Menus_Close(Menus_FindByName(p)); }
 
+qboolean Menus_CloseSubmenus(void)
+{
+    menuDef_t *menu;
+
+    // Close only the top submenu on the stack
+    if (openMenuCount > 0)
+    {
+        menu = menuStack[openMenuCount - 1];
+        if (menu->submenu)
+        {
+            Menus_Close(menu);
+            return qtrue;
+        }
+    }
+
+    return qfalse;
+}
+
 void Menus_CloseAll(void)
 {
     int i;
@@ -8375,6 +8393,16 @@ qboolean MenuParse_fadeCycle(itemDef_t *item, int handle)
     return qtrue;
 }
 
+qboolean MenuParse_submenu(itemDef_t *item, int handle)
+{
+    menuDef_t *menu = (menuDef_t *)item;
+
+    if (!PC_Int_Parse(handle, (int *)&menu->submenu))
+        return qfalse;
+
+    return qtrue;
+}
+
 qboolean MenuParse_itemDef(itemDef_t *item, int handle)
 {
     menuDef_t *menu = (menuDef_t *)item;
@@ -8414,7 +8442,7 @@ keywordHash_t menuParseKeywords[] = {{"font", MenuParse_font, 0, NULL}, {"name",
     {"itemDef", MenuParse_itemDef, 0, NULL}, {"cinematic", MenuParse_cinematic, 0, NULL},
     {"popup", MenuParse_popup, 0, NULL}, {"fadeClamp", MenuParse_fadeClamp, 0, NULL},
     {"fadeCycle", MenuParse_fadeCycle, 0, NULL}, {"fadeAmount", MenuParse_fadeAmount, 0, NULL},
-    {NULL, voidFunction2, 0, NULL}};
+    {"submenu", MenuParse_submenu, 0, NULL}, {NULL, voidFunction2, 0, NULL}};
 
 keywordHash_t *menuParseKeywordHash[KEYWORDHASH_SIZE];
 

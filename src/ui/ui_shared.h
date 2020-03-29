@@ -299,6 +299,7 @@ typedef struct {
     Window window;
     const char *font;  // font
     qboolean fullScreen;  // covers entire screen
+    qboolean submenu;  // similar to popup but in same height level
     int itemCount;  // number of items;
     int fontIndex;  //
     int cursorItem;  // which item as the cursor
@@ -494,6 +495,7 @@ menuDef_t *Menus_FindByName(const char *p);
 void Menus_CloseByName(const char *p);
 void Display_HandleKey(int key, qboolean down, int x, int y);
 void LerpColor(vec4_t a, vec4_t b, vec4_t c, float t);
+qboolean Menus_CloseSubmenus(void);
 void Menus_CloseAll(void);
 void Menu_Update(menuDef_t *menu);
 void Menu_Paint(menuDef_t *menu, qboolean forcePaint);

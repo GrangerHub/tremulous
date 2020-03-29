@@ -6141,8 +6141,10 @@ void UI_KeyEvent(int key, qboolean down)
 
         if (menu)
         {
-            if ( (key == K_ESCAPE || key == K_PAD0_BACK || key == K_PAD0_GUIDE || key == K_PAD0_B)
-                    && down && !Menus_AnyFullScreenVisible() && !Display_KeyBindPending() )
+            // Escape will close all, back button will close submenu first
+            if ( (key == K_ESCAPE || key == K_PAD0_GUIDE || key == K_PAD0_BACK || key == K_PAD0_B)
+                    && down && !Menus_AnyFullScreenVisible() && !Display_KeyBindPending()
+                    && ((key != K_PAD0_BACK && key != K_PAD0_B) || !Menus_CloseSubmenus()) )
                 Menus_CloseAll();
             else
                 Menu_HandleKey(menu, key, down);

@@ -34,6 +34,7 @@
     name "ingame_options"
     visible MENU_FALSE
     fullscreen MENU_FALSE
+    submenu MENU_TRUE
     outOfBoundsClick      // this closes the window if it gets a click out of the rectangle
     rect X Y W H
     focusColor WINDOW_FOCUSCOLOR

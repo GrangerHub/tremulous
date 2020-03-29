@@ -41,7 +41,13 @@
     disableColor .5 .5 .5 1
     backColor 0 0 0 1
     aspectBias ALIGN_LEFT
-
+    onClose
+    {
+      close ingame_options;
+      close ingame_leave;
+      close ingame_help;
+      close ingame_game;
+    }
     onEsc
     {
       close ingame;

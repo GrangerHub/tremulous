@@ -22,7 +22,8 @@
   {
     name "ingame_leave"
     visible MENU_TRUE
-    fullScreen 0
+    fullScreen MENU_FALSE
+    submenu MENU_TRUE
     outOfBoundsClick      // this closes the window if it gets a click out of the rectangle
     rect X Y W H
     focusColor WINDOW_FOCUSCOLOR
