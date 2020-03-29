@@ -55,7 +55,7 @@ extern int chat_playerNum;
 void Key_WriteBindings(fileHandle_t f);
 void Key_SetBinding(int keynum, const char *binding);
 const char *Key_GetBinding(int keynum);
-bool Key_IsDown(int keynum);
+bool Key_IsKeyDown(int keynum);
 bool Key_GetOverstrikeMode(void);
 void Key_SetOverstrikeMode(bool state);
 void Key_ClearStates(void);

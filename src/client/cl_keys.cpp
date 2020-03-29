@@ -852,10 +852,10 @@ void Key_SetOverstrikeMode( bool state )
 
 /*
 ===================
-Key_IsDown
+Key_IsKeyDown
 ===================
 */
-bool Key_IsDown( int keynum )
+bool Key_IsKeyDown( int keynum )
 {
 	if ( keynum < 0 || keynum >= MAX_KEYS )
 		return false;
