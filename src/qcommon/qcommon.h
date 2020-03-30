@@ -174,6 +174,9 @@ typedef enum {
 } clientProfile_t;
 #endif
 
+void  Com_rgb_to_hsl(vec4_t rgb, vec4_t hsl);
+void  Com_hsl_to_rgb(vec4_t hsl, vec4_t rgb);
+
 void		Com_QueueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength, void *ptr );
 int			Com_EventLoop( void );
 sysEvent_t	Com_GetSystemEvent( void );
