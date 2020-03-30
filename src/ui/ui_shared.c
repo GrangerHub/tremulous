@@ -80,7 +80,7 @@ void Item_RunScript(itemDef_t *item, const char *s);
 void Item_SetupKeywordHash(void);
 static ID_INLINE qboolean Item_IsEditField(itemDef_t *item);
 static ID_INLINE qboolean Item_IsListBox(itemDef_t *item);
-static void Item_ListBox_SetStartPos(itemDef_t *item, int startPos);
+static qboolean Item_ListBox_SetStartPos(itemDef_t *item, int startPos);
 void Menu_SetupKeywordHash(void);
 int BindingIDFromName(const char *name);
 qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down);
@@ -2798,29 +2798,38 @@ static void Item_ComboBox_MaybeUnCastFromListBox(itemDef_t *item, qboolean unCas
     }
 }
 
-static void Item_ListBox_SetStartPos(itemDef_t *item, int startPos)
+static qboolean Item_ListBox_SetStartPos(itemDef_t *item, int startPos)
 {
     listBoxDef_t *listPtr = item->typeData.list;
     int total = DC->feederCount(item->feederID);
     int max = Item_ListBox_MaxScroll(item);
+    qboolean changed = qfalse;
 
     if (startPos < 0)
         listPtr->startPos = 0;
     else if (startPos > max)
         listPtr->startPos = max;
     else
+    {
         listPtr->startPos = startPos;
+        changed = qtrue;
+    }
 
     listPtr->endPos = listPtr->startPos + MIN((total - listPtr->startPos), Item_ListBox_NumItemsForItemHeight(item));
+
+    return changed;
 }
 
-static void Item_ListBox_SelectPrevious(itemDef_t *item)
+static qboolean Item_ListBox_SelectPrevious(itemDef_t *item)
 {
     listBoxDef_t *listPtr = item->typeData.list;
     int viewmax = Item_ListBox_NumItemsForItemHeight(item);
+    int oldCursorPos;
 
     if (!listPtr->notselectable)
     {
+        oldCursorPos = item->cursorPos;
+
         listPtr->cursorPos = item->cursorPos;
         listPtr->cursorPos -= 1;
 
@@ -2835,19 +2844,24 @@ static void Item_ListBox_SelectPrevious(itemDef_t *item)
 
         item->cursorPos = listPtr->cursorPos;
         DC->feederSelection(item->feederID, item->cursorPos);
+
+        return oldCursorPos != item->cursorPos;
     }
     else
-        Item_ListBox_SetStartPos(item, listPtr->startPos - 1);
+        return Item_ListBox_SetStartPos(item, listPtr->startPos - 1);
 }
 
-static void Item_ListBox_SelectNext(itemDef_t *item)
+static qboolean Item_ListBox_SelectNext(itemDef_t *item)
 {
     listBoxDef_t *listPtr = item->typeData.list;
     int count = DC->feederCount(item->feederID);
     int viewmax = Item_ListBox_NumItemsForItemHeight(item);
+    int oldCursorPos;
 
     if (!listPtr->notselectable)
     {
+        oldCursorPos = item->cursorPos;
+
         listPtr->cursorPos = item->cursorPos;
         listPtr->cursorPos += 1;
 
@@ -2862,9 +2876,11 @@ static void Item_ListBox_SelectNext(itemDef_t *item)
 
         item->cursorPos = listPtr->cursorPos;
         DC->feederSelection(item->feederID, item->cursorPos);
+
+        return oldCursorPos != item->cursorPos;
     }
     else
-        Item_ListBox_SetStartPos(item, listPtr->startPos + 1);
+        return Item_ListBox_SetStartPos(item, listPtr->startPos + 1);
 }
 
 float Item_ListBox_ThumbPosition(itemDef_t *item)
@@ -3206,7 +3222,7 @@ qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolea
             case K_PAD0_RIGHTSTICK_UP:
             case K_PAD0_LEFTSTICK_UP:
           	case K_PAD0_DPAD_UP:
-                Item_ListBox_SelectPrevious(item);
+                return Item_ListBox_SelectPrevious(item);
                 break;
 
             case K_KP_DOWNARROW:
@@ -3214,7 +3230,7 @@ qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolea
             case K_PAD0_RIGHTSTICK_DOWN:
             case K_PAD0_LEFTSTICK_DOWN:
           	case K_PAD0_DPAD_DOWN:
-                Item_ListBox_SelectNext(item);
+                return Item_ListBox_SelectNext(item);
                 break;
 
             case K_ENTER:
