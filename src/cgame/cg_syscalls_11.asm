@@ -60,7 +60,7 @@ equ trap_SetUserCmdValue              -57
 equ trap_R_RegisterShaderNoMip        -58
 equ trap_MemoryRemaining              -59
 equ trap_R_RegisterFont               -60
-equ trap_Key_IsKeyDown                   -61
+equ trap_Key_IsKeyDown                 -61
 equ trap_Key_GetCatcher               -62
 equ trap_Key_SetCatcher               -63
 equ trap_Key_GetKey                   -64
