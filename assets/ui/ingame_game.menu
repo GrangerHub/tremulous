@@ -273,6 +273,7 @@
       group gameGrp
       style WINDOW_STYLE_EMPTY
       ownerdraw UI_SELECTEDMAPPREVIEW
+      decoration
       rect MAP_X MAP_Y MAP_W MAP_H
       border WINDOW_BORDER_FULL
       bordercolor .5 .5 .5 .5

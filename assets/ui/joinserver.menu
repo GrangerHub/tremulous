@@ -212,6 +212,7 @@
       name mappreview
       style WINDOW_STYLE_EMPTY
       ownerdraw UI_NETMAPPREVIEW
+      decoration
       rect (W-(PREVIEW_W+BORDER)) BORDER PREVIEW_W PREVIEW_H
       border WINDOW_BORDER_FULL
       bordercolor .5 .5 .5 1
