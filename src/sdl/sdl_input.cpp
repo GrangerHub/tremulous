@@ -521,16 +521,24 @@ static const int posKeys[SDL_CONTROLLER_AXIS_MAX] = {
   K_PAD0_RIGHTTRIGGER
 };
 
+typedef struct
+{
+	bool pressed;
+	unsigned long pressedTime;  // When was it pressed for the last time ?
+	unsigned long repeatTime;  // When was it repeated for the last time ?
+} joyButton_t;
 
 struct
 {
-	bool oldButtons[SDL_CONTROLLER_BUTTON_MAX + 1]; // +1 because old max was 16, current SDL_CONTROLLER_BUTTON_MAX is 15
+	joyButton_t oldButtons[SDL_CONTROLLER_BUTTON_MAX];
 	unsigned int oldAxes;
 	int oldAxis[MAX_JOYSTICK_AXIS];
 	int oldCroppedAxis[MAX_JOYSTICK_AXIS];
   int oldTranslatedAxis[MAX_JOYSTICK_AXIS];
+	joyButton_t oldPosAxisAsButtons[MAX_JOYSTICK_AXIS];
+	joyButton_t oldNegAxisAsButtons[MAX_JOYSTICK_AXIS];
 	unsigned int oldHats;
-} stick_state;
+} stickState;
 
 typedef struct
 {
@@ -627,7 +635,7 @@ static void IN_InitJoystick( void )
 
 	stick = NULL;
 	gamepad = NULL;
-	memset(&stick_state, '\0', sizeof (stick_state));
+	memset(&stickState, '\0', sizeof (stickState));
 
 	if( !in_joystick->integer )
 	{
@@ -1056,6 +1064,74 @@ static float IN_SimpleJoystickDeadzone(float input)
   return (32767.0f * ((input < 0) ? -cropped : cropped));
 }
 
+#define JOY_REPEAT_INTERVAL 150
+#define JOY_REPEAT_DELAY JOY_REPEAT_INTERVAL*4
+
+/*
+===============
+IN_JoyHandleKeyRepeat
+Manage gamepad key press / key up
+===============
+*/
+static void IN_JoyHandleKeyRepeat(bool caught, bool pressed, joyButton_t *oldButton, int keyNum)
+{
+	if ( (pressed != oldButton->pressed)
+			|| (caught && pressed && in_eventTime - oldButton->pressedTime > JOY_REPEAT_DELAY
+					&& in_eventTime - oldButton->repeatTime > JOY_REPEAT_INTERVAL) )
+	{
+		Com_QueueEvent(in_eventTime, SE_KEY, keyNum, pressed, 0, NULL);
+
+		if (!pressed)
+		{
+			oldButton->pressed = false;
+			oldButton->pressedTime = 0;
+			oldButton->repeatTime = 0;
+		}
+		else if (oldButton->pressed && pressed)
+			oldButton->repeatTime = in_eventTime;
+		else
+		{
+			oldButton->pressed = true;
+			oldButton->pressedTime = in_eventTime;
+			oldButton->repeatTime = in_eventTime;
+		}
+	}
+}
+
+/*
+===============
+IN_JoyHandleAnalogicalKeyRepeat
+Manage gamepad analog input acting as key press / key up
+===============
+*/
+static void IN_JoyHandleAnalogicalKeyRepeat(bool caught, bool pressed, joyButton_t *oldButton, int keyNum, float croppedValue)
+{
+	float repeatModifier = in_joystickUseAnalog->integer ? (4.0f - 3.5f * (fabs(croppedValue) / 32767.0f)) : 1.0f;
+	float repeatDelay = ((float)JOY_REPEAT_DELAY) * repeatModifier;
+	float repeatInterval = ((float)JOY_REPEAT_INTERVAL) * repeatModifier;
+
+	if ( (pressed != oldButton->pressed)
+			|| (caught && pressed && in_eventTime - oldButton->pressedTime > repeatDelay
+					&& in_eventTime - oldButton->repeatTime > repeatInterval) )
+	{
+		Com_QueueEvent(in_eventTime, SE_KEY, keyNum, pressed, 0, NULL);
+
+		if (!pressed)
+		{
+			oldButton->pressed = false;
+			oldButton->pressedTime = 0;
+			oldButton->repeatTime = 0;
+		}
+		else if (oldButton->pressed && pressed)
+			oldButton->repeatTime = in_eventTime;
+		else
+		{
+			oldButton->pressed = true;
+			oldButton->pressedTime = in_eventTime;
+			oldButton->repeatTime = in_eventTime;
+		}
+	}
+}
 
 /*
 ===============
@@ -1081,11 +1157,7 @@ static bool IN_GamepadMove( bool isCaught )
 	for (i = 0; i < SDL_CONTROLLER_BUTTON_MAX; i++)
 	{
 		bool pressed = SDL_GameControllerGetButton(gamepad, (SDL_GameControllerButton)(SDL_CONTROLLER_BUTTON_A + i));
-		if (pressed != stick_state.oldButtons[i])
-		{
-			Com_QueueEvent(in_eventTime, SE_KEY, K_PAD0_A + i, pressed, 0, NULL);
-			stick_state.oldButtons[i] = pressed;
-		}
+		IN_JoyHandleKeyRepeat(isCaught, pressed, &stickState.oldButtons[i], K_PAD0_A + i);
 	}
 
 	// check axes
@@ -1095,8 +1167,8 @@ static bool IN_GamepadMove( bool isCaught )
 		negKey = negKeys[i];
 		axisValue = IN_GetGamecontrollerAxis(i);
 		axisCroppedValue = IN_SimpleJoystickDeadzone(axisValue);
-		oldAxisValue = stick_state.oldAxis[i];
-		oldAxisCroppedValue = stick_state.oldCroppedAxis[i];
+		oldAxisValue = stickState.oldAxis[i];
+		oldAxisCroppedValue = stickState.oldCroppedAxis[i];
 
 		if (in_joystickUseAnalog->integer && !isCaught)
 		{
@@ -1137,27 +1209,27 @@ static bool IN_GamepadMove( bool isCaught )
 
 		// If a direction is not used, use it as button
 		// keyups first so they get overridden by keydowns later
+
+		// positive to negative/neutral -> keyup
+		if (!posAnalog && posKey && axisCroppedValue <= 0)
+			IN_JoyHandleAnalogicalKeyRepeat(isCaught, false, &(stickState.oldPosAxisAsButtons[i]), posKey, axisCroppedValue);
+
+		// negative to positive/neutral -> keyup
+		if (!negAnalog && negKey && axisCroppedValue >= 0)
+			IN_JoyHandleAnalogicalKeyRepeat(isCaught, false, &(stickState.oldNegAxisAsButtons[i]), negKey, axisCroppedValue);
+
+		// negative/neutral to positive -> keydown
+		if (!posAnalog && posKey && axisCroppedValue > 0)
+			IN_JoyHandleAnalogicalKeyRepeat(isCaught, true, &(stickState.oldPosAxisAsButtons[i]), posKey, axisCroppedValue);
+
+		// positive/neutral to negative -> keydown
+		if (!negAnalog && negKey && axisCroppedValue < 0)
+			IN_JoyHandleAnalogicalKeyRepeat(isCaught, true, &(stickState.oldNegAxisAsButtons[i]), negKey, axisCroppedValue);
+
 		if (oldAxisCroppedValue != axisCroppedValue)
 		{
-			// positive to negative/neutral -> keyup
-			if (!posAnalog && posKey && oldAxisCroppedValue > 0 && axisCroppedValue <= 0)
-				Com_QueueEvent(in_eventTime, SE_KEY, posKey, false, 0, NULL);
-
-			// negative to positive/neutral -> keyup
-			if (!negAnalog && negKey && oldAxisCroppedValue < 0 && axisCroppedValue >= 0)
-				Com_QueueEvent(in_eventTime, SE_KEY, negKey, false, 0, NULL);
-
-			// negative/neutral to positive -> keydown
-			if (!posAnalog && posKey && oldAxisCroppedValue <= 0 && axisCroppedValue > 0)
-				Com_QueueEvent(in_eventTime, SE_KEY, posKey, true, 0, NULL);
-
-			// positive/neutral to negative -> keydown
-			if (!negAnalog && negKey && oldAxisCroppedValue >= 0 && axisCroppedValue < 0)
-				Com_QueueEvent(in_eventTime, SE_KEY, negKey, true, 0, NULL);
-
-
-			stick_state.oldAxis[i] = axisValue;
-			stick_state.oldCroppedAxis[i] = axisCroppedValue;
+			stickState.oldAxis[i] = axisValue;
+			stickState.oldCroppedAxis[i] = axisCroppedValue;
 		}
 	}
 
@@ -1168,10 +1240,10 @@ static bool IN_GamepadMove( bool isCaught )
 	{
 		for (i = 0; i < MAX_JOYSTICK_AXIS; i++)
 		{
-			if (translatedAxisSet[i] && stick_state.oldTranslatedAxis[i] != translatedAxis[i])
+			if (translatedAxisSet[i] && stickState.oldTranslatedAxis[i] != translatedAxis[i])
 			{
 				Com_QueueEvent(in_eventTime, SE_JOYSTICK_AXIS, i, translatedAxis[i], 0, NULL);
-				stick_state.oldTranslatedAxis[i] = translatedAxis[i];
+				stickState.oldTranslatedAxis[i] = translatedAxis[i];
 			}
 		}
 	}
@@ -1227,15 +1299,33 @@ static void IN_JoyMove( bool isCaught )
 	total = SDL_JoystickNumButtons(stick);
 	if (total > 0)
 	{
-		if (total > ARRAY_LEN(stick_state.oldButtons))
-			total = ARRAY_LEN(stick_state.oldButtons);
+		if (total > ARRAY_LEN(stickState.oldButtons))
+			total = ARRAY_LEN(stickState.oldButtons);
 		for (i = 0; i < total; i++)
 		{
 			bool pressed = (SDL_JoystickGetButton(stick, i) != 0);
-			if (pressed != stick_state.oldButtons[i])
+			joyButton_t *oldButton = &stickState.oldButtons[i];
+
+			if ( (pressed != oldButton->pressed)
+					|| (pressed && in_eventTime - oldButton->pressedTime > JOY_REPEAT_DELAY
+							&& in_eventTime - oldButton->repeatTime > JOY_REPEAT_INTERVAL) )
 			{
-				Com_QueueEvent(in_eventTime, SE_KEY, K_JOY1 + i, pressed, 0, NULL );
-				stick_state.oldButtons[i] = pressed;
+				Com_QueueEvent(in_eventTime, SE_KEY, K_PAD0_A + i, pressed, 0, NULL);
+
+				if (!pressed)
+				{
+					oldButton->pressed = false;
+					oldButton->pressedTime = 0;
+					oldButton->repeatTime = 0;
+				}
+				else if (stickState.oldButtons[i].pressed && pressed)
+					oldButton->repeatTime = in_eventTime;
+				else
+				{
+					oldButton->pressed = true;
+					oldButton->pressedTime = in_eventTime;
+					oldButton->repeatTime = in_eventTime;
+				}
 			}
 		}
 	}
@@ -1252,12 +1342,12 @@ static void IN_JoyMove( bool isCaught )
 	}
 
 	// update hat state
-	if (hats != stick_state.oldHats)
+	if (hats != stickState.oldHats)
 	{
 		for( i = 0; i < 4; i++ ) {
-			if( ((Uint8 *)&hats)[i] != ((Uint8 *)&stick_state.oldHats)[i] ) {
+			if( ((Uint8 *)&hats)[i] != ((Uint8 *)&stickState.oldHats)[i] ) {
 				// release event
-				switch( ((Uint8 *)&stick_state.oldHats)[i] ) {
+				switch( ((Uint8 *)&stickState.oldHats)[i] ) {
 					case SDL_HAT_UP:
 						Com_QueueEvent(in_eventTime, SE_KEY, hatKeys[4*i + 0], false, 0, NULL );
 						break;
@@ -1327,7 +1417,7 @@ static void IN_JoyMove( bool isCaught )
 	}
 
 	// save hat state
-	stick_state.oldHats = hats;
+	stickState.oldHats = hats;
 
 	// finally, look at the axes...
 	total = SDL_JoystickNumAxes(stick);
@@ -1340,10 +1430,10 @@ static void IN_JoyMove( bool isCaught )
 			{
 				int axisValue = IN_GetJoycontrollerAxis(i);
 
-				if ( axisValue != stick_state.oldAxis[i] )
+				if ( axisValue != stickState.oldAxis[i] )
 				{
 					Com_QueueEvent(in_eventTime, SE_JOYSTICK_AXIS, i, axisValue, 0, NULL );
-					stick_state.oldAxis[i] = axisValue;
+					stickState.oldAxis[i] = axisValue;
 				}
 			}
 		}
@@ -1364,21 +1454,21 @@ static void IN_JoyMove( bool isCaught )
 	}
 
 	/* Time to update axes state based on old vs. new. */
-	if (axes != stick_state.oldAxes)
+	if (axes != stickState.oldAxes)
 	{
 		for( i = 0; i < 16; i++ ) {
-			if( ( axes & ( 1 << i ) ) && !( stick_state.oldAxes & ( 1 << i ) ) ) {
+			if( ( axes & ( 1 << i ) ) && !( stickState.oldAxes & ( 1 << i ) ) ) {
 				Com_QueueEvent(in_eventTime, SE_KEY, joyKeys[i], true, 0, NULL );
 			}
 
-			if( !( axes & ( 1 << i ) ) && ( stick_state.oldAxes & ( 1 << i ) ) ) {
+			if( !( axes & ( 1 << i ) ) && ( stickState.oldAxes & ( 1 << i ) ) ) {
 				Com_QueueEvent(in_eventTime, SE_KEY, joyKeys[i], false, 0, NULL );
 			}
 		}
 	}
 
 	/* Save for future generations. */
-	stick_state.oldAxes = axes;
+	stickState.oldAxes = axes;
 }
 
 /*
@@ -1575,7 +1665,7 @@ IN_Frame
 void IN_Frame( void )
 {
 	static bool beenCaught = false;
-	bool isCaught = ( Key_GetCatcher( ) & KEYCATCH_UI );  // Let the UI access to analogs as keys
+	bool isCaught = ( Key_GetCatcher( ) != 0 );  // Let the UI (and others) access to analogs as keys
 	bool loading;
 	bool cursorShowing;
 	int x, y;
