@@ -35,6 +35,15 @@ void CG_UpdateFeedbacks( void )
       ( cent->eFlags & EF_WARN_CHARGE ) &&
       cent->stats[ STAT_TEAM ] != TEAM_ALIENS );
 
+	qboolean tyrantSprint =
+			( weaponNum == WP_ALEVEL4 && cent->stats[ STAT_MISC ] > 0
+			&& cent->stats[ STAT_STATE ] & SS_CHARGING );
+
 	CG_UpdateHapticState(CG_FB_EFFECT_LCANNON, lcannon);
 	CG_UpdateHapticState(CG_FB_EFFECT_LCANNONWARN, lcannonWarn);
+	CG_UpdateHapticState(CG_FB_EFFECT_TYRANTTRAMPLE, tyrantSprint);
+	// lisk poisoned
+	// mara electized (decreschendo) / tesla
+	// rant sprint
+	// hive
 }

@@ -1785,6 +1785,19 @@ void CG_FireWeapon( centity_t *cent, weaponMode_t weaponMode )
     if( wi->wim[ weaponMode ].flashSound[ c ] )
       trap_S_StartSound( NULL, es->number, CHAN_WEAPON, wi->wim[ weaponMode ].flashSound[ c ] );
   }
+
+  // Haptic feedback, for local player only
+  if( cent->currentState.number == cg.snap->ps.clientNum )
+  {
+    if( weaponNum == WP_CHAINGUN )
+    {
+      if( cg.snap->ps.pm_flags & PMF_DUCKED ||
+          BG_InventoryContainsUpgrade( UP_BATTLESUIT, cg.snap->ps.stats ) )
+        trap_IN_RunHapticEffect(CG_FB_EFFECT_CHAINGUNSHOTSMALL);
+      else
+        trap_IN_RunHapticEffect(CG_FB_EFFECT_CHAINGUNSHOT);
+    }
+  }
 }
 
 

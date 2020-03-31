@@ -774,6 +774,41 @@ void IN_HapticInitEffects( void )
 	hapticEffectId[CG_FB_EFFECT_LCANNONWARN]
 			= SDL_HapticNewEffect( haptic,
 					IN_HapticGenerateEffect(&lcannonWarnEfx, &hapticEffect[CG_FB_EFFECT_LCANNONWARN]) );
+
+	effectgen_t chaingunShotEfx;
+	memset(&chaingunShotEfx, 0, sizeof(chaingunShotEfx));
+
+	chaingunShotEfx.length = 45;
+	chaingunShotEfx.magnitude = 0.6;
+	chaingunShotEfx.large_magnitude = 0.6;
+
+	hapticEffectId[CG_FB_EFFECT_CHAINGUNSHOT]
+			= SDL_HapticNewEffect( haptic,
+					IN_HapticGenerateEffect(&chaingunShotEfx, &hapticEffect[CG_FB_EFFECT_CHAINGUNSHOT]) );
+
+	effectgen_t chaingunShotSmallEfx;
+	memset(&chaingunShotSmallEfx, 0, sizeof(chaingunShotSmallEfx));
+
+	chaingunShotSmallEfx.length = 45;
+	chaingunShotSmallEfx.magnitude = 0.15;
+	chaingunShotSmallEfx.small_magnitude = 0.15;
+
+	hapticEffectId[CG_FB_EFFECT_CHAINGUNSHOTSMALL]
+			= SDL_HapticNewEffect( haptic,
+					IN_HapticGenerateEffect(&chaingunShotSmallEfx, &hapticEffect[CG_FB_EFFECT_CHAINGUNSHOTSMALL]) );
+
+
+	effectgen_t tyrantTrampleEfx;
+	memset(&tyrantTrampleEfx, 0, sizeof(tyrantTrampleEfx));
+
+	tyrantTrampleEfx.length = LEVEL4_TRAMPLE_DURATION;
+	tyrantTrampleEfx.magnitude = 0.2;
+	tyrantTrampleEfx.small_magnitude = 0.2;
+	tyrantTrampleEfx.large_magnitude = 0.1;
+
+	hapticEffectId[CG_FB_EFFECT_TYRANTTRAMPLE]
+			= SDL_HapticNewEffect( haptic,
+					IN_HapticGenerateEffect(&tyrantTrampleEfx, &hapticEffect[CG_FB_EFFECT_TYRANTTRAMPLE]) );
 }
 
 

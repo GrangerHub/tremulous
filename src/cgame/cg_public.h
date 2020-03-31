@@ -60,8 +60,23 @@ typedef struct {
 enum { CGAME_EVENT_NONE, CGAME_EVENT_TEAMMENU, CGAME_EVENT_SCOREBOARD, CGAME_EVENT_EDITHUD };
 
 enum {
+  // Weapons
   CG_FB_EFFECT_LCANNON,
-  CG_FB_EFFECT_LCANNONWARN,
+  CG_FB_EFFECT_LCANNONWARN,  // When the critical alert's beep sound
+  CG_FB_EFFECT_CHAINGUNSHOT,
+  CG_FB_EFFECT_CHAINGUNSHOTSMALL,  // When have battlesuit
+  CG_FB_EFFECT_TYRANTTRAMPLE,  // Tyrant while trampling
+
+  // Damages
+  CG_FB_EFFECT_SMALLDAMAGE,
+  CG_FB_EFFECT_DAMAGE,
+  CG_FB_EFFECT_CRITICALDAMAGE,
+
+  // Attacks
+  CG_FB_EFFECT_ELECTRIZED,  // Victim of Tesla or Adv Marauder
+  CG_FB_EFFECT_POISONED, // Victim of Adv Basilisk
+  CG_FB_EFFECT_INFESTED, // Victim of Hive
+
   CG_FB_EFFECT_COUNT
 };
 
