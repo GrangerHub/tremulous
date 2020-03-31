@@ -1564,7 +1564,7 @@ qboolean Menus_CloseSubmenus(void)
     if (openMenuCount > 0)
     {
         menu = menuStack[openMenuCount - 1];
-        if (menu->submenu)
+        if ( menu->submenu && menu->window.flags & (WINDOW_VISIBLE | WINDOW_HASFOCUS) )
         {
             Menus_Close(menu);
             return qtrue;
