@@ -3664,6 +3664,9 @@ qboolean Item_TextField_HandleKey(itemDef_t *item, int key)
 
                 case K_RIGHTARROW:
                 case K_KP_RIGHTARROW:
+                case K_PAD0_RIGHTSTICK_RIGHT:
+                case K_PAD0_LEFTSTICK_RIGHT:
+              	case K_PAD0_DPAD_RIGHT:
                     if (item->cursorPos < len)
                         item->cursorPos++;
 
@@ -3671,6 +3674,9 @@ qboolean Item_TextField_HandleKey(itemDef_t *item, int key)
 
                 case K_LEFTARROW:
                 case K_KP_LEFTARROW:
+                case K_PAD0_RIGHTSTICK_LEFT:
+                case K_PAD0_LEFTSTICK_LEFT:
+              	case K_PAD0_DPAD_LEFT:
                     if (item->cursorPos > 0)
                         item->cursorPos--;
 
@@ -3766,6 +3772,9 @@ qboolean Item_TextField_HandleKey(itemDef_t *item, int key)
 
                 case K_DOWNARROW:
                 case K_KP_DOWNARROW:
+                case K_PAD0_RIGHTSTICK_DOWN:
+                case K_PAD0_LEFTSTICK_DOWN:
+              	case K_PAD0_DPAD_DOWN:
                     if( item->type == ITEM_TYPE_SAYFIELD ) {
                         if(!chatInfo.say_make_current_line_blank) {
                             if(chatInfo.say_history_current) {
@@ -3800,18 +3809,16 @@ qboolean Item_TextField_HandleKey(itemDef_t *item, int key)
                         break;
                     }
 
-                    newItem = Menu_SetNextCursorItem(item->parent);
-
-                    if (newItem && Item_IsEditField(newItem)) {
-                        g_editItem = newItem;
-                    } else {
-                        releaseFocus = qtrue;
-                        goto exit;
-                    }
+                    // Let the deault handling
+                    releaseFocus = qtrue;
+                    goto exit;
                     break;
 
                 case K_UPARROW:
                 case K_KP_UPARROW:
+                case K_PAD0_RIGHTSTICK_UP:
+                case K_PAD0_LEFTSTICK_UP:
+              	case K_PAD0_DPAD_UP:
                     if( item->type == ITEM_TYPE_SAYFIELD ) {
                         if(chatInfo.say_make_current_line_blank) {
                             chatInfo.say_make_current_line_blank = qfalse;
@@ -3845,17 +3852,9 @@ qboolean Item_TextField_HandleKey(itemDef_t *item, int key)
                         }
                     }
 
-                    newItem = Menu_SetNextCursorItem( item->parent );
-
-                    if( newItem && Item_IsEditField( newItem ) )
-                    {
-                        g_editItem = newItem;
-                    }
-                    else
-                    {
-                        releaseFocus = qtrue;
-                        goto exit;
-                    }
+                    // Let the deault handling
+                    releaseFocus = qtrue;
+                    goto exit;
                     break;
 
                 case K_MOUSE1:
@@ -3871,6 +3870,7 @@ qboolean Item_TextField_HandleKey(itemDef_t *item, int key)
                 case K_ESCAPE:
                 case K_PAD0_BACK:
                 case K_PAD0_GUIDE:
+                case K_PAD0_B:
                     releaseFocus = qtrue;
                     goto exit;
 
@@ -4774,12 +4774,12 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
             g_editingField = qfalse;
             Item_RunScript(g_editItem, g_editItem->onTextEntry);
             g_editItem = NULL;
-            return;
         }
         else
         {
             key_pressed_onCharEntry = key;
             Item_RunScript(g_editItem, g_editItem->onCharEntry);
+            return;
         }
     }
 
