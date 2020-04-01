@@ -524,8 +524,8 @@ static const int posKeys[SDL_CONTROLLER_AXIS_MAX] = {
 typedef struct
 {
 	bool pressed;
-	unsigned long pressedTime;  // When was it pressed for the last time ?
-	unsigned long repeatTime;  // When was it repeated for the last time ?
+	long long pressedTime;  // When was it pressed for the last time ?
+	long long repeatTime;  // When was it repeated for the last time ?
 } joyButton_t;
 
 struct
@@ -1111,8 +1111,8 @@ Manage gamepad key press / key up
 static void IN_JoyHandleKeyRepeat(bool caught, bool pressed, joyButton_t *oldButton, int keyNum)
 {
 	if ( (pressed != oldButton->pressed)
-			|| (caught && pressed && in_eventTime - oldButton->pressedTime > JOY_REPEAT_DELAY
-					&& in_eventTime - oldButton->repeatTime > JOY_REPEAT_INTERVAL) )
+			|| (caught && pressed && (long long)in_eventTime - oldButton->pressedTime > JOY_REPEAT_DELAY
+					&& (long long)in_eventTime - oldButton->repeatTime > JOY_REPEAT_INTERVAL) )
 	{
 		Com_QueueEvent(in_eventTime, SE_KEY, keyNum, pressed, 0, NULL);
 
@@ -1158,12 +1158,12 @@ static void IN_JoyHandleAnalogicalKeyRepeat(bool caught, bool pressed, joyButton
 			oldButton->repeatTime = 0;
 		}
 		else if (oldButton->pressed && pressed)
-			oldButton->repeatTime = in_eventTime;
+			oldButton->repeatTime = (long long)in_eventTime;
 		else
 		{
 			oldButton->pressed = true;
-			oldButton->pressedTime = in_eventTime;
-			oldButton->repeatTime = in_eventTime;
+			oldButton->pressedTime = (long long)in_eventTime;
+			oldButton->repeatTime = (long long)in_eventTime;
 		}
 	}
 }
@@ -1182,6 +1182,7 @@ static bool IN_GamepadMove( bool isCaught )
 	int negKey, posKey;
 	int posAxis, posSign, negAxis, negSign;
 	int axisValue, oldAxisValue, axisCroppedValue, oldAxisCroppedValue;
+	bool isPressed, isPositive;
 
 	if (!gamepad || SDL_GameControllerGetAttached(gamepad) == SDL_FALSE)
 		return false;
@@ -1191,8 +1192,8 @@ static bool IN_GamepadMove( bool isCaught )
 	// check buttons
 	for (i = 0; i < SDL_CONTROLLER_BUTTON_MAX; i++)
 	{
-		bool pressed = SDL_GameControllerGetButton(gamepad, (SDL_GameControllerButton)(SDL_CONTROLLER_BUTTON_A + i));
-		IN_JoyHandleKeyRepeat(isCaught, pressed, &stickState.oldButtons[i], K_PAD0_A + i);
+		isPressed = SDL_GameControllerGetButton(gamepad, (SDL_GameControllerButton)(SDL_CONTROLLER_BUTTON_A + i));
+		IN_JoyHandleKeyRepeat(isCaught, isPressed, &stickState.oldButtons[i], K_PAD0_A + i);
 	}
 
 	// check axes
@@ -1245,20 +1246,24 @@ static bool IN_GamepadMove( bool isCaught )
 		// If a direction is not used, use it as button
 		// keyups first so they get overridden by keydowns later
 
+		// Solves float errors
+		isPressed = fabs(axisCroppedValue) > 0.1f;
+		isPositive = isPressed && axisCroppedValue > 0;
+
 		// positive to negative/neutral -> keyup
-		if (!posAnalog && posKey && axisCroppedValue <= 0)
+		if (!posAnalog && posKey && (!isPressed || !isPositive))
 			IN_JoyHandleAnalogicalKeyRepeat(isCaught, false, &(stickState.oldPosAxisAsButtons[i]), posKey, axisCroppedValue);
 
 		// negative to positive/neutral -> keyup
-		if (!negAnalog && negKey && axisCroppedValue >= 0)
+		if (!negAnalog && negKey && (!isPressed || isPositive))
 			IN_JoyHandleAnalogicalKeyRepeat(isCaught, false, &(stickState.oldNegAxisAsButtons[i]), negKey, axisCroppedValue);
 
 		// negative/neutral to positive -> keydown
-		if (!posAnalog && posKey && axisCroppedValue > 0)
+		if (!posAnalog && posKey && (isPressed && isPositive))
 			IN_JoyHandleAnalogicalKeyRepeat(isCaught, true, &(stickState.oldPosAxisAsButtons[i]), posKey, axisCroppedValue);
 
 		// positive/neutral to negative -> keydown
-		if (!negAnalog && negKey && axisCroppedValue < 0)
+		if (!negAnalog && negKey && (isPressed && !isPositive))
 			IN_JoyHandleAnalogicalKeyRepeat(isCaught, true, &(stickState.oldNegAxisAsButtons[i]), negKey, axisCroppedValue);
 
 		if (oldAxisCroppedValue != axisCroppedValue)
@@ -1342,8 +1347,8 @@ static void IN_JoyMove( bool isCaught )
 			joyButton_t *oldButton = &stickState.oldButtons[i];
 
 			if ( (pressed != oldButton->pressed)
-					|| (pressed && in_eventTime - oldButton->pressedTime > JOY_REPEAT_DELAY
-							&& in_eventTime - oldButton->repeatTime > JOY_REPEAT_INTERVAL) )
+					|| (pressed && (long long)in_eventTime - oldButton->pressedTime > JOY_REPEAT_DELAY
+							&& (long long)in_eventTime - oldButton->repeatTime > JOY_REPEAT_INTERVAL) )
 			{
 				Com_QueueEvent(in_eventTime, SE_KEY, K_PAD0_A + i, pressed, 0, NULL);
 
@@ -1354,12 +1359,12 @@ static void IN_JoyMove( bool isCaught )
 					oldButton->repeatTime = 0;
 				}
 				else if (stickState.oldButtons[i].pressed && pressed)
-					oldButton->repeatTime = in_eventTime;
+					oldButton->repeatTime = (long long)in_eventTime;
 				else
 				{
 					oldButton->pressed = true;
-					oldButton->pressedTime = in_eventTime;
-					oldButton->repeatTime = in_eventTime;
+					oldButton->pressedTime = (long long)in_eventTime;
+					oldButton->repeatTime = (long long)in_eventTime;
 				}
 			}
 		}
