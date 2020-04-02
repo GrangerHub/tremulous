@@ -3891,8 +3891,14 @@ qboolean Item_TextField_HandleKey(itemDef_t *item, int key)
                 case K_KP_PGDN:
                 case K_UPARROW:
                 case K_KP_UPARROW:
+                case K_PAD0_RIGHTSTICK_UP:
+                case K_PAD0_LEFTSTICK_UP:
+              	case K_PAD0_DPAD_UP:
                 case K_DOWNARROW:
                 case K_KP_DOWNARROW:
+                case K_PAD0_RIGHTSTICK_DOWN:
+                case K_PAD0_LEFTSTICK_DOWN:
+              	case K_PAD0_DPAD_DOWN:
                     break;
 
                 default:
