@@ -142,19 +142,20 @@ void CG_ClientList_f( void )
     switch( ci->team )
     {
       case TEAM_ALIENS:
-        Com_Printf( "%2d " S_COLOR_RED "A   " S_COLOR_WHITE "%s\n", i,
+        Com_Printf( "%2d " S_COLOR_ALIEN "A   " S_COLOR_WHITE "%s\n", i,
           ci->name );
         break;
 
       case TEAM_HUMANS:
-        Com_Printf( "%2d " S_COLOR_CYAN "H   " S_COLOR_WHITE "%s\n", i,
+        Com_Printf( "%2d " S_COLOR_HUMAN "H   " S_COLOR_WHITE "%s\n", i,
           ci->name );
         break;
 
       default:
       case TEAM_NONE:
       case NUM_TEAMS:
-        Com_Printf( "%2d S   %s\n", i, ci->name );
+        Com_Printf( "%2d " S_COLOR_SPECTATOR "S   " S_COLOR_WHITE "%s\n", i,
+          ci->name );
         break;
     }
 

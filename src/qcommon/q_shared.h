@@ -550,6 +550,9 @@ extern	vec4_t		colorLightGreen;
 #define COLOR_LIGHT_GRAY	'X'
 #define COLOR_LIGHT_SALMON	'Y'
 #define COLOR_LIGHT_GREEN	'Z'
+#define COLOR_ALIEN	COLOR_RED_ORANGE
+#define COLOR_HUMAN	COLOR_TURQUOISE_BLUE
+#define COLOR_SPECTATOR	COLOR_YELLOW
 #define ColorIndex(c) (((((c) >= '0') && ((c) <= '9')) ? ((c) - '0') : ((((c) >= 'a') && ((c) <= 'z')) ? ((c) - 'a' + 10) : ((((c) >= 'A') && ((c) <= 'Z')) ? ((c) - 'A' + 36) : 7))))
 
 #define S_COLOR_BLACK		"^0"
@@ -560,60 +563,63 @@ extern	vec4_t		colorLightGreen;
 #define S_COLOR_CYAN		"^5"
 #define S_COLOR_MAGENTA		"^6"
 #define S_COLOR_WHITE		"^7"
-#define S_COLOR_GRAY	'^8'
-#define S_COLOR_ORANGE	'^9'
-#define S_COLOR_ROSE_BUD	'^a'
-#define S_COLOR_PALE_GREEN	'^b'
-#define S_COLOR_PALE_GOLDEN	'^c'
-#define S_COLOR_COLUMBIA_BLUE	'^d'
-#define S_COLOR_PALE_TURQUOISE	'^e'
-#define S_COLOR_PALE_VIOLET_RED	'^f'
-#define S_COLOR_PALACE_PALE_WHITE	'^g'
-#define S_COLOR_OLIVE	'^h'
-#define S_COLOR_TOMATO	'^i'
-#define S_COLOR_LIME	'^j'
-#define S_COLOR_LEMON	'^k'
-#define S_COLOR_BLUE_BERRY	'^l'
-#define S_COLOR_TURQUOISE	'^m'
-#define S_COLOR_WILD_WATERMELON	'^n'
-#define S_COLOR_SALTPAN	'^o'
-#define S_COLOR_GRAY_CHATEAU	'^p'
-#define S_COLOR_RUST	'^q'
-#define S_COLOR_COPPER_GREEN	'^r'
-#define S_COLOR_GOLD	'^s'
-#define S_COLOR_STEEL_BLUE	'^t'
-#define S_COLOR_STEEL_GRAY	'^u'
-#define S_COLOR_BRONZE	'^v'
-#define S_COLOR_SILVER	'^w'
-#define S_COLOR_DARK_GRAY	'^x'
-#define S_COLOR_DARK_ORANGE	'^y'
-#define S_COLOR_DARK_GREEN	'^z'
-#define S_COLOR_RED_ORANGE	'^A'
-#define S_COLOR_FOREST_GREEN	'^B'
-#define S_COLOR_BRIGHT_SUN	'^C'
-#define S_COLOR_MEDIUM_SLATE_BLUE	'^D'
-#define S_COLOR_CELESTE	'^E'
-#define S_COLOR_IRONSTONE	'^F'
-#define S_COLOR_TIMBERWOLF	'^G'
-#define S_COLOR_ONYX	'^H'
-#define S_COLOR_ROSEWOOD	'^I'
-#define S_COLOR_KOKODA	'^J'
-#define S_COLOR_PORSCHE	'^K'
-#define S_COLOR_CLOUD_BURST	'^L'
-#define S_COLOR_BLUE_DIANE	'^M'
-#define S_COLOR_ROPE	'^N'
-#define S_COLOR_BLONDE	'^O'
-#define S_COLOR_SMOKEY_BLACK	'^P'
-#define S_COLOR_AMERICAN_ROSE	'^Q'
-#define S_COLOR_NEON_GREEN	'^R'
-#define S_COLOR_NEON_YELLOW	'^S'
-#define S_COLOR_ULTRAMARINE	'^T'
-#define S_COLOR_TURQUOISE_BLUE	'^U'
-#define S_COLOR_DARK_MAGENTA	'^V'
-#define S_COLOR_MAGIC_MINT	'^W'
-#define S_COLOR_LIGHT_GRAY	'^X'
-#define S_COLOR_LIGHT_SALMON	'^Y'
-#define S_COLOR_LIGHT_GREEN	'^Z'
+#define S_COLOR_GRAY	"^8"
+#define S_COLOR_ORANGE	"^9"
+#define S_COLOR_ROSE_BUD	"^a"
+#define S_COLOR_PALE_GREEN	"^b"
+#define S_COLOR_PALE_GOLDEN	"^c"
+#define S_COLOR_COLUMBIA_BLUE	"^d"
+#define S_COLOR_PALE_TURQUOISE	"^e"
+#define S_COLOR_PALE_VIOLET_RED	"^f"
+#define S_COLOR_PALACE_PALE_WHITE	"^g"
+#define S_COLOR_OLIVE	"^h"
+#define S_COLOR_TOMATO	"^i"
+#define S_COLOR_LIME	"^j"
+#define S_COLOR_LEMON	"^k"
+#define S_COLOR_BLUE_BERRY	"^l"
+#define S_COLOR_TURQUOISE	"^m"
+#define S_COLOR_WILD_WATERMELON	"^n"
+#define S_COLOR_SALTPAN	"^o"
+#define S_COLOR_GRAY_CHATEAU	"^p"
+#define S_COLOR_RUST	"^q"
+#define S_COLOR_COPPER_GREEN	"^r"
+#define S_COLOR_GOLD	"^s"
+#define S_COLOR_STEEL_BLUE	"^t"
+#define S_COLOR_STEEL_GRAY	"^u"
+#define S_COLOR_BRONZE	"^v"
+#define S_COLOR_SILVER	"^w"
+#define S_COLOR_DARK_GRAY	"^x"
+#define S_COLOR_DARK_ORANGE	"^y"
+#define S_COLOR_DARK_GREEN	"^z"
+#define S_COLOR_RED_ORANGE	"^A"
+#define S_COLOR_FOREST_GREEN	"^B"
+#define S_COLOR_BRIGHT_SUN	"^C"
+#define S_COLOR_MEDIUM_SLATE_BLUE	"^D"
+#define S_COLOR_CELESTE	"^E"
+#define S_COLOR_IRONSTONE	"^F"
+#define S_COLOR_TIMBERWOLF	"^G"
+#define S_COLOR_ONYX	"^H"
+#define S_COLOR_ROSEWOOD	"^I"
+#define S_COLOR_KOKODA	"^J"
+#define S_COLOR_PORSCHE	"^K"
+#define S_COLOR_CLOUD_BURST	"^L"
+#define S_COLOR_BLUE_DIANE	"^M"
+#define S_COLOR_ROPE	"^N"
+#define S_COLOR_BLONDE	"^O"
+#define S_COLOR_SMOKEY_BLACK	"^P"
+#define S_COLOR_AMERICAN_ROSE	"^Q"
+#define S_COLOR_NEON_GREEN	"^R"
+#define S_COLOR_NEON_YELLOW	"^S"
+#define S_COLOR_ULTRAMARINE	"^T"
+#define S_COLOR_TURQUOISE_BLUE	"^U"
+#define S_COLOR_DARK_MAGENTA	"^V"
+#define S_COLOR_MAGIC_MINT	"^W"
+#define S_COLOR_LIGHT_GRAY	"^X"
+#define S_COLOR_LIGHT_SALMON	"^Y"
+#define S_COLOR_LIGHT_GREEN	"^Z"
+#define S_COLOR_ALIEN	S_COLOR_RED_ORANGE
+#define S_COLOR_HUMAN	S_COLOR_TURQUOISE_BLUE
+#define S_COLOR_SPECTATOR	S_COLOR_YELLOW
 
 void	Q_GetVectFromHexColor(const char *color_code, vec4_t color);
 int   Q_ApproxBasicColorIndexFromVectColor(const vec4_t color);
@@ -776,7 +782,7 @@ static ID_INLINE int VectorCompare( const vec3_t v1, const vec3_t v2 ) {
 static ID_INLINE int Vector4Compare( const vec4_t v1, const vec4_t v2 ) {
 	if (v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2] || v1[3] != v2[3]) {
 		return 0;
-	}			
+	}
 	return 1;
 }
 

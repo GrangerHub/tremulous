@@ -96,11 +96,11 @@ CG_GetForceColor
 char CG_GetForceColor( team_t team )
 {
   if (team == TEAM_ALIENS)
-    return COLOR_RED;
+    return COLOR_ALIEN;
   else if (team == TEAM_HUMANS)
-    return COLOR_CYAN;
+    return COLOR_HUMAN;
   else
-    return COLOR_YELLOW;
+    return COLOR_SPECTATOR;
 }
 
 /*
