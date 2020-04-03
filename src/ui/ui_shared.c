@@ -2430,7 +2430,6 @@ static void UI_Text_Paint_Generic(
                 else
                 {
                     float yadj = useScale * glyph->top;
-                    forceColor[3] = newColor[3];
 
                     DC->setColor(NULL);
 
