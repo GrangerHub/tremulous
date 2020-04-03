@@ -2356,7 +2356,7 @@ static void UI_Text_Paint_Generic(
     int         count = 0;
     vec4_t      newColor;
     vec4_t      forceColor;
-    fontInfo_t  *font = UI_AutoSelectFont(scale);
+    fontInfo_t  *font = UI_AutoSelectFont(scale, textfont);
     glyphInfo_t *glyph;
     glyphInfo_t *shadowGlyph;
     float       useScale;
@@ -2447,8 +2447,6 @@ static void UI_Text_Paint_Generic(
 
                         DC->setColor(colorBlack);
                         DC->drawHandlePic(x + ofs, y + ofs - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
-                        if (emoticonColorHandle)
-                          DC->drawHandlePic(x + ofs, y + ofs - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonColorHandle);
                         DC->setColor(NULL);
 
                         colorBlack[3] = 1.0f;
@@ -2920,59 +2918,6 @@ static qboolean Item_ListBox_SelectNext(itemDef_t *item)
     }
     else
         return Item_ListBox_SetStartPos(item, listPtr->startPos + 1);
-}
-
-static void Item_ListBox_SelectPrevious(itemDef_t *item)
-{
-    listBoxDef_t *listPtr = item->typeData.list;
-    int viewmax = Item_ListBox_NumItemsForItemHeight(item);
-
-    if (!listPtr->notselectable)
-    {
-        listPtr->cursorPos = item->cursorPos;
-        listPtr->cursorPos -= 1;
-
-        if (listPtr->cursorPos < 0)
-            listPtr->cursorPos = 0;
-
-        if (listPtr->cursorPos < listPtr->startPos)
-            Item_ListBox_SetStartPos(item, listPtr->cursorPos);
-
-        if (listPtr->cursorPos >= listPtr->startPos + viewmax)
-            Item_ListBox_SetStartPos(item, listPtr->cursorPos - viewmax + 1);
-
-        item->cursorPos = listPtr->cursorPos;
-        DC->feederSelection(item->feederID, item->cursorPos);
-    }
-    else
-        Item_ListBox_SetStartPos(item, listPtr->startPos - 1);
-}
-
-static void Item_ListBox_SelectNext(itemDef_t *item)
-{
-    listBoxDef_t *listPtr = item->typeData.list;
-    int count = DC->feederCount(item->feederID);
-    int viewmax = Item_ListBox_NumItemsForItemHeight(item);
-
-    if (!listPtr->notselectable)
-    {
-        listPtr->cursorPos = item->cursorPos;
-        listPtr->cursorPos += 1;
-
-        if (listPtr->cursorPos < listPtr->startPos)
-            Item_ListBox_SetStartPos(item, listPtr->cursorPos);
-
-        if (listPtr->cursorPos >= count)
-            listPtr->cursorPos = count - 1;
-
-        if (listPtr->cursorPos >= listPtr->startPos + viewmax)
-            Item_ListBox_SetStartPos(item, listPtr->cursorPos - viewmax + 1);
-
-        item->cursorPos = listPtr->cursorPos;
-        DC->feederSelection(item->feederID, item->cursorPos);
-    }
-    else
-        Item_ListBox_SetStartPos(item, listPtr->startPos + 1);
 }
 
 float Item_ListBox_ThumbPosition(itemDef_t *item)
