@@ -775,6 +775,7 @@ void IN_HapticInitEffects( void )
 			= SDL_HapticNewEffect( haptic,
 					IN_HapticGenerateEffect(&lcannonWarnEfx, &hapticEffect[CG_FB_EFFECT_LCANNONWARN]) );
 
+
 	effectgen_t chaingunShotEfx;
 	memset(&chaingunShotEfx, 0, sizeof(chaingunShotEfx));
 
@@ -785,6 +786,7 @@ void IN_HapticInitEffects( void )
 	hapticEffectId[CG_FB_EFFECT_CHAINGUNSHOT]
 			= SDL_HapticNewEffect( haptic,
 					IN_HapticGenerateEffect(&chaingunShotEfx, &hapticEffect[CG_FB_EFFECT_CHAINGUNSHOT]) );
+
 
 	effectgen_t chaingunShotSmallEfx;
 	memset(&chaingunShotSmallEfx, 0, sizeof(chaingunShotSmallEfx));
@@ -809,6 +811,67 @@ void IN_HapticInitEffects( void )
 	hapticEffectId[CG_FB_EFFECT_TYRANTTRAMPLE]
 			= SDL_HapticNewEffect( haptic,
 					IN_HapticGenerateEffect(&tyrantTrampleEfx, &hapticEffect[CG_FB_EFFECT_TYRANTTRAMPLE]) );
+
+
+
+	effectgen_t damageSmallEfx;
+	memset(&damageSmallEfx, 0, sizeof(damageSmallEfx));
+
+	damageSmallEfx.length = 50;
+	damageSmallEfx.magnitude = 0.2;
+	damageSmallEfx.small_magnitude = 0.2;
+
+	hapticEffectId[CG_FB_EFFECT_SMALLDAMAGE]
+			= SDL_HapticNewEffect( haptic,
+					IN_HapticGenerateEffect(&damageSmallEfx, &hapticEffect[CG_FB_EFFECT_SMALLDAMAGE]) );
+
+	effectgen_t damageEfx;
+	memset(&damageEfx, 0, sizeof(damageEfx));
+
+	damageEfx.length = 75;
+	damageEfx.magnitude = 0.35;
+	damageEfx.large_magnitude = 0.35;
+
+	hapticEffectId[CG_FB_EFFECT_DAMAGE]
+			= SDL_HapticNewEffect( haptic,
+					IN_HapticGenerateEffect(&damageEfx, &hapticEffect[CG_FB_EFFECT_DAMAGE]) );
+
+	effectgen_t damageCriticalEfx;
+	memset(&damageCriticalEfx, 0, sizeof(damageCriticalEfx));
+
+	damageCriticalEfx.length = 160;
+	damageCriticalEfx.magnitude = 0.55;
+	damageCriticalEfx.large_magnitude = 0.55;
+
+	hapticEffectId[CG_FB_EFFECT_CRITICALDAMAGE]
+			= SDL_HapticNewEffect( haptic,
+					IN_HapticGenerateEffect(&damageCriticalEfx, &hapticEffect[CG_FB_EFFECT_CRITICALDAMAGE]) );
+
+
+	effectgen_t damageDeadEfx;
+	memset(&damageDeadEfx, 0, sizeof(damageDeadEfx));
+
+	damageDeadEfx.length = 1500;
+	damageDeadEfx.fade_length = 1500;
+	damageDeadEfx.magnitude = 0.25;
+	damageDeadEfx.small_magnitude = 0.25;
+
+	hapticEffectId[CG_FB_EFFECT_DEAD]
+			= SDL_HapticNewEffect( haptic,
+					IN_HapticGenerateEffect(&damageDeadEfx, &hapticEffect[CG_FB_EFFECT_DEAD]) );
+
+
+
+	effectgen_t poisonedEfx;
+	memset(&poisonedEfx, 0, sizeof(poisonedEfx));
+
+	poisonedEfx.length = SDL_HAPTIC_INFINITY;
+	poisonedEfx.magnitude = 0.15;
+	poisonedEfx.small_magnitude = 0.15;
+
+	hapticEffectId[CG_FB_EFFECT_POISONED]
+			= SDL_HapticNewEffect( haptic,
+					IN_HapticGenerateEffect(&poisonedEfx, &hapticEffect[CG_FB_EFFECT_POISONED]) );
 }
 
 

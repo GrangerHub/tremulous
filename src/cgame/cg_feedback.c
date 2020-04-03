@@ -24,26 +24,60 @@ static void CG_UpdateHapticState(int id, qboolean active)
 
 void CG_UpdateFeedbacks( void )
 {
-	playerState_t			*cent = &(cg.snap->ps);
-	weapon_t      weaponNum = cg.snap->ps.weapon;
+	static float		lastHealth;
+	static qboolean	wasAlive;
+	playerState_t		*cent = &(cg.predictedPlayerState);
+	weapon_t				weaponNum = cg.snap->ps.weapon;
+	qboolean 				alive, playing;
+	qboolean				lcannon, lcannonWarn, tyrantTrample;
+	qboolean				poisonClouded;
+	int							health = cent->stats[ STAT_HEALTH ];
+	float 					damage;
 
-	qboolean lcannon =
-			(weaponNum == WP_LUCIFER_CANNON && cent->stats[ STAT_MISC ] > 0);
+	playing = ( !cg.intermissionStarted && !(cent->pm_flags & PMF_FOLLOW) );
+	alive = ( health > 0 && !(cent->eFlags & EF_DEAD) && playing);
 
-	qboolean lcannonWarn =
-			( weaponNum == WP_LUCIFER_CANNON &&
+	lcannon =
+			( alive && weaponNum == WP_LUCIFER_CANNON &&
+				cent->stats[ STAT_MISC ] > 0 );
+
+	lcannonWarn =
+			( alive && weaponNum == WP_LUCIFER_CANNON &&
       ( cent->eFlags & EF_WARN_CHARGE ) &&
       cent->stats[ STAT_TEAM ] != TEAM_ALIENS );
 
-	qboolean tyrantSprint =
-			( weaponNum == WP_ALEVEL4 && cent->stats[ STAT_MISC ] > 0
-			&& cent->stats[ STAT_STATE ] & SS_CHARGING );
+	tyrantTrample =
+			( alive && weaponNum == WP_ALEVEL4 &&
+				cent->stats[ STAT_MISC ] > 0 &&
+				cent->stats[ STAT_STATE ] & SS_CHARGING );
+
+	poisonClouded =
+			( alive && cent->eFlags & EF_POISONCLOUDED );
 
 	CG_UpdateHapticState(CG_FB_EFFECT_LCANNON, lcannon);
 	CG_UpdateHapticState(CG_FB_EFFECT_LCANNONWARN, lcannonWarn);
-	CG_UpdateHapticState(CG_FB_EFFECT_TYRANTTRAMPLE, tyrantSprint);
-	// lisk poisoned
-	// mara electized (decreschendo) / tesla
-	// rant sprint
-	// hive
+	CG_UpdateHapticState(CG_FB_EFFECT_TYRANTTRAMPLE, tyrantTrample);
+	CG_UpdateHapticState(CG_FB_EFFECT_POISONED, poisonClouded);
+
+	if ( health != lastHealth )
+	{
+		if ( alive && health != cent->stats[STAT_MAX_HEALTH] && health < lastHealth)
+		{
+			damage = (float)(lastHealth - health) / cent->stats[STAT_MAX_HEALTH];
+
+			if ( damage <= 0.055 )
+				trap_IN_RunHapticEffect(CG_FB_EFFECT_SMALLDAMAGE);
+			else if ( damage <= 0.355 )
+				trap_IN_RunHapticEffect(CG_FB_EFFECT_DAMAGE);
+			else
+				trap_IN_RunHapticEffect(CG_FB_EFFECT_CRITICALDAMAGE);
+		}
+		lastHealth = health;
+	}
+	if (wasAlive != alive)
+	{
+		if (wasAlive && !alive && playing)
+			trap_IN_RunHapticEffect(CG_FB_EFFECT_DEAD);
+		wasAlive = alive;
+	}
 }

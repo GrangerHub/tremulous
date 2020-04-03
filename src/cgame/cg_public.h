@@ -71,11 +71,12 @@ enum {
   CG_FB_EFFECT_SMALLDAMAGE,
   CG_FB_EFFECT_DAMAGE,
   CG_FB_EFFECT_CRITICALDAMAGE,
+  CG_FB_EFFECT_DEAD,
 
   // Attacks
-  CG_FB_EFFECT_ELECTRIZED,  // Victim of Tesla or Adv Marauder
   CG_FB_EFFECT_POISONED, // Victim of Adv Basilisk
-  CG_FB_EFFECT_INFESTED, // Victim of Hive
+  // CG_FB_EFFECT_ELECTRIZED,  // Victim of Tesla or Adv Marauder - Difficult to implement
+  // CG_FB_EFFECT_INFESTED, // Victim of Hive - Difficult to implement
 
   CG_FB_EFFECT_COUNT
 };
