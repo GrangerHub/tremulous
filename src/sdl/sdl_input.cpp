@@ -542,13 +542,15 @@ struct
 
 typedef struct
 {
-	int length;
-	int attack_length;
-	int attack_level;
-	int period;
-	float magnitude;
-	float large_magnitude;
-	float small_magnitude;
+	int		length;
+	int		attack_length;
+	int		attack_level;
+	int		period;
+	int		fade_length;
+	int		fade_level;
+	float	magnitude;
+	float	large_magnitude;
+	float	small_magnitude;
 } effectgen_t;
 
 static bool IN_GamepadMove( bool isCaught );
@@ -726,15 +728,20 @@ SDL_HapticEffect *IN_HapticGenerateEffect(effectgen_t *efxGen, SDL_HapticEffect 
 	unsigned int support = SDL_HapticQuery(haptic);
 	memset(efx, 0, sizeof(efx));
 
-	if (support & SDL_HAPTIC_SINE) {
+	if (support & SDL_HAPTIC_SINE)
+	{
 		efx->type = SDL_HAPTIC_SINE;
 		efx->periodic.length = efxGen->length;
 		efx->periodic.attack_length = efxGen->attack_length;
 		efx->periodic.attack_level = efxGen->attack_level;
+		efx->periodic.fade_length = efxGen->fade_length;
+		efx->periodic.fade_level = efxGen->fade_level;
 		efx->periodic.direction.type = SDL_HAPTIC_CARTESIAN;
 		efx->periodic.period = efxGen->period ? efxGen->period : 500;
 		efx->periodic.magnitude = 32767.0f * efxGen->magnitude * in_hapticIntensity->value;
-	} else if (support & SDL_HAPTIC_LEFTRIGHT) {
+	}
+	else if (support & SDL_HAPTIC_LEFTRIGHT)
+	{
 		efx->type = SDL_HAPTIC_LEFTRIGHT;
 		efx->leftright.length = efxGen->length;
 		efx->leftright.large_magnitude = 32767.0f * efxGen->large_magnitude * in_hapticIntensity->value;
