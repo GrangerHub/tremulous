@@ -106,14 +106,6 @@ vmCvar_t j_logicInThreshold;
 vmCvar_t j_globalOutThreshold;
 
 
-vmCvar_t in_availableJoysticks;
-vmCvar_t in_joystickCount;
-vmCvar_t in_joystickNo;
-vmCvar_t in_availableHaptics;
-vmCvar_t in_hapticCount;
-vmCvar_t in_hapticNo;
-
-
 static cvarTable_t cvarTable[] = {{&ui_browserShowFull, "ui_browserShowFull", "1", CVAR_ARCHIVE},
     {&ui_browserShowEmpty, "ui_browserShowEmpty", "1", CVAR_ARCHIVE},
 
