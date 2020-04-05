@@ -680,7 +680,9 @@ static void IN_InitJoystick( void )
 		if (i)
 			Q_strcat(buf, sizeof(buf), "\n");
 		Q_strcat(buf, sizeof(buf), SDL_IsGameController(i) ? "[gamepad] " : "[joystick] ");
-		Q_strcat(buf, sizeof(buf), SDL_JoystickNameForIndex(i));
+
+		// Sometime on disconnect, the device still counted but its name is a NULL pointer
+		Q_strcat(buf, sizeof(buf), SDL_JoystickNameForIndex(i) ? SDL_JoystickNameForIndex(i) : "UNKNOWN");
 	}
 
 	Cvar_Set( "in_availableJoysticks", buf );
@@ -967,7 +969,9 @@ static void IN_InitHaptic( void )
 	{
 		if (i)
 			Q_strcat(buf, sizeof(buf), "\n");
-		Q_strcat(buf, sizeof(buf), SDL_HapticName(i));
+
+		// Sometime on disconnect, the device still counted but its name is a NULL pointer
+		Q_strcat(buf, sizeof(buf), SDL_HapticName(i) ? SDL_HapticName(i) : "UNKNOWN");
 	}
 
 	Cvar_Set( "in_availableHaptics", buf );
