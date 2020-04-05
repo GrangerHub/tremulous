@@ -1873,6 +1873,7 @@ void CG_LoadHudMenu( void )
   cgDC.setColor             = &trap_R_SetColor;
   cgDC.drawHandlePic        = &CG_DrawPic;
   cgDC.drawStretchPic       = &trap_R_DrawStretchPic;
+  cgDC.backgroundBlur       = &trap_R_BackgroundBlur;
   cgDC.registerModel        = &trap_R_RegisterModel;
   cgDC.modelBounds          = &trap_R_ModelBounds;
   cgDC.fillRect             = &CG_FillRect;

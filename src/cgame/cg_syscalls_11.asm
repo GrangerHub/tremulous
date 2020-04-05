@@ -102,6 +102,7 @@ equ trap_Key_GetBindingBuf            -99
 equ trap_Key_SetBinding               -100
 
 equ trap_R_RegisterNewFont            -104
+equ trap_R_BackgroundBlur             -105
 
 equ memset                            -201
 equ memcpy                            -202

@@ -89,6 +89,7 @@ vmCvar_t ui_findPlayer;
 vmCvar_t ui_serverStatusTimeOut;
 vmCvar_t ui_textWrapCache;
 vmCvar_t ui_developer;
+vmCvar_t ui_backgroundBlur;
 
 vmCvar_t ui_emoticons;
 vmCvar_t ui_fontShadow;
@@ -129,6 +130,7 @@ static cvarTable_t cvarTable[] = {
     { &ui_serverStatusTimeOut, "ui_serverStatusTimeOut", "7000", CVAR_ARCHIVE },
     { &ui_textWrapCache, "ui_textWrapCache", "1", CVAR_ARCHIVE },
     { &ui_developer, "ui_developer", "0", CVAR_ARCHIVE | CVAR_CHEAT },
+    { &ui_backgroundBlur, "ui_backgroundBlur", "1", CVAR_ARCHIVE },
     { &ui_emoticons, "cg_emoticons", "1", CVAR_LATCH | CVAR_ARCHIVE },
     { &ui_fontShadow, "ui_fontShadow", "1", CVAR_ARCHIVE },
     { &ui_winner, "ui_winner", "", CVAR_ROM },
@@ -6102,6 +6104,7 @@ void UI_Init(qboolean inGameLoad)
     uiInfo.uiDC.setColor = &UI_SetColor;
     uiInfo.uiDC.drawHandlePic = &UI_DrawHandlePic;
     uiInfo.uiDC.drawStretchPic = &trap_R_DrawStretchPic;
+    uiInfo.uiDC.backgroundBlur = &trap_R_BackgroundBlur;
     uiInfo.uiDC.registerModel = &trap_R_RegisterModel;
     uiInfo.uiDC.registerSkin = &trap_R_RegisterSkin;
     uiInfo.uiDC.modelBounds = &trap_R_ModelBounds;

@@ -38,32 +38,32 @@ void R_PerformanceCounters( void ) {
 
 	if (r_speeds->integer == 1) {
 		ri.Printf (PRINT_ALL, "%i/%i/%i shaders/batches/surfs %i leafs %i verts %i/%i tris %.2f mtex %.2f dc\n",
-			backEnd.pc.c_shaders, backEnd.pc.c_surfBatches, backEnd.pc.c_surfaces, tr.pc.c_leafs, backEnd.pc.c_vertexes, 
-			backEnd.pc.c_indexes/3, backEnd.pc.c_totalIndexes/3, 
-			R_SumOfUsedImages()/(1000000.0f), backEnd.pc.c_overDraw / (float)(glConfig.vidWidth * glConfig.vidHeight) ); 
+			backEnd.pc.c_shaders, backEnd.pc.c_surfBatches, backEnd.pc.c_surfaces, tr.pc.c_leafs, backEnd.pc.c_vertexes,
+			backEnd.pc.c_indexes/3, backEnd.pc.c_totalIndexes/3,
+			R_SumOfUsedImages()/(1000000.0f), backEnd.pc.c_overDraw / (float)(glConfig.vidWidth * glConfig.vidHeight) );
 	} else if (r_speeds->integer == 2) {
 		ri.Printf (PRINT_ALL, "(patch) %i sin %i sclip  %i sout %i bin %i bclip %i bout\n",
-			tr.pc.c_sphere_cull_patch_in, tr.pc.c_sphere_cull_patch_clip, tr.pc.c_sphere_cull_patch_out, 
+			tr.pc.c_sphere_cull_patch_in, tr.pc.c_sphere_cull_patch_clip, tr.pc.c_sphere_cull_patch_out,
 			tr.pc.c_box_cull_patch_in, tr.pc.c_box_cull_patch_clip, tr.pc.c_box_cull_patch_out );
 		ri.Printf (PRINT_ALL, "(md3) %i sin %i sclip  %i sout %i bin %i bclip %i bout\n",
-			tr.pc.c_sphere_cull_md3_in, tr.pc.c_sphere_cull_md3_clip, tr.pc.c_sphere_cull_md3_out, 
+			tr.pc.c_sphere_cull_md3_in, tr.pc.c_sphere_cull_md3_clip, tr.pc.c_sphere_cull_md3_out,
 			tr.pc.c_box_cull_md3_in, tr.pc.c_box_cull_md3_clip, tr.pc.c_box_cull_md3_out );
 	} else if (r_speeds->integer == 3) {
 		ri.Printf (PRINT_ALL, "viewcluster: %i\n", tr.viewCluster );
 	} else if (r_speeds->integer == 4) {
 		if ( backEnd.pc.c_dlightVertexes ) {
-			ri.Printf (PRINT_ALL, "dlight srf:%i  culled:%i  verts:%i  tris:%i\n", 
+			ri.Printf (PRINT_ALL, "dlight srf:%i  culled:%i  verts:%i  tris:%i\n",
 				tr.pc.c_dlightSurfaces, tr.pc.c_dlightSurfacesCulled,
 				backEnd.pc.c_dlightVertexes, backEnd.pc.c_dlightIndexes / 3 );
 		}
-	} 
+	}
 	else if (r_speeds->integer == 5 )
 	{
 		ri.Printf( PRINT_ALL, "zFar: %.0f\n", tr.viewParms.zFar );
 	}
 	else if (r_speeds->integer == 6 )
 	{
-		ri.Printf( PRINT_ALL, "flare adds:%i tests:%i renders:%i\n", 
+		ri.Printf( PRINT_ALL, "flare adds:%i tests:%i renders:%i\n",
 			backEnd.pc.c_flareAdds, backEnd.pc.c_flareTests, backEnd.pc.c_flareRenders );
 	}
 	else if (r_speeds->integer == 7 )
@@ -340,7 +340,7 @@ void RE_SetClipRegion( const float *region ) {
 RE_StretchPic
 =============
 */
-void RE_StretchPic ( float x, float y, float w, float h, 
+void RE_StretchPic ( float x, float y, float w, float h,
 					  float s1, float t1, float s2, float t2, qhandle_t hShader ) {
 	stretchPicCommand_t	*cmd;
 
@@ -366,6 +366,28 @@ void RE_StretchPic ( float x, float y, float w, float h,
 	cmd->t2 = t2;
 }
 
+/*
+=============
+RE_BackgroundBlur
+=============
+*/
+void RE_BackgroundBlur ( float x, float y, float w, float h, float amount) {
+	backgroundBlurCommand_t	*cmd;
+
+	if (!tr.registered)
+		return;
+
+	if ( !( cmd = (backgroundBlurCommand_t*)R_GetCommandBuffer(sizeof( *cmd )) ) )
+		return;
+
+	cmd->commandId = RC_BACKGROUNDBLUR;
+	cmd->x = x;
+	cmd->y = y;
+	cmd->w = w;
+	cmd->h = h;
+	cmd->amount = amount;
+}
+
 #define MODE_RED_CYAN	1
 #define MODE_RED_BLUE	2
 #define MODE_RED_GREEN	3
@@ -375,17 +397,17 @@ void RE_StretchPic ( float x, float y, float w, float h,
 void R_SetColorMode(GLboolean *rgba, stereoFrame_t stereoFrame, int colormode)
 {
 	rgba[0] = rgba[1] = rgba[2] = rgba[3] = GL_TRUE;
-	
+
 	if(colormode > MODE_MAX)
 	{
 		if(stereoFrame == STEREO_LEFT)
 			stereoFrame = STEREO_RIGHT;
 		else if(stereoFrame == STEREO_RIGHT)
 			stereoFrame = STEREO_LEFT;
-		
+
 		colormode -= MODE_MAX;
 	}
-	
+
 	if(colormode == MODE_GREEN_MAGENTA)
 	{
 		if(stereoFrame == STEREO_LEFT)
@@ -400,7 +422,7 @@ void R_SetColorMode(GLboolean *rgba, stereoFrame_t stereoFrame, int colormode)
 		else if(stereoFrame == STEREO_RIGHT)
 		{
 			rgba[0] = GL_FALSE;
-		
+
 			if(colormode == MODE_RED_BLUE)
 				rgba[1] = GL_FALSE;
 			else if(colormode == MODE_RED_GREEN)
@@ -500,9 +522,9 @@ void RE_BeginFrame( stereoFrame_t stereoFrame ) {
 	if (glConfig.stereoEnabled) {
 		if( !(cmd = (drawBufferCommand_t*)R_GetCommandBuffer(sizeof(*cmd))) )
 			return;
-			
+
 		cmd->commandId = RC_DRAW_BUFFER;
-		
+
 		if ( stereoFrame == STEREO_LEFT ) {
 			cmd->buffer = (int)GL_BACK_LEFT;
 		} else if ( stereoFrame == STEREO_RIGHT ) {
@@ -523,7 +545,7 @@ void RE_BeginFrame( stereoFrame_t stereoFrame ) {
 				backEnd.colorMask[1] = GL_FALSE;
 				backEnd.colorMask[2] = GL_FALSE;
 				backEnd.colorMask[3] = GL_FALSE;
-								
+
 				if (glRefConfig.framebufferObject)
 				{
 					// clear all framebuffers
@@ -549,19 +571,19 @@ void RE_BeginFrame( stereoFrame_t stereoFrame ) {
 
 				r_anaglyphMode->modified = false;
 			}
-			
+
 			if(stereoFrame == STEREO_LEFT)
 			{
 				if( !(cmd = (drawBufferCommand_t*)R_GetCommandBuffer(sizeof(*cmd))) )
 					return;
-				
+
 				if( !(colcmd = (colorMaskCommand_t*)R_GetCommandBuffer(sizeof(*colcmd))) )
 					return;
 			}
 			else if(stereoFrame == STEREO_RIGHT)
 			{
 				clearDepthCommand_t *cldcmd;
-				
+
 				if( !(cldcmd = (clearDepthCommand_t*)R_GetCommandBuffer(sizeof(*cldcmd))) )
 					return;
 
@@ -605,7 +627,7 @@ void RE_BeginFrame( stereoFrame_t stereoFrame ) {
 				cmd->buffer = (int)GL_BACK;
 		}
 	}
-	
+
 	tr.refdef.stereoFrame = stereoFrame;
 }
 

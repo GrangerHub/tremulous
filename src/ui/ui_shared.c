@@ -988,6 +988,16 @@ void Fade(int *flags, float *f, float clamp, int *nextTime, int offsetTime, qboo
     }
 }
 
+
+static void Window_DrawBackgroundBlur(float x, float y, float w, float h, float amount)
+{
+  if (!DC->getCVarValue("ui_backgroundBlur"))
+    return;
+
+  UI_AdjustFrom640(&x, &y, &w, &h);
+  DC->backgroundBlur(x, y, w, h, amount);
+}
+
 static void Window_Paint(Window *w, float fadeAmount, float fadeClamp, float fadeCycle)
 {
     vec4_t color;
@@ -1014,6 +1024,9 @@ static void Window_Paint(Window *w, float fadeAmount, float fadeClamp, float fad
     if (w->style == WINDOW_STYLE_FILLED)
     {
         // box, but possible a shader that needs filled
+
+        if (w->blur > 0.001f)
+          Window_DrawBackgroundBlur(fillRect.x, fillRect.y, fillRect.w, fillRect.h, w->blur);
 
         if (w->background)
         {
@@ -7652,6 +7665,14 @@ qboolean ItemParse_doubleClick(itemDef_t *item, int handle)
     return (item->typeData.list && PC_Script_Parse(handle, &item->typeData.list->doubleClick));
 }
 
+qboolean ItemParse_blur(itemDef_t *item, int handle)
+{
+    if (!PC_Float_Parse(handle, &item->window.blur))
+      return qfalse;
+
+    return qtrue;
+}
+
 qboolean ItemParse_onFocus(itemDef_t *item, int handle)
 {
     if (!PC_Script_Parse(handle, &item->onFocus))
@@ -7997,7 +8018,8 @@ keywordHash_t itemParseKeywords[] = {{"name", ItemParse_name, TYPE_ANY, NULL}, {
     {"enableCvar", ItemParse_enableCvar, TYPE_ANY, NULL}, {"cvarTest", ItemParse_cvarTest, TYPE_ANY, NULL},
     {"disableCvar", ItemParse_disableCvar, TYPE_ANY, NULL}, {"showCvar", ItemParse_showCvar, TYPE_ANY, NULL},
     {"hideCvar", ItemParse_hideCvar, TYPE_ANY, NULL}, {"cinematic", ItemParse_cinematic, TYPE_ANY, NULL},
-    {"doubleclick", ItemParse_doubleClick, TYPE_LIST, NULL}, {NULL, voidFunction2, 0, NULL}};
+    {"doubleclick", ItemParse_doubleClick, TYPE_LIST, NULL}, {"blur", ItemParse_blur, TYPE_ANY, NULL},
+    {NULL, voidFunction2, 0, NULL}};
 
 keywordHash_t *itemParseKeywordHash[KEYWORDHASH_SIZE];
 

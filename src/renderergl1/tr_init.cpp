@@ -1285,6 +1285,7 @@ refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 	re.SetColor = RE_SetColor;
 	re.SetClipRegion = RE_SetClipRegion;
 	re.DrawStretchPic = RE_StretchPic;
+	re.BackgroundBlur = NULL;
 	re.DrawStretchRaw = RE_StretchRaw;
 	re.UploadCinematic = RE_UploadCinematic;
 

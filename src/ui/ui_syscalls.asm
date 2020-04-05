@@ -91,6 +91,7 @@ equ trap_Parse_SourceFileAndLine      -86
 equ trap_GetNews                      -87
 
 equ trap_R_RegisterNewFont            -88
+equ trap_R_BackgroundBlur             -89
 
 equ memset                            -101
 equ memcpy                            -102

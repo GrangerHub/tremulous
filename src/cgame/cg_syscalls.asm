@@ -113,6 +113,7 @@ equ trap_IN_RunHapticEffect           -107
 equ trap_IN_StopHapticEffect          -108
 
 equ trap_R_RegisterNewFont            -109
+equ trap_R_BackgroundBlur             -110
 
 equ memset                            -201
 equ memcpy                            -202

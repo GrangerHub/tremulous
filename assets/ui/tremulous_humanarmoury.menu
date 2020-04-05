@@ -53,6 +53,7 @@
       backcolor HUMANS_WINDOW_BACKCOLOR
       visible MENU_TRUE
       decoration
+      blur WINDOW_BLUR
 
       border WINDOW_BORDER_ROUNDED
       borderSize 1.0

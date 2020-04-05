@@ -140,6 +140,7 @@ typedef enum {
     UI_GETNEWS,
 #endif
     UI_R_REGISTERNEWFONT,
+    UI_R_BACKGROUNDBLUR,
 
     // XXX THERE IS ROOM FOR _1_ (or 2? Did i count from 0?)
     // SYSCALL BETWEEN UI_GETNEWS and UI_MEMSET

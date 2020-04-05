@@ -370,6 +370,7 @@ void trap_R_SetColor(const float *rgba);
 void trap_R_SetClipRegion(const float *region);
 void trap_R_DrawStretchPic(
     float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader);
+void trap_R_BackgroundBlur(float x, float y, float w, float h, float amount);
 void trap_R_ModelBounds(clipHandle_t model, vec3_t mins, vec3_t maxs);
 void trap_UpdateScreen(void);
 int trap_CM_LerpTag(

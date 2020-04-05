@@ -72,11 +72,11 @@ void GL_Cull( int cullType ) {
 		return;
 	}
 
-	if ( cullType == CT_TWO_SIDED ) 
+	if ( cullType == CT_TWO_SIDED )
 	{
 		qglDisable( GL_CULL_FACE );
-	} 
-	else 
+	}
+	else
 	{
 		bool cullFront = (cullType == CT_FRONT_SIDED);
 
@@ -272,14 +272,14 @@ void GL_State( unsigned long stateBits )
 void GL_SetProjectionMatrix(mat4_t matrix)
 {
 	Mat4Copy(matrix, glState.projection);
-	Mat4Multiply(glState.projection, glState.modelview, glState.modelviewProjection);	
+	Mat4Multiply(glState.projection, glState.modelview, glState.modelviewProjection);
 }
 
 
 void GL_SetModelviewMatrix(mat4_t matrix)
 {
 	Mat4Copy(matrix, glState.modelview);
-	Mat4Multiply(glState.projection, glState.modelview, glState.modelviewProjection);	
+	Mat4Multiply(glState.projection, glState.modelview, glState.modelviewProjection);
 }
 
 
@@ -310,9 +310,9 @@ static void SetViewportAndScissor( void ) {
 	GL_SetProjectionMatrix( backEnd.viewParms.projectionMatrix );
 
 	// set the window clipping
-	qglViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, 
+	qglViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
 		backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
-	qglScissor( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, 
+	qglScissor( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
 		backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
 }
 
@@ -526,7 +526,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 				{
 					// hack the depth range to prevent view model from poking into walls
 					depthRange = true;
-					
+
 					if(backEnd.currentEntity->e.renderfx & RF_CROSSHAIR)
 						isCrosshair = true;
 				}
@@ -749,7 +749,7 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 	VectorSet2(texCoords[3], 0.5f / cols,          (rows - 0.5f) / rows);
 
 	GLSL_BindProgram(&tr.textureColorShader);
-	
+
 	GLSL_SetUniformMat4(&tr.textureColorShader, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
 	GLSL_SetUniformVec4(&tr.textureColorShader, UNIFORM_COLOR, colorWhite);
 
@@ -884,6 +884,28 @@ const void *RB_StretchPic ( const void *data ) {
 
 	tess.texCoords[ numVerts + 3 ][0] = cmd->s1;
 	tess.texCoords[ numVerts + 3 ][1] = cmd->t2;
+
+	return (const void *)(cmd + 1);
+}
+
+/*
+=============
+RB_BackgroundBlur
+=============
+*/
+const void *RB_BackgroundBlur ( const void *data )
+{
+	const backgroundBlurCommand_t	*cmd;
+	ivec4_t box;
+
+	cmd = (const backgroundBlurCommand_t *)data;
+	box[0] = cmd->x;
+	// FIXME : There are probably a flip in RB_BokehBlur
+	box[1] = glConfig.vidHeight - cmd->y - cmd->h;
+	box[2] = cmd->w;
+	box[3] = cmd->h;
+
+	RB_BokehBlur(NULL, box, NULL, box, cmd->amount);
 
 	return (const void *)(cmd + 1);
 }
@@ -1159,7 +1181,7 @@ const void	*RB_DrawSurfs( const void *data ) {
 		{
 			FBO_t *oldFbo = glState.currentFBO;
 			FBO_Bind(tr.sunRaysFbo);
-			
+
 			qglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 			qglClear( GL_COLOR_BUFFER_BIT );
 
@@ -1180,7 +1202,7 @@ const void	*RB_DrawSurfs( const void *data ) {
 		}
 
 		// darken down any stencil shadows
-		RB_ShadowFinish();		
+		RB_ShadowFinish();
 
 		// add light flares on lights that aren't obscured
 		RB_RenderFlares();
@@ -1311,7 +1333,7 @@ const void *RB_ColorMask(const void *data)
 	}
 
 	qglColorMask(cmd->rgba[0], cmd->rgba[1], cmd->rgba[2], cmd->rgba[3]);
-	
+
 	return (const void *)(cmd + 1);
 }
 
@@ -1324,7 +1346,7 @@ RB_ClearDepth
 const void *RB_ClearDepth(const void *data)
 {
 	const clearDepthCommand_t *cmd = (clearDepthCommand_t*)data;
-	
+
 	// finish any 2D drawing if needed
 	if(tess.numIndexes)
 		RB_EndSurface();
@@ -1354,7 +1376,7 @@ const void *RB_ClearDepth(const void *data)
 		qglClear(GL_DEPTH_BUFFER_BIT);
 	}
 
-	
+
 	return (const void *)(cmd + 1);
 }
 
@@ -1787,19 +1809,22 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			data = RB_TakeVideoFrameCmd( data );
 			break;
 		case RC_COLORMASK:
-			data = RB_ColorMask(data);
+			data = RB_ColorMask( data );
 			break;
 		case RC_CLEARDEPTH:
-			data = RB_ClearDepth(data);
+			data = RB_ClearDepth( data );
 			break;
 		case RC_CAPSHADOWMAP:
-			data = RB_CapShadowMap(data);
+			data = RB_CapShadowMap( data );
 			break;
 		case RC_POSTPROCESS:
-			data = RB_PostProcess(data);
+			data = RB_PostProcess( data );
 			break;
 		case RC_EXPORT_CUBEMAPS:
-			data = RB_ExportCubemaps(data);
+			data = RB_ExportCubemaps( data );
+			break;
+		case RC_BACKGROUNDBLUR:
+			data = RB_BackgroundBlur( data );
 			break;
 		case RC_END_OF_LIST:
 		default:

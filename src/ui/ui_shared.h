@@ -165,6 +165,7 @@ typedef struct {
     vec4_t borderStyle;  // border style, for rounded border style (Top left, top right, bottom right, bottom left)
     vec4_t outlineColor;  // border color
     qhandle_t background;  // background asset
+    float blur;
 } Window;
 
 typedef struct {
@@ -376,6 +377,7 @@ typedef struct {
     void (*drawHandlePic)(float x, float y, float w, float h, qhandle_t asset);
     void (*drawStretchPic)(
         float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader);
+    void (*backgroundBlur)( float x, float y, float w, float h, float amount);
     qhandle_t (*registerModel)(const char *p);
     qhandle_t (*registerSkin)(const char *p);
     void (*modelBounds)(qhandle_t model, vec3_t min, vec3_t max);
