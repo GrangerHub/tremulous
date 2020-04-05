@@ -91,6 +91,7 @@ vmCvar_t ui_textWrapCache;
 vmCvar_t ui_developer;
 
 vmCvar_t ui_emoticons;
+vmCvar_t ui_fontShadow;
 vmCvar_t ui_winner;
 vmCvar_t ui_chatCommands;
 vmCvar_t ui_clantag;
@@ -106,26 +107,31 @@ vmCvar_t j_logicInThreshold;
 vmCvar_t j_globalOutThreshold;
 
 
-static cvarTable_t cvarTable[] = {{&ui_browserShowFull, "ui_browserShowFull", "1", CVAR_ARCHIVE},
-    {&ui_browserShowEmpty, "ui_browserShowEmpty", "1", CVAR_ARCHIVE},
+static cvarTable_t cvarTable[] = {
+    { &ui_browserShowFull, "ui_browserShowFull", "1", CVAR_ARCHIVE },
+    { &ui_browserShowEmpty, "ui_browserShowEmpty", "1", CVAR_ARCHIVE },
 
-    {&ui_dedicated, "ui_dedicated", "0", CVAR_ARCHIVE}, {&ui_netSource, "ui_netSource", "0", CVAR_ARCHIVE},
-    {&ui_selectedMap, "ui_selectedMap", "0", CVAR_ARCHIVE},
-    {&ui_lastServerRefresh_0, "ui_lastServerRefresh_0", "", CVAR_ARCHIVE},
-    {&ui_lastServerRefresh_1, "ui_lastServerRefresh_1", "", CVAR_ARCHIVE},
-    {&ui_lastServerRefresh_2, "ui_lastServerRefresh_2", "", CVAR_ARCHIVE},
-    {&ui_lastServerRefresh_3, "ui_lastServerRefresh_3", "", CVAR_ARCHIVE},
-    {&ui_lastServerRefresh_0, "ui_lastServerRefresh_0_time", "", CVAR_ARCHIVE},
-    {&ui_lastServerRefresh_1, "ui_lastServerRefresh_1_time", "", CVAR_ARCHIVE},
-    {&ui_lastServerRefresh_2, "ui_lastServerRefresh_2_time", "", CVAR_ARCHIVE},
-    {&ui_lastServerRefresh_3, "ui_lastServerRefresh_3_time", "", CVAR_ARCHIVE},
-    {&ui_mainMenuSelectedMusic, "ui_mainMenuSelectedMusic", "", CVAR_ARCHIVE},
-    {&ui_smallFont, "ui_smallFont", "0.2", CVAR_ARCHIVE | CVAR_LATCH},
-    {&ui_bigFont, "ui_bigFont", "0.5", CVAR_ARCHIVE | CVAR_LATCH}, {&ui_findPlayer, "ui_findPlayer", "", CVAR_ARCHIVE},
-    {&ui_serverStatusTimeOut, "ui_serverStatusTimeOut", "7000", CVAR_ARCHIVE},
-    {&ui_textWrapCache, "ui_textWrapCache", "1", CVAR_ARCHIVE},
-    {&ui_developer, "ui_developer", "0", CVAR_ARCHIVE | CVAR_CHEAT},
-    {&ui_emoticons, "cg_emoticons", "1", CVAR_LATCH | CVAR_ARCHIVE}, {&ui_winner, "ui_winner", "", CVAR_ROM},
+    { &ui_dedicated, "ui_dedicated", "0", CVAR_ARCHIVE },
+    { &ui_netSource, "ui_netSource", "0", CVAR_ARCHIVE },
+    { &ui_selectedMap, "ui_selectedMap", "0", CVAR_ARCHIVE },
+    { &ui_lastServerRefresh_0, "ui_lastServerRefresh_0", "", CVAR_ARCHIVE },
+    { &ui_lastServerRefresh_1, "ui_lastServerRefresh_1", "", CVAR_ARCHIVE },
+    { &ui_lastServerRefresh_2, "ui_lastServerRefresh_2", "", CVAR_ARCHIVE },
+    { &ui_lastServerRefresh_3, "ui_lastServerRefresh_3", "", CVAR_ARCHIVE },
+    { &ui_lastServerRefresh_0, "ui_lastServerRefresh_0_time", "", CVAR_ARCHIVE },
+    { &ui_lastServerRefresh_1, "ui_lastServerRefresh_1_time", "", CVAR_ARCHIVE },
+    { &ui_lastServerRefresh_2, "ui_lastServerRefresh_2_time", "", CVAR_ARCHIVE },
+    { &ui_lastServerRefresh_3, "ui_lastServerRefresh_3_time", "", CVAR_ARCHIVE },
+    { &ui_mainMenuSelectedMusic, "ui_mainMenuSelectedMusic", "", CVAR_ARCHIVE },
+    { &ui_smallFont, "ui_smallFont", "0.2", CVAR_ARCHIVE | CVAR_LATCH },
+    { &ui_bigFont, "ui_bigFont", "0.5", CVAR_ARCHIVE | CVAR_LATCH },
+    { &ui_findPlayer, "ui_findPlayer", "", CVAR_ARCHIVE },
+    { &ui_serverStatusTimeOut, "ui_serverStatusTimeOut", "7000", CVAR_ARCHIVE },
+    { &ui_textWrapCache, "ui_textWrapCache", "1", CVAR_ARCHIVE },
+    { &ui_developer, "ui_developer", "0", CVAR_ARCHIVE | CVAR_CHEAT },
+    { &ui_emoticons, "cg_emoticons", "1", CVAR_LATCH | CVAR_ARCHIVE },
+    { &ui_fontShadow, "ui_fontShadow", "1", CVAR_ARCHIVE },
+    { &ui_winner, "ui_winner", "", CVAR_ROM },
     { &ui_chatCommands, "ui_chatCommands", "1", CVAR_ARCHIVE },
     { &ui_clantag, "ui_clantag", "", CVAR_ARCHIVE },
     { &in_availableJoysticks, "in_availableJoysticks", "", CVAR_ROM },
