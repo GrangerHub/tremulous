@@ -2495,7 +2495,7 @@ static void UI_Text_Paint_Generic(
 
             colorBlack[3] = newColor[3] * 0.85;
 
-            if (qtrue && font->shadows[shadowLevel].available) // could create a r_fontShadow option
+            if (DC->getCVarValue("ui_fontShadow") && font->shadows[shadowLevel].available)
             {
               int margin = font->shadows[shadowLevel].margin;
               float shadowOffset = (-(float)margin * useScale) + ((float)shadowLevel + 1);
@@ -2521,7 +2521,7 @@ static void UI_Text_Paint_Generic(
         {
             DC->setColor(newColor);
 
-            if (qtrue && font->shadows[FONT_SHADOWNEON].available) // could create a r_fontShadow option
+            if (DC->getCVarValue("ui_fontShadow") && font->shadows[FONT_SHADOWNEON].available)
             {
                 int margin = font->shadows[FONT_SHADOWNEON].margin;
                 float shadowOffset = -(float)margin * useScale;
@@ -2531,7 +2531,7 @@ static void UI_Text_Paint_Generic(
             }
             else
             {
-                UI_Text_PaintChar(x, y, useScale, glyph, 1.4f);
+                UI_Text_PaintChar(x, y, useScale, glyph, 6.0f);
             }
 
             colorWhite[3] = newColor[3] * 0.85;
