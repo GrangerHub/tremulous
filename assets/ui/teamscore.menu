@@ -28,6 +28,19 @@
     style WINDOW_STYLE_EMPTY
 
 
+    // BACKGROUND BLUR  //
+
+    itemDef
+    {
+      name middle_blur
+      rect 1 (BAR_H+BORDER+1) (W-2) (H-((2*BAR_H)+(2*BORDER))-2)
+      style WINDOW_STYLE_FILLED
+      visible MENU_TRUE
+      blur 0.5
+      decoration
+    }
+
+
     // TEAM STATUS  //
 
     itemDef

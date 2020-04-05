@@ -949,6 +949,11 @@ intptr_t CL_UISystemCalls(intptr_t *args)
             re.DrawStretchPic(VMF(1), VMF(2), VMF(3), VMF(4), VMF(5), VMF(6), VMF(7), VMF(8), args[9]);
             return 0;
 
+        case UI_R_BACKGROUNDBLUR:
+            if (re.BackgroundBlur)
+              re.BackgroundBlur(VMF(1), VMF(2), VMF(3), VMF(4), VMF(5));
+            return 0;
+
         case UI_R_MODELBOUNDS:
             re.ModelBounds(args[1], (float *)VMA(2), (float *)VMA(3));
             return 0;

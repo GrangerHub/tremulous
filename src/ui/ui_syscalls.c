@@ -153,6 +153,11 @@ void trap_R_DrawStretchPic(
         PASSFLOAT(s2), PASSFLOAT(t2), hShader);
 }
 
+void trap_R_BackgroundBlur(float x, float y, float w, float h, float amount)
+{
+    syscall(UI_R_BACKGROUNDBLUR, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(w), PASSFLOAT(h), PASSFLOAT(amount));
+}
+
 void trap_R_ModelBounds(clipHandle_t model, vec3_t mins, vec3_t maxs) { syscall(UI_R_MODELBOUNDS, model, mins, maxs); }
 
 void trap_UpdateScreen(void) { syscall(UI_UPDATESCREEN); }

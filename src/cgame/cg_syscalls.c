@@ -418,6 +418,12 @@ void  trap_R_DrawStretchPic( float x, float y, float w, float h,
            PASSFLOAT(s1), PASSFLOAT(t1), PASSFLOAT(s2), PASSFLOAT(t2), hShader );
 }
 
+void  trap_R_BackgroundBlur( float x, float y, float w, float h, float amount )
+{
+  syscall( CG_R_BACKGROUNDBLUR, PASSFLOAT(x), PASSFLOAT(y),
+           PASSFLOAT(w), PASSFLOAT(h), PASSFLOAT(amount) );
+}
+
 void  trap_R_ModelBounds( clipHandle_t model, vec3_t mins, vec3_t maxs ) {
   syscall( CG_R_MODELBOUNDS, model, mins, maxs );
 }
