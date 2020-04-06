@@ -2064,17 +2064,22 @@ qboolean UI_Text_IsEmoticon(const char *s, qboolean *escaped, int *length, qhand
     if (forceColor)
     {
         if (Q_IsColorString(p))
-            memcpy(&forceColor[0], &(g_color_table[ColorIndex(*(p + 1))])[0], sizeof(vec4_t));
+        {
+            if (Q_IsHardcodedColor(p)) {
+                Vector4Copy(g_color_table[ColorIndex( *(p+1))], forceColor);
+            } else {
+                Q_GetVectFromHexColor(p, forceColor);
+            }
+        }
         else
             memcpy(&forceColor[0], &colorWhite[0], sizeof(vec4_t));
     }
 
-    for (*length = 0; p[*length] != ']'; (*length)++)
+    for (*length = 0; *length < MAX_EMOTICON_NAME_LEN - 1 && p[*length] && p[*length] != ']'; (*length)++)
     {
-        if (!p[*length] || *length == MAX_EMOTICON_NAME_LEN - 1)
-            return qfalse;
-
-        if ( p[*length] != Q_COLOR_ESCAPE && ( !*length || p[*length - 1] != Q_COLOR_ESCAPE ) )
+        if (Q_IsColorString(p + *length))
+          *length += Q_ColorStringLength(p + *length) - 1;
+        else
           emoticon[emoticonLength++] = tolower(p[*length]);
     }
     emoticon[emoticonLength] = '\0';
@@ -2415,15 +2420,15 @@ static void UI_Text_Paint_Generic(
         {
             if ( Q_IsColorString(s))
             {
-            if (Q_IsHardcodedColor(s)) {
-                Vector4Copy(g_color_table[ColorIndex(*(s+1))], newColor);
-            } else {
-                Q_GetVectFromHexColor(s, newColor);
-            }
-            newColor[3] = color[3];
-            DC->setColor( newColor );
-            s += Q_ColorStringLength(s);
-            continue;
+              if (Q_IsHardcodedColor(s)) {
+                  Vector4Copy(g_color_table[ColorIndex(*(s+1))], newColor);
+              } else {
+                  Q_GetVectFromHexColor(s, newColor);
+              }
+              newColor[3] = color[3];
+              DC->setColor( newColor );
+              s += Q_ColorStringLength(s);
+              continue;
             } else if (Q_IsColorEscapeEscape(s)) {
                 s++;
             }
@@ -2464,6 +2469,7 @@ static void UI_Text_Paint_Generic(
                         colorBlack[3] = 1.0f;
                     }
                     colorWhite[3] = newColor[3];
+                    forceColor[3] = newColor[3];
                     DC->setColor(colorWhite);
                     colorWhite[3] = 1;
                     DC->drawHandlePic(x, y - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
@@ -2480,9 +2486,9 @@ static void UI_Text_Paint_Generic(
                 }
             }
         } else {
-            if (skip_color_string_check) {
+            if (skip_color_string_check)
                 skip_color_string_check = qfalse;
-            } else if (Q_IsColorString(s))
+            else if (Q_IsColorString(s))
             {
                 if (Q_IsHardcodedColor(s)) {
                     Vector4Copy(g_color_table[ColorIndex( *(s+1))], newColor);
@@ -2491,9 +2497,9 @@ static void UI_Text_Paint_Generic(
                 }
                 newColor[3] = color[3];
                 DC->setColor(newColor);
-            } else if (Q_IsColorEscapeEscape(s)) {
-                skip_color_string_check = qtrue;
             }
+            else if (Q_IsColorEscapeEscape(s))
+                skip_color_string_check = qtrue;
         }
 
         if (style == ITEM_TEXTSTYLE_SHADOWED ||
