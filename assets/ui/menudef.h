@@ -43,7 +43,7 @@ enum
   FONT_SMALL,     // Small font
   FONT_STANDARD,  // Simple font
   FONT_BIG,       // Big font
-  FONT_CHAT,       // Big font
+  FONT_CHAT,      // Chat font
   FONT_ALIEN,     // Font dedicated for aliens UI
   FONT_HUMAN     // Font dedicated for humans UI
 };

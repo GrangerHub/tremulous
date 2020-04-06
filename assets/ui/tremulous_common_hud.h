@@ -43,12 +43,12 @@ itemDef
   style WINDOW_STYLE_EMPTY
   visible MENU_TRUE
   decoration
-  forecolor 1 1 1 0.75
+  forecolor 1 1 1 0.5
   textalign ALIGN_LEFT
   textvalign VALIGN_CENTER
   textscale 0.3
   textfont FONT_CHAT
-  textstyle ITEM_TEXTSTYLE_SHADOWED
+  textstyle ITEM_TEXTSTYLE_NORMAL
   ownerdraw CG_TUTORIAL
 }
 
