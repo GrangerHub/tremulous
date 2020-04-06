@@ -2475,6 +2475,7 @@ static void UI_Text_Paint_Generic(
                     DC->drawHandlePic(x, y - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
                     if (emoticonColorHandle)
                     {
+                        // FIXEME: Should "merge" both layer before applying opacity
                         DC->setColor(forceColor);
                         DC->drawHandlePic(x, y - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonColorHandle);
                     }

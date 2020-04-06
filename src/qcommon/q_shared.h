@@ -550,7 +550,7 @@ extern	vec4_t		colorLightGreen;
 #define COLOR_LIGHT_GRAY	'X'
 #define COLOR_LIGHT_SALMON	'Y'
 #define COLOR_LIGHT_GREEN	'Z'
-#define COLOR_ALIEN	COLOR_RED_ORANGE
+#define COLOR_ALIEN	COLOR_TOMATO
 #define COLOR_HUMAN	COLOR_TURQUOISE_BLUE
 #define COLOR_SPECTATOR	COLOR_YELLOW
 #define ColorIndex(c) (((((c) >= '0') && ((c) <= '9')) ? ((c) - '0') : ((((c) >= 'a') && ((c) <= 'z')) ? ((c) - 'a' + 10) : ((((c) >= 'A') && ((c) <= 'Z')) ? ((c) - 'A' + 36) : 7))))
@@ -617,7 +617,7 @@ extern	vec4_t		colorLightGreen;
 #define S_COLOR_LIGHT_GRAY	"^X"
 #define S_COLOR_LIGHT_SALMON	"^Y"
 #define S_COLOR_LIGHT_GREEN	"^Z"
-#define S_COLOR_ALIEN	S_COLOR_RED_ORANGE
+#define S_COLOR_ALIEN	S_COLOR_TOMATO
 #define S_COLOR_HUMAN	S_COLOR_TURQUOISE_BLUE
 #define S_COLOR_SPECTATOR	S_COLOR_YELLOW
 
