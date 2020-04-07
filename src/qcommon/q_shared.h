@@ -1503,8 +1503,8 @@ typedef enum {
 // DO NOT MOFIFY (old font compatibility)
 #define GLYPH_START 0
 #define GLYPH_END 255
-#define GLYPH_CHARSTART 32
-#define GLYPH_CHAREND 127
+#define GLYPH_CHARSTART 32  // Unused
+#define GLYPH_CHAREND 127  // Unused
 #define GLYPHS_PER_FONT (GLYPH_END - GLYPH_START + 1)
 
 

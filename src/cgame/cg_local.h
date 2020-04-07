@@ -1727,7 +1727,9 @@ void        CG_Text_PaintChar( float x, float y, float width, float height, floa
 void        CG_DrawLoadingScreen( void );
 void        CG_UpdateMediaFraction( float newFract );
 void        CG_ResetPainBlend( void );
-void        CG_DrawField( float x, float y, int width, float cw, float ch, int value );
+int         CG_FontForTeam(team_t team);
+void        CG_DrawField( float x, float y, int width, float cw, float ch,
+                          int textfont, int value, unsigned char prefix );
 
 //
 // cg_players.c

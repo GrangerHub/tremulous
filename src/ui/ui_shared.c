@@ -989,6 +989,8 @@ void Fade(int *flags, float *f, float clamp, int *nextTime, int offsetTime, qboo
 }
 
 
+void UI_AdjustFrom640(float *x, float *y, float *w, float *h);
+
 static void Window_DrawBackgroundBlur(float x, float y, float w, float h, float amount)
 {
   if (!DC->getCVarValue("ui_backgroundBlur"))
@@ -1998,9 +2000,15 @@ void Script_playLoopedBucket(itemDef_t *item, char **args)
     }
 }
 
+// Despite of its name, return true for chars who have a shader, even non pritable
+static ID_INLINE qboolean UI_IsPrintable(unsigned char c)
+{
+  return (c >= GLYPH_START && c <= GLYPH_END);
+}
+
 static ID_INLINE float UI_EmoticonHeight(fontInfo_t *font, float scale)
 {
-    return font->glyphs[(int)'['].height * scale * font->glyphScale;
+    return font->glyphs[(unsigned char)'['].height * scale * font->glyphScale;
 }
 
 static ID_INLINE float UI_EmoticonWidth(fontInfo_t *font, float scale)
@@ -2201,6 +2209,12 @@ float UI_Char_Width(const char **text, float scale, int textfont)
 
     if (text && *text)
     {
+        if (!UI_IsPrintable(**text) || **text == INDENT_MARKER)
+        {
+          (*text)++;
+          return 0.0f;
+        }
+
         if( Q_IsColorString( *text ) )
         {
             *text += Q_ColorStringLength(*text);
@@ -2228,7 +2242,7 @@ float UI_Char_Width(const char **text, float scale, int textfont)
             }
         }
 
-        glyph = &font->glyphs[(int)**text];
+        glyph = &font->glyphs[(unsigned char)**text];
         (*text)++;
 
         return glyph->xSkip * DC->aspectScale * scale * font->glyphScale;
@@ -2278,10 +2292,15 @@ float UI_Text_Height(const char *text, float scale, int textfont)
             }
             else
             {
-                if(Q_IsColorEscapeEscape(s)) {
+                if (Q_IsColorEscapeEscape(s))
                     s++;
+                if (!UI_IsPrintable(*s))
+                {
+                  s++;
+                  continue;
                 }
-                glyph = &font->glyphs[(int)*s];
+
+                glyph = &font->glyphs[(unsigned char)*s];
 
                 if (max < glyph->height)
                     max = glyph->height;
@@ -2380,6 +2399,7 @@ static void UI_Text_Paint_Generic(
     qhandle_t   emoticonHandle = 0;
     qhandle_t   emoticonColorHandle = 0;
     float       emoticonH, emoticonW;
+    float       charWidth;
     qboolean    emoticonEscaped;
     qboolean    skip_color_string_check = qfalse;
     int         emoticonLen = 0;
@@ -2406,8 +2426,15 @@ static void UI_Text_Paint_Generic(
     while (s && *s && count < len)
     {
         const char *t = s;
-        float charWidth = UI_Char_Width(&t, scale, textfont);
-        glyph = &font->glyphs[(int)*s];
+
+        if ( (!UI_IsPrintable(*s)) && (*s != INDENT_MARKER) )
+        {
+          s++;
+          continue;
+        }
+
+        charWidth = UI_Char_Width(&t, scale, textfont);
+        glyph = &font->glyphs[(unsigned char)*s];
 
         if (maxX && charWidth + x > *maxX)
         {
@@ -2518,7 +2545,7 @@ static void UI_Text_Paint_Generic(
             {
               int margin = font->shadows[shadowLevel].margin;
               float shadowOffset = (-(float)margin * useScale) + ((float)shadowLevel + 1);
-              shadowGlyph = &font->shadows[shadowLevel].glyphs[(int)*s];
+              shadowGlyph = &font->shadows[shadowLevel].glyphs[(unsigned char)*s];
 
               DC->setColor(colorBlack);
               UI_Text_PaintChar(x + shadowOffset, y + shadowOffset, useScale, shadowGlyph, 0.0f);
@@ -2544,7 +2571,7 @@ static void UI_Text_Paint_Generic(
             {
                 int margin = font->shadows[FONT_SHADOWNEON].margin;
                 float shadowOffset = -(float)margin * useScale;
-                shadowGlyph = &font->shadows[FONT_SHADOWNEON].glyphs[(int)*s];
+                shadowGlyph = &font->shadows[FONT_SHADOWNEON].glyphs[(unsigned char)*s];
 
                 UI_Text_PaintChar(x + shadowOffset, y + shadowOffset, useScale, shadowGlyph, 0.0f);
             }
@@ -2579,7 +2606,7 @@ static void UI_Text_Paint_Generic(
 
         if (cursorX >= 0 && !((DC->realTime / BLINK_DIVISOR) & 1))
         {
-            glyph = &font->glyphs[(int)cursor];
+            glyph = &font->glyphs[(unsigned char)cursor];
             DC->setColor(color);
             UI_Text_PaintChar(cursorX, y, useScale, glyph, 0.0f);
         }
