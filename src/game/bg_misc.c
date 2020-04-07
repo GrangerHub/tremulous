@@ -3981,7 +3981,7 @@ Bucket Selection System
 */
 
 unsigned int BG_Bucket_Create_Bucket(void) {
-  Q_Bucket_Create_Bucket(BG_Alloc, BG_Free);
+  return Q_Bucket_Create_Bucket(BG_Alloc, BG_Free);
 }
 
 void BG_Bucket_Delete_Bucket(unsigned int bucket_handle) {

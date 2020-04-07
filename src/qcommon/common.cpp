@@ -3861,7 +3861,7 @@ static void *Z_PlaceHolderAlloc(int size) {
 }
 
 unsigned int Com_Bucket_Create_Bucket(void) {
-    Q_Bucket_Create_Bucket(Z_PlaceHolderAlloc, Z_Free);
+    return Q_Bucket_Create_Bucket(Z_PlaceHolderAlloc, Z_Free);
 }
 
 void Com_Bucket_Delete_Bucket(unsigned int bucket_handle) {
