@@ -22,8 +22,10 @@
 #define INFO_Y    BORDER
 #define INFO_TOFF 6
 
-#define MODEL_W (32*4+2*BORDER)
+#define MODEL_W (32*4)
 #define MODEL_H (24*4)
+#define MODEL_X ((INFO_X+INFO_W)-(MODEL_W))
+#define MODEL_Y ((INFO_Y+INFO_H)-(MODEL_H))
 
 #define BUTT_X    INFO_X
 #define BUTT_W    (INFO_W/3)
@@ -115,17 +117,6 @@
 
     itemDef
     {
-      name infopane_model
-      ownerdraw UI_HBUYINFOPANEMODEL
-      rect (INFO_X+INFO_W-MODEL_W+1) (INFO_Y+INFO_H-MODEL_H+1) MODEL_W MODEL_H
-      style WINDOW_STYLE_EMPTY
-      aspectBias ALIGN_CENTER
-      visible MENU_TRUE
-      decoration
-    }
-
-    itemDef
-    {
       name infopane
       ownerdraw UI_HBUYINFOPANE
       textstyle ITEM_TEXTSTYLE_NORMAL
@@ -141,6 +132,17 @@
       forecolor     1   1   1   1
       backcolor     0.2 0.2 0.2 1
       outlinecolor  0.1 0.1 0.1 0.5
+      visible MENU_TRUE
+      decoration
+    }
+
+    itemDef
+    {
+      name infopane_model
+      ownerdraw UI_HBUYINFOPANEMODEL
+      rect MODEL_X MODEL_Y MODEL_W MODEL_H
+      style WINDOW_STYLE_EMPTY
+      aspectBias ALIGN_CENTER
       visible MENU_TRUE
       decoration
     }
