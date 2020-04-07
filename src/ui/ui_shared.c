@@ -6178,7 +6178,8 @@ void Item_Model_Paint(itemDef_t *item)
     DC->renderScene(&refdef);
 }
 
-void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean highlight, qboolean scrollbar)
+void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos,
+        qboolean highlight, qboolean scrollbar)
 {
     float x, y, w;
     listBoxDef_t *listPtr = item->typeData.list;
@@ -6186,6 +6187,7 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
     float one, two;
     rectDef_t itemRect;
     vec4_t hightlightColor;
+    qboolean focused = item->window.flags & WINDOW_HASFOCUS;
 
     one = 1.0f * DC->aspectScale;
     two = 2.0f * DC->aspectScale;
@@ -6228,7 +6230,7 @@ void Item_ListBoxRow_Paint(itemDef_t *item, int row, int renderPos, qboolean hig
         qhandle_t optionalImage;
         Vector4Copy(item->window.outlineColor, hightlightColor);
 
-        if (highlight || Rect_ContainsPoint(&itemRect, DC->cursorx, DC->cursory))
+        if (highlight || (Rect_ContainsPoint(&itemRect, DC->cursorx, DC->cursory) && focused))
         {
           if (!highlight)
             hightlightColor[3] *= 0.55f;
