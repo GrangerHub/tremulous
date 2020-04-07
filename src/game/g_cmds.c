@@ -2883,14 +2883,13 @@ static void Cmd_RotateBuild( gentity_t *ent, int unit, qboolean add )
   int currentAngle;
   int finalAngle;
 
-  if ( !ent->client || ent->client->ps.stats[ STAT_BUILDABLE ] & SB_BUILDABLE_MASK == 0 )
+  if ( !(ent->client) || (ent->client->ps.stats[ STAT_BUILDABLE ] & SB_BUILDABLE_MASK) == 0 )
     return;
 
   if (add == qtrue)
   {
     currentAngle =
-    (ent->client->ps.stats[ STAT_BUILDABLE ] & SB_ROTATION_MASK)
-    / SB_ROTATION_UNIT;
+        (ent->client->ps.stats[ STAT_BUILDABLE ] & SB_ROTATION_MASK) / SB_ROTATION_UNIT;
     finalAngle = currentAngle + unit;
   }
   else
