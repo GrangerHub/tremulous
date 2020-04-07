@@ -3638,7 +3638,7 @@ void Com_rgb_to_hsl(vec4_t rgb, vec4_t hsl) {
         } else {
             hsl[0] = (rgb[0] - rgb[1]) / chroma + 4;
         }
-        
+
         hsl[0] = hsl[0] / 6;
         hsl[1] = 1 - fabs(2 * hsl[2] - 1);
 	}
@@ -3652,7 +3652,7 @@ Converts from the hue saturation luminosity color space to red green blue
 ==================
 */
 void Com_hsl_to_rgb(vec4_t hsl, vec4_t rgb) {
-	
+
     //keep the alpha the same
     rgb[3] = hsl[3];
 
@@ -3857,7 +3857,7 @@ Bucket Selection System
 */
 
 static void *Z_PlaceHolderAlloc(int size) {
-    Z_Malloc(size);
+    return Z_Malloc(size);
 }
 
 unsigned int Com_Bucket_Create_Bucket(void) {
@@ -3884,7 +3884,7 @@ void Com_Bucket_Remove_Item_From_Bucket(
 }
 
 void* Com_Bucket_Select_A_Random_Item(unsigned int bucket_handle) {
-    Q_Bucket_Select_A_Random_Item(bucket_handle);
+    return Q_Bucket_Select_A_Random_Item(bucket_handle);
 }
 
 void Com_Bucket_Select_A_Specific_Item(unsigned int bucket_handle, void* item) {

@@ -4004,7 +4004,7 @@ void BG_Bucket_Remove_Item_From_Bucket(
 }
 
 void* BG_Bucket_Select_A_Random_Item(unsigned int bucket_handle) {
-    Q_Bucket_Select_A_Random_Item(bucket_handle);
+    return Q_Bucket_Select_A_Random_Item(bucket_handle);
 }
 
 void BG_Bucket_Select_A_Specific_Item(unsigned int bucket_handle, void* item) {
