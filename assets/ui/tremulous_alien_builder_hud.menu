@@ -32,7 +32,7 @@
     itemDef
     {
       name "build-points"
-      rect 497 421.5 53 15
+      rect 492 421.5 53 15
       aspectBias ALIGN_RIGHT
       visible MENU_TRUE
       decoration

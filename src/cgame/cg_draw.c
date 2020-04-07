@@ -30,6 +30,37 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 
 menuDef_t *menuScoreboard = NULL;
 
+ID_INLINE int CG_FontForTeam(team_t team)
+{
+  if (team == TEAM_ALIENS)
+    return FONT_ALIEN;
+  else if (team == TEAM_HUMANS)
+    return FONT_HUMAN;
+  else
+    return FONT_STANDARD;
+}
+
+static ID_INLINE fontInfo_t *CG_SelectFont(int font)
+{
+  switch (font) {
+    case FONT_STANDARD:
+      return &cgDC.Assets.textFont;
+    case FONT_BIG:
+      return &cgDC.Assets.bigFont;
+    case FONT_ALIEN:
+      if (cgDC.Assets.alienFontRegistered)
+        return &cgDC.Assets.alienFont;
+      else
+        break;
+    case FONT_HUMAN:
+      if (cgDC.Assets.humanFontRegistered)
+        return &cgDC.Assets.humanFont;
+      else
+        break;
+  }
+  return &cgDC.Assets.textFont;
+}
+
 static void CG_AlignText( rectDef_t *rect, const char *text,
                           float scale, int font,
                           float w, float h,
@@ -93,23 +124,54 @@ static void CG_AlignText( rectDef_t *rect, const char *text,
 
 /*
 ==============
+CG_DrawChar
+
+Draws char in a square
+==============
+*/
+static void CG_DrawChar(float x, float y, float w, float h, glyphInfo_t *glyph)
+{
+    float gw, gh;
+    float offsetX, finalWidth;
+
+    gw = glyph->imageWidth * cgDC.aspectScale;
+    gh = glyph->imageHeight;
+
+    finalWidth = gw * h / gh;
+    x += (w - finalWidth) * 0.5;
+    w = finalWidth;
+
+    CG_AdjustFrom640(&x, &y, &w, &h);
+    trap_R_DrawStretchPic( x, y, w, h, glyph->s, glyph->t, glyph->s2, glyph->t2, glyph->glyph );
+}
+
+/*
+==============
 CG_DrawFieldPadded
 
 Draws large numbers for status bar
 ==============
 */
-static void CG_DrawFieldPadded( int x, int y, int width, int cw, int ch, int value )
+static void CG_DrawFieldPadded( int x, int y, int width, int cw, int ch, int textfont, int value, unsigned char prefix )
 {
-  char  num[ 16 ], *ptr;
-  int   l, orgL;
-  int   frame;
-  int   charWidth, charHeight;
+  char        num[ 16 ], *ptr;
+  int         l, orgL;
+  int         frame;
+  int         charWidth, charHeight;
+  float       margin;
+  fontInfo_t  *font = CG_SelectFont(textfont);
+  glyphInfo_t *glyph;
 
   if( !( charWidth = cw ) )
     charWidth = CHAR_WIDTH;
 
   if( !( charHeight = ch ) )
     charHeight = CHAR_HEIGHT;
+
+  if (charWidth > charHeight * 1.2)
+    margin = 0;
+  else
+    margin = cgDC.aspectScale * charWidth * 0.05;
 
   if( width < 1 )
     return;
@@ -148,26 +210,29 @@ static void CG_DrawFieldPadded( int x, int y, int width, int cw, int ch, int val
 
   x += ( 2.0f * cgDC.aspectScale );
 
+  if (prefix)
+    CG_DrawChar( x - margin - charWidth, y + margin,
+      charWidth - margin * 2, charHeight - margin * 2, &font->glyphs[prefix]);
+
   ptr = num;
   while( *ptr && l )
   {
     if( width > orgL )
     {
-      CG_DrawPic( x,y, charWidth, charHeight, cgs.media.numberShaders[ 0 ] );
+      glyph = &font->glyphs['0'];
       width--;
-      x += charWidth;
-      continue;
+    }
+    else
+    {
+      glyph = &font->glyphs[(unsigned char)*ptr];
+      ptr++;
+      l--;
     }
 
-    if( *ptr == '-' )
-      frame = STAT_MINUS;
-    else
-      frame = *ptr - '0';
+    CG_DrawChar( x + margin, y + margin,
+        charWidth - margin * 2, charHeight - margin * 2, glyph);
 
-    CG_DrawPic( x,y, charWidth, charHeight, cgs.media.numberShaders[ frame ] );
-    x += charWidth;
-    ptr++;
-    l--;
+    x += charWidth + margin * 2;
   }
 }
 
@@ -178,18 +243,26 @@ CG_DrawField
 Draws large numbers for status bar
 ==============
 */
-void CG_DrawField( float x, float y, int width, float cw, float ch, int value )
+void CG_DrawField( float x, float y, int width, float cw, float ch, int textfont, int value, unsigned char prefix )
 {
-  char  num[ 16 ], *ptr;
-  int   l;
-  int   frame;
-  float charWidth, charHeight;
+  char        num[ 16 ], *ptr;
+  int         l;
+  int         frame;
+  float       charWidth, charHeight;
+  float       margin;
+  fontInfo_t  *font = CG_SelectFont(textfont);
+  glyphInfo_t *glyph;
 
   if( !( charWidth = cw ) )
     charWidth = CHAR_WIDTH;
 
   if( !( charHeight = ch ) )
     charHeight = CHAR_HEIGHT;
+
+  if (charWidth > charHeight * 1.2)
+    margin = 0;
+  else
+    margin = cgDC.aspectScale * charWidth * 0.07;
 
   if( width < 1 )
     return;
@@ -226,16 +299,19 @@ void CG_DrawField( float x, float y, int width, float cw, float ch, int value )
 
   x += ( 2.0f * cgDC.aspectScale ) + charWidth * ( width - l );
 
+  if (prefix)
+    CG_DrawChar( x - margin - charWidth, y + margin,
+        charWidth - margin * 2, charHeight - margin * 2, &font->glyphs[prefix]);
+
   ptr = num;
   while( *ptr && l )
   {
-    if( *ptr == '-' )
-      frame = STAT_MINUS;
-    else
-      frame = *ptr -'0';
+    glyph = &font->glyphs[(unsigned char)*ptr];
 
-    CG_DrawPic( x,y, charWidth, charHeight, cgs.media.numberShaders[ frame ] );
-    x += charWidth;
+    CG_DrawChar( x + margin, y + margin,
+        charWidth - margin * 2, charHeight - margin * 2, glyph);
+
+    x += charWidth + margin * 2;
     ptr++;
     l--;
   }
@@ -391,9 +467,11 @@ static void CG_DrawPlayerCreditsValue( rectDef_t *rect, vec4_t color, qboolean p
     trap_R_SetColor( color );
 
     if( padding )
-      CG_DrawFieldPadded( rect->x, rect->y, 4, rect->w / 4, rect->h, value );
+      CG_DrawFieldPadded( rect->x, rect->y, 4, rect->w / 4, rect->h,
+                          CG_FontForTeam(cg.predictedPlayerState.stats[ STAT_TEAM ]), value, 0 );
     else
-      CG_DrawField( rect->x, rect->y, 1, rect->w, rect->h, value );
+      CG_DrawField( rect->x, rect->y, 1, rect->w, rect->h,
+                    CG_FontForTeam(cg.predictedPlayerState.stats[ STAT_TEAM ]), value, 0 );
 
     trap_R_SetColor( NULL );
   }
@@ -683,13 +761,26 @@ static void CG_DrawPlayerWallclimbing( rectDef_t *rect, vec4_t backColor, vec4_t
   trap_R_SetColor( NULL );
 }
 
-static void CG_DrawPlayerAmmoValue( rectDef_t *rect, vec4_t color, int font )
+
+#define MARKED_MAIN_SIZE 0.9
+#define MARKED_MAIN_TOP_OFFSET -0.3
+#define MARKED_MARKED_SIZE 0.6
+
+/*
+==============
+CG_DrawPlayerAmmoValue
+
+Draws ammo or buildpoint with marked for destruction on a second line
+==============
+*/
+static void CG_DrawPlayerAmmoValue( rectDef_t *rect, vec4_t color )
 {
   int value;
   int valueMarked = -1;
   qboolean bp = qfalse;
+  int font = CG_FontForTeam(cg.snap->ps.stats[ STAT_TEAM ]);
 
-  switch( cg.snap->ps.stats[ STAT_WEAPON ] )
+  switch( BG_GetPlayerWeapon( &cg.snap->ps ) )
   {
     case WP_NONE:
     case WP_BLASTER:
@@ -708,10 +799,10 @@ static void CG_DrawPlayerAmmoValue( rectDef_t *rect, vec4_t color, int font )
       break;
   }
 
-  if( value > 999 )
-    value = 999;
-  if( valueMarked > 999 )
-    valueMarked = 999;
+  if( value > 9999 )
+    value = 9999;
+  if( valueMarked > 9999 )
+    valueMarked = 9999;
 
   if( value > -1 )
   {
@@ -721,33 +812,27 @@ static void CG_DrawPlayerAmmoValue( rectDef_t *rect, vec4_t color, int font )
     int len;
 
     trap_R_SetColor( color );
-    if( !bp )
+
+    if ( bp && valueMarked > 0)
     {
-      CG_DrawField( rect->x - 5, rect->y, 4, rect->w / 4, rect->h, value );
-      trap_R_SetColor( NULL );
-      return;
+      CG_DrawField(
+        rect->x + rect->w * (1-MARKED_MAIN_SIZE),
+        rect->y + rect->h * MARKED_MAIN_TOP_OFFSET,
+        4,
+        rect->w / 4 * MARKED_MAIN_SIZE,
+        rect->h * MARKED_MAIN_SIZE,
+        font, value, 0 );
+      CG_DrawField(
+        rect->x + rect->w * (1-MARKED_MARKED_SIZE),
+        rect->y + rect->h * (MARKED_MAIN_TOP_OFFSET + MARKED_MAIN_SIZE),
+        4,
+        rect->w / 4 * MARKED_MARKED_SIZE,
+        rect->h * MARKED_MARKED_SIZE,
+        font, valueMarked, '+' );
     }
-
-    if( valueMarked > 0 )
-      text = va( "%d+(%d)", value, valueMarked );
     else
-      text = va( "%d", value );
+      CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h, font, value, 0 );
 
-    len = strlen( text );
-
-    if( len <= 4 )
-      scale = 0.50;
-    else if( len <= 6 )
-      scale = 0.43;
-    else if( len == 7 )
-      scale = 0.36;
-    else if( len == 8 )
-      scale = 0.33;
-    else
-      scale = 0.31;
-
-    CG_AlignText( rect, text, scale, font, 0.0f, 0.0f, ALIGN_RIGHT, VALIGN_CENTER, &tx, &ty );
-    UI_Text_Paint( tx + 1, ty, scale, font, color, text, 0, 0, ITEM_TEXTSTYLE_NORMAL );
     trap_R_SetColor( NULL );
   }
 }
@@ -865,7 +950,7 @@ static void CG_DrawPlayerClipsValue( rectDef_t *rect, vec4_t color )
   int           value;
   playerState_t *ps = &cg.snap->ps;
 
-  switch( ps->stats[ STAT_WEAPON ] )
+  switch( BG_GetPlayerWeapon( &cg.snap->ps ) )
   {
     case WP_NONE:
     case WP_BLASTER:
@@ -880,7 +965,8 @@ static void CG_DrawPlayerClipsValue( rectDef_t *rect, vec4_t color )
       if( value > -1 )
       {
         trap_R_SetColor( color );
-        CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h, value );
+        CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h,
+                      CG_FontForTeam(ps->stats[ STAT_TEAM ]), value, 0 );
         trap_R_SetColor( NULL );
       }
       break;
@@ -891,7 +977,9 @@ static void CG_DrawPlayerHealthValue( rectDef_t *rect, vec4_t color )
 {
   trap_R_SetColor( color );
   CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h,
-                cg.snap->ps.stats[ STAT_HEALTH ] );
+                CG_FontForTeam(cg.snap->ps.stats[ STAT_TEAM ]),
+                cg.snap->ps.stats[ STAT_HEALTH ],
+                0 );
   trap_R_SetColor( NULL );
 }
 
@@ -1685,7 +1773,7 @@ static void CG_DrawFPS( rectDef_t *rect, float text_x, float text_y,
     else
     {
       trap_R_SetColor( color );
-      CG_DrawField( rect->x, rect->y, 3, rect->w / 3, rect->h, fps );
+      CG_DrawField( rect->x, rect->y, 3, rect->w / 3, rect->h, FONT_STANDARD, fps, 0 );
       trap_R_SetColor( NULL );
     }
   }
@@ -1712,7 +1800,7 @@ static void CG_DrawTimerMins( rectDef_t *rect, vec4_t color )
   seconds -= mins * 60;
 
   trap_R_SetColor( color );
-  CG_DrawField( rect->x, rect->y, 3, rect->w / 3, rect->h, mins );
+  CG_DrawField( rect->x, rect->y, 3, rect->w / 3, rect->h, FONT_STANDARD, mins, 0 );
   trap_R_SetColor( NULL );
 }
 
@@ -1737,7 +1825,7 @@ static void CG_DrawTimerSecs( rectDef_t *rect, vec4_t color )
   seconds -= mins * 60;
 
   trap_R_SetColor( color );
-  CG_DrawFieldPadded( rect->x, rect->y, 2, rect->w / 2, rect->h, seconds );
+  CG_DrawFieldPadded( rect->x, rect->y, 2, rect->w / 2, rect->h, FONT_STANDARD, seconds, 0 );
   trap_R_SetColor( NULL );
 }
 
@@ -2959,7 +3047,7 @@ void CG_OwnerDraw( float x, float y, float w, float h, float text_x,
       CG_DrawPlayerStaminaBolt( &rect, backColor, foreColor, shader );
       break;
     case CG_PLAYER_AMMO_VALUE:
-      CG_DrawPlayerAmmoValue( &rect, foreColor, font );
+      CG_DrawPlayerAmmoValue( &rect, foreColor );
       break;
     case CG_PLAYER_CLIPS_VALUE:
       CG_DrawPlayerClipsValue( &rect, foreColor );
