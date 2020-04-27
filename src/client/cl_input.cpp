@@ -425,17 +425,17 @@ void CL_JoystickEvent(int axis, int value, int time)
 
 /*
 =================
-CL_SimpleJoystickDeadzone
+CL_CustomJoystickDeadzone
 
-Apply a simple deadzone
+Apply a simple custom "in" deadzone
 =================
 */
-static float CL_SimpleJoystickDeadzone(float input)
+static float CL_CustomJoystickDeadzone(float input, float in)
 {
   float cropped;
 
-  cropped = ((fabs(input) / 32767.0f) - j_threshold->value)
-      / (1.0f - j_threshold->value);
+  cropped = ((fabs(input) / 32767.0f) - in)
+      / (1.0f - in);
 
   if (cropped < 0.0f)
     cropped = 0.0f;
@@ -443,6 +443,18 @@ static float CL_SimpleJoystickDeadzone(float input)
     cropped = 1.0f;
 
   return (32767.0f * ((input < 0) ? -cropped : cropped));
+}
+
+/*
+=================
+CL_SimpleJoystickDeadzone
+
+Apply a simple deadzone, when the maximum value is not limited
+=================
+*/
+static float CL_SimpleJoystickDeadzone(float input)
+{
+  return CL_CustomJoystickDeadzone(input, j_analogInThreshold->value);
 }
 
 /*
@@ -456,8 +468,8 @@ static float CL_AdjustJoystickToValue(float input, float ceil)
 {
   float cropped;
 
-  cropped = ((fabs(input) / 32767.0f) - j_threshold->value)
-      / (1.0f - j_threshold->value - j_outMovmentThreshold->value);
+  cropped = ((fabs(input) / 32767.0f) - j_analogInThreshold->value)
+      / (1.0f - j_analogInThreshold->value - j_globalOutThreshold->value);
 
   if (cropped < 0.0f)
     cropped = 0.0f;

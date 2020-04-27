@@ -483,8 +483,9 @@ extern cvar_t *m_filter;
 
 extern cvar_t *j_pitch;
 extern cvar_t *j_yaw;
-extern cvar_t *j_threshold;
-extern cvar_t *j_outMovmentThreshold;
+extern cvar_t *j_analogInThreshold;
+extern cvar_t *j_logicInThreshold;
+extern cvar_t *j_globalOutThreshold;
 extern cvar_t *j_pitch_axis;
 extern cvar_t *j_yaw_axis;
 extern cvar_t *j_forward_axis;

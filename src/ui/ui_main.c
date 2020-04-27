@@ -101,8 +101,9 @@ vmCvar_t in_joystickNo;
 vmCvar_t in_availableHaptics;
 vmCvar_t in_hapticCount;
 vmCvar_t in_hapticNo;
-vmCvar_t j_threshold;
-vmCvar_t j_outMovmentThreshold;
+vmCvar_t j_analogInThreshold;
+vmCvar_t j_logicInThreshold;
+vmCvar_t j_globalOutThreshold;
 
 
 static cvarTable_t cvarTable[] = {{&ui_browserShowFull, "ui_browserShowFull", "1", CVAR_ARCHIVE},
@@ -133,8 +134,9 @@ static cvarTable_t cvarTable[] = {{&ui_browserShowFull, "ui_browserShowFull", "1
     { &in_availableHaptics, "in_availableHaptics", "", CVAR_ROM },
     { &in_hapticCount, "in_hapticCount", "0", CVAR_ROM },
     { &in_hapticNo, "in_hapticNo", "0", CVAR_ARCHIVE },
-    { &j_threshold, "j_threshold", "0.02", CVAR_ARCHIVE },
-    { &j_outMovmentThreshold, "j_outMovmentThreshold", "0.02", CVAR_ARCHIVE }};
+    { &j_analogInThreshold, "j_analogInThreshold", "0.02", CVAR_ARCHIVE },
+    { &j_logicInThreshold, "j_logicInThreshold", "0.2", CVAR_ARCHIVE },
+    { &j_globalOutThreshold, "j_globalOutThreshold", "0.02", CVAR_ARCHIVE }};
 
 static size_t cvarTableSize = ARRAY_LEN(cvarTable);
 
@@ -328,21 +330,16 @@ Return false if the infostring contains nonprinting characters,
  or if the hostname is blank/undefined
 ==================
 */
-static void UI_DrawGraph(float function(float), float x, float y, float w, float h, vec4_t foreColor, vec4_t backColor, float borderSize)
+static void UI_DrawGraph(float function(float), float x, float y, float w, float h, vec4_t foreColor, float borderSize)
 {
   int i, samples;
   float val;
-
-  UI_DrawRect(x, y, w, h, borderSize, backColor);
 
   UI_AdjustFrom640(&x, &y, &w, &h);
   x += borderSize;
   y += borderSize;
   w -= borderSize*2;
   h -= borderSize*2;
-
-  trap_R_SetColor( colorBlack );
-  trap_R_DrawStretchPic( x, y, w, h, 0, 0, 0, 0, uiInfo.uiDC.whiteShader );
 
   trap_R_SetColor( foreColor );
 
@@ -2567,8 +2564,8 @@ static float UI_AdjustJoystickToValue(float input, float ceil)
 {
   float cropped;
 
-  cropped = ((fabs(input) / 32767.0f) - j_threshold.value)
-      / (1.0f - j_threshold.value - j_outMovmentThreshold.value);
+  cropped = ((fabs(input) / 32767.0f) - j_analogInThreshold.value)
+      / (1.0f - j_analogInThreshold.value - j_globalOutThreshold.value);
 
   if (cropped < 0.0f)
     cropped = 0.0f;
@@ -2582,10 +2579,23 @@ static float UI_DrawJoyThresholdGraphFunction(float input)
 {
   return UI_AdjustJoystickToValue(input * 32767.0f, 1.0f);
 }
+static float UI_DrawJoyAnalogAsLogicGraphFunction(float input)
+{
+  return j_logicInThreshold.value < input ? 1.0f : 0.0f;
+}
 
 static void UI_DrawJoyThresholdGraph(rectDef_t *rect, vec4_t foreColor, vec4_t backColor, float borderSize)
 {
-  UI_DrawGraph(&UI_DrawJoyThresholdGraphFunction, rect->x, rect->y, rect->w, rect->h, foreColor, backColor, borderSize);
+  vec4_t oppositeColor;
+
+  oppositeColor[0] = 1.0f - foreColor[0];
+  oppositeColor[1] = 1.0f - foreColor[1];
+  oppositeColor[2] = 1.0f - foreColor[2];
+  oppositeColor[3] = foreColor[3];
+
+  UI_DrawRect(rect->x, rect->y, rect->w, rect->h, borderSize, backColor);
+  UI_DrawGraph(&UI_DrawJoyAnalogAsLogicGraphFunction, rect->x, rect->y, rect->w, rect->h, oppositeColor, borderSize);
+  UI_DrawGraph(&UI_DrawJoyThresholdGraphFunction, rect->x, rect->y, rect->w, rect->h, foreColor, borderSize);
 }
 
 // FIXME: table drive

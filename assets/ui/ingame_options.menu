@@ -1765,8 +1765,24 @@
       name joystick
       group optionsGrp
       type ITEM_TYPE_SLIDER
-      text "Global \"in\" dead zone:"
-      cvarfloat "j_threshold" 0.02 0 0.1
+      text "Analogic \"in\" dead zone:"
+      cvarfloat "j_analogInThreshold" 0.02 0 0.1
+      rect SCONTENT_X (SCONTENT_Y+(5*ELEM_H)) SCONTENT_W ELEM_H
+      textalign ALIGN_RIGHT
+      textvalign VALIGN_CENTER
+      textalignx SCONTENT_OFF
+      textscale .25
+      forecolor 1 1 1 1
+      visible MENU_FALSE
+    }
+
+    itemDef
+    {
+      name joystick
+      group optionsGrp
+      type ITEM_TYPE_SLIDER
+      text "Logic \"in\" dead zone:"
+      cvarfloat "j_logicInThreshold" 0.2 0 0.5
       rect SCONTENT_X (SCONTENT_Y+(6*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
@@ -1781,8 +1797,8 @@
       name joystick
       group optionsGrp
       type ITEM_TYPE_SLIDER
-      text "Moves \"out\" dead zone:"
-      cvarfloat "j_outMovmentThreshold" 0.02 0 0.1
+      text "Global \"out\" dead zone:"
+      cvarfloat "j_globalOutThreshold" 0.02 0 0.1
       rect SCONTENT_X (SCONTENT_Y+(7*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
@@ -1798,7 +1814,7 @@
       group optionsGrp
       ownerdraw UI_JOYTHRESHOLDGRAPH
       rect SCONTENT_X (SCONTENT_Y+(8*ELEM_H)) SCONTENT_W (ELEM_H*4)
-      forecolor WINDOW_FOCUSCOLOR
+      forecolor 1 .75 0 0.85
       backcolor 0.2 0.2 0.2 1
       borderSize 2.0
       visible MENU_FALSE

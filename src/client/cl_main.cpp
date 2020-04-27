@@ -101,8 +101,9 @@ cvar_t *m_filter;
 
 cvar_t *j_pitch;
 cvar_t *j_yaw;
-cvar_t *j_threshold;
-cvar_t *j_outMovmentThreshold;
+cvar_t *j_analogInThreshold;
+cvar_t *j_logicInThreshold;
+cvar_t *j_globalOutThreshold;
 cvar_t *j_pitch_axis;
 cvar_t *j_yaw_axis;
 cvar_t *j_forward_axis;
@@ -4916,8 +4917,9 @@ void CL_Init(void)
 
     j_pitch = Cvar_Get("j_pitch", "0.022", CVAR_ARCHIVE);
     j_yaw = Cvar_Get("j_yaw", "-0.022", CVAR_ARCHIVE);
-    j_threshold = Cvar_Get( "j_threshold", "0.02", CVAR_ARCHIVE );
-    j_outMovmentThreshold = Cvar_Get( "j_outMovmentThreshold", "0.02", CVAR_ARCHIVE );
+    j_analogInThreshold = Cvar_Get( "j_analogInThreshold", "0.02", CVAR_ARCHIVE );
+    j_logicInThreshold = Cvar_Get( "j_logicInThreshold", "0.2", CVAR_ARCHIVE );
+    j_globalOutThreshold = Cvar_Get( "j_globalOutThreshold", "0.02", CVAR_ARCHIVE );
 
     j_pitch_axis = Cvar_Get("j_pitch_axis", "3", CVAR_ARCHIVE);
     j_yaw_axis = Cvar_Get("j_yaw_axis", "2", CVAR_ARCHIVE);

@@ -533,7 +533,6 @@ struct
 	joyButton_t oldButtons[SDL_CONTROLLER_BUTTON_MAX];
 	unsigned int oldAxes;
 	int oldAxis[MAX_JOYSTICK_AXIS];
-	int oldCroppedAxis[MAX_JOYSTICK_AXIS];
   int oldTranslatedAxis[MAX_JOYSTICK_AXIS];
 	joyButton_t oldPosAxisAsButtons[MAX_JOYSTICK_AXIS];
 	joyButton_t oldNegAxisAsButtons[MAX_JOYSTICK_AXIS];
@@ -1155,15 +1154,15 @@ static bool IN_KeyToDirection(int keynum, int *outAxis, int *outSign)
 
 /*
 ===============
-IN_SimpleJoystickDeadzone
+IN_CustomJoystickDeadzone
 ===============
 */
-static float IN_SimpleJoystickDeadzone(float input)
+static float IN_CustomJoystickDeadzone(float input, float in)
 {
   float cropped;
 
-  cropped = ((fabs(input) / 32767.0f) - j_threshold->value)
-      / (1.0f - j_threshold->value);
+  cropped = ((fabs(input) / 32767.0f) - in)
+      / (1.0f - in);
 
   if (cropped < 0.0f)
     cropped = 0.0f;
@@ -1213,9 +1212,9 @@ IN_JoyHandleAnalogicalKeyRepeat
 Manage gamepad analog input acting as key press / key up
 ===============
 */
-static void IN_JoyHandleAnalogicalKeyRepeat(bool caught, bool pressed, joyButton_t *oldButton, int keyNum, float croppedValue)
+static void IN_JoyHandleAnalogicalKeyRepeat(bool caught, bool pressed, joyButton_t *oldButton, int keyNum, float gradValue)
 {
-	float repeatModifier = in_joystickUseAnalog->integer ? (4.0f - 3.5f * (fabs(croppedValue) / 32767.0f)) : 1.0f;
+	float repeatModifier = in_joystickUseAnalog->integer ? (4.0f - 3.5f * (fabs(gradValue) / 32767.0f)) : 1.0f;
 	float repeatDelay = ((float)JOY_REPEAT_DELAY) * repeatModifier;
 	float repeatInterval = ((float)JOY_REPEAT_INTERVAL) * repeatModifier;
 
@@ -1244,6 +1243,18 @@ static void IN_JoyHandleAnalogicalKeyRepeat(bool caught, bool pressed, joyButton
 
 /*
 ===============
+IN_IsAnalogAsLogicPressed
+===============
+*/
+static bool IN_IsAnalogAsLogicPressed(float absAxisVal, int index, int *axisValues)
+{
+	float concurrentAxisAbsVal = fabs( axisValues[ (int)(index / 2) * 2 + !(index % 2) ] );
+	return absAxisVal > (j_logicInThreshold->value * 32767.0f) &&
+			absAxisVal >= concurrentAxisAbsVal * 2 / 3;
+}
+
+/*
+===============
 IN_GamepadMove
 ===============
 */
@@ -1255,7 +1266,8 @@ static bool IN_GamepadMove( bool isCaught )
 	bool posAnalog, negAnalog;
 	int negKey, posKey;
 	int posAxis, posSign, negAxis, negSign;
-	int axisValue, oldAxisValue, axisCroppedValue, oldAxisCroppedValue;
+	int axisValues[SDL_CONTROLLER_AXIS_MAX];
+	int axisValue, oldAxisValue, axisLogicalGradValue;
 	bool isPressed, isPositive;
 
 	if (!gamepad || SDL_GameControllerGetAttached(gamepad) == SDL_FALSE)
@@ -1270,15 +1282,17 @@ static bool IN_GamepadMove( bool isCaught )
 		IN_JoyHandleKeyRepeat(isCaught, isPressed, &stickState.oldButtons[i], K_PAD0_A + i);
 	}
 
+	// Save all curent axis values for later use
+	for (i = 0; i < SDL_CONTROLLER_AXIS_MAX; i++)
+		axisValues[i] = IN_GetGamecontrollerAxis(i);
+
 	// check axes
 	for (i = 0; i < SDL_CONTROLLER_AXIS_MAX; i++)
 	{
 		posKey = posKeys[i];
 		negKey = negKeys[i];
-		axisValue = IN_GetGamecontrollerAxis(i);
-		axisCroppedValue = IN_SimpleJoystickDeadzone(axisValue);
+		axisValue = axisValues[i];
 		oldAxisValue = stickState.oldAxis[i];
-		oldAxisCroppedValue = stickState.oldCroppedAxis[i];
 
 		if (in_joystickUseAnalog->integer && !isCaught)
 		{
@@ -1320,31 +1334,29 @@ static bool IN_GamepadMove( bool isCaught )
 		// If a direction is not used, use it as button
 		// keyups first so they get overridden by keydowns later
 
-		// Solves float errors
-		isPressed = fabs(axisCroppedValue) > 0.1f;
-		isPositive = isPressed && axisCroppedValue > 0;
+		// Must be higher than threshold and make diagonals coherent
+		isPressed = IN_IsAnalogAsLogicPressed(fabs(axisValue), i, axisValues);
+		isPositive = isPressed && axisValue > 0;
+		axisLogicalGradValue = IN_CustomJoystickDeadzone(axisValue, j_logicInThreshold->value);
 
 		// positive to negative/neutral -> keyup
 		if (!posAnalog && posKey && (!isPressed || !isPositive))
-			IN_JoyHandleAnalogicalKeyRepeat(isCaught, false, &(stickState.oldPosAxisAsButtons[i]), posKey, axisCroppedValue);
+			IN_JoyHandleAnalogicalKeyRepeat(isCaught, false, &(stickState.oldPosAxisAsButtons[i]), posKey, axisLogicalGradValue);
 
 		// negative to positive/neutral -> keyup
 		if (!negAnalog && negKey && (!isPressed || isPositive))
-			IN_JoyHandleAnalogicalKeyRepeat(isCaught, false, &(stickState.oldNegAxisAsButtons[i]), negKey, axisCroppedValue);
+			IN_JoyHandleAnalogicalKeyRepeat(isCaught, false, &(stickState.oldNegAxisAsButtons[i]), negKey, axisLogicalGradValue);
 
 		// negative/neutral to positive -> keydown
 		if (!posAnalog && posKey && (isPressed && isPositive))
-			IN_JoyHandleAnalogicalKeyRepeat(isCaught, true, &(stickState.oldPosAxisAsButtons[i]), posKey, axisCroppedValue);
+			IN_JoyHandleAnalogicalKeyRepeat(isCaught, true, &(stickState.oldPosAxisAsButtons[i]), posKey, axisLogicalGradValue);
 
 		// positive/neutral to negative -> keydown
 		if (!negAnalog && negKey && (isPressed && !isPositive))
-			IN_JoyHandleAnalogicalKeyRepeat(isCaught, true, &(stickState.oldNegAxisAsButtons[i]), negKey, axisCroppedValue);
+			IN_JoyHandleAnalogicalKeyRepeat(isCaught, true, &(stickState.oldNegAxisAsButtons[i]), negKey, axisLogicalGradValue);
 
-		if (oldAxisCroppedValue != axisCroppedValue)
-		{
+		if (oldAxisValue != axisValue)
 			stickState.oldAxis[i] = axisValue;
-			stickState.oldCroppedAxis[i] = axisCroppedValue;
-		}
 	}
 
 	// set translated axis
@@ -1558,9 +1570,9 @@ static void IN_JoyMove( bool isCaught )
 			{
 				int axisValue = SDL_JoystickGetAxis(stick, i);
 				float axisValueRatio = ( (float) axisValue ) / 32767.0f;
-				if( axisValueRatio < -j_threshold->value ) {
+				if( axisValueRatio < -j_analogInThreshold->value ) {
 					axes |= ( 1 << ( i * 2 ) );
-				} else if( axisValueRatio > j_threshold->value ) {
+				} else if( axisValueRatio > j_analogInThreshold->value ) {
 					axes |= ( 1 << ( ( i * 2 ) + 1 ) );
 				}
 			}
@@ -1866,8 +1878,9 @@ void IN_Init( void *windowData )
 	in_mouse = Cvar_Get( "in_mouse", "1", CVAR_ARCHIVE );
 	in_nograb = Cvar_Get( "in_nograb", "0", CVAR_ARCHIVE );
 
-	j_threshold = Cvar_Get( "j_threshold", "0.02", CVAR_ARCHIVE );
-	j_outMovmentThreshold = Cvar_Get( "j_outMovmentThreshold", "0.02", CVAR_ARCHIVE );
+	j_analogInThreshold = Cvar_Get( "j_analogInThreshold", "0.02", CVAR_ARCHIVE );
+	j_logicInThreshold = Cvar_Get( "j_logicInThreshold", "0.2", CVAR_ARCHIVE );
+	j_globalOutThreshold = Cvar_Get( "j_globalOutThreshold", "0.02", CVAR_ARCHIVE );
 	in_joystick = Cvar_Get( "in_joystick", "1", CVAR_ARCHIVE|CVAR_LATCH );
 	in_joystickNo = Cvar_Get( "in_joystickNo", "0", CVAR_ARCHIVE );
 	in_joystickUseAnalog = Cvar_Get( "in_joystickUseAnalog", "1", CVAR_ARCHIVE );
