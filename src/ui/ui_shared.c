@@ -920,6 +920,33 @@ qboolean PC_Script_Parse(int handle, const char **out)
     return qfalse;
 }
 
+/*
+=================
+PC_Font_Parse
+=================
+*/
+qboolean PC_Font_Parse(int handle, qboolean *newFormat,
+        const char **path, const char **name, int *pointSize)
+{
+    char  *tmpStr;
+    int   tmpInt;
+
+    if ( !PC_String_Parse( handle, path ) || !PC_String_Parse( handle, (const char **)(&tmpStr) ) )
+      return qfalse;
+    tmpInt = atoi(tmpStr);
+    *newFormat = tmpInt == 0;
+    if (*newFormat)
+    {
+      *name = tmpStr;
+      if ( !PC_Int_Parse(handle, pointSize) )
+        return qfalse;
+    }
+    else
+      *pointSize = tmpInt;
+
+    return qtrue;
+}
+
 // display, window, menu, item code
 //
 

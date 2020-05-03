@@ -1571,82 +1571,94 @@ qboolean Asset_Parse(int handle)
         // font
         if (Q_stricmp(token.string, "font") == 0)
         {
-            int pointSize;
+            qboolean  newFormat;
+            int       pointSize;
 
-            if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize))
+            if (!PC_Font_Parse(handle, &newFormat, &tempStr, &tempStr2, &pointSize))
                 return qfalse;
 
-            if (PC_String_Parse(handle, &tempStr2))
-              trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.textFont);
+            if (newFormat)
+                trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.textFont);
             else
-              trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.textFont);
+                trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.textFont);
             uiInfo.uiDC.Assets.fontRegistered = qtrue;
             continue;
         }
 
         if (Q_stricmp(token.string, "smallFont") == 0)
         {
-            int pointSize;
+            qboolean  newFormat;
+            int       pointSize;
 
-            if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize))
+            if (!PC_Font_Parse(handle, &newFormat, &tempStr, &tempStr2, &pointSize))
                 return qfalse;
 
-            if (PC_String_Parse(handle, &tempStr2))
-              trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.smallFont);
+            if (newFormat)
+                trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.smallFont);
             else
-              trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.smallFont);
+                trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.smallFont);
             continue;
         }
 
         if (Q_stricmp(token.string, "bigFont") == 0)
         {
-            int pointSize;
+            qboolean  newFormat;
+            int       pointSize;
 
-            if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize))
+            if (!PC_Font_Parse(handle, &newFormat, &tempStr, &tempStr2, &pointSize))
                 return qfalse;
 
-            if (PC_String_Parse(handle, &tempStr2))
-              trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.bigFont);
+            if (newFormat)
+                trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.bigFont);
             else
-              trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.bigFont);
+                trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.bigFont);
             continue;
         }
 
         if (Q_stricmp(token.string, "chatFont") == 0)
         {
-            int pointSize;
+            qboolean  newFormat;
+            int       pointSize;
 
-            if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize)
-                    || !PC_String_Parse(handle, &tempStr2))
+            if (!PC_Font_Parse(handle, &newFormat, &tempStr, &tempStr2, &pointSize))
                 return qfalse;
 
-            trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.chatFont);
+            if (newFormat)
+                trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.chatFont);
+            else
+                trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.chatFont);
             uiInfo.uiDC.Assets.chatFontRegistered = qtrue;
             continue;
         }
 
         if (Q_stricmp(token.string, "alienFont") == 0)
         {
-            int pointSize;
+            qboolean  newFormat;
+            int       pointSize;
 
-            if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize)
-                    || !PC_String_Parse(handle, &tempStr2))
+            if (!PC_Font_Parse(handle, &newFormat, &tempStr, &tempStr2, &pointSize))
                 return qfalse;
 
-            trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.alienFont);
+            if (newFormat)
+                trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.alienFont);
+            else
+                trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.alienFont);
             uiInfo.uiDC.Assets.alienFontRegistered = qtrue;
             continue;
         }
 
         if (Q_stricmp(token.string, "humanFont") == 0)
         {
-            int pointSize;
+            qboolean  newFormat;
+            int       pointSize;
 
-            if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize)
-                    || !PC_String_Parse(handle, &tempStr2))
+            if (!PC_Font_Parse(handle, &newFormat, &tempStr, &tempStr2, &pointSize))
                 return qfalse;
 
-            trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.humanFont);
+            if (newFormat)
+                trap_R_RegisterNewFont(tempStr, tempStr2, pointSize, &uiInfo.uiDC.Assets.humanFont);
+            else
+                trap_R_RegisterFont(tempStr, pointSize, &uiInfo.uiDC.Assets.humanFont);
             uiInfo.uiDC.Assets.humanFontRegistered = qtrue;
             continue;
         }
