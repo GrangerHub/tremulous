@@ -57,8 +57,10 @@ static ID_INLINE fontInfo_t *CG_SelectFont(int font)
         return &cgDC.Assets.humanFont;
       else
         break;
+    default:
+      return &cgDC.Assets.textFont;
   }
-  return &cgDC.Assets.textFont;
+  return &cgDC.Assets.bigFont;
 }
 
 static void CG_AlignText( rectDef_t *rect, const char *text,

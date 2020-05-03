@@ -6,12 +6,13 @@ focusColor WINDOW_FOCUSCOLOR// vim:ft=menu
 {
     assetGlobalDef
     {
-        font "fonts/font" 26 "standard"         // standard font
-        smallFont "fonts/smallfont" 20 "small"  // small font (console mainly)
-        bigFont "fonts/bigfont" 34 "big"        // big font
-        chatFont "fonts/chat" 26 "chat"         // chat font
-        alienFont "fonts/alien" 34 "alien"      // alien's font
-        humanFont "fonts/human" 34 "human"      // human's font
+        font "fonts/font" standard 26         // standard font
+        smallFont "fonts/smallfont" small 20  // small font (console mainly)
+        bigFont "fonts/bigfont" big 34        // big font
+        chatFont "fonts/chat" chat 26         // chat font
+        alienFont "fonts/alien" alien 34      // alien's font
+        humanFont "fonts/human" human 34      // human's font
+
         cursor "ui/assets/cursor"  // cursor
         gradientBar "ui/assets/gradientbar2.tga"  // gradient bar
         itemFocusSound "sound/misc/menu2.wav"   // sound for item getting focus (via keyboard or mouse )
