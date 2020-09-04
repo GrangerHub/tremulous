@@ -325,12 +325,12 @@ typedef struct {
     const char *fontStr;
     const char *cursorStr;
     const char *gradientStr;
-    fontInfo_t textFont;
-    fontInfo_t smallFont;
-    fontInfo_t bigFont;
-    fontInfo_t chatFont;
-    fontInfo_t alienFont;
-    fontInfo_t humanFont;
+    newFontInfo_t textFont;
+    newFontInfo_t smallFont;
+    newFontInfo_t bigFont;
+    newFontInfo_t chatFont;
+    newFontInfo_t alienFont;
+    newFontInfo_t humanFont;
     qboolean chatFontRegistered;
     qboolean alienFontRegistered;
     qboolean humanFontRegistered;
@@ -392,7 +392,7 @@ typedef struct {
     void (*addRefEntityToScene)(const refEntity_t *re);
     void (*renderScene)(const refdef_t *fd);
     void (*registerFont)(const char *pFontname, int pointSize, fontInfo_t *font);
-    void (*registerNewFont)(const char *pFontname, const char *simpleName, int pointSize, fontInfo_t *font);
+    void (*registerNewFont)(const char *pFontname, const char *simpleName, int pointSize, newFontInfo_t *font);
     void (*ownerDrawItem)(float x, float y, float w, float h, float text_x, float text_y, int ownerDraw,
         int ownerDrawFlags, int align, int textalign, int textvalign, float borderSize, float scale, int font, vec4_t foreColor,
         vec4_t backColor, qhandle_t shader, int textStyle);

@@ -1531,7 +1531,7 @@ typedef struct {
   glyphInfo_t glyphs [GLYPHS_PER_FONT];
   float glyphScale;
   char name[MAX_QPATH];
-} oldFontInfo_t;
+} fontInfo_t;
 
 typedef struct {
   glyphInfo_t glyphs [GLYPHS_PER_FONT];
@@ -1546,16 +1546,12 @@ enum {
   FONT_MAXSHADOW
 };
 
-// DO NOT MOFIFY over the separation (old font compatibility)
 typedef struct {
   glyphInfo_t glyphs [GLYPHS_PER_FONT];
   float glyphScale;
   char name[MAX_QPATH];
-
-// ===== News implanted for 1.3 =====
-
   fontShadow_t shadows[FONT_MAXSHADOW];
-} fontInfo_t;
+} newFontInfo_t;
 
 #define Square(x) ((x)*(x))
 

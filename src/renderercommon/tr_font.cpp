@@ -92,9 +92,9 @@ FT_Library ftLibrary = NULL;
 
 #endif
 
-#define MAX_FONTS 6
+#define MAX_FONTS 9
 static int registeredFontCount = 0;
-static fontInfo_t registeredFont[MAX_FONTS];
+static newFontInfo_t registeredFont[MAX_FONTS];
 
 #ifdef BUILD_FREETYPE
 void R_GetGlyphInfo(FT_GlyphSlot glyph, int *left, int *right, int *width, int *top, int *bottom, int *height, int *pitch) {
@@ -383,7 +383,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 	Com_Memset(font, 0, sizeof(fontInfo_t));
 
 	len = ri.FS_ReadFile(name, NULL);
-	if (len == sizeof(oldFontInfo_t)) {
+	if (len == sizeof(fontInfo_t)) {
 		ri.FS_ReadFile(name, &faceData);
 		fdOffset = 0;
 		fdFile = (byte*)faceData;
@@ -411,6 +411,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 		for (i = GLYPH_START; i <= GLYPH_END; i++) {
 			font->glyphs[i].glyph = RE_RegisterShaderNoMip(font->glyphs[i].shaderName);
 		}
+		Com_Memset(&registeredFont[registeredFontCount], 0, sizeof(newFontInfo_t));
 		Com_Memcpy(&registeredFont[registeredFontCount++], font, sizeof(fontInfo_t));
 		ri.FS_FreeFile(faceData);
 		return;
@@ -638,7 +639,7 @@ static void RE_ApplyBlur(int canvasSize, int radius, unsigned char *buff, double
 #endif
 
 
-void RE_RegisterNewFont(const char *fontName, const char *simpleName, int pointSize, fontInfo_t *font) {
+void RE_RegisterNewFont(const char *fontName, const char *simpleName, int pointSize, newFontInfo_t *font) {
 #ifdef BUILD_FREETYPE
 	FT_Face face;
 	int k, l, xOut, yOut, lastStart, imageNumber;
@@ -672,7 +673,7 @@ void RE_RegisterNewFont(const char *fontName, const char *simpleName, int pointS
 	Com_sprintf(name, sizeof(name), "fonts/%s_%i.dat", simpleName, pointSize);
 	for (i = 0; i < registeredFontCount; i++) {
 		if (Q_stricmp(name, registeredFont[i].name) == 0) {
-			Com_Memcpy(font, &registeredFont[i], sizeof(fontInfo_t));
+			Com_Memcpy(font, &registeredFont[i], sizeof(newFontInfo_t));
 			return;
 		}
 	}
@@ -682,10 +683,10 @@ void RE_RegisterNewFont(const char *fontName, const char *simpleName, int pointS
 		return;
 	}
 
-	Com_Memset(font, 0, sizeof(fontInfo_t));
+	Com_Memset(font, 0, sizeof(newFontInfo_t));
 
 	len = ri.FS_ReadFile(name, NULL);
-	if (len == sizeof(fontInfo_t)) {
+	if (len == sizeof(newFontInfo_t)) {
 		ri.FS_ReadFile(name, &faceData);
 		fdOffset = 0;
 		fdFile = (byte*)faceData;
@@ -758,7 +759,7 @@ void RE_RegisterNewFont(const char *fontName, const char *simpleName, int pointS
 					font->shadows[i].glyphs[j].glyph = RE_RegisterShaderNoMip(font->shadows[i].glyphs[j].shaderName);
 
 
-		Com_Memcpy(&registeredFont[registeredFontCount++], font, sizeof(fontInfo_t));
+		Com_Memcpy(&registeredFont[registeredFontCount++], font, sizeof(newFontInfo_t));
 		ri.FS_FreeFile(faceData);
 		return;
 	}
@@ -962,10 +963,10 @@ void RE_RegisterNewFont(const char *fontName, const char *simpleName, int pointS
 
 	registeredFont[registeredFontCount].glyphScale = glyphScale;
 	font->glyphScale = glyphScale;
-	Com_Memcpy(&registeredFont[registeredFontCount++], font, sizeof(fontInfo_t));
+	Com_Memcpy(&registeredFont[registeredFontCount++], font, sizeof(newFontInfo_t));
 
 	if (r_saveFontData->integer) {
-		ri.FS_WriteFile(va("fonts/%s_%i.dat", simpleName, pointSize), font, sizeof(fontInfo_t));
+		ri.FS_WriteFile(va("fonts/%s_%i.dat", simpleName, pointSize), font, sizeof(newFontInfo_t));
 	}
 
 	ri.Free(out);

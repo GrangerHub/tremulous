@@ -40,7 +40,7 @@ ID_INLINE int CG_FontForTeam(team_t team)
     return FONT_STANDARD;
 }
 
-static ID_INLINE fontInfo_t *CG_SelectFont(int font)
+static ID_INLINE newFontInfo_t *CG_SelectFont(int font)
 {
   switch (font) {
     case FONT_STANDARD:
@@ -156,13 +156,13 @@ Draws large numbers for status bar
 */
 static void CG_DrawFieldPadded( int x, int y, int width, int cw, int ch, int textfont, int value, unsigned char prefix )
 {
-  char        num[ 16 ], *ptr;
-  int         l, orgL;
-  int         frame;
-  int         charWidth, charHeight;
-  float       margin;
-  fontInfo_t  *font = CG_SelectFont(textfont);
-  glyphInfo_t *glyph;
+  char          num[ 16 ], *ptr;
+  int           l, orgL;
+  int           frame;
+  int           charWidth, charHeight;
+  float         margin;
+  newFontInfo_t *font = CG_SelectFont(textfont);
+  glyphInfo_t   *glyph;
 
   if( !( charWidth = cw ) )
     charWidth = CHAR_WIDTH;
@@ -247,13 +247,13 @@ Draws large numbers for status bar
 */
 void CG_DrawField( float x, float y, int width, float cw, float ch, int textfont, int value, unsigned char prefix )
 {
-  char        num[ 16 ], *ptr;
-  int         l;
-  int         frame;
-  float       charWidth, charHeight;
-  float       margin;
-  fontInfo_t  *font = CG_SelectFont(textfont);
-  glyphInfo_t *glyph;
+  char          num[ 16 ], *ptr;
+  int           l;
+  int           frame;
+  float         charWidth, charHeight;
+  float         margin;
+  newFontInfo_t *font = CG_SelectFont(textfont);
+  glyphInfo_t   *glyph;
 
   if( !( charWidth = cw ) )
     charWidth = CHAR_WIDTH;

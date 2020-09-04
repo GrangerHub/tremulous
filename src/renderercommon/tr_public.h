@@ -101,7 +101,7 @@ typedef struct {
 	void    (*A3D_RenderGeometry) (void *pVoidA3D, void *pVoidGeom, void *pVoidMat, void *pVoidGeomStatus);
 #endif
 	void	(*RegisterFont)(const char *fontName, int pointSize, fontInfo_t *font);
-	void	(*RegisterNewFont)(const char *fontName, const char *simpleName, int pointSize, fontInfo_t *font);
+	void	(*RegisterNewFont)(const char *fontName, const char *simpleName, int pointSize, newFontInfo_t *font);
 	void	(*RemapShader)(const char *oldShader, const char *newShader, const char *offsetTime);
 	bool (*GetEntityToken)( char *buffer, int size );
 	bool (*inPVS)( const vec3_t p1, const vec3_t p2 );

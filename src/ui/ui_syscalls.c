@@ -117,7 +117,7 @@ void trap_R_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font)
     syscall(UI_R_REGISTERFONT, fontName, pointSize, font);
 }
 
-void trap_R_RegisterNewFont(const char *fontName, const char *name, int pointSize, fontInfo_t *font)
+void trap_R_RegisterNewFont(const char *fontName, const char *name, int pointSize, newFontInfo_t *font)
 {
     syscall(UI_R_REGISTERNEWFONT, fontName, name, pointSize, font);
 }
