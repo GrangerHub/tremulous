@@ -2034,12 +2034,12 @@ static ID_INLINE qboolean UI_IsPrintable(unsigned char c)
   return (c >= GLYPH_START && c <= GLYPH_END);
 }
 
-static ID_INLINE float UI_EmoticonHeight(fontInfo_t *font, float scale)
+static ID_INLINE float UI_EmoticonHeight(newFontInfo_t *font, float scale)
 {
     return font->glyphs[(unsigned char)'['].height * scale * font->glyphScale;
 }
 
-static ID_INLINE float UI_EmoticonWidth(fontInfo_t *font, float scale)
+static ID_INLINE float UI_EmoticonWidth(newFontInfo_t *font, float scale)
 {
     return UI_EmoticonHeight(font, scale) * DC->aspectScale;
 }
@@ -2189,7 +2189,7 @@ static float UI_Parse_Indent(const char **text)
     return pixels;
 }
 
-static ID_INLINE fontInfo_t *UI_FontForScale(float scale)
+static ID_INLINE newFontInfo_t *UI_FontForScale(float scale)
 {
     if (scale <= DC->smallFontScale)
         return &DC->Assets.smallFont;
@@ -2199,7 +2199,7 @@ static ID_INLINE fontInfo_t *UI_FontForScale(float scale)
         return &DC->Assets.textFont;
 }
 
-static ID_INLINE fontInfo_t *UI_AutoSelectFont(float scale, int font)
+static ID_INLINE newFontInfo_t *UI_AutoSelectFont(float scale, int font)
 {
   switch (font) {
     case FONT_SMALL:
@@ -2229,11 +2229,11 @@ static ID_INLINE fontInfo_t *UI_AutoSelectFont(float scale, int font)
 
 float UI_Char_Width(const char **text, float scale, int textfont)
 {
-    glyphInfo_t *glyph;
-    fontInfo_t *font;
-    int emoticonLen;
-    qboolean emoticonEscaped;
-    int emoticonWidth;
+    glyphInfo_t     *glyph;
+    newFontInfo_t   *font;
+    int             emoticonLen;
+    qboolean        emoticonEscaped;
+    int             emoticonWidth;
 
     if (text && *text)
     {
@@ -2300,11 +2300,11 @@ float UI_Text_Width(const char *text, float scale, int font)
 
 float UI_Text_Height(const char *text, float scale, int textfont)
 {
-    float max;
-    glyphInfo_t *glyph;
-    float useScale;
-    const char *s = text;
-    fontInfo_t *font = UI_AutoSelectFont(scale, textfont);
+    float           max;
+    glyphInfo_t     *glyph;
+    float           useScale;
+    const char      *s = text;
+    newFontInfo_t   *font = UI_AutoSelectFont(scale, textfont);
 
     useScale = scale * font->glyphScale;
     max = 0;
@@ -2415,24 +2415,24 @@ static void UI_Text_Paint_Generic(
     const char *text, vec4_t color, int style, int limit, float *maxX,
     int cursorPos, char cursor)
 {
-    const char  *s = text;
-    int         len;
-    int         count = 0;
-    vec4_t      newColor;
-    vec4_t      forceColor;
-    fontInfo_t  *font = UI_AutoSelectFont(scale, textfont);
-    glyphInfo_t *glyph;
-    glyphInfo_t *shadowGlyph;
-    float       useScale;
-    qhandle_t   emoticonHandle = 0;
-    qhandle_t   emoticonColorHandle = 0;
-    float       emoticonH, emoticonW;
-    float       charWidth;
-    qboolean    emoticonEscaped;
-    qboolean    skip_color_string_check = qfalse;
-    int         emoticonLen = 0;
-    int         emoticonWidth;
-    int         cursorX = -1;
+    const char      *s = text;
+    int             len;
+    int             count = 0;
+    vec4_t          newColor;
+    vec4_t          forceColor;
+    newFontInfo_t   *font = UI_AutoSelectFont(scale, textfont);
+    glyphInfo_t     *glyph;
+    glyphInfo_t     *shadowGlyph;
+    float           useScale;
+    qhandle_t       emoticonHandle = 0;
+    qhandle_t       emoticonColorHandle = 0;
+    float           emoticonH, emoticonW;
+    float           charWidth;
+    qboolean        emoticonEscaped;
+    qboolean        skip_color_string_check = qfalse;
+    int             emoticonLen = 0;
+    int             emoticonWidth;
+    int             cursorX = -1;
 
     if (!text)
         return;
@@ -8195,14 +8195,29 @@ Menu Keyword Parse functions
 
 qboolean MenuParse_font(itemDef_t *item, int handle)
 {
-    menuDef_t *menu = (menuDef_t *)item;
+    qboolean    newFormat;
+    char        *tmpStr;
+    int         pointSize;
+    menuDef_t   *menu = (menuDef_t *)item;
 
-    if (!PC_String_Parse(handle, &menu->font))
+    if ( !PC_String_Parse( handle, &(menu->font ) ) || !PC_String_Parse( handle, (const char **)(&tmpStr) ) )
         return qfalse;
+
+    pointSize = atoi(tmpStr);
+    newFormat = pointSize == 0;
+    if (newFormat)
+        if ( !PC_Int_Parse(handle, &pointSize) )
+            return qfalse;
 
     if (!DC->Assets.fontRegistered)
     {
-        DC->registerFont(menu->font, 48, &DC->Assets.textFont);
+        if (newFormat)
+            DC->registerNewFont(menu->font, tmpStr, pointSize, (newFontInfo_t *)(&DC->Assets.textFont));
+        else
+        {
+            memset(&DC->Assets.textFont, 0, sizeof(newFontInfo_t));
+            DC->registerFont(menu->font, pointSize, (fontInfo_t *)(&DC->Assets.textFont));
+        }
         DC->Assets.fontRegistered = qtrue;
     }
 

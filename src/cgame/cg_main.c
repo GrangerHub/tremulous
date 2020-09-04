@@ -1256,7 +1256,10 @@ qboolean CG_Asset_Parse( int handle )
       if (newFormat)
         cgDC.registerNewFont( tempStr, tempStr2, pointSize, &cgDC.Assets.textFont );
       else
-        cgDC.registerFont( tempStr, pointSize, &cgDC.Assets.textFont );
+      {
+        memset( &cgDC.Assets.textFont, 0, sizeof(newFontInfo_t) );
+        cgDC.registerFont( tempStr, pointSize, (fontInfo_t *)( &cgDC.Assets.textFont ) );
+      }
       continue;
     }
 
@@ -1272,7 +1275,10 @@ qboolean CG_Asset_Parse( int handle )
       if (newFormat)
         cgDC.registerNewFont( tempStr, tempStr2, pointSize, &cgDC.Assets.smallFont );
       else
-        cgDC.registerFont( tempStr, pointSize, &cgDC.Assets.smallFont );
+      {
+        memset( &cgDC.Assets.smallFont, 0, sizeof(newFontInfo_t) );
+        cgDC.registerFont( tempStr, pointSize, (fontInfo_t *)( &cgDC.Assets.smallFont ) );
+      }
       continue;
     }
 
@@ -1288,7 +1294,10 @@ qboolean CG_Asset_Parse( int handle )
       if (newFormat)
         cgDC.registerNewFont( tempStr, tempStr2, pointSize, &cgDC.Assets.bigFont );
       else
-        cgDC.registerFont( tempStr, pointSize, &cgDC.Assets.bigFont );
+      {
+        memset( &cgDC.Assets.bigFont, 0, sizeof(newFontInfo_t) );
+        cgDC.registerFont( tempStr, pointSize, (fontInfo_t *)( &cgDC.Assets.bigFont ) );
+      }
       continue;
     }
 
@@ -1304,7 +1313,10 @@ qboolean CG_Asset_Parse( int handle )
       if (newFormat)
         cgDC.registerNewFont( tempStr, tempStr2, pointSize, &cgDC.Assets.chatFont );
       else
-        cgDC.registerFont( tempStr, pointSize, &cgDC.Assets.chatFont );
+      {
+        memset( &cgDC.Assets.chatFont, 0, sizeof(newFontInfo_t) );
+        cgDC.registerFont( tempStr, pointSize, (fontInfo_t *)( &cgDC.Assets.chatFont ) );
+      }
       cgDC.Assets.chatFontRegistered = qtrue;
       continue;
     }
@@ -1321,7 +1333,10 @@ qboolean CG_Asset_Parse( int handle )
       if (newFormat)
         cgDC.registerNewFont( tempStr, tempStr2, pointSize, &cgDC.Assets.alienFont );
       else
-        cgDC.registerFont( tempStr, pointSize, &cgDC.Assets.alienFont );
+      {
+        memset( &cgDC.Assets.alienFont, 0, sizeof(newFontInfo_t) );
+        cgDC.registerFont( tempStr, pointSize, (fontInfo_t *)( &cgDC.Assets.alienFont ) );
+      }
       cgDC.Assets.alienFontRegistered = qtrue;
       continue;
     }
@@ -1338,7 +1353,10 @@ qboolean CG_Asset_Parse( int handle )
       if (newFormat)
         cgDC.registerNewFont( tempStr, tempStr2, pointSize, &cgDC.Assets.humanFont );
       else
-        cgDC.registerFont( tempStr, pointSize, &cgDC.Assets.humanFont );
+      {
+        memset( &cgDC.Assets.humanFont, 0, sizeof(newFontInfo_t) );
+        cgDC.registerFont( tempStr, pointSize, (fontInfo_t *)( &cgDC.Assets.humanFont ) );
+      }
       cgDC.Assets.humanFontRegistered = qtrue;
       continue;
     }

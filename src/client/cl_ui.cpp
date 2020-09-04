@@ -1100,7 +1100,7 @@ intptr_t CL_UISystemCalls(intptr_t *args)
             return 0;
 
         case UI_R_REGISTERNEWFONT:
-            re.RegisterNewFont((const char *)VMA(1), (const char *)VMA(2), args[3], (fontInfo_t *)VMA(4));
+            re.RegisterNewFont((const char *)VMA(1), (const char *)VMA(2), args[3], (newFontInfo_t *)VMA(4));
             return 0;
 
         case UI_MEMSET:
