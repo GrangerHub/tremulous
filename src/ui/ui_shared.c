@@ -2575,7 +2575,7 @@ static void UI_Text_Paint_Generic(
               shadowGlyph = &font->shadows[shadowLevel].glyphs[(unsigned char)*s];
 
               DC->setColor(colorBlack);
-              UI_Text_PaintChar(x + shadowOffset, y + shadowOffset, useScale, shadowGlyph, 0.0f);
+              UI_Text_PaintChar(x + shadowOffset * DC->aspectScale, y + shadowOffset, useScale, shadowGlyph, 0.0f);
               DC->setColor(newColor);
 
             }
@@ -2600,7 +2600,7 @@ static void UI_Text_Paint_Generic(
                 float shadowOffset = -(float)margin * useScale;
                 shadowGlyph = &font->shadows[FONT_SHADOWNEON].glyphs[(unsigned char)*s];
 
-                UI_Text_PaintChar(x + shadowOffset, y + shadowOffset, useScale, shadowGlyph, 0.0f);
+                UI_Text_PaintChar(x + shadowOffset * DC->aspectScale, y + shadowOffset, useScale, shadowGlyph, 0.0f);
             }
             else
             {

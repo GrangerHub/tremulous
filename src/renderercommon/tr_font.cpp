@@ -555,7 +555,7 @@ static double *RE_GaussianKernel(int radius, double sigma)
 {
 	int kernelSize = radius * 2 + 1;
 	double *kernel;
-	int kernelOffset = (kernelSize - 1) / 2;
+	int kernelOffset = radius;
 	int x, y, i;
 	double sum = 0.0;
 
@@ -589,7 +589,7 @@ static void RE_ApplyBlur(int canvasSize, int radius, unsigned char *buff, double
 	int x, y, x1, y1, x2, y2;
 	unsigned char *buffCpy;
 	double pixelValue;
-	int kernelOffset = (kernelSize - 1) / 2;
+	int kernelOffset = radius;
 	int channel;
 
 	if ( !(buffCpy = (unsigned char*)ri.Malloc((canvasSize*canvasSize * 4) * sizeof(unsigned char))) )
