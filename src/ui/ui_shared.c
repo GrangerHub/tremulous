@@ -997,6 +997,7 @@ static void Window_Paint(Window *w, float fadeAmount, float fadeClamp, float fad
     {
         color[0] = color[1] = color[2] = color[3] = 1;
         DC->drawRect(w->rect.x, w->rect.y, w->rect.w, w->rect.h, 1, color);
+        DC->drawRect(w->rect.x + w->rect.w / 2 - 1, w->rect.y + w->rect.h / 2 - 1, 2, 2, 1, color);
     }
 
     if (w == NULL || (w->style == 0 && w->border == 0))
@@ -4308,220 +4309,94 @@ itemDef_t *Menu_SetNextCursorItem(menuDef_t *menu)
   Arrow navigation stuff
 */
 
-// For unknow reason, left and right are swapped
-#define ANGLE_TOP M_PI/2
-#define ANGLE_BOTTOM -M_PI/2
-#define ANGLE_LEFT 0
-#define ANGLE_RIGHT M_PI
+#define ANGLE_TOP -M_PI / 2
+#define ANGLE_BOTTOM M_PI / 2
+#define ANGLE_LEFT M_PI
+#define ANGLE_RIGHT 0
 
-
-// Sometime return 0 instead of -PI ?
-static double getAngle(double x, double y)
+static ID_INLINE qboolean Navigation_IsValidItem(itemDef_t *item)
 {
-  if (x == 0 && y == 0)
-    return 0;
-  return atan2(y, x);
+    return (item != NULL && !(item->window.flags & (WINDOW_HASFOCUS | WINDOW_DECORATION)) && (item->window.flags & WINDOW_VISIBLE));
 }
 
-static void rotateVector(double *x, double *y, double angle)
+static ID_INLINE double Navigation_GetDistance(itemDef_t *item, itemDef_t *origin)
 {
-  double x1, y1;
+    double deltaX;
+    double deltaY;
 
-  x1 = *x * cos(angle) - *y * sin(angle);
-  y1 = *x * sin(angle) + *y * cos(angle);
-
-  *x = x1;
-  *y = y1;
+    deltaX = item->window.rect.x + item->window.rect.w / 2;
+    deltaY = item->window.rect.y + item->window.rect.h / 2;
+    deltaX -= origin->window.rect.x + origin->window.rect.w / 2;
+    deltaY -= origin->window.rect.y + origin->window.rect.h / 2;
+    return (sqrt(pow(deltaX, 2) + pow(deltaY, 2)));
 }
 
-static int getSign(double a)
+static ID_INLINE double Navigation_GetAngle(itemDef_t *item, itemDef_t *origin, double refAngle)
 {
-  return a > 0 ? 1 : -1;
+    double  angle;
+    double deltaX;
+    double deltaY;
+
+    deltaX = item->window.rect.x + item->window.rect.w / 2;
+    deltaY = item->window.rect.y + item->window.rect.h / 2;
+    deltaX -= origin->window.rect.x + origin->window.rect.w / 2;
+    deltaY -= origin->window.rect.y + origin->window.rect.h / 2;
+    angle = atan2(deltaY, deltaX);
+    return atan2(sin(angle - refAngle), cos(angle - refAngle));
 }
 
-static double Menu_getItemAngle(double originX, double originY, double itemX, double itemY, double refAngle)
+static ID_INLINE qboolean Navigation_CompareItemForDirection(itemDef_t *item, itemDef_t *newItem, itemDef_t *origin, double refAngle)
 {
-  double x, y;
+    double  distance;
+    double  newDistance;
+    double  angle;
+    double  newAngle;
 
-  x = originX - itemX;
-  y = originY - itemY;
-
-  rotateVector(&x, &y, -refAngle);
-  return getAngle(x, y);
+    distance = Navigation_GetDistance(item, origin);
+    newDistance = Navigation_GetDistance(newItem, origin);
+    angle = Navigation_GetAngle(item, origin, refAngle);
+    newAngle = Navigation_GetAngle(newItem, origin, refAngle);
+    if (fabs(fabs(angle) - fabs(newAngle)) < M_PI / 10)
+        return (newDistance < distance);
+    else
+        return (fabs(angle) - fabs(newAngle) > 0);
 }
 
-static double Menu_getBestItemAngle(double originX, double originY, itemDef_t *item, double refAngle)
+static ID_INLINE qboolean Navigation_IsAcceptable(itemDef_t *item, itemDef_t *origin, double refAngle)
 {
-  double angle[5];
-  double smallestAngle;
-  int i;
+    double  angle;
 
-  // Angle to the center
-  angle[0] = Menu_getItemAngle(originX, originY,
-      item->window.rect.x + item->window.rect.w / 2,
-      item->window.rect.y + item->window.rect.h / 2,
-      refAngle);
-
-  // Angle to the top left corder
-  angle[1] = Menu_getItemAngle(originX, originY,
-      item->window.rect.x,
-      item->window.rect.y,
-      refAngle);
-
-  // Angle to the top right corder
-  angle[2] = Menu_getItemAngle(originX, originY,
-      item->window.rect.x + item->window.rect.w,
-      item->window.rect.y,
-      refAngle);
-
-  // Angle to the bottom left corder
-  angle[3] = Menu_getItemAngle(originX, originY,
-      item->window.rect.x,
-      item->window.rect.y + item->window.rect.h,
-      refAngle);
-
-  // Angle to the bottom right corder
-  angle[4] = Menu_getItemAngle(originX, originY,
-      item->window.rect.x + item->window.rect.w,
-      item->window.rect.y + item->window.rect.h,
-      refAngle);
-
-  // if the asked sense cross the surface
-  if (fabs(angle[0]) < M_PI/2 - 0.001f)
-    if (getSign(angle[1]) != getSign(angle[4]) || getSign(angle[2]) != getSign(angle[3]))
-      return 0;
-
-  // else find the smallest angle
-  smallestAngle = angle[0];
-  for (i = 1; i < 5; i++)
-    if (fabs(angle[i]) < fabs(smallestAngle))
-      smallestAngle = angle[i];
-
-  return smallestAngle;
+    angle = Navigation_GetAngle(item, origin, refAngle);
+    return (fabs(angle) < M_PI / 2 * 0.85);
 }
 
-static double Menu_getDistance(double Ax, double Ay, double Bx, double By)
-{
-  return sqrt( pow(Ax - Bx, 2) + pow(Ay - By, 2) );
-}
-
-static double Menu_getItemsDistance(double Ax, double Ay, itemDef_t *b, double angle)
-{
-  double Bx, By;
-
-  // Choose best destination point depending of the wanted sense
-  if (angle == ANGLE_TOP)
-  {
-    Bx = b->window.rect.x + b->window.rect.w / 2;
-    By = b->window.rect.y + b->window.rect.h;
-  }
-  else if (angle == ANGLE_BOTTOM)
-  {
-    Bx = b->window.rect.x + b->window.rect.w / 2;
-    By = b->window.rect.y;
-  }
-  else if (angle == ANGLE_LEFT)
-  {
-    Bx = b->window.rect.x + b->window.rect.w;
-    By = b->window.rect.y + b->window.rect.h / 2;
-  }
-  else if (angle == ANGLE_RIGHT)
-  {
-    Bx = b->window.rect.x;
-    By = b->window.rect.y + b->window.rect.h / 2;
-  }
-  else
-  {
-    Com_Printf( S_COLOR_YELLOW "WARNING: Menu_getItemsDistance: failed to recognize angle\n" );
-    Bx = b->window.rect.x + b->window.rect.w / 2;
-    By = b->window.rect.y + b->window.rect.h / 2;
-  }
-
-  return Menu_getDistance(Ax, Ay, Bx, By);
-}
-
-static void Menu_getBestOrigin(double *originX, double *originY, itemDef_t *origin, double angle)
-{
-  // Choose best origin depending of the wanted sense
-  if (angle == ANGLE_TOP)
-  {
-    *originX = origin->window.rect.x + origin->window.rect.w / 2;
-    *originY = origin->window.rect.y;
-  }
-  else if (angle == ANGLE_BOTTOM)
-  {
-    *originX = origin->window.rect.x + origin->window.rect.w / 2;
-    *originY = origin->window.rect.y + origin->window.rect.h;
-  }
-  else if (angle == ANGLE_LEFT)
-  {
-    *originX = origin->window.rect.x;
-    *originY = origin->window.rect.y + origin->window.rect.h / 2;
-  }
-  else if (angle == ANGLE_RIGHT)
-  {
-    *originX = origin->window.rect.x + origin->window.rect.w;
-    *originY = origin->window.rect.y + origin->window.rect.h / 2;
-  }
-  else
-  {
-    Com_Printf( S_COLOR_YELLOW "WARNING: Menu_getBestOrigin: failed to recognize angle\n" );
-    *originX = origin->window.rect.x + origin->window.rect.w / 2;
-    *originY = origin->window.rect.y + origin->window.rect.h / 2;
-  }
-}
-
+// TODO : Take all item surface in account (not just the center)
 itemDef_t *Menu_SetCursorItemFromDirection(menuDef_t *menu, double angle)
 {
-  int cursor = 0, bestItemCursor;
-  itemDef_t *item, *bestItem = NULL;
-  itemDef_t *focused = Menu_GetFocusedItem(menu);
-  double bestItemAngle, pretenderItemAngle;
-  double bestItemDistance, pretenderItemDistance;
-  double originX, originY;
+    itemDef_t   *origin;
+    size_t      selected;
+    size_t      item;
 
-  Menu_getBestOrigin(&originX, &originY, focused, angle);
-
-  while (cursor < menu->itemCount)
-  {
-    item = menu->items[cursor];
-
-    if ( item != NULL && item != focused
-        && !(item->window.flags & (WINDOW_HASFOCUS | WINDOW_DECORATION)) && item->window.flags & WINDOW_VISIBLE )
+    if (!menu->itemCount)
+        return (NULL);
+    if (!(origin = Menu_GetFocusedItem(menu)))
+        return (Menu_SetNextCursorItem(menu));
+    selected = (*(menu->items) == origin);
+    item = selected + 1;
+    while (item < menu->itemCount)
     {
-      pretenderItemAngle = Menu_getBestItemAngle(originX, originY, item, angle);
-      pretenderItemDistance = Menu_getItemsDistance(originX, originY, item, angle);
-      if (fabs(pretenderItemAngle) < M_PI / 2 - 0.001f)
-      {
-        if ( !bestItem || (fabs(pretenderItemAngle) <= fabs(bestItemAngle) && pretenderItemDistance < bestItemDistance) )
-        {
-          bestItem = item;
-          bestItemAngle = pretenderItemAngle;
-          bestItemDistance = pretenderItemDistance;
-          bestItemCursor = cursor;
-        }
-      }
+        if (!Navigation_IsValidItem(menu->items[selected]) || (Navigation_IsValidItem(menu->items[item]) && menu->items[item] != origin && Navigation_CompareItemForDirection(menu->items[selected], menu->items[item], origin, angle)))
+            selected = item;
+        ++item;
     }
-    cursor++;
-  }
-
-  if (bestItem)
-  {
-    menu->cursorItem = bestItemCursor;
-    if (Item_SetFocus(menu->items[menu->cursorItem], DC->cursorx, DC->cursory))
+    if (!Navigation_IsAcceptable(menu->items[selected], origin, angle) || !Navigation_IsValidItem(menu->items[selected]))
+        return (NULL);
+    menu->cursorItem = selected;
+    if (Item_SetFocus(menu->items[selected], DC->cursorx, DC->cursory))
     {
-      Menu_HandleMouseMove(menu, menu->items[menu->cursorItem]->window.rect.x + 1,
-        menu->items[menu->cursorItem]->window.rect.y + 1);
-        return menu->items[menu->cursorItem];
+        Menu_HandleMouseMove(menu, menu->items[selected]->window.rect.x + 1, menu->items[selected]->window.rect.y + 1);
+        return (menu->items[selected]);
     }
-  }
-  else
-  {
-    if (angle == ANGLE_TOP || angle == ANGLE_LEFT)
-      return Menu_SetPrevCursorItem(menu);
-    else
-      return Menu_SetNextCursorItem(menu);
-  }
 }
 
 itemDef_t *Menu_SetUpperCursorItem(menuDef_t *menu)
@@ -5514,6 +5389,7 @@ void Item_Text_Wrapped_Paint(itemDef_t *item)
                     color[1] = 0.0f;
                     DC->drawRect(lineItem.window.rect.x, lineItem.window.rect.y, lineItem.window.rect.w,
                         lineItem.window.rect.h, 1, color);
+                    DC->drawRect(lineItem.window.rect.x + lineItem.window.rect.w / 2 - 1, lineItem.window.rect.y + lineItem.window.rect.h / 2 - 1, 2, 2, 1, color);
                 }
 
                 Item_SetTextExtents(&lineItem, buff);
@@ -6718,6 +6594,7 @@ void Item_Paint(itemDef_t *item)
         color[1] = color[3] = 1;
         color[0] = color[2] = 0;
         DC->drawRect(r->x, r->y, r->w, r->h, 1, color);
+        DC->drawRect(r->x + r->w / 2 - 1, r->y + r->h / 2 - 1, 2, 2, 1, color);
     }
 
     switch (item->type)
@@ -7087,6 +6964,7 @@ void Menu_Paint(menuDef_t *menu, qboolean forcePaint)
         color[0] = color[2] = color[3] = 1;
         color[1] = 0;
         DC->drawRect(menu->window.rect.x, menu->window.rect.y, menu->window.rect.w, menu->window.rect.h, 1, color);
+        DC->drawRect(menu->window.rect.x + menu->window.rect.w / 2 - 1, menu->window.rect.y + menu->window.rect.h / 2 - 1, 2, 2, 1, color);
     }
 }
 
