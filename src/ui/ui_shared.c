@@ -2050,7 +2050,7 @@ void UI_EscapeEmoticons(char *dest, const char *src, int destsize)
 
     for (; *src && destsize > 1; src++, destsize--)
     {
-        if (UI_Text_IsEmoticon(src, &escaped, &len, NULL, NULL, NULL, NULL) && !escaped)
+        if (UI_Text_IsEmoticon(src, &escaped, &len, NULL, NULL, NULL) && !escaped)
         {
             *dest++ = '[';
             destsize--;
@@ -2076,12 +2076,12 @@ static qboolean UI_EmoticonMatch(char *filename, char *emoticon)
   return ((*filename == '*' && !*(filename + 1)) || (!*filename && !*emoticon)) ? qtrue : qfalse;
 }
 
-qboolean UI_Text_IsEmoticon(const char *s, qboolean *escaped, int *length, qhandle_t *h, qhandle_t *hColor , int *width, vec4_t forceColor)
+qboolean UI_Text_IsEmoticon(const char *s, qboolean *escaped, int *length, emoticon_t **emoticon, emoticon_t **overlay, vec4_t forceColor)
 {
     const char *p = s;
-    char emoticon[MAX_EMOTICON_NAME_LEN];
+    char name[MAX_EMOTICON_NAME_LEN];
     int i, j;
-    int emoticonLength = 0;
+    int nameLength = 0;
 
     if (*p != '[')
         return qfalse;
@@ -2114,38 +2114,36 @@ qboolean UI_Text_IsEmoticon(const char *s, qboolean *escaped, int *length, qhand
         if (Q_IsColorString(p + *length))
           *length += Q_ColorStringLength(p + *length) - 1;
         else
-          emoticon[emoticonLength++] = tolower(p[*length]);
+          name[nameLength++] = tolower(p[*length]);
     }
-    emoticon[emoticonLength] = '\0';
+    name[nameLength] = '\0';
 
     for (i = 0; i < DC->Assets.emoticonCount; i++)
-        if (UI_EmoticonMatch(DC->Assets.emoticons[i].name, emoticon))
+        if (UI_EmoticonMatch(DC->Assets.emoticons[i].name, name))
             break;
 
     if (i == DC->Assets.emoticonCount)
         return qfalse;
 
-    if (h)
-        *h = DC->Assets.emoticons[i].shader;
-    if (width)
-        *width = DC->Assets.emoticons[i].width;
+    if (emoticon)
+        *emoticon = (emoticon_t *)(DC->Assets.emoticons + i);
 
-    if (hColor)
+    if (overlay)
     {
-      Q_strcat(emoticon, MAX_EMOTICON_NAME_LEN, "-ol");  // Overlay
+      Q_strcat(name, MAX_EMOTICON_NAME_LEN, "-ol");  // Overlay
 
       for (j = 0; j < DC->Assets.emoticonCount; j++)
           if (Q_stristr(DC->Assets.emoticons[j].name, "-ol")
-                  && UI_EmoticonMatch(DC->Assets.emoticons[j].name, emoticon))
+                  && UI_EmoticonMatch(DC->Assets.emoticons[j].name, name))
               break;
 
       // It could solve some bug to return only one assets with both layer merged
       // Or rendering it then apply opacity once
       if (j != DC->Assets.emoticonCount
           && DC->Assets.emoticons[i].width == DC->Assets.emoticons[j].width)
-        *hColor = DC->Assets.emoticons[j].shader;
+        *overlay = (emoticon_t *)(DC->Assets.emoticons + j);
       else
-        *hColor = 0;
+        *overlay = 0;
     }
 
     (*length) += 2;
@@ -2232,7 +2230,7 @@ float UI_Char_Width(const char **text, float scale, int textfont)
     newFontInfo_t   *font;
     int             emoticonLen;
     qboolean        emoticonEscaped;
-    int             emoticonWidth;
+    emoticon_t      *emoticon;
 
     if (text && *text)
     {
@@ -2258,14 +2256,14 @@ float UI_Char_Width(const char **text, float scale, int textfont)
 
         font = UI_AutoSelectFont(scale, textfont);
 
-        if (UI_Text_IsEmoticon(*text, &emoticonEscaped, &emoticonLen, NULL, NULL, &emoticonWidth, NULL))
+        if (UI_Text_IsEmoticon(*text, &emoticonEscaped, &emoticonLen, &emoticon, NULL, NULL))
         {
             if (emoticonEscaped)
                 (*text)++;
             else
             {
                 *text += emoticonLen;
-                return emoticonWidth * UI_EmoticonWidth(font, scale);
+                return emoticon->width * UI_EmoticonWidth(font, scale);
             }
         }
 
@@ -2409,6 +2407,10 @@ static void UI_Text_PaintChar(float x, float y, float scale, glyphInfo_t *glyph,
     DC->drawStretchPic(x, y, w, h, glyph->s, glyph->t, glyph->s2, glyph->t2, glyph->glyph);
 }
 
+
+// @TODO: Rewrite this function.
+// I think that shadow is constant through all a text block
+// And subfunctions to draw char / emoticon / ... could be written
 static void UI_Text_Paint_Generic(
     float x, float y, float scale, int textfont, float gapAdjust,
     const char *text, vec4_t color, int style, int limit, float *maxX,
@@ -2423,14 +2425,13 @@ static void UI_Text_Paint_Generic(
     glyphInfo_t     *glyph;
     glyphInfo_t     *shadowGlyph;
     float           useScale;
-    qhandle_t       emoticonHandle = 0;
-    qhandle_t       emoticonColorHandle = 0;
+    emoticon_t      *emoticon;
+    emoticon_t      *emoticonOverlay;
     float           emoticonH, emoticonW;
     float           charWidth;
     qboolean        emoticonEscaped;
     qboolean        skip_color_string_check = qfalse;
     int             emoticonLen = 0;
-    int             emoticonWidth;
     int             cursorX = -1;
 
     if (!text)
@@ -2493,8 +2494,7 @@ static void UI_Text_Paint_Generic(
             }
 
             if (UI_Text_IsEmoticon(s, &emoticonEscaped, &emoticonLen,
-                                    &emoticonHandle, &emoticonColorHandle,
-                                    &emoticonWidth, forceColor))
+                                    &emoticon, &emoticonOverlay, forceColor))
             {
                 if (emoticonEscaped)
                     s++;
@@ -2503,21 +2503,36 @@ static void UI_Text_Paint_Generic(
                     float yadj = useScale * glyph->top;
 
                     DC->setColor(NULL);
-
-                    if (style == ITEM_TEXTSTYLE_SHADOWED || style == ITEM_TEXTSTYLE_SHADOWEDMORE)
+                    if (style == ITEM_TEXTSTYLE_SHADOWED ||
+                            style == ITEM_TEXTSTYLE_SHADOWEDMORE)
                     {
-                        int ofs;
+                        int shadowLevel;
 
                         if (style == ITEM_TEXTSTYLE_SHADOWED)
-                            ofs = 1;
+                            shadowLevel = FONT_SHADOW;
                         else
-                            ofs = 2;
+                            shadowLevel = FONT_SHADOWMORE;
 
                         colorBlack[3] = newColor[3] * 0.85;
 
-                        DC->setColor(colorBlack);
-                        DC->drawHandlePic(x + ofs, y + ofs - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
-                        DC->setColor(NULL);
+                        if (DC->getCVarValue("ui_fontShadow") && emoticon->shadows[shadowLevel])
+                        {
+                            int margin = 4 * shadowLevel;
+                            float shadowOffset = (-(float)margin * useScale) + ((float)shadowLevel + 1);
+                            shadowGlyph = &font->shadows[shadowLevel].glyphs[(unsigned char)*s];
+
+                            DC->setColor(colorBlack);
+                            DC->drawHandlePic(x + shadowOffset * DC->aspectScale, y + shadowOffset - yadj, (emoticonW * emoticon->width), emoticonH, emoticon->shadows[shadowLevel]);
+                            DC->setColor(NULL);
+                        }
+                        else
+                        {
+                            int ofs = shadowLevel + 1;
+
+                            DC->setColor(colorBlack);
+                            DC->drawHandlePic(x + ofs, y + ofs - yadj, (emoticonW * emoticon->width), emoticonH, emoticon->shader);
+                            DC->setColor(NULL);
+                        }
 
                         colorBlack[3] = 1.0f;
                     }
@@ -2525,17 +2540,17 @@ static void UI_Text_Paint_Generic(
                     forceColor[3] = newColor[3];
                     DC->setColor(colorWhite);
                     colorWhite[3] = 1;
-                    DC->drawHandlePic(x, y - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonHandle);
-                    if (emoticonColorHandle)
+                    DC->drawHandlePic(x, y - yadj, (emoticonW * emoticon->width), emoticonH, emoticon->shader);
+                    if (emoticonOverlay)
                     {
                         // FIXEME: Should "merge" both layer before applying opacity
                         DC->setColor(forceColor);
-                        DC->drawHandlePic(x, y - yadj, (emoticonW * emoticonWidth), emoticonH, emoticonColorHandle);
+                        DC->drawHandlePic(x, y - yadj, (emoticonW * emoticon->width), emoticonH, emoticonOverlay->shader);
                     }
                     DC->setColor(newColor);
-                    x += (emoticonW * emoticonWidth) + gapAdjust;
+                    x += (emoticonW * emoticon->width) + gapAdjust;
                     s += emoticonLen;
-                    count += emoticonWidth;
+                    count += emoticon->width;
                     continue;
                 }
             }

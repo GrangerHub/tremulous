@@ -134,7 +134,7 @@ Draws char in a square
 static void CG_DrawChar(float x, float y, float w, float h, glyphInfo_t *glyph)
 {
     float gw, gh;
-    float offsetX, finalWidth;
+    float finalWidth;
 
     gw = glyph->imageWidth * cgDC.aspectScale;
     gh = glyph->imageHeight;

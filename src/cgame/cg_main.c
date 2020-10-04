@@ -1972,7 +1972,7 @@ void CG_LoadHudMenu( void )
 
 void CG_AssetCache( void )
 {
-  int i;
+  int       i, j;
 
   cgDC.Assets.gradientBar         = trap_R_RegisterShaderNoMip( ASSET_GRADIENTBAR );
   cgDC.Assets.scrollBar           = trap_R_RegisterShaderNoMip( ASSET_SCROLLBAR );
@@ -2005,6 +2005,11 @@ void CG_AssetCache( void )
     cgDC.Assets.emoticons[ i ].shader = trap_R_RegisterShaderNoMip(
       va( "emoticons/%s_%dx1.tga", cgDC.Assets.emoticons[ i ].name,
           cgDC.Assets.emoticons[ i ].width ) );
+    for (j = 0; j < FONT_MAXSHADOW; j++) {
+      cgDC.Assets.emoticons[ i ].shadows[ j ] = trap_R_RegisterShaderNoMip(
+          va( "emoticons/shadows/%s_%dx1_%d.tga", cgDC.Assets.emoticons[ i ].name,
+                cgDC.Assets.emoticons[ i ].width, j ));
+    }
   }
 }
 

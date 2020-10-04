@@ -540,7 +540,7 @@ float UI_Text_Width(const char *text, float scale, int font);
 float UI_Text_Height(const char *text, float scale, int font);
 float UI_Text_EmWidth(float scale, int font);
 float UI_Text_EmHeight(float scale, int font);
-qboolean UI_Text_IsEmoticon(const char *s, qboolean *escaped, int *length, qhandle_t *h, qhandle_t *hColor, int *width, vec4_t forceColor);
+qboolean UI_Text_IsEmoticon(const char *s, qboolean *escaped, int *length, emoticon_t **emoticon, emoticon_t **overlay, vec4_t forceColor);
 void UI_EscapeEmoticons(char *dest, const char *src, int destsize);
 
 int trap_Parse_AddGlobalDefine(char *define);
