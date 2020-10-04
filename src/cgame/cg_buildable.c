@@ -1146,7 +1146,7 @@ static void CG_BuildableStatusDisplay( centity_t *cent )
 
       CG_DrawField( nX, subY, 4, subH, subH,
         CG_FontForTeam( BG_Buildable( es->modelindex )->team ),
-        healthPoints, 0 );
+        healthPoints, 0, qfalse );
     }
 
     trap_R_SetColor( NULL );

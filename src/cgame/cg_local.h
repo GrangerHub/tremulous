@@ -1729,7 +1729,7 @@ void        CG_UpdateMediaFraction( float newFract );
 void        CG_ResetPainBlend( void );
 int         CG_FontForTeam(team_t team);
 void        CG_DrawField( float x, float y, int width, float cw, float ch,
-                          int textfont, int value, unsigned char prefix );
+                          int textfont, int value, unsigned char prefix, qboolean padded );
 
 //
 // cg_players.c

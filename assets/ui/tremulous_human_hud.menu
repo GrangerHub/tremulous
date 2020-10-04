@@ -206,7 +206,7 @@
     itemDef
     {
       name "credits"
-      rect 516 402 48 11.25
+      rect 517 402 45 11.25
       aspectBias ALIGN_RIGHT
       visible MENU_TRUE
       decoration
@@ -218,7 +218,7 @@
     itemDef
     {
       name "health"
-      rect 66 430 60 15
+      rect 65 430 65 15
       aspectBias ALIGN_LEFT
       visible MENU_TRUE
       decoration
@@ -255,7 +255,7 @@
     itemDef
     {
       name "ammo"
-      rect 502 430 53 15
+      rect 498 430 60 15
       aspectBias ALIGN_RIGHT
       visible MENU_TRUE
       decoration
@@ -267,7 +267,7 @@
     itemDef
     {
       name "clips"
-      rect 538 423 60 15
+      rect 540 422.5 60 15
       aspectBias ALIGN_RIGHT
       visible MENU_TRUE
       decoration
