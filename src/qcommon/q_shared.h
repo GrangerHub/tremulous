@@ -1613,6 +1613,7 @@ typedef struct
 #ifndef GAME
   int       width;
   qhandle_t shader;
+  qhandle_t shadows[FONT_MAXSHADOW];
 #endif
 } emoticon_t;
 
