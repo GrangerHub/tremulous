@@ -162,7 +162,7 @@ itemDef
 itemDef
 {
   name "health"
-  rect 78.5 421.5 60 15
+  rect 76.5 421.5 65 15
   aspectBias ALIGN_LEFT
   visible MENU_TRUE
   decoration
@@ -186,7 +186,7 @@ itemDef
 itemDef
 {
   name "organs"
-  rect 570 416 15 15
+  rect 572 415 15 15
   aspectBias ALIGN_RIGHT
   visible MENU_TRUE
   decoration

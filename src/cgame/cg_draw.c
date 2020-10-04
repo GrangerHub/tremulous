@@ -149,127 +149,49 @@ static void CG_DrawChar(float x, float y, float w, float h, glyphInfo_t *glyph)
 
 /*
 ==============
-CG_DrawFieldPadded
+CG_DrawMargedChar
 
-Draws large numbers for status bar
+Draws char in a square, with margin
 ==============
 */
-static void CG_DrawFieldPadded( int x, int y, int width, int cw, int ch, int textfont, int value, unsigned char prefix )
+static void CG_DrawMargedChar(float x, float y, float w, float h, float margin, glyphInfo_t *glyph)
 {
-  char          num[ 16 ], *ptr;
-  int           l, orgL;
-  int           frame;
-  int           charWidth, charHeight;
-  float         margin;
-  newFontInfo_t *font = CG_SelectFont(textfont);
-  glyphInfo_t   *glyph;
+  CG_DrawChar(x + margin, y + margin, w - margin * 2, h - margin * 2, glyph);
+}
 
-  if( !( charWidth = cw ) )
-    charWidth = CHAR_WIDTH;
+/*
+==============
+CG_MarginForSquare
 
-  if( !( charHeight = ch ) )
-    charHeight = CHAR_HEIGHT;
-
-  if (charWidth > charHeight * 1.2)
-    margin = 0;
+Get appropriate margin for a char square
+==============
+*/
+static float CG_MarginForSquare(float w, float h)
+{
+  if (w > h * 1.2)
+    return (0);
   else
-    margin = cgDC.aspectScale * charWidth * 0.05;
-
-  if( width < 1 )
-    return;
-
-  // draw number string
-  if( width > 4 )
-    width = 4;
-
-  switch( width )
-  {
-    case 1:
-      value = value > 9 ? 9 : value;
-      value = value < 0 ? 0 : value;
-      break;
-    case 2:
-      value = value > 99 ? 99 : value;
-      value = value < -9 ? -9 : value;
-      break;
-    case 3:
-      value = value > 999 ? 999 : value;
-      value = value < -99 ? -99 : value;
-      break;
-    case 4:
-      value = value > 9999 ? 9999 : value;
-      value = value < -999 ? -999 : value;
-      break;
-  }
-
-  Com_sprintf( num, sizeof( num ), "%d", value );
-  l = strlen( num );
-
-  if( l > width )
-    l = width;
-
-  orgL = l;
-
-  x += ( 2.0f * cgDC.aspectScale );
-
-  if (prefix)
-    CG_DrawChar( x - margin - charWidth, y + margin,
-      charWidth - margin * 2, charHeight - margin * 2, &font->glyphs[prefix]);
-
-  ptr = num;
-  while( *ptr && l )
-  {
-    if( width > orgL )
-    {
-      glyph = &font->glyphs['0'];
-      width--;
-    }
-    else
-    {
-      glyph = &font->glyphs[(unsigned char)*ptr];
-      ptr++;
-      l--;
-    }
-
-    CG_DrawChar( x + margin, y + margin,
-        charWidth - margin * 2, charHeight - margin * 2, glyph);
-
-    x += charWidth + margin * 2;
-  }
+    return (cgDC.aspectScale * w * 0.07);
 }
 
 /*
 ==============
 CG_DrawField
 
-Draws large numbers for status bar
+Draws numbers (1 to 4 length), maybe padded with zeros
 ==============
 */
-void CG_DrawField( float x, float y, int width, float cw, float ch, int textfont, int value, unsigned char prefix )
+void CG_DrawField( float x, float y, int width, float cw, float ch, int textfont, int value, unsigned char prefix, qboolean padded )
 {
-  char          num[ 16 ], *ptr;
-  int           l;
-  int           frame;
-  float         charWidth, charHeight;
-  float         margin;
-  newFontInfo_t *font = CG_SelectFont(textfont);
-  glyphInfo_t   *glyph;
-
-  if( !( charWidth = cw ) )
-    charWidth = CHAR_WIDTH;
-
-  if( !( charHeight = ch ) )
-    charHeight = CHAR_HEIGHT;
-
-  if (charWidth > charHeight * 1.2)
-    margin = 0;
-  else
-    margin = cgDC.aspectScale * charWidth * 0.07;
+  char          num[5];
+  unsigned char *ptr;
+  newFontInfo_t *font   = CG_SelectFont(textfont);
+  float         margin  = CG_MarginForSquare(cw, ch);
+  size_t        length;
 
   if( width < 1 )
     return;
 
-  // draw number string
   if( width > 4 )
     width = 4;
 
@@ -294,28 +216,30 @@ void CG_DrawField( float x, float y, int width, float cw, float ch, int textfont
   }
 
   Com_sprintf( num, sizeof( num ), "%d", value );
-  l = strlen( num );
+  length = strlen(num);
 
-  if( l > width )
-    l = width;
-
-  x += ( 2.0f * cgDC.aspectScale ) + charWidth * ( width - l );
+  if (!padded)
+    x += cw * (width - length);
 
   if (prefix)
-    CG_DrawChar( x - margin - charWidth, y + margin,
-        charWidth - margin * 2, charHeight - margin * 2, &font->glyphs[prefix]);
+    CG_DrawMargedChar( x - cw, y, cw, ch, margin, &font->glyphs[prefix]);
 
-  ptr = num;
-  while( *ptr && l )
+  if (padded)
   {
-    glyph = &font->glyphs[(unsigned char)*ptr];
+    while (width > length)
+    {
+      CG_DrawMargedChar( x, y, cw, ch, margin, &font->glyphs['0']);
+      x += cw;
+      width--;
+    }
+  }
 
-    CG_DrawChar( x + margin, y + margin,
-        charWidth - margin * 2, charHeight - margin * 2, glyph);
-
-    x += charWidth + margin * 2;
+  ptr = (unsigned char*)num;
+  while( *ptr )
+  {
+    CG_DrawMargedChar( x, y, cw, ch, margin, &font->glyphs[*ptr]);
+    x += cw;
     ptr++;
-    l--;
   }
 }
 
@@ -469,11 +393,11 @@ static void CG_DrawPlayerCreditsValue( rectDef_t *rect, vec4_t color, qboolean p
     trap_R_SetColor( color );
 
     if( padding )
-      CG_DrawFieldPadded( rect->x, rect->y, 4, rect->w / 4, rect->h,
-                          CG_FontForTeam(cg.predictedPlayerState.stats[ STAT_TEAM ]), value, 0 );
+      CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h,
+                    CG_FontForTeam(cg.predictedPlayerState.stats[ STAT_TEAM ]), value, 0, qtrue );
     else
       CG_DrawField( rect->x, rect->y, 1, rect->w, rect->h,
-                    CG_FontForTeam(cg.predictedPlayerState.stats[ STAT_TEAM ]), value, 0 );
+                    CG_FontForTeam(cg.predictedPlayerState.stats[ STAT_TEAM ]), value, 0, qfalse );
 
     trap_R_SetColor( NULL );
   }
@@ -823,17 +747,17 @@ static void CG_DrawPlayerAmmoValue( rectDef_t *rect, vec4_t color )
         4,
         rect->w / 4 * MARKED_MAIN_SIZE,
         rect->h * MARKED_MAIN_SIZE,
-        font, value, 0 );
+        font, value, 0, qfalse );
       CG_DrawField(
         rect->x + rect->w * (1-MARKED_MARKED_SIZE),
         rect->y + rect->h * (MARKED_MAIN_TOP_OFFSET + MARKED_MAIN_SIZE),
         4,
         rect->w / 4 * MARKED_MARKED_SIZE,
         rect->h * MARKED_MARKED_SIZE,
-        font, valueMarked, '+' );
+        font, valueMarked, '+', qfalse);
     }
     else
-      CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h, font, value, 0 );
+      CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h, font, value, 0, qfalse );
 
     trap_R_SetColor( NULL );
   }
@@ -968,7 +892,7 @@ static void CG_DrawPlayerClipsValue( rectDef_t *rect, vec4_t color )
       {
         trap_R_SetColor( color );
         CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h,
-                      CG_FontForTeam(ps->stats[ STAT_TEAM ]), value, 0 );
+                      CG_FontForTeam(ps->stats[ STAT_TEAM ]), value, 0, qfalse );
         trap_R_SetColor( NULL );
       }
       break;
@@ -981,7 +905,7 @@ static void CG_DrawPlayerHealthValue( rectDef_t *rect, vec4_t color )
   CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h,
                 CG_FontForTeam(cg.snap->ps.stats[ STAT_TEAM ]),
                 cg.snap->ps.stats[ STAT_HEALTH ],
-                0 );
+                0, qfalse );
   trap_R_SetColor( NULL );
 }
 
@@ -1775,7 +1699,7 @@ static void CG_DrawFPS( rectDef_t *rect, float text_x, float text_y,
     else
     {
       trap_R_SetColor( color );
-      CG_DrawField( rect->x, rect->y, 3, rect->w / 3, rect->h, FONT_STANDARD, fps, 0 );
+      CG_DrawField( rect->x, rect->y, 3, rect->w / 3, rect->h, FONT_STANDARD, fps, 0, qfalse );
       trap_R_SetColor( NULL );
     }
   }
@@ -1802,7 +1726,7 @@ static void CG_DrawTimerMins( rectDef_t *rect, vec4_t color )
   seconds -= mins * 60;
 
   trap_R_SetColor( color );
-  CG_DrawField( rect->x, rect->y, 3, rect->w / 3, rect->h, FONT_STANDARD, mins, 0 );
+  CG_DrawField( rect->x, rect->y, 3, rect->w / 3, rect->h, FONT_STANDARD, mins, 0, qfalse );
   trap_R_SetColor( NULL );
 }
 
@@ -1827,7 +1751,7 @@ static void CG_DrawTimerSecs( rectDef_t *rect, vec4_t color )
   seconds -= mins * 60;
 
   trap_R_SetColor( color );
-  CG_DrawFieldPadded( rect->x, rect->y, 2, rect->w / 2, rect->h, FONT_STANDARD, seconds, 0 );
+  CG_DrawField( rect->x, rect->y, 2, rect->w / 2, rect->h, FONT_STANDARD, seconds, 0, qtrue );
   trap_R_SetColor( NULL );
 }
 
