@@ -944,7 +944,6 @@ static void CG_RegisterGraphics( void )
 
   cgs.media.upgradeClassIconShader    = trap_R_RegisterShader( "icons/icona_upgrade.tga" );
 
-  cgs.media.balloonShader             = trap_R_RegisterShader( "gfx/sprites/chatballoon" );
   cgs.media.aliensBalloonShader       = trap_R_RegisterShader( "gfx/sprites/aliens_chatballoon" );
   cgs.media.humansBalloonShader       = trap_R_RegisterShader( "gfx/sprites/humans_chatballoon" );
 

@@ -309,17 +309,18 @@ typedef enum
 #define EF_B_POWERED        0x0010
 #define EF_B_MARKED         0x0020
 
-#define EF_WARN_CHARGE      0x0020    // Lucifer Cannon is about to overcharge
-#define EF_WALLCLIMB        0x0040    // wall walking
-#define EF_WALLCLIMBCEILING 0x0080    // wall walking ceiling hack
-#define EF_NODRAW           0x0100    // may have an event, but no model (unspawned items)
-#define EF_FIRING           0x0200    // for lightning gun
-#define EF_FIRING2          0x0400    // alt fire
-#define EF_FIRING3          0x0800    // third fire
-#define EF_MOVER_STOP       0x1000    // will push otherwise
-#define EF_POISONCLOUDED    0x2000    // player hit with basilisk gas
-#define EF_CONNECTION       0x4000    // draw a connection trouble sprite
-#define EF_BLOBLOCKED       0x8000    // caught by a trapper
+#define EF_WARN_CHARGE      0x00000020    // Lucifer Cannon is about to overcharge
+#define EF_WALLCLIMB        0x00000040    // wall walking
+#define EF_WALLCLIMBCEILING 0x00000080    // wall walking ceiling hack
+#define EF_NODRAW           0x00000100    // may have an event, but no model (unspawned items)
+#define EF_FIRING           0x00000200    // for lightning gun
+#define EF_FIRING2          0x00000400    // alt fire
+#define EF_FIRING3          0x00000800    // third fire
+#define EF_MOVER_STOP       0x00001000    // will push otherwise
+#define EF_POISONCLOUDED    0x00002000    // player hit with basilisk gas
+#define EF_CONNECTION       0x00004000    // draw a connection trouble sprite
+#define EF_BLOBLOCKED       0x00008000    // caught by a trapper
+#define EF_TALK             0x00010000    // draw a talk balloon
 
 typedef enum
 {
@@ -976,6 +977,7 @@ typedef struct
   int       viewheight;
   int       crouchViewheight;
   float     zOffset;
+  float     spriteOffset;
   vec3_t    shoulderOffsets;
 } classConfig_t;
 
@@ -1170,20 +1172,21 @@ void                        BG_BuildableBoundingBox( buildable_t buildable,
 void                        BG_InitBuildableConfigs( void );
 
 const classAttributes_t     *BG_ClassByName( const char *name );
-const classAttributes_t     *BG_Class( class_t klass );
-qboolean                    BG_ClassAllowedInStage( class_t klass,
+const classAttributes_t     *BG_Class( class_t class );
+qboolean                    BG_ClassAllowedInStage( class_t class,
                                                     stage_t stage );
 
-classConfig_t               *BG_ClassConfig( class_t klass );
+classConfig_t               *BG_ClassConfig( class_t class );
 
-void                        BG_ClassBoundingBox( class_t klass, vec3_t mins,
+void                        BG_ClassBoundingBox( class_t class, vec3_t mins,
                                                  vec3_t maxs, vec3_t cmaxs,
                                                  vec3_t dmins, vec3_t dmaxs );
-qboolean                    BG_ClassHasAbility( class_t klass, int ability );
+float                       BG_ClassSpriteHeight( class_t class );
+qboolean                    BG_ClassHasAbility( class_t class, int ability );
 int                         BG_ClassCanEvolveFromTo( class_t fclass,
                                                      class_t tclass,
                                                      int credits, int alienStage, int num );
-qboolean                    BG_AlienCanEvolve( class_t klass, int credits, int alienStage );
+qboolean                    BG_AlienCanEvolve( class_t class, int credits, int alienStage );
 
 void                        BG_InitClassConfigs( void );
 
@@ -1298,7 +1301,7 @@ void BG_ParseCSVBuildableList( const char *string, buildable_t *buildables, int 
 void BG_InitAllowedGameElements( void );
 qboolean BG_WeaponIsAllowed( weapon_t weapon );
 qboolean BG_UpgradeIsAllowed( upgrade_t upgrade );
-qboolean BG_ClassIsAllowed( class_t klass );
+qboolean BG_ClassIsAllowed( class_t class );
 qboolean BG_BuildableIsAllowed( buildable_t buildable );
 
 // Friendly Fire Flags
@@ -1330,7 +1333,7 @@ typedef struct voiceTrack_s
   char                   *text;
   int                    enthusiasm;
   int                    team;
-  int                    klass;
+  int                    class;
   int                    weapon;
   struct voiceTrack_s    *next;
 } voiceTrack_t;
@@ -1357,7 +1360,7 @@ voiceCmd_t *BG_VoiceCmdFind( voiceCmd_t *head, char *name, int *cmdNum );
 voiceCmd_t *BG_VoiceCmdByNum( voiceCmd_t *head, int num);
 voiceTrack_t *BG_VoiceTrackByNum( voiceTrack_t *head, int num );
 voiceTrack_t *BG_VoiceTrackFind( voiceTrack_t *head, team_t team,
-                                 class_t klass, weapon_t weapon,
+                                 class_t class, weapon_t weapon,
                                  int enthusiasm, int *trackNum );
 
 int BG_LoadEmoticons( emoticon_t *emoticons, int num );

@@ -1190,7 +1190,6 @@ typedef struct
 
   qhandle_t   level2ZapTS;
 
-  qhandle_t   balloonShader;
   qhandle_t   aliensBalloonShader;
   qhandle_t   humansBalloonShader;
   qhandle_t   connectionShader;

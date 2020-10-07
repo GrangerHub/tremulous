@@ -811,6 +811,7 @@ ClientIntermissionThink
 */
 void ClientIntermissionThink( gclient_t *client )
 {
+  client->ps.eFlags &= ~EF_TALK;
   client->ps.eFlags &= ~EF_FIRING;
   client->ps.eFlags &= ~EF_FIRING2;
 

@@ -3625,6 +3625,12 @@ void PmoveSingle( pmove_t *pmove )
 
     if( pmove->cmd.upmove > 0 )
       pmove->cmd.upmove = 0;
+
+    pm->ps->eFlags |= EF_TALK;
+  }
+  else
+  {
+    pm->ps->eFlags &= ~EF_TALK;
   }
 
   // clear all pmove local vars

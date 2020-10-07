@@ -1310,6 +1310,22 @@ void BG_ClassBoundingBox( class_t class,
 
 /*
 ==============
+BG_ClassSpriteHeight
+
+The height at which we can float a sprite above the client's head.
+We can't use the bounding box alone because they are not consistent with the
+models (!).
+==============
+*/
+float BG_ClassSpriteHeight( class_t class )
+{
+  classConfig_t *classConfig = BG_ClassConfig( class );
+
+  return (classConfig->maxs[ 2 ] + classConfig->spriteOffset);
+}
+
+/*
+==============
 BG_ClassHasAbility
 ==============
 */
@@ -1432,7 +1448,8 @@ static qboolean BG_ParseClassFile( const char *filename, classConfig_t *cc )
       CVIEWHEIGHT     = 1 << 11,
       ZOFFSET         = 1 << 12,
       NAME            = 1 << 13,
-      SHOULDEROFFSETS = 1 << 14
+      SHOULDEROFFSETS = 1 << 14,
+      SPRITEOFFSET    = 1 << 15
   };
 
   // load the file
@@ -1655,6 +1672,21 @@ static qboolean BG_ParseClassFile( const char *filename, classConfig_t *cc )
       defined |= SHOULDEROFFSETS;
       continue;
     }
+    else if( !Q_stricmp( token, "spriteOffset" ) )
+    {
+      float offset;
+
+      token = COM_Parse( &text_p );
+      if( !token )
+        break;
+
+      offset = atof( token );
+
+      cc->spriteOffset = offset;
+
+      defined |= SPRITEOFFSET;
+      continue;
+    }
 
     Com_Printf( S_COLOR_RED "ERROR: unknown token '%s'\n", token );
     return qfalse;
@@ -1675,6 +1707,7 @@ static qboolean BG_ParseClassFile( const char *filename, classConfig_t *cc )
   else if( !( defined & ZOFFSET         ) ) token = "zOffset";
   else if( !( defined & NAME            ) ) token = "name";
   else if( !( defined & SHOULDEROFFSETS ) ) token = "shoulderOffsets";
+  else if( !( defined & SPRITEOFFSET    ) ) token = "spriteOffset";
   else                                      token = "";
 
   if( strlen( token ) > 0 )

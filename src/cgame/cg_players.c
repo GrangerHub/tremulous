@@ -1559,7 +1559,6 @@ static void CG_PlayerUpgrades( centity_t *cent, refEntity_t *torso )
   }
 }
 
-
 /*
 ===============
 CG_PlayerFloatSprite
@@ -1579,7 +1578,6 @@ static void CG_PlayerFloatSprite( centity_t *cent, qhandle_t shader )
 
   memset( &ent, 0, sizeof( ent ) );
   VectorCopy( cent->lerpOrigin, ent.origin );
-  ent.origin[ 2 ] += 48;
   ent.reType = RT_SPRITE;
   ent.customShader = shader;
   ent.radius = 10;
@@ -1588,6 +1586,10 @@ static void CG_PlayerFloatSprite( centity_t *cent, qhandle_t shader )
   ent.shaderRGBA[ 1 ] = 255;
   ent.shaderRGBA[ 2 ] = 255;
   ent.shaderRGBA[ 3 ] = 255;
+
+  // Find the proper height to float the sprite
+  ent.origin[ 2 ] += BG_ClassSpriteHeight( ( cent->currentState.misc >> 8 ) & 0xFF );
+
   trap_R_AddRefEntityToScene( &ent );
 }
 
@@ -1602,10 +1604,22 @@ Float sprites over the player's head
 */
 static void CG_PlayerSprites( centity_t *cent )
 {
+  clientInfo_t  *ci;
+
+  ci = &cgs.clientinfo[ cent->currentState.number ];
+
   if( cent->currentState.eFlags & EF_CONNECTION )
   {
     CG_PlayerFloatSprite( cent, cgs.media.connectionShader );
     return;
+  }
+
+  if( cent->currentState.eFlags & EF_TALK )
+  {
+    if( ci->team == TEAM_ALIENS )
+      CG_PlayerFloatSprite( cent, cgs.media.aliensBalloonShader );
+    else if( ci->team == TEAM_HUMANS )
+      CG_PlayerFloatSprite( cent, cgs.media.humansBalloonShader );
   }
 }
 
