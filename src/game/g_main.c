@@ -46,6 +46,7 @@ gclient_t   g_clients[ MAX_CLIENTS ];
 
 vmCvar_t  g_timelimit;
 vmCvar_t  g_suddenDeathTime;
+vmCvar_t  g_extremeSuddenDeathTime;
 vmCvar_t  g_friendlyFire;
 vmCvar_t  g_friendlyBuildableFire;
 vmCvar_t  g_dretchPunt;
@@ -73,6 +74,8 @@ vmCvar_t  g_allowVote;
 vmCvar_t  g_voteLimit;
 vmCvar_t  g_suddenDeathVotePercent;
 vmCvar_t  g_suddenDeathVoteDelay;
+vmCvar_t  g_extremeSuddenDeathVotePercent;
+vmCvar_t  g_extremeSuddenDeathVoteDelay;
 vmCvar_t  g_teamForceBalance;
 vmCvar_t  g_smoothClients;
 vmCvar_t  pmove_fixed;
@@ -175,6 +178,7 @@ static cvarTable_t   gameCvarTable[ ] =
 
   { &g_timelimit, "timelimit", "0", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, 0, qtrue },
   { &g_suddenDeathTime, "g_suddenDeathTime", "0", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, 0, qtrue },
+  { &g_extremeSuddenDeathTime, "g_extremeSuddenDeathTime", "0", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, 0, qtrue },
 
   { &g_synchronousClients, "g_synchronousClients", "0", CVAR_SYSTEMINFO, 0, qfalse  },
 
@@ -207,6 +211,8 @@ static cvarTable_t   gameCvarTable[ ] =
   { &g_voteLimit, "g_voteLimit", "5", CVAR_ARCHIVE, 0, qfalse },
   { &g_suddenDeathVotePercent, "g_suddenDeathVotePercent", "74", CVAR_ARCHIVE, 0, qfalse },
   { &g_suddenDeathVoteDelay, "g_suddenDeathVoteDelay", "180", CVAR_ARCHIVE, 0, qfalse },
+  { &g_extremeSuddenDeathVotePercent, "g_extremeSuddenDeathVotePercent", "74", CVAR_ARCHIVE, 0, qfalse },
+  { &g_extremeSuddenDeathVoteDelay, "g_extremeSuddenDeathVoteDelay", "180", CVAR_ARCHIVE, 0, qfalse },
   { &g_minNameChangePeriod, "g_minNameChangePeriod", "5", 0, 0, qfalse},
   { &g_maxNameChanges, "g_maxNameChanges", "5", 0, 0, qfalse},
 
@@ -680,6 +686,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart )
   trap_Cvar_Set( "g_alienCredits", 0 );
   trap_Cvar_Set( "g_humanCredits", 0 );
   level.suddenDeathBeginTime = g_suddenDeathTime.integer * 60000;
+  level.extremeSuddenDeathBeginTime = g_extremeSuddenDeathTime.integer * 60000;
 
   G_Printf( "-----------------------------------\n" );
 
@@ -1120,6 +1127,22 @@ int G_TimeTilSuddenDeath( void )
 }
 
 
+/*
+============
+G_TimeTilExtremeSuddenDeath
+============
+*/
+#define EXTREMESUDDENDEATHWARNING 60000
+int G_TimeTilExtremeSuddenDeath( void )
+{
+  if( ( !g_extremeSuddenDeathTime.integer && level.extremeSuddenDeathBeginTime == 0 ) ||
+      ( level.extremeSuddenDeathBeginTime < 0 ) )
+    return EXTREMESUDDENDEATHWARNING + 1; // Always some time away
+
+  return ( ( level.extremeSuddenDeathBeginTime ) - ( level.time - level.startTime ) );
+}
+
+
 #define PLAYER_COUNT_MOD 5.0f
 
 /*
@@ -1159,7 +1182,7 @@ void G_CalculateBuildPoints( void )
   {
     G_LogPrintf( "Beginning Sudden Death\n" );
     trap_SendServerCommand( -1, "cp \"Sudden Death!\"" );
-    trap_SendServerCommand( -1, "print \"Beginning Sudden Death.\n\"" );
+    trap_SendServerCommand( -1, "print \"Beginning Sudden Death. Rebuilding your base is now denied.\n\"" );
     level.suddenDeathWarning = TW_PASSED;
     G_ClearDeconMarks( );
 
@@ -1175,9 +1198,33 @@ void G_CalculateBuildPoints( void )
   {
     trap_SendServerCommand( -1, va( "cp \"Sudden Death in %d seconds!\"",
           (int)( G_TimeTilSuddenDeath( ) / 1000 ) ) );
-    trap_SendServerCommand( -1, va( "print \"Sudden Death will begin in %d seconds.\n\"",
+    trap_SendServerCommand( -1, va( "print \"Sudden Death will begin in %d seconds. You will not be able to rebuild your base anymore.\n\"",
           (int)( G_TimeTilSuddenDeath( ) / 1000 ) ) );
     level.suddenDeathWarning = TW_IMMINENT;
+  }
+
+  // Extreme Sudden Death checks
+  if( G_TimeTilExtremeSuddenDeath( ) <= 0 && level.extremeSuddenDeathWarning < TW_PASSED )
+  {
+    G_LogPrintf( "Beginning Extreme Sudden Death\n" );
+    trap_SendServerCommand( -1, "cp \"Extreme Sudden Death!\"" );
+    trap_SendServerCommand( -1, "print \"Beginning Extreme Sudden Death. Your base is over !\n\"" );
+    G_BaseSelfDestruct( TEAM_ALIENS );
+    G_BaseSelfDestruct( TEAM_HUMANS );
+    level.extremeSuddenDeathWarning = TW_PASSED;
+  }
+  else if( G_TimeTilExtremeSuddenDeath( ) <= EXTREMESUDDENDEATHWARNING &&
+    level.suddenDeathWarning < TW_IMMINENT )
+  {
+    trap_SendServerCommand( -1, va( "cp \"Extreme Sudden Death in %d seconds!\"",
+          (int)( G_TimeTilExtremeSuddenDeath( ) / 1000 ) ) );
+    trap_SendServerCommand( -1, va( "print \"Extreme Sudden Death will begin in %d seconds.\nBase will be destroyed.\n\"",
+          (int)( G_TimeTilExtremeSuddenDeath( ) / 1000 ) ) );
+    level.suddenDeathWarning = TW_IMMINENT;
+    trap_SendConsoleCommand( EXEC_NOW, "g_alienStage 2\n" );
+    trap_SendConsoleCommand( EXEC_NOW, "g_humanStage 2\n" );
+    for( i = 0; i < MAX_CLIENTS; i++ )
+      level.clients[i].ps.persistant[PERS_CREDIT] = 2000;
   }
 
   level.humanBuildPoints = g_humanBuildPoints.integer - level.humanBuildPointQueue;
@@ -2266,6 +2313,7 @@ void CheckCvars( void )
   static int lastPasswordModCount   = -1;
   static int lastMarkDeconModCount  = -1;
   static int lastSDTimeModCount = -1;
+  static int lastESDTimeModCount = -1;
   static int lastNumZones = 0;
 
   if( g_password.modificationCount != lastPasswordModCount )
@@ -2292,6 +2340,14 @@ void CheckCvars( void )
   {
     lastSDTimeModCount = g_suddenDeathTime.modificationCount;
     level.suddenDeathBeginTime = g_suddenDeathTime.integer * 60000;
+  }
+
+  // If we change g_extremeSuddenDeathTime during a map, we need to update
+  // when esd will begin
+  if( g_extremeSuddenDeathTime.modificationCount != lastESDTimeModCount )
+  {
+    lastESDTimeModCount = g_extremeSuddenDeathTime.modificationCount;
+    level.extremeSuddenDeathBeginTime = g_extremeSuddenDeathTime.integer * 60000;
   }
 
   // If the number of zones changes, we need a new array

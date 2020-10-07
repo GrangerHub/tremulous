@@ -1621,7 +1621,7 @@ void Cmd_CallVote_f( gentity_t *ent )
     {
       if(!g_suddenDeathVotePercent.integer)
       {
-        trap_SendServerCommand( ent-g_entities,
+        trap_SendServerCommand( ent - g_entities,
               "print \"Sudden Death votes have been disabled\n\"" );
         return;
       }
@@ -1646,11 +1646,46 @@ void Cmd_CallVote_f( gentity_t *ent )
                    "Begin sudden death in %d seconds",
                    g_suddenDeathVoteDelay.integer );
     }
+    else if( !Q_stricmp( vote, "extreme_sudden_death" ) )
+    {
+      if(!g_extremeSuddenDeathVotePercent.integer)
+      {
+        trap_SendServerCommand( ent - g_entities,
+              "print \"Extreme Sudden Death votes have been disabled\n\"" );
+        return;
+      }
+      if( G_TimeTilSuddenDeath( ) > 0 )
+      {
+        trap_SendServerCommand( ent - g_entities,
+              va( "print \"callvote: Sudden Death must begin before Extreme Sudden Death\n\"") );
+        return;
+      }
+      if( G_TimeTilExtremeSuddenDeath( ) <= 0 )
+      {
+        trap_SendServerCommand( ent - g_entities,
+              va( "print \"callvote: Extreme Sudden Death has already begun\n\"") );
+        return;
+      }
+      if( level.extremeSuddenDeathBeginTime > 0 &&
+          G_TimeTilExtremeSuddenDeath() <= g_extremeSuddenDeathVoteDelay.integer * 1000 )
+      {
+        trap_SendServerCommand( ent - g_entities,
+              va( "print \"callvote: Extreme Sudden Death is imminent\n\"") );
+        return;
+      }
+      level.voteThreshold[ team ] = g_extremeSuddenDeathVotePercent.integer;
+      Com_sprintf( level.voteString[ team ], sizeof( level.voteString[ team ] ),
+        "extremesuddendeath %d", g_extremeSuddenDeathVoteDelay.integer );
+      Com_sprintf( level.voteDisplayString[ team ],
+                   sizeof( level.voteDisplayString[ team ] ),
+                   "Begin extreme sudden death in %d seconds",
+                   g_extremeSuddenDeathVoteDelay.integer );
+    }
     else
     {
       trap_SendServerCommand( ent-g_entities, "print \"Invalid vote string\n\"" );
       trap_SendServerCommand( ent-g_entities, "print \"Valid vote commands are: "
-        "map, nextmap, map_restart, draw, sudden_death, kick, mute and unmute\n" );
+        "map, nextmap, map_restart, draw, sudden_death, extreme_sudden_death, kick, mute and unmute\n" );
       return;
     }
   }

@@ -550,11 +550,25 @@ static void Svcmd_SuddenDeath_f( void )
       offset, offset == 1 ? "" : "s" ) );
 }
 
+static void Svcmd_ExtremeSuddenDeath_f( void )
+{
+  char secs[ 5 ];
+  int  offset;
+  trap_Argv( 1, secs, sizeof( secs ) );
+  offset = atoi( secs );
+
+  level.extremeSuddenDeathBeginTime = level.time - level.startTime + offset * 1000;
+  trap_SendServerCommand( -1,
+    va( "cp \"Extreme Sudden Death will begin in %d second%s\"",
+      offset, offset == 1 ? "" : "s" ) );
+}
+
 static void Svcmd_G_AdvanceMapRotation_f( void )
 {
   G_AdvanceMapRotation( 0 );
 }
 
+// This list must be alpha sorted !!!
 struct svcmd
 {
   char     *cmd;
@@ -571,6 +585,7 @@ struct svcmd
   { "eject", qfalse, Svcmd_EjectClient_f },
   { "entityList", qfalse, Svcmd_EntityList_f },
   { "evacuation", qfalse, Svcmd_Evacuation_f },
+  { "extremesuddendeath", qfalse, Svcmd_ExtremeSuddenDeath_f },
   { "forceTeam", qfalse, Svcmd_ForceTeam_f },
   { "game_memory", qfalse, BG_MemoryInfo },
   { "humanWin", qfalse, Svcmd_TeamWin_f },
