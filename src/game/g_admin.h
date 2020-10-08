@@ -174,6 +174,7 @@ qboolean G_admin_mute( gentity_t *ent );
 qboolean G_admin_denybuild( gentity_t *ent );
 qboolean G_admin_showbans( gentity_t *ent );
 qboolean G_admin_adminhelp( gentity_t *ent );
+qboolean G_admin_info( gentity_t *ent );
 qboolean G_admin_admintest( gentity_t *ent );
 qboolean G_admin_allready( gentity_t *ent );
 qboolean G_admin_endvote( gentity_t *ent );

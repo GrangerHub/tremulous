@@ -115,6 +115,11 @@ g_admin_cmd_t g_admin_cmds[ ] =
       "[^3name|slot#^7]"
     },
 
+    {"info", G_admin_info, qtrue, "info",
+      "display server information files",
+      "(^5subject^7)"
+    },
+
     {"kick", G_admin_kick, qfalse, "kick",
       "kick a player with an optional reason",
       "[^3name|slot#^7] (^5reason^7)"
@@ -2749,6 +2754,81 @@ qboolean G_admin_adminhelp( gentity_t *ent )
     ADMBP_end( );
     return qfalse;
   }
+}
+
+qboolean G_admin_info( gentity_t *ent )
+{
+  char         buffer[ MAX_STRING_CHARS ];
+  char         output[ MAX_STRING_CHARS ];
+  char         subject[ 16 ];
+  char         filename[ MAX_OSPATH ];
+  char         *ptr;
+  fileHandle_t F;
+  int          len;
+  int          pos = 0;
+  int          end = sizeof( output ) - 1;
+  int          i;
+
+  if( trap_Argc( ) > 1 )
+    trap_Argv( 1, subject, sizeof( subject ) );
+  else
+    Q_strncpyz( subject, "index", sizeof( subject ) );
+  Com_sprintf( filename, sizeof( filename ), "info/info-%s.txt", subject );
+
+  len = trap_FS_FOpenFile( filename, &F, FS_READ );
+  if( len < 0 )
+  {
+    if( !strcmp( subject, "index" ) )
+      G_Printf( "Unable to find the top page info file %s\n", filename );
+    ADMP( va( "^3info: ^7info subject %s not found\n", subject ) );
+    return qfalse;
+  }
+  trap_FS_Read( buffer, sizeof( buffer ), F );
+  trap_FS_FCloseFile( F );
+
+  if( len >= sizeof( buffer ) )
+  {
+    len = sizeof( buffer ) - 1;
+    G_Printf( "G_admin_info: %s exceeds max info file size (%d)\n",
+              filename, len );
+  }
+  buffer[ len ] = '\0';
+
+  ptr = buffer;
+  while( *ptr )
+  {
+    // parse cvars, format: ${cvar}
+    if( *ptr == '$' && *(ptr + 1) == '{' )
+    {
+      char *cvar;
+
+      ptr += 2;
+      cvar = ptr;
+      while( *ptr && *ptr != '}' )
+        ptr++;
+      if( *ptr == '}' )
+      {
+        char value[ MAX_CVAR_VALUE_STRING ];
+
+        *ptr = '\0';
+        ptr++;
+        trap_Cvar_VariableStringBuffer( cvar, value, sizeof( value ) );
+        for( i = 0; value[ i ] && pos < end; i++, pos++ )
+          output[ pos ] = value [ i ];
+      }
+      continue;
+    }
+
+    if( ( isprint(*ptr) || *ptr == '\n' ) && pos < end )
+      output[ pos++ ] = *ptr;
+    ptr++;
+  }
+
+  if( ( pos == 0 || output[ pos - 1 ] != '\n' ) && pos < end )
+    output[ pos++ ] = '\n';
+  output[ pos ] = '\0';
+  ADMP( output );
+  return qtrue;
 }
 
 qboolean G_admin_admintest( gentity_t *ent )
