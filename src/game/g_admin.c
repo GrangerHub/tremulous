@@ -105,6 +105,11 @@ g_admin_cmd_t g_admin_cmds[ ] =
       "[^3mapname^7] (^5layout^7)"
     },
 
+    {"cpa", G_admin_cp, qfalse, "cpa",
+      "display a brief Center Print Announcement message to users, optionally specifying team(s) to send to",
+      "(^5-A|H|S^7) [^3message^7]"
+    },
+
     {"denybuild", G_admin_denybuild, qfalse, "denybuild",
       "take away a player's ability to build",
       "[^3name|slot#^7]"
@@ -235,6 +240,11 @@ g_admin_cmd_t g_admin_cmds[ ] =
     {"unmute", G_admin_mute, qfalse, "mute",
       "unmute a muted player",
       "[^3name|slot#^7]"
+    },
+
+    {"warn", G_admin_warn, qfalse, "warn",
+      "warn a player to correct their current activity",
+      "[^3name|slot#^7] [^3reason^7]"
     }
   };
 
@@ -2172,6 +2182,110 @@ qboolean G_admin_changemap( gentity_t *ent )
   AP( va( "print \"^3changemap: ^7map '%s' started by %s^7 %s\n\"", map,
           ( ent ) ? ent->client->pers.netname : "console",
           ( layout[ 0 ] ) ? va( "(forcing layout '%s')", layout ) : "" ) );
+  return qtrue;
+}
+
+qboolean G_admin_cp( gentity_t *ent )
+{
+  char     message[ 64 ];
+  char     arg[ 8 ];
+  int      team = -1;
+  int      i;
+  qboolean admin;
+
+  if( trap_Argc( ) < 2 )
+  {
+    ADMP( "^3cpa: ^7usage: cpa (-AHS) [message]\n" );
+    return qfalse;
+  }
+  trap_Argv( 1, arg, sizeof( arg ) );
+  if( arg[ 0 ] == '-' )
+  {
+    switch( arg[ 1 ] )
+    {
+      case 'a': case 'A':
+        team = TEAM_ALIENS;
+        break;
+      case 'h': case 'H':
+        team = TEAM_HUMANS;
+        break;
+      case 's': case 'S':
+        team = TEAM_NONE;
+        break;
+      default:
+        ADMP( "^3cpa: ^7team not recognized as -a -h or -s\n" );
+        return qfalse;
+    }
+    if( trap_Argc( ) < 2 )
+    {
+      ADMP( "^3cpa: ^7no message\n" );
+      return qfalse;
+    }
+    G_DecolorString( ConcatArgs( 2 ), message, sizeof( message ) );
+  }
+  else
+    G_DecolorString( ConcatArgs( 1 ), message, sizeof( message ) );
+
+  for( i = 0; i < level.maxclients; i++ )
+  {
+    if( level.clients[ i ].pers.connected != CON_CONNECTED )
+      continue;
+
+    admin = qfalse;
+    if( team < 0 || level.clients[ i ].pers.teamSelection == team ||
+        ( admin = G_admin_permission( &g_entities[ i ], ADMF_ADMINCHAT ) ) )
+    {
+      if( !admin )
+        trap_SendServerCommand( i, va( "cp \"^%s%s\"",
+          ( team < 0 ) ? "2" : "5", message ) );
+      trap_SendServerCommand( i, va( "print \"%s^3CPA: ^7%s%s^7%s%s%s: %c%s\n\"",
+        ( admin ) ? "[ADMIN] " : "",
+        ( team >= 0 ) ? "(" : "",
+        ( ent ) ? ent->client->pers.netname : "console",
+        ( team >= 0 ) ? ")" : "",
+        ( admin ) ? " to " : "",
+        ( admin ) ? BG_TeamName( team ) : "",
+        INDENT_MARKER,
+        message ) );
+    }
+  }
+
+  return qtrue;
+}
+
+qboolean G_admin_warn( gentity_t *ent )
+{
+  char      reason[ 64 ];
+  int       pids[ MAX_CLIENTS ], found;
+  char      name[ MAX_NAME_LENGTH ], err[ MAX_STRING_CHARS ];
+  gentity_t *vic;
+
+  if( trap_Argc() < 3 )
+  {
+    ADMP( va( "^3warn: ^7usage: warn [name|slot#] [reason]\n" ) );
+    return qfalse;
+  }
+  trap_Argv( 1, name, sizeof( name ) );
+  if( ( found = G_ClientNumbersFromString( name, pids, MAX_CLIENTS, qtrue ) ) != 1 )
+  {
+    ADMP( "^3warn: ^7only one recipient is allowed\n" );
+    return qfalse;
+  }
+  if( !admin_higher( ent, &g_entities[ pids[ 0 ] ] ) )
+  {
+    ADMP( "^3warn: ^7sorry, but your intended victim has a higher admin level than you\n" );
+    return qfalse;
+  }
+  vic = &g_entities[ pids[ 0 ] ];
+
+  G_DecolorString( ConcatArgs( 2 ), reason, sizeof( reason ) );
+  CPx( pids[ 0 ], va( "cp \"^1You have been warned by an administrator:\n^3%s\"",
+                      reason ) );
+  AP( va( "print \"^3warn: ^7%s^7 has been warned: '%s' by %s\n\"",
+          vic->client->pers.netname,
+          reason,
+          ( ent ) ? ent->client->pers.netname : "console" ) );
+
   return qtrue;
 }
 

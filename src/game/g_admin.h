@@ -168,6 +168,8 @@ qboolean G_admin_listadmins( gentity_t *ent );
 qboolean G_admin_listlayouts( gentity_t *ent );
 qboolean G_admin_listplayers( gentity_t *ent );
 qboolean G_admin_changemap( gentity_t *ent );
+qboolean G_admin_cp( gentity_t *ent );
+qboolean G_admin_warn( gentity_t *ent );
 qboolean G_admin_mute( gentity_t *ent );
 qboolean G_admin_denybuild( gentity_t *ent );
 qboolean G_admin_showbans( gentity_t *ent );
