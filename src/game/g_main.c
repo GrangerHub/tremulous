@@ -2185,7 +2185,10 @@ void G_Vote( gentity_t *ent, team_t team, qboolean voting )
   if( !voting && !( ent->client->pers.voted & ( 1 << team ) ) )
     return;
 
-  ent->client->pers.voted |= 1 << team;
+  if ( voting )
+    ent->client->pers.voted |= 1 << team;
+  else
+    ent->client->pers.voted &= ~( 1 << team );
 
   if( ent->client->pers.vote & ( 1 << team ) )
   {

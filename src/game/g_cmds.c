@@ -1788,8 +1788,21 @@ void Cmd_CallVote_f( gentity_t *ent )
     caller );
 
   ent->client->pers.namelog->voteCount++;
-  ent->client->pers.vote |= 1 << team;
-  G_Vote( ent, team, qtrue );
+
+  // Don't force the caller's vote
+  // ent->client->pers.vote |= 1 << team;
+  // G_Vote( ent, team, qtrue );
+}
+
+static char *G_GetVoteValueString(qboolean value)
+{
+  static char *s_yes = S_COLOR_GREEN "yes";
+  static char *s_no = S_COLOR_RED "no";
+
+  if( value )
+    return (s_yes);
+  else
+    return (s_no);
 }
 
 /*
@@ -1799,8 +1812,11 @@ Cmd_Vote_f
 */
 void Cmd_Vote_f( gentity_t *ent )
 {
-  char cmd[ MAX_TOKEN_CHARS ], vote[ MAX_TOKEN_CHARS ];
-  team_t team = ent->client->pers.teamSelection;
+  char      cmd[ MAX_TOKEN_CHARS ], voteStr[ MAX_TOKEN_CHARS ];
+  team_t    team = ent->client->pers.teamSelection;
+  qboolean  changeVote = qfalse;
+  qboolean  oldVote;
+  qboolean  vote;
 
   trap_Argv( 0, cmd, sizeof( cmd ) );
   if( Q_stricmp( cmd, "teamvote" ) )
@@ -1813,24 +1829,70 @@ void Cmd_Vote_f( gentity_t *ent )
     return;
   }
 
-  if( ent->client->pers.voted & ( 1 << team ) )
+  trap_Argv( 1, voteStr, sizeof( voteStr ) );
+  if( voteStr[ 0 ] == 'y' || voteStr[ 0 ] == 'Y' || voteStr[ 0 ] == '1' )
+    vote = qtrue;
+  else if( voteStr[ 0 ] == 'n' || voteStr[ 0 ] == 'N' || voteStr[ 0 ] == '0' )
+    vote = qfalse;
+  else
   {
     trap_SendServerCommand( ent-g_entities,
-      va( "print \"%s: vote already cast\n\"", cmd ) );
+      va( "print \"%s: unrecognized vote value: %s\n\"", cmd, vote ) );
     return;
   }
 
-  trap_SendServerCommand( ent-g_entities,
-    va( "print \"%s: vote cast\n\"", cmd ) );
+  if( ent->client->pers.voted & ( 1 << team ) )
+  {
+    changeVote = qtrue;
+    oldVote = ent->client->pers.vote & ( 1 << team );
 
-  trap_Argv( 1, vote, sizeof( vote ) );
-  if( vote[ 0 ] == 'y' )
+    if( oldVote == vote )
+    {
+      trap_SendServerCommand(
+        ent - g_entities,
+        va(
+          "print \"%s: vote already cast as %s\n\"",
+          cmd,
+          G_GetVoteValueString( oldVote )
+        )
+      );
+      return;
+    }
+    
+    // Remove old vote
+    G_Vote( ent, team, qfalse );
+  }
+
+  if( vote )
     ent->client->pers.vote |= 1 << team;
   else
     ent->client->pers.vote &= ~( 1 << team );
   G_Vote( ent, team, qtrue );
-}
 
+  if( changeVote )
+  {
+    trap_SendServerCommand(
+      ent - g_entities,
+      va(
+        "print \"%s: vote changed from %s" S_COLOR_WHITE " to %s\n\"",
+        cmd,
+        G_GetVoteValueString( oldVote ),
+        G_GetVoteValueString( ent->client->pers.vote & ( 1 << team ) )
+      )
+    );
+  }
+  else
+  {
+    trap_SendServerCommand(
+      ent - g_entities,
+      va(
+        "print \"%s: vote cast as %s\n\"",
+        cmd,
+        G_GetVoteValueString( ent->client->pers.vote & ( 1 << team ) )
+      )
+    );
+  }
+}
 
 /*
 =================
