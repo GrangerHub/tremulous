@@ -2087,6 +2087,9 @@ can see the last frag.
 */
 void CheckExitRules( void )
 {
+  qboolean  humansWin;
+  qboolean  aliensWin;
+
   // if at the intermission, wait for all non-bots to
   // signal ready, then go to next level
   if( level.intermissiontime )
@@ -2130,11 +2133,25 @@ void CheckExitRules( void )
     }
   }
 
-  if( level.uncondHumanWin ||
+  humansWin = level.uncondHumanWin ||
       ( !level.uncondAlienWin &&
         ( level.time > level.startTime + 1000 ) &&
         ( level.numAlienSpawns == 0 ) &&
-        ( level.numAlienClientsAlive == 0 ) ) )
+        ( level.numAlienClientsAlive == 0 ) );
+  aliensWin = level.uncondAlienWin ||
+           ( ( level.time > level.startTime + 1000 ) &&
+             ( level.numHumanSpawns == 0 ) &&
+             ( level.numHumanClientsAlive == 0 ) );
+
+  if ( humansWin && aliensWin)
+  {
+    // if strict equality happend: could happen with extreme sudden death
+    level.lastWin = TEAM_NONE;
+    trap_SendServerCommand( -1, "print \"Stalemate\n\"" );
+    trap_SetConfigstring( CS_WINNER, "Stalemate" );
+    LogExit( "Timelimit hit." );
+  }
+  else if( humansWin )
   {
     //humans win
     level.lastWin = TEAM_HUMANS;
@@ -2142,10 +2159,7 @@ void CheckExitRules( void )
     trap_SetConfigstring( CS_WINNER, "^5  Humans Win [human]" );
     LogExit( "Humans win." );
   }
-  else if( level.uncondAlienWin ||
-           ( ( level.time > level.startTime + 1000 ) &&
-             ( level.numHumanSpawns == 0 ) &&
-             ( level.numHumanClientsAlive == 0 ) ) )
+  else if( aliensWin )
   {
     //aliens win
     level.lastWin = TEAM_ALIENS;

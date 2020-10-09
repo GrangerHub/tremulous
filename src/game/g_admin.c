@@ -227,6 +227,7 @@ g_admin_cmd_t g_admin_cmds[ ] =
     {"time", G_admin_time, qtrue, "time",
       "show the current local server time",
       ""},
+
     {"transform", G_admin_transform, qfalse, "magic",
       "change a human player to a different player model",
       "[^3name|slot#^7] [^3player model^7]"
