@@ -204,7 +204,7 @@ void G_RunWeaponDrop (gentity_t *ent)
 //
 // Spawn an unusable weapon and toss it into the world.
 //
-gentity_t *LaunchDeadWeapon (gentity_t* client, weapon_t weap, vec3_t origin, vec3_t angles, vec3_t velocity)
+gentity_t *LaunchDeadWeapon (gentity_t* client, weapon_t weap, vec3_t origin, vec3_t velocity)
 {
     gentity_t   *dropped;
 
@@ -254,5 +254,5 @@ gentity_t *G_DropDeadWeapon (gentity_t *ent, weapon_t w)
     VectorScale( velocity, 150, velocity );
     velocity[2] += 50 + crandom() * 50;
 
-    return LaunchDeadWeapon( ent, w, ent->s.pos.trBase, angles, velocity );
+    return LaunchDeadWeapon( ent, w, ent->s.pos.trBase, velocity );
 }

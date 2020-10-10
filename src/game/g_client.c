@@ -465,6 +465,8 @@ static void G_SpawnCorpse( gentity_t *ent )
   VectorCopy( ent->s.apos.trBase, body->s.apos.trBase );
   VectorCopy( ent->s.apos.trBase, body->r.currentAngles );
   body->s.eFlags = EF_DEAD;
+  body->s.eFlags |= ( ent->s.eFlags & EF_BLOBLOCKED );
+  body->s.eFlags |= ( ent->s.eFlags & EF_POISONCLOUDED ); // Not currently used
   body->s.eType = ET_CORPSE;
   body->timestamp = level.time;
   body->s.event = 0;
@@ -472,6 +474,7 @@ static void G_SpawnCorpse( gentity_t *ent )
   body->clipmask = MASK_DEADSOLID;
   body->s.clientNum = ent->client->ps.stats[ STAT_CLASS ];
   body->nonSegModel = ent->client->ps.persistant[ PERS_STATE ] & PS_NONSEGMODEL;
+  body->s.modelindex = ent->s.modelindex;  // Communicate held items to the client
 
   if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
     body->classname = "humanCorpse";

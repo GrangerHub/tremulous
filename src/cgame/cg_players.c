@@ -2173,6 +2173,7 @@ void CG_Corpse( centity_t *cent )
   float         shadowPlane;
   vec3_t        origin, aliveZ, deadZ;
   float         scale;
+  int           held = es->modelindex;
 
   corpseNum = CG_GetCorpseNum( es->clientNum );
 
@@ -2243,7 +2244,11 @@ void CG_Corpse( centity_t *cent )
   if( !ci->nonsegmented )
   {
     legs.hModel = ci->legsModel;
-    legs.customSkin = ci->legsSkin;
+
+    if( held & ( 1 << UP_LIGHTARMOUR ) )
+      legs.customSkin = cgs.media.larmourLegsSkin;
+    else
+      legs.customSkin = ci->legsSkin;
   }
   else
   {
@@ -2286,7 +2291,10 @@ void CG_Corpse( centity_t *cent )
     if( !torso.hModel )
       return;
 
-    torso.customSkin = ci->torsoSkin;
+    if( held & ( 1 << UP_LIGHTARMOUR ) )
+      torso.customSkin = cgs.media.larmourTorsoSkin;
+    else
+      torso.customSkin = ci->torsoSkin;
 
     VectorCopy( origin, torso.lightingOrigin );
 
@@ -2304,7 +2312,10 @@ void CG_Corpse( centity_t *cent )
     if( !head.hModel )
       return;
 
-    head.customSkin = ci->headSkin;
+    if( held & ( 1 << UP_HELMET ) )
+      head.customSkin = cgs.media.larmourHeadSkin;
+    else
+      head.customSkin = ci->headSkin;
 
     VectorCopy( origin, head.lightingOrigin );
 
@@ -2314,6 +2325,13 @@ void CG_Corpse( centity_t *cent )
     head.renderfx = renderfx;
 
     trap_R_AddRefEntityToScene( &head );
+
+    //
+    // add the equipment
+    //
+
+    CG_PlayerUpgrades( cent, &torso );
+
   }
 }
 
