@@ -986,6 +986,15 @@ void poisonCloud( gentity_t *ent )
     if( humanPlayer->client &&
         humanPlayer->client->pers.teamSelection == TEAM_HUMANS )
     {
+      if( g_poisonProtection.integer )
+      {
+        if( BG_InventoryContainsUpgrade( UP_HELMET, humanPlayer->client->ps.stats ) )
+          continue;
+
+        if( BG_InventoryContainsUpgrade( UP_BATTLESUIT, humanPlayer->client->ps.stats ) )
+          continue;
+      }
+
       trap_Trace( &tr, muzzle, NULL, NULL, humanPlayer->r.currentOrigin,
                   humanPlayer->s.number, CONTENTS_SOLID );
 
