@@ -1520,6 +1520,7 @@ static void CG_DrawTeamStatus( rectDef_t *rect, float text_x, float text_y,
 {
   char  s[ MAX_TOKEN_CHARS ];
   float tx, ty;
+  int   fullHealth;
 
   if( cg.intermissionStarted )
     return;
@@ -1530,7 +1531,11 @@ static void CG_DrawTeamStatus( rectDef_t *rect, float text_x, float text_y,
   if( cg.snap->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
   {
     alienStates_t *alienStates = &cgs.alienStates;
-    int fullHealth = BG_Buildable(BA_A_OVERMIND)->health;
+
+    if( !alienStates->actived )
+      return;
+
+    fullHealth = BG_Buildable(BA_A_OVERMIND)->health;
     Com_sprintf( s, MAX_TOKEN_CHARS, "^7%s[overmind](%s%i/%i^7) [egg](%s%i^7) [granger](%s%i^7) [booster](%s%i^7)",
         alienStates->omBuilding ? "[upgrade]" : (alienStates->omHealth ? "" : "[!]"),
         ((alienStates->omHealth > fullHealth / 2) ? "^2" : ((alienStates->omHealth > fullHealth / 4) ? "^3" : "^1" )),
@@ -1547,7 +1552,11 @@ static void CG_DrawTeamStatus( rectDef_t *rect, float text_x, float text_y,
   else if( cg.snap->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
   {
     humanStates_t *humanStates = &cgs.humanStates;
-    int fullHealth = BG_Buildable(BA_H_REACTOR)->health;
+
+    if( !humanStates->actived )
+      return;
+
+    fullHealth = BG_Buildable(BA_H_REACTOR)->health;
     Com_sprintf( s, MAX_TOKEN_CHARS, "^7%s[reactor](%s%i/%i^7) [telenode](%s%i^7) [ckit](%s%i^7) [armoury](%s%i^7) [medstat](%s%i^7) [defcomp](%s%i^7)",
         (humanStates->rcBuilding ? "[upgrade]" : (humanStates->rcHealth ? "" : "[!]")),
         ((humanStates->rcHealth > fullHealth / 2) ? "^2" : ((humanStates->rcHealth > fullHealth / 4) ? "^3" : "^1" )),

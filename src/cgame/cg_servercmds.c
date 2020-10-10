@@ -158,16 +158,25 @@ static void CG_ParseAlienStates( void )
 
   if( alienStates[0] )
   {
+    state->actived = qtrue;
     sscanf( alienStates, "%d %d %d %d %d", &state->omBuilding, &state->omHealth,
         &state->spawns, &state->builders, &state->boosters );
   }
   else
-    state->omBuilding = state->omHealth = state->spawns = state->builders = state->boosters = 0;
+  {
+    // Fill up with mock data
+    state->actived = qfalse;
+    state->omBuilding = qfalse;
+    state->omHealth = 1;
+    state->spawns = 1;
+    state->builders = 1;
+    state->boosters = 1;
+  }
 }
 
 /*
 ==================
-CG_ParseAliensStates
+CG_ParseHumanStates
 ==================
 */
 static void CG_ParseHumanStates( void )
@@ -177,11 +186,21 @@ static void CG_ParseHumanStates( void )
 
   if( humanStates[0] )
   {
+    state->actived = qtrue;
     sscanf( humanStates, "%d %d %d %d %d %d %d", &state->rcBuilding, &state->rcHealth,
         &state->spawns, &state->builders, &state->armourys, &state->medicals, &state->computers );
   }
   else
-    state->rcBuilding = state->rcHealth = state->spawns = state->builders = state->armourys = state->medicals = 0;
+  {
+    // Fill up with mock data
+    state->actived = qfalse;
+    state->rcBuilding = qfalse;
+    state->rcHealth = 1;
+    state->spawns = 1;
+    state->builders = 1;
+    state->armourys = 1;
+    state->medicals = 1;
+  }
 }
 
 /*

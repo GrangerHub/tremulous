@@ -1113,22 +1113,24 @@ typedef struct
 // Teams status provided by the server, also a remplacement for /teamstatus
 typedef struct
 {
-  int omBuilding;
-  int omHealth;
-  int spawns;
-  int builders;
-  int boosters;
+  qboolean  actived;
+  int       omBuilding;
+  int       omHealth;
+  int       spawns;
+  int       builders;
+  int       boosters;
 } alienStates_t;
 
 typedef struct
 {
-  int rcBuilding;
-  int rcHealth;
-  int spawns;
-  int builders;
-  int armourys;
-  int medicals;
-  int computers;
+  qboolean  actived;
+  int       rcBuilding;
+  int       rcHealth;
+  int       spawns;
+  int       builders;
+  int       armourys;
+  int       medicals;
+  int       computers;
 } humanStates_t;
 
 qboolean  BG_WeaponIsFull( weapon_t weapon, int stats[ ], int ammo, int clips );
