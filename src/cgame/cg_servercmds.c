@@ -983,8 +983,10 @@ static void CG_Say( int clientNum, saymode_t mode, const char *text )
   if( clientNum >= 0 && clientNum < MAX_CLIENTS )
   {
     clientInfo_t *ci = &cgs.clientinfo[ clientNum ];
-    char         *tcolor = S_COLOR_WHITE;
-    char         *tbcolor = S_COLOR_YELLOW;
+    // char         *tcolor = S_COLOR_WHITE;
+    // char         *tbcolor = S_COLOR_YELLOW;
+    char         *tcolor = S_COLOR_SPECTATOR;
+    char         *tbcolor = S_COLOR_WHITE;
 
     name = ci->name;
 
@@ -993,13 +995,17 @@ static void CG_Say( int clientNum, saymode_t mode, const char *text )
 
     if( ci->team == TEAM_ALIENS )
     {
-      tcolor = S_COLOR_MAGENTA;
-      tbcolor = S_COLOR_RED;
+      // tcolor = S_COLOR_MAGENTA;
+      // tbcolor = S_COLOR_RED;
+      tcolor = S_COLOR_ALIEN;
+      tbcolor = S_COLOR_WHITE;
     }
     else if( ci->team == TEAM_HUMANS )
     {
-      tcolor = S_COLOR_CYAN;
-      tbcolor = S_COLOR_BLUE;
+      // tcolor = S_COLOR_CYAN;
+      // tbcolor = S_COLOR_BLUE;
+      tcolor = S_COLOR_HUMAN;
+      tbcolor = S_COLOR_WHITE;
     }
 
     if( cg_chatTeamPrefix.integer )
