@@ -335,7 +335,8 @@ static void CG_ConfigStringModified( void )
       sscanf( str, "%d %d %d", &cgs.alienStage, &cgs.alienCredits,
           &cgs.alienNextStageThreshold );
 
-      if( cgs.alienStage != oldAlienStage )
+      // Don't trigger on map restart
+      if( cgs.alienStage != oldAlienStage && oldAlienStage < cgs.alienStage )
         CG_AnnounceAlienStageTransistion( oldAlienStage, cgs.alienStage );
     }
     else
@@ -352,7 +353,8 @@ static void CG_ConfigStringModified( void )
       sscanf( str, "%d %d %d", &cgs.humanStage, &cgs.humanCredits,
           &cgs.humanNextStageThreshold );
 
-      if( cgs.humanStage != oldHumanStage )
+      // Don't trigger on map restart
+      if( cgs.humanStage != oldHumanStage && oldHumanStage < cgs.humanStage )
         CG_AnnounceHumanStageTransistion( oldHumanStage, cgs.humanStage );
     }
     else
