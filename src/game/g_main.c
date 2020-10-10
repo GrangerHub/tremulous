@@ -112,6 +112,7 @@ vmCvar_t  g_disabledBuildables;
 vmCvar_t  g_markDeconstruct;
 vmCvar_t  g_poisonProtection;
 vmCvar_t  g_dropWeapon;
+vmCvar_t  g_teamStatus;
 
 vmCvar_t  g_debugMapRotation;
 vmCvar_t  g_currentMapRotation;
@@ -257,6 +258,7 @@ static cvarTable_t   gameCvarTable[ ] =
   { &g_markDeconstruct, "g_markDeconstruct", "3", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qtrue  },
   { &g_poisonProtection, "g_poisonProtection", "0", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qtrue  },
   { &g_dropWeapon, "g_dropWeapon", "1", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qtrue  },
+  { &g_teamStatus, "g_teamStatus", "1", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qtrue  },
 
   { &g_debugMapRotation, "g_debugMapRotation", "0", 0, 0, qfalse  },
   { &g_currentMapRotation, "g_currentMapRotation", "-1", 0, 0, qfalse  }, // -1 = NOT_ROTATING
@@ -2611,7 +2613,8 @@ void G_RunFrame( int levelTime )
   {
     G_CalculateBuildPoints( );
     G_CalculateStages( );
-    G_CalculateStates( );
+    if( g_teamStatus.integer )
+      G_CalculateStates( );
     G_SpawnClients( TEAM_ALIENS );
     G_SpawnClients( TEAM_HUMANS );
     G_CalculateAvgPlayers( );

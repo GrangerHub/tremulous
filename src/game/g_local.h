@@ -1183,6 +1183,7 @@ extern  vmCvar_t  g_disabledBuildables;
 extern  vmCvar_t  g_markDeconstruct;
 extern  vmCvar_t  g_poisonProtection;
 extern  vmCvar_t  g_dropWeapon;
+extern  vmCvar_t  g_teamStatus;
 
 extern  vmCvar_t  g_debugMapRotation;
 extern  vmCvar_t  g_currentMapRotation;
