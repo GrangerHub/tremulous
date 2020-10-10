@@ -455,7 +455,7 @@ void SpectatorThink( gentity_t *ent, usercmd_t *ucmd )
     if( client->sess.spectatorState == SPECTATOR_LOCKED ||
         client->sess.spectatorState == SPECTATOR_FOLLOW )
       client->ps.pm_type = PM_FREEZE;
-    else if( client->noclip )
+    else if( client->noclip || g_specNoclip.integer)
       client->ps.pm_type = PM_NOCLIP;
     else
       client->ps.pm_type = PM_SPECTATOR;

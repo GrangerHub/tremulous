@@ -66,6 +66,7 @@ vmCvar_t  g_motd;
 vmCvar_t  g_synchronousClients;
 vmCvar_t  g_warmup;
 vmCvar_t  g_doWarmup;
+vmCvar_t  g_specNoclip;
 vmCvar_t  g_restarted;
 vmCvar_t  g_lockTeamsAtStart;
 vmCvar_t  g_logFile;
@@ -194,6 +195,7 @@ static cvarTable_t   gameCvarTable[ ] =
 
   { &g_warmup, "g_warmup", "10", CVAR_ARCHIVE, 0, qtrue  },
   { &g_doWarmup, "g_doWarmup", "0", CVAR_ARCHIVE, 0, qtrue  },
+  { &g_specNoclip, "g_specNoclip", "0", CVAR_ARCHIVE, 0, qtrue  },
   { &g_logFile, "g_logFile", "games.log", CVAR_ARCHIVE, 0, qfalse  },
   { &g_logFileSync, "g_logFileSync", "0", CVAR_ARCHIVE, 0, qfalse  },
 
@@ -256,9 +258,9 @@ static cvarTable_t   gameCvarTable[ ] =
   { &g_floodMinTime, "g_floodMinTime", "2000", CVAR_ARCHIVE, 0, qfalse  },
 
   { &g_markDeconstruct, "g_markDeconstruct", "3", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qtrue  },
-  { &g_poisonProtection, "g_poisonProtection", "0", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qtrue  },
-  { &g_dropWeapon, "g_dropWeapon", "1", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qtrue  },
-  { &g_teamStatus, "g_teamStatus", "1", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qtrue  },
+  { &g_poisonProtection, "g_poisonProtection", "0", CVAR_ARCHIVE, 0, qtrue  },
+  { &g_dropWeapon, "g_dropWeapon", "1", CVAR_ARCHIVE, 0, qtrue  },
+  { &g_teamStatus, "g_teamStatus", "1", CVAR_ARCHIVE, 0, qtrue  },
 
   { &g_debugMapRotation, "g_debugMapRotation", "0", 0, 0, qfalse  },
   { &g_currentMapRotation, "g_currentMapRotation", "-1", 0, 0, qfalse  }, // -1 = NOT_ROTATING
