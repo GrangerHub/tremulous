@@ -1351,17 +1351,18 @@ Cmd_CallVote_f
 */
 void Cmd_CallVote_f( gentity_t *ent )
 {
-  char   cmd[ MAX_TOKEN_CHARS ],
-         vote[ MAX_TOKEN_CHARS ],
-         arg[ MAX_TOKEN_CHARS ],
-         extra[ MAX_TOKEN_CHARS ];
-  char   name[ MAX_NAME_LENGTH ] = "";
-  char   caller[ MAX_NAME_LENGTH ] = "";
-  char   reason[ MAX_TOKEN_CHARS ];
-  char   *creason;
-  int    clientNum = -1;
-  int    id = -1;
-  team_t team;
+  char    cmd[ MAX_TOKEN_CHARS ],
+          vote[ MAX_TOKEN_CHARS ],
+          arg[ MAX_TOKEN_CHARS ],
+          extra[ MAX_TOKEN_CHARS ];
+  char    name[ MAX_NAME_LENGTH ] = "";
+  char    caller[ MAX_NAME_LENGTH ] = "";
+  char    reason[ MAX_TOKEN_CHARS ];
+  char    *creason;
+  int     clientNum = -1;
+  int     id = -1;
+  team_t  team;
+  char    currentmap[ MAX_QPATH ];
 
   trap_Argv( 0, cmd, sizeof( cmd ) );
   trap_Argv( 1, vote, sizeof( vote ) );
@@ -1369,6 +1370,8 @@ void Cmd_CallVote_f( gentity_t *ent )
   trap_Argv( 3, extra, sizeof( extra ) );
   creason = ConcatArgs( 3 );
   G_DecolorString( creason, reason, sizeof( reason ) );
+
+  trap_Cvar_VariableStringBuffer( "mapname", currentmap, sizeof( currentmap ) );
 
   if( !Q_stricmp( cmd, "callteamvote" ) )
     team = ent->client->pers.teamSelection;
@@ -1532,26 +1535,25 @@ void Cmd_CallVote_f( gentity_t *ent )
         sizeof( level.voteDisplayString[ team ] ),
         "Unmute player '%s'", name );
     }
-    else if( !Q_stricmp( vote, "map_restart" ) )
+    else if( !Q_stricmp( vote, "map_restart" ) || ( !Q_stricmp( vote, "map" ) && !Q_stricmp( currentmap, arg ) ) )
     {
-      if( arg[ 0 ] )
-      {
-        char map[ MAX_QPATH ];
-        trap_Cvar_VariableStringBuffer( "mapname", map, sizeof( map ) );
+      char  *layout = !Q_stricmp( vote, "map" ) ? extra : arg;
 
-        if( !G_LayoutExists( map, arg ) )
+      if( layout[ 0 ] )
+      {
+        if( !G_LayoutExists( currentmap, arg ) )
         {
           trap_SendServerCommand( ent-g_entities,
             va( "print \"%s: layout '%s' does not exist for map '%s'\n\"",
-              cmd, arg, map ) );
+              cmd, layout, currentmap ) );
           return;
         }
       }
 
       Com_sprintf( level.voteDisplayString[ team ], sizeof( level.voteDisplayString[ team ] ),
-        "Restart the current map%s", arg[ 0 ] ? va( " with layout '%s'", arg ) : "" );
+        "Restart the current map%s", layout[ 0 ] ? va( " with layout '%s'", layout ) : "" );
       Com_sprintf( level.voteString[ team ], sizeof( level.voteString[ team ] ),
-        "set g_nextMap \"\" ; set g_nextLayout \"%s\" ; %s", arg, vote );
+        "set g_nextMap \"\" ; set g_nextLayout \"%s\" ; map_restart", layout );
       // map_restart comes with a default delay
     }
     else if( !Q_stricmp( vote, "map" ) )
