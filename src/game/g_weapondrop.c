@@ -197,3 +197,62 @@ void G_RunWeaponDrop (gentity_t *ent)
 
     G_BounceMissile( ent, &tr );
 }
+
+
+//
+// Launch Dead Weapon
+//
+// Spawn an unusable weapon and toss it into the world.
+//
+gentity_t *LaunchDeadWeapon (gentity_t* client, weapon_t weap, vec3_t origin, vec3_t angles, vec3_t velocity)
+{
+    gentity_t   *dropped;
+
+    dropped = G_Spawn();
+
+    dropped->s.eType = ET_WEAPON_DROP;  // Used for compatiblity with old version
+    dropped->s.eFlags = EF_DEAD;  // But this flag permit to make a difference between "dead" and "gettable" item
+    dropped->s.modelindex = weap; // store weapon number in modelindex
+
+    dropped->classname = BG_Weapon(weap)->name;
+    dropped->timestamp = level.time;
+    dropped->s.event = 0;
+    dropped->r.contents = CONTENTS_CORPSE;
+    dropped->clipmask = MASK_DEADSOLID;
+    dropped->s.angles[YAW] = client->s.apos.trBase[YAW] + 30;
+    dropped->s.angles[ROLL] = 90;
+
+    G_SetOrigin( dropped, origin );
+    dropped->s.pos.trType = TR_GRAVITY;
+    dropped->s.pos.trTime = level.time;
+    VectorCopy( velocity, dropped->s.pos.trDelta );
+
+    dropped->s.eFlags |= EF_BOUNCE_HALF;
+    dropped->think = G_BodySink;
+    dropped->nextthink = level.time + 20000;
+
+    trap_LinkEntity (dropped);
+
+    return dropped;
+}
+
+//
+// Drop Dead Weapon
+//
+// Spawns an unusable weapon with corpse
+//
+gentity_t *G_DropDeadWeapon (gentity_t *ent, weapon_t w)
+{
+    vec3_t  velocity;
+    vec3_t  angles;
+
+    // set aiming directions
+    VectorCopy( ent->s.apos.trBase, angles );
+    angles[PITCH] = 0;  // always forward
+
+    AngleVectors( angles, velocity, NULL, NULL );
+    VectorScale( velocity, 150, velocity );
+    velocity[2] += 50 + crandom() * 50;
+
+    return LaunchDeadWeapon( ent, w, ent->s.pos.trBase, angles, velocity );
+}

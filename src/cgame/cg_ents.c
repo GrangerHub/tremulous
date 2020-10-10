@@ -438,6 +438,69 @@ static void CG_WeaponDrop( centity_t *cent )
 #endif
 }
 
+/*
+==================
+CG_DeadWeaponDrop
+==================
+*/
+static void CG_DeadWeaponDrop( centity_t *cent )
+{
+	refEntity_t		ent;
+	entityState_t	*es;
+	weaponInfo_t	*wi;
+
+	es = &cent->currentState;
+
+  if (BG_Weapon(es->modelindex) == WP_NONE)
+  {
+      CG_Printf("Bad weapon index %i on entity", es->modelindex);
+      return;
+  }
+
+	// if set to invisible, skip
+	if (es->eFlags & EF_NODRAW)
+		return;
+
+	// cent->lerpOrigin[2] += 4 + cos( ( cg.time + 1000 ) *  scale ) * 4;
+
+	memset (&ent, 0, sizeof(ent));
+
+  AnglesToAxis( es->angles, ent.axis );
+
+  wi = &cg_weapons[ es->modelindex ];
+
+	// the weapons have their origin where they attatch to player
+	// models, so we need to offset them or they will rotate
+	// eccentricly
+
+	cent->lerpOrigin[0] -= wi->weaponMidpoint[0] * ent.axis[0][0]
+                         + wi->weaponMidpoint[1] * ent.axis[1][0]
+                         + wi->weaponMidpoint[2] * ent.axis[2][0];
+	cent->lerpOrigin[1] -= wi->weaponMidpoint[0] * ent.axis[0][1]
+               			 + wi->weaponMidpoint[1] * ent.axis[1][1]
+               			 + wi->weaponMidpoint[2] * ent.axis[2][1];
+	cent->lerpOrigin[2] -= wi->weaponMidpoint[0] * ent.axis[0][2]
+            			 + wi->weaponMidpoint[1] * ent.axis[1][2]
+            			 + wi->weaponMidpoint[2] * ent.axis[2][2];
+	cent->lerpOrigin[2] += 8;	// an extra height boost
+
+	ent.hModel = wi->weaponModel;
+
+	cent->lerpOrigin[2] -= 6;	// adjust side face offset rhougly
+	VectorCopy( cent->lerpOrigin, ent.origin);
+	VectorCopy( cent->lerpOrigin, ent.oldorigin);
+
+	ent.nonNormalizedAxes = qfalse; // ... ?
+
+	// items without glow textures need to keep a minimum light value
+	// so they are always visible
+	ent.renderfx |= RF_LIGHTING_ORIGIN;
+
+
+	// add to refresh list
+	trap_R_AddRefEntityToScene(&ent);
+}
+
 
 /*
 ==================
@@ -1207,7 +1270,10 @@ static void CG_AddCEntity( centity_t *cent )
       break;
 
     case ET_WEAPON_DROP:
-      CG_WeaponDrop( cent );
+      if ( cent->currentState.eFlags & EF_DEAD )
+        CG_DeadWeaponDrop( cent );
+      else
+        CG_WeaponDrop( cent );
       break;
 
     case ET_CORPSE:

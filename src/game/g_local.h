@@ -993,6 +993,7 @@ void      respawn( gentity_t *ent );
 void      BeginIntermission( void );
 void      ClientSpawn( gentity_t *ent, gentity_t *spawn, const vec3_t origin, const vec3_t angles );
 void      player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int mod );
+void      G_BodySink( gentity_t *ent );
 qboolean  SpotWouldTelefrag( gentity_t *spot );
 
 //
@@ -1015,6 +1016,9 @@ void FireWeapon3( gentity_t *ent );
 gentity_t *LaunchWeapon( gentity_t *client, weapon_t weap, vec3_t origin, vec3_t velocity );
 gentity_t *G_DropWeapon( gentity_t *ent, weapon_t w, float angle );
 void G_RunWeaponDrop(gentity_t *ent);
+gentity_t *LaunchDeadWeapon (gentity_t* client, weapon_t weap, vec3_t origin, vec3_t angles, vec3_t velocity);
+gentity_t *G_DropDeadWeapon( gentity_t *ent, weapon_t w );
+void G_RunDeadWeaponDrop(gentity_t *ent);
 
 //
 // g_main.c

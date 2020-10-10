@@ -2558,7 +2558,10 @@ void G_RunFrame( int levelTime )
 
     if ( ent->s.eType == ET_WEAPON_DROP )
     {
-      G_RunWeaponDrop( ent );
+      if ( ent->s.eFlags & EF_DEAD )
+        G_Physics( ent, msec );
+      else
+       G_RunWeaponDrop( ent );
       continue;
     }
 

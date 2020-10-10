@@ -409,12 +409,12 @@ BODYQUE
 
 /*
 =============
-BodySink
+G_BodySink
 
 After sitting around for five seconds, fall into the ground and dissapear
 =============
 */
-static void BodySink( gentity_t *ent )
+void G_BodySink( gentity_t *ent )
 {
   //run on first BodySink call
   if( !ent->active )
@@ -432,20 +432,20 @@ static void BodySink( gentity_t *ent )
     return;
   }
 
-  ent->nextthink = level.time + 100;
-  ent->s.pos.trBase[ 2 ] -= 1;
+  ent->nextthink = level.time + 33;
+  ent->s.pos.trBase[ 2 ] -= 0.33;
 }
 
 
 /*
 =============
-SpawnCorpse
+G_SpawnCorpse
 
 A player is respawning, so make an entity that looks
 just like the existing corpse to leave behind.
 =============
 */
-static void SpawnCorpse( gentity_t *ent )
+static void G_SpawnCorpse( gentity_t *ent )
 {
   gentity_t   *body;
   int         contents;
@@ -480,7 +480,7 @@ static void SpawnCorpse( gentity_t *ent )
 
   body->s.misc = MAX_CLIENTS;
 
-  body->think = BodySink;
+  body->think = G_BodySink;
   body->nextthink = level.time + 20000;
 
   body->s.legsAnim = ent->s.legsAnim;
@@ -578,7 +578,7 @@ void respawn( gentity_t *ent )
 {
   int i;
 
-  SpawnCorpse( ent );
+  G_SpawnCorpse( ent );
 
   // Clients can't respawn - they must go through the class cmd
   ent->client->pers.classSelection = PCL_NONE;
