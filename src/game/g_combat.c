@@ -246,7 +246,10 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
   if( level.intermissiontime )
     return;
 
-  G_DropDeadWeapon( self, self->s.weapon );
+  if( g_dropWeapon.integer == 1 )
+    G_DropDeadWeapon( self, self->s.weapon );
+  else if( g_dropWeapon.integer == 2 )
+    G_DropWeapon( self, self->s.weapon, 0 );
 
   self->client->ps.pm_type = PM_DEAD;
   self->suicideTime = 0;
