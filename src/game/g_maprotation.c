@@ -873,8 +873,9 @@ Send commands to the server to actually change the map
 */
 static void G_IssueMapChange( int index, int rotation )
 {
-  node_t *node = mapRotations.rotations[ rotation ].nodes[ index ];
-  map_t  *map = &node->u.map;
+  char    currentmap[ MAX_CVAR_VALUE_STRING ];
+  node_t  *node = mapRotations.rotations[ rotation ].nodes[ index ];
+  map_t   *map = &node->u.map;
 
   // allow a manually defined g_nextLayout setting to override the maprotation
   if( !g_nextLayout.string[ 0 ] && map->layouts[ 0 ] )
@@ -884,7 +885,12 @@ static void G_IssueMapChange( int index, int rotation )
 
   G_MapConfigs( map->name );
 
-  trap_SendConsoleCommand( EXEC_APPEND, va( "map \"%s\"\n", map->name ) );
+  // Fast loading if map is same
+  trap_Cvar_VariableStringBuffer( "mapname", currentmap, sizeof( currentmap ) );
+  if( !Q_stricmp( currentmap, map->name ) )
+    trap_SendConsoleCommand( EXEC_APPEND, va( "map_restart\n" ) );
+  else
+    trap_SendConsoleCommand( EXEC_APPEND, va( "map \"%s\"\n", map->name ) );
 
   if( strlen( map->postCommand ) > 0 )
     trap_SendConsoleCommand( EXEC_APPEND, map->postCommand );
