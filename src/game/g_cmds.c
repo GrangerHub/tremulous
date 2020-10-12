@@ -3698,6 +3698,296 @@ void Cmd_Damage_f( gentity_t *ent )
 }
 
 /*
+=================
+Cmd_Share_f
+=================
+*/
+void Cmd_Share_f( gentity_t *ent )
+{
+  char    receiver[ MAX_STRING_TOKENS ];
+  char    amount[ MAX_STRING_TOKENS ];
+  char    err[ MAX_STRING_TOKENS ];
+  int     clientNum = 0;
+  double   creds;
+  team_t  team;
+  char    *creditsName;
+  double  transactionValue;
+  float   destCreds;
+  float   ownCreds;
+    
+  if( !g_allowShare.integer )
+  {
+    ADMP("^3share: ^7Share has been disabled.\n");
+    return;
+  }
+
+  if( trap_Argc() < 2 )
+  {
+    ADMP("^3share: ^7usage: share [name|slot#] [amount]\n");
+    return;
+  }
+ 
+  trap_Argv(1, receiver, sizeof(receiver));
+  trap_Argv(2, amount, sizeof(amount));
+
+  team = ent->client->pers.teamSelection;
+  creds = atof(amount);
+  clientNum = G_ClientNumberFromString( receiver, err, sizeof( err ) );
+
+  // convert input creds into evos
+  if( team == TEAM_ALIENS )
+    creds *= ALIEN_CREDITS_PER_KILL;
+  
+  if( clientNum == -1 )
+  {
+    ADMP( va( "^3share: ^7%s\n", err ) );
+    return;
+  }
+ 
+  // verify target player team
+  if( level.clients[ clientNum ].pers.teamSelection != team )
+  {
+    ADMP("^3share: ^7not a valid player of your team.\n" );
+    return;
+  }
+
+  // player specified "0" or negative to transfer
+  if( creds <= 0 )
+  {
+    ADMP("^3share: ^7amount must be superior than zero.\n");
+    return;
+  }
+
+  // transfer only credits the player really has
+  ownCreds = ent->client->ps.persistant[ PERS_CREDIT ];
+  if( creds > ownCreds )
+  {
+    creds = ownCreds;
+  }
+
+  // player has no credits
+  if( creds <= 0 )
+  {
+    ADMP("^3share: ^7get some credits first.\n");
+    return;
+  }
+
+  if( team == TEAM_ALIENS )
+    creditsName = "evos";
+  else
+    creditsName = "credits";
+ 
+  // allow transfers only up to the credit/evo limit
+  destCreds = level.clients[ clientNum ].ps.persistant[ PERS_CREDIT ];
+  if( ( team == TEAM_HUMANS ) && ( creds > HUMAN_MAX_CREDITS - destCreds ) )
+    creds = HUMAN_MAX_CREDITS - destCreds;
+  else if( ( team == TEAM_ALIENS ) && ( creds > ALIEN_MAX_CREDITS - destCreds ) )
+    creds = ALIEN_MAX_CREDITS - destCreds;
+ 
+  // target cannot take any more credits
+  if( creds <= 0 )
+  {
+    ADMP("^3share: ^7player cannot receive any more credits.\n");
+    return;
+  }
+ 
+  // transfer credits
+  ent->client->ps.persistant[ PERS_CREDIT ] -= creds;
+  level.clients[ clientNum ].ps.persistant[ PERS_CREDIT ] += creds;
+
+  // inform about the transaction
+  // %g flag have currently some issues
+  if( team == TEAM_ALIENS )
+    transactionValue = creds / (double)ALIEN_CREDITS_PER_KILL;
+  else
+    transactionValue = creds;
+  ADMP(
+    va(
+      "^3share: ^7transferred %.3g %s to %s^7.\n",
+      transactionValue,
+      creditsName,
+      level.clients[ clientNum ].pers.netname 
+    )
+  );
+  trap_SendServerCommand(
+    clientNum,
+    va(
+      "print \"^3share: ^7you have received %0.3g %s from %s^7.\n\"",
+      transactionValue,
+      creditsName,
+      ent->client->pers.netname
+    )
+  );
+
+  G_LogPrintf(
+    "Share: %i %i %i %.3g: %s^7 transferred %.3g credits to %s^7\n",
+    ent->client->ps.clientNum,
+    clientNum,
+    team,
+    creds,
+    ent->client->pers.netname,
+    creds,
+    level.clients[ clientNum ].pers.netname
+  );
+ }
+ 
+ /*
+ =================
+ Cmd_Donate_f
+ 
+ Alms for the poor
+ =================
+ */
+ void Cmd_Donate_f( gentity_t *ent )
+ {
+  team_t    team;
+  char      amount_str[ MAX_STRING_TOKENS ];
+  int       amount;
+  int       max;
+  int       divisor;
+  char      *creditsName;
+  int       i;
+  int       portion, new_credits, total=0;
+  int       *amounts;
+  qboolean  donated = qtrue;
+  double    transactionValue;
+ 
+  if( !ent->client ) return;
+
+  if( !g_allowShare.integer )
+  {
+    ADMP("^3donate: ^7Share has been disabled.\n");
+    return;
+  }
+
+  if( trap_Argc() < 1 )
+  {
+    ADMP("^3donate: ^7usage: donate [amount]\n");
+    return;
+  }
+ 
+  trap_Argv(1, amount_str, sizeof(amount_str));
+  team = ent->client->pers.teamSelection;
+ 
+  if( team == TEAM_ALIENS )
+  {
+    creditsName = "evos";
+    amount = atof(amount_str) * (double)ALIEN_CREDITS_PER_KILL;
+    divisor = level.numAlienClients - 1;
+    max = ALIEN_MAX_CREDITS;
+  }
+  else if( team == TEAM_HUMANS )
+  {
+    creditsName = "credits";
+    amount = atoi(amount_str);
+    divisor = level.numHumanClients - 1;
+    max = HUMAN_MAX_CREDITS;
+  }
+  else
+  {
+    ADMP("^3donate: ^7unrecognized team.\n");
+    return;
+  }
+
+ 
+  if( divisor < 1 )
+  {
+    ADMP("^3donate: ^7you haven't any teammates.\n");
+    return;
+  }
+ 
+  if( amount <= 0 )
+  {
+    ADMP("^3donate: ^7amount must be superior than zero.\n");
+    return;
+  }
+
+  if( amount > ent->client->ps.persistant[ PERS_CREDIT ] )
+    amount = ent->client->ps.persistant[ PERS_CREDIT ];
+ 
+  // allocate and initialize memory for distribution amounts
+  amounts = BG_Alloc( level.maxclients * sizeof( int ) );
+  memset(amounts, 0, level.maxclients * sizeof( int ));
+ 
+  // determine donation amounts for each client
+  total = amount;
+  while( donated && amount )
+  {
+    donated = qfalse;
+    portion = amount / divisor;
+    if( portion < 1 )
+      portion = 1;
+    for( i = 0; i < level.maxclients; i++ )
+    {
+      if( level.clients[ i ].pers.connected == CON_CONNECTED &&
+          ent->client != level.clients + i &&
+          level.clients[ i ].pers.teamSelection == ent->client->pers.teamSelection )
+        {
+        new_credits = level.clients[ i ].ps.persistant[ PERS_CREDIT ] + portion;
+        amounts[ i ] = portion;
+        if( new_credits > max )
+        {
+          amounts[ i ] -= new_credits - max;
+          new_credits = max;
+        }
+        if( amounts[ i ] )
+        {
+          level.clients[ i ].ps.persistant[ PERS_CREDIT ] = new_credits;
+          donated = qtrue;
+          amount -= amounts[ i ];
+          if( amount < portion )
+            break;
+        }
+      }
+    }
+  }
+ 
+  // transfer funds
+  G_AddCreditToClient( ent->client, amount - total, qtrue );
+  for( i = 0; i < level.maxclients; i++ )
+  {
+    if( amounts[ i ] )
+    {
+      if( team == TEAM_ALIENS )
+        transactionValue = (double)( amounts[ i ] ) / (double)ALIEN_CREDITS_PER_KILL;
+      else
+        transactionValue = amounts[ i ];
+      trap_SendServerCommand(
+        i,
+        va(
+          "print \"^3donate: ^7%s^7 donated %.3g %s to you, don't forget to say 'thank you'!\n\"",
+          ent->client->pers.netname,
+          trap_SendServerCommand,
+          creditsName
+        )
+      );
+    }
+  }
+  if( team == TEAM_ALIENS )
+    transactionValue = (double)( total - amount ) / (double)ALIEN_CREDITS_PER_KILL;
+  else
+    transactionValue = total - amount;
+  ADMP(
+    va(
+      "^3donate: ^7donated %.3g %s to the cause.\n",
+      transactionValue,
+      creditsName
+    )
+  );
+  G_LogPrintf(
+    "Donate: %i %i %.3g: %s^7 donated %.3g credits^7\n",
+    ent->client->ps.clientNum,
+    team,
+    transactionValue,
+    ent->client->pers.netname,
+    transactionValue
+  );
+
+  BG_Free( amounts );
+}
+
+
+/*
 ==================
 G_FloodLimited
 
@@ -3743,6 +4033,7 @@ commands_t cmds[ ] = {
   { "damage", CMD_CHEAT|CMD_ALIVE, Cmd_Damage_f },
   { "deconstruct", CMD_TEAM|CMD_ALIVE, Cmd_Destroy_f },
   { "destroy", CMD_CHEAT|CMD_TEAM|CMD_ALIVE, Cmd_Destroy_f },
+  { "donate", CMD_TEAM, Cmd_Donate_f },
   { "drop", CMD_HUMAN|CMD_CHEAT, Cmd_Drop_f },
   { "follow", CMD_SPEC, Cmd_Follow_f },
   { "follownext", CMD_SPEC, Cmd_FollowCycle_f },
@@ -3772,6 +4063,7 @@ commands_t cmds[ ] = {
   { "score", CMD_INTERMISSION, ScoreboardMessage },
   { "sell", CMD_HUMAN|CMD_ALIVE, Cmd_Sell_f },
   { "setviewpos", CMD_CHEAT_TEAM, Cmd_SetViewpos_f },
+  { "share", CMD_TEAM, Cmd_Share_f },
   { "team", 0, Cmd_Team_f },
   { "teamvote", CMD_TEAM, Cmd_Vote_f },
   { "test", CMD_CHEAT, Cmd_Test_f },
