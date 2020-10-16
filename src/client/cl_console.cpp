@@ -32,7 +32,7 @@ int g_console_field_width = 78;
 
 #define	NUM_CON_TIMES 4
 
-#define		CON_TEXTSIZE	163840
+#define		CON_TEXTSIZE	40000  // reduced to avoid stack overflow
 typedef struct {
 	bool		initialized;
 
