@@ -277,6 +277,7 @@ void  trap_S_StopLoopingSound( int entityNum )
   syscall( CG_S_STOPLOOPINGSOUND, entityNum );
 }
 
+#ifndef MODULE_INTERFACE_11
 void  trap_IN_HapticFeedbackEffect( float strength, uint32_t length )
 {
   syscall( CG_IN_HAPTICFEEDBACKEFFECT, PASSFLOAT( strength ), length );
@@ -291,6 +292,7 @@ void  trap_IN_StopHapticEffect( int id )
 {
   syscall( CG_IN_STOPHAPTICEFFECT, id );
 }
+#endif
 
 void  trap_S_UpdateEntityPosition( int entityNum, const vec3_t origin )
 {

@@ -2135,4 +2135,17 @@ qboolean trap_Key_GetOverstrikeMode( void )
 {
   return keyOverstrikeMode;
 }
+
+void  trap_IN_HapticFeedbackEffect( float strength, uint32_t length )
+{
+}
+
+void  trap_IN_RunHapticEffect( int id )
+{
+}
+
+void  trap_IN_StopHapticEffect( int id )
+{
+}
+
 #endif
