@@ -277,6 +277,7 @@ void  trap_S_StopLoopingSound( int entityNum )
   syscall( CG_S_STOPLOOPINGSOUND, entityNum );
 }
 
+#ifndef MODULE_INTERFACE_11
 void  trap_IN_HapticFeedbackEffect( float strength, uint32_t length )
 {
   syscall( CG_IN_HAPTICFEEDBACKEFFECT, PASSFLOAT( strength ), length );
@@ -291,6 +292,7 @@ void  trap_IN_StopHapticEffect( int id )
 {
   syscall( CG_IN_STOPHAPTICEFFECT, id );
 }
+#endif
 
 void  trap_S_UpdateEntityPosition( int entityNum, const vec3_t origin )
 {
@@ -349,10 +351,12 @@ void trap_R_RegisterFont( const char *fontName, int pointSize, fontInfo_t *font 
   syscall(CG_R_REGISTERFONT, fontName, pointSize, font );
 }
 
+#ifndef MODULE_INTERFACE_11
 void trap_R_RegisterNewFont( const char *fontName, const char *name, int pointSize, newFontInfo_t *font )
 {
   syscall(CG_R_REGISTERNEWFONT, fontName, name, pointSize, font );
 }
+#endif
 
 void  trap_R_ClearScene( void )
 {
@@ -418,11 +422,13 @@ void  trap_R_DrawStretchPic( float x, float y, float w, float h,
            PASSFLOAT(s1), PASSFLOAT(t1), PASSFLOAT(s2), PASSFLOAT(t2), hShader );
 }
 
+#ifndef MODULE_INTERFACE_11
 void  trap_R_BackgroundBlur( float x, float y, float w, float h, float amount )
 {
   syscall( CG_R_BACKGROUNDBLUR, PASSFLOAT(x), PASSFLOAT(y),
            PASSFLOAT(w), PASSFLOAT(h), PASSFLOAT(amount) );
 }
+#endif
 
 void  trap_R_ModelBounds( clipHandle_t model, vec3_t mins, vec3_t maxs ) {
   syscall( CG_R_MODELBOUNDS, model, mins, maxs );

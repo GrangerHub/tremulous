@@ -6814,4 +6814,8 @@ void UI_UpdateGithubRelease()
 void trap_R_SetClipRegion(const float *region) {}
 
 qboolean trap_GetNews(qboolean force) { return qtrue; }
+
+void trap_R_RegisterNewFont( const char *fontName, const char *name, int pointSize, newFontInfo_t *font ) {}
+
+void  trap_R_BackgroundBlur( float x, float y, float w, float h, float amount ) {}
 #endif

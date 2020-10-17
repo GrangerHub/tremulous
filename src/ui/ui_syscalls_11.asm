@@ -85,8 +85,7 @@ equ trap_LAN_ServerIsVisible          -82
 equ trap_LAN_CompareServers           -83
 equ trap_FS_Seek                      -84
 equ trap_SetPbClStatus                -85
-equ trap_R_RegisterNewFont            -86
-equ trap_R_BackgroundBlur             -87
+
 
 equ memset                            -101
 equ memcpy                            -102
