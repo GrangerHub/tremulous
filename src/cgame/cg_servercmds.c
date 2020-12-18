@@ -151,38 +151,38 @@ static void CG_ParseWarmup( void )
 CG_ParseAlienStates
 ==================
 */
-static void CG_ParseAlienStates( void )
-{
-  const char *alienStates = CG_ConfigString( CS_ALIEN_STATUS );
-  alienStates_t *state = &cgs.alienStates;
+// static void CG_ParseAlienStates( void )
+// {
+//   const char *alienStates = CG_ConfigString( CS_ALIEN_STATUS );
+//   alienStates_t *state = &cgs.alienStates;
 
-  if( alienStates[0] )
-  {
-    sscanf( alienStates, "%d %d %d %d %d", &state->omBuilding, &state->omHealth,
-        &state->spawns, &state->builders, &state->boosters );
-  }
-  else
-    state->omBuilding = state->omHealth = state->spawns = state->builders = state->boosters = 0;
-}
+//   if( alienStates[0] )
+//   {
+//     sscanf( alienStates, "%d %d %d %d %d", &state->omBuilding, &state->omHealth,
+//         &state->spawns, &state->builders, &state->boosters );
+//   }
+//   else
+//     state->omBuilding = state->omHealth = state->spawns = state->builders = state->boosters = 0;
+// }
 
 /*
 ==================
-CG_ParseAliensStates
+CG_ParseHumanStates
 ==================
 */
-static void CG_ParseHumanStates( void )
-{
-  const char *humanStates = CG_ConfigString( CS_HUMAN_STATUS );
-  humanStates_t *state = &cgs.humanStates;
+// static void CG_ParseHumanStates( void )
+// {
+//   const char *humanStates = CG_ConfigString( CS_HUMAN_STATUS );
+//   humanStates_t *state = &cgs.humanStates;
 
-  if( humanStates[0] )
-  {
-    sscanf( humanStates, "%d %d %d %d %d %d %d", &state->rcBuilding, &state->rcHealth,
-        &state->spawns, &state->builders, &state->armourys, &state->medicals, &state->computers );
-  }
-  else
-    state->rcBuilding = state->rcHealth = state->spawns = state->builders = state->armourys = state->medicals = 0;
-}
+//   if( humanStates[0] )
+//   {
+//     sscanf( humanStates, "%d %d %d %d %d %d %d", &state->rcBuilding, &state->rcHealth,
+//         &state->spawns, &state->builders, &state->armourys, &state->medicals, &state->computers );
+//   }
+//   else
+//     state->rcBuilding = state->rcHealth = state->spawns = state->builders = state->armourys = state->medicals = 0;
+// }
 
 /*
 ================
@@ -212,9 +212,6 @@ void CG_SetConfigValues( void )
   }
   else
     cgs.humanStage = cgs.humanCredits = cgs.humanNextStageThreshold = 0;
-
-  CG_ParseAlienStates();
-  CG_ParseHumanStates();
 
   cgs.levelStartTime = atoi( CG_ConfigString( CS_LEVEL_START_TIME ) );
   cg.warmupTime = atoi( CG_ConfigString( CS_WARMUP ) );
@@ -360,10 +357,6 @@ static void CG_ConfigStringModified( void )
       cgs.humanStage = cgs.humanCredits = cgs.humanNextStageThreshold = 0;
     }
   }
-  else if( num == CS_ALIEN_STATUS )
-    CG_ParseAlienStates( );
-  else if( num == CS_HUMAN_STATUS )
-    CG_ParseHumanStates( );
   else if( num == CS_LEVEL_START_TIME )
     cgs.levelStartTime = atoi( str );
   else if( num >= CS_VOTE_TIME && num < CS_VOTE_TIME + NUM_TEAMS )
