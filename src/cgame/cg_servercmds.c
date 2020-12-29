@@ -147,44 +147,6 @@ static void CG_ParseWarmup( void )
 }
 
 /*
-==================
-CG_ParseAlienStates
-==================
-*/
-// static void CG_ParseAlienStates( void )
-// {
-//   const char *alienStates = CG_ConfigString( CS_ALIEN_STATUS );
-//   alienStates_t *state = &cgs.alienStates;
-
-//   if( alienStates[0] )
-//   {
-//     sscanf( alienStates, "%d %d %d %d %d", &state->omBuilding, &state->omHealth,
-//         &state->spawns, &state->builders, &state->boosters );
-//   }
-//   else
-//     state->omBuilding = state->omHealth = state->spawns = state->builders = state->boosters = 0;
-// }
-
-/*
-==================
-CG_ParseHumanStates
-==================
-*/
-// static void CG_ParseHumanStates( void )
-// {
-//   const char *humanStates = CG_ConfigString( CS_HUMAN_STATUS );
-//   humanStates_t *state = &cgs.humanStates;
-
-//   if( humanStates[0] )
-//   {
-//     sscanf( humanStates, "%d %d %d %d %d %d %d", &state->rcBuilding, &state->rcHealth,
-//         &state->spawns, &state->builders, &state->armourys, &state->medicals, &state->computers );
-//   }
-//   else
-//     state->rcBuilding = state->rcHealth = state->spawns = state->builders = state->armourys = state->medicals = 0;
-// }
-
-/*
 ================
 CG_SetConfigValues
 
