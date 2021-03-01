@@ -44,6 +44,7 @@
 #include "qcommon.h"
 #include "unzip.h"
 #include "vm.h"
+#include <sys/stat.h>
 
 #ifndef DEDICATED
 #include "client/cl_rest.h"
@@ -450,6 +451,7 @@ bool FS_OpenBaseGamePath( const char *baseGamePath )
 {
     const char *homePath = Sys_DefaultHomePath( );
     const char *path;
+    struct stat st;
 
     if (!homePath || !homePath[0])
     {
@@ -457,10 +459,16 @@ bool FS_OpenBaseGamePath( const char *baseGamePath )
     }
 
     path = FS_BuildOSPath( homePath, fs_basegame->string, baseGamePath);
-
-    if( FS_OpenWithDefault( path ) )
+    if(stat(path, &st) == 0 && !S_ISDIR(st.st_mode)) {
+        if( FS_OpenWithDefault( path ))
         return true;
+    } else {
+        FS_CreatePath(path);
+    }
 
+     if( FS_OpenWithDefault( path ))
+        return true;
+        
     Com_Printf( S_COLOR_RED "FS_BrowseHomepath: failed to open the homepath with the default file manager.\n" S_COLOR_WHITE );
     return false;
 }
