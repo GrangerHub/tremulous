@@ -20,6 +20,9 @@
 #ifndef QC_FILES_H
 #define QC_FILES_H
 
+#ifdef NEW_FILESYSTEM
+#include "../filesystem/fspublic.h"
+#else
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -256,6 +259,7 @@ void         FS_HomeRemove (const char* homePath);
 void         FS_Remove (const char* osPath);
 bool         FS_BrowseHomepath ( void );
 bool         FS_OpenBaseGamePath( const char *baseGamePath );
+bool         FS_OpenModPath( const char *modPath );
 bool     FS_CreatePath (const char* OSPath);
 char*        FS_BuildOSPath (const char* base, const char* game, const char* qpath);
 long         FS_filelength (fileHandle_t f);
@@ -281,6 +285,7 @@ extern char lastValidBase[MAX_OSPATH];
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

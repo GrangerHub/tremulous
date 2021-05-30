@@ -259,6 +259,10 @@ void CL_cURL_BeginDownload( const char *localName, const char *remoteURL )
 	CL_cURL_Cleanup();
 	Q_strncpyz(clc.downloadURL, remoteURL, sizeof(clc.downloadURL));
 	Q_strncpyz(clc.downloadName, localName, sizeof(clc.downloadName));
+#ifdef NEW_FILESYSTEM
+	if(!clc.activeCURLNotGameRelated) Com_sprintf(clc.downloadTempName, sizeof(clc.downloadTempName), "download.temp");
+	else
+#endif
 	Com_sprintf(clc.downloadTempName, sizeof(clc.downloadTempName),
 		"%s.tmp", localName);
 
@@ -347,7 +351,14 @@ void CL_cURL_PerformDownload(void)
 		return;
 	}
 	FS_FCloseFile(clc.download);
+#ifdef NEW_FILESYSTEM
+	clc.download = 0;
+#endif
 	if(msg->msg == CURLMSG_DONE && msg->data.result == CURLE_OK) {
+#ifdef NEW_FILESYSTEM
+		if(!clc.activeCURLNotGameRelated) fs_finalize_download();
+		else
+#endif
 		FS_SV_Rename(clc.downloadTempName, clc.downloadName, false);
 		clc.downloadRestart = true;
 	}
@@ -355,10 +366,19 @@ void CL_cURL_PerformDownload(void)
 		long code;
 
 		qcurl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &code);	
+#ifdef NEW_FILESYSTEM
+		if(!clc.activeCURLNotGameRelated) Com_Printf("Download Error: %s Code: %ld URL: %s\n",
+			qcurl_easy_strerror(msg->data.result), code, clc.downloadURL);
+		else
+#endif
 		Com_Error(ERR_DROP, "Download Error: %s Code: %ld URL: %s",
 			qcurl_easy_strerror(msg->data.result),
 			code, clc.downloadURL);
 	}
 
+#ifdef NEW_FILESYSTEM
+	if(clc.activeCURLNotGameRelated) CL_cURL_Shutdown();
+	else
+#endif
 	CL_NextDownload();
 }

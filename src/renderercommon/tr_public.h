@@ -24,6 +24,12 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #ifndef __TR_PUBLIC_H
 #define __TR_PUBLIC_H
 
+#ifdef NEW_FILESYSTEM
+typedef struct fsc_file_s fsc_file_t;
+typedef struct fsc_shader_s fsc_shader_t;
+#define LOOKUPFLAG_ENABLE_DDS 1		// Enable dds format for image lookups. Must match value in fspublic.h!
+#endif
+
 #include "renderercommon/tr_types.h"
 
 #define	REF_API_VERSION		8
@@ -182,6 +188,14 @@ typedef struct {
 	void	(*Sys_GLimpSafeInit)( void );
 	void	(*Sys_GLimpInit)( void );
 	bool (*Sys_LowPhysicalMemory)( void );
+#ifdef NEW_FILESYSTEM
+	const fsc_file_t *(*fs_general_lookup)(const char *name, int lookup_flags, bool debug);
+	const fsc_file_t *(*fs_image_lookup)(const char *name, int lookup_flags, bool debug);
+	const fsc_shader_t *(*fs_shader_lookup)(const char *name, int lookup_flags, bool debug);
+	char *(*fs_read_shader)(const fsc_shader_t *shader);
+	const char *(*fs_file_extension)(const fsc_file_t *file);
+	bool (*fs_files_from_same_pk3)(const fsc_file_t *file1, const fsc_file_t *file2);
+#endif
 } refimport_t;
 
 

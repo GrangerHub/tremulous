@@ -3,9 +3,9 @@
 # Let's make the user give us a target to work with.
 # architecture is assumed universal if not specified, and is optional.
 # if arch is defined, it we will store the .app bundle in the target arch build directory
-if [ $# == 0 ] || [ $# -gt 2 ]; then
-	echo "Usage:   $0 target <arch>"
-	echo "Example: $0 release x86"
+if [ $# == 0 ] || [ $# -gt 3 ]; then
+	echo "Usage:   $0 target <basemod> <arch>"
+	echo "Example: $0 release basemod x86"
 	echo "Valid targets are:"
 	echo " release"
 	echo " debug"
@@ -33,13 +33,13 @@ fi
 CURRENT_ARCH=""
 
 # validate the architecture if it was specified
-if [ "$2" != "" ]; then
-	if [ "$2" == "x86" ]; then
+if [ "$3" != "" ]; then
+	if [ "$3" == "x86" ]; then
 		CURRENT_ARCH="x86"
-	elif [ "$2" == "x86_64" ]; then
+	elif [ "$3" == "x86_64" ]; then
 		CURRENT_ARCH="x86_64"
 	else
-		echo "Invalid architecture: $2"
+		echo "Invalid architecture: $3"
 		echo "Valid architectures are:"
 		echo " x86"
 		echo " x86_64"
@@ -127,11 +127,15 @@ IOQ3_MP_CGAME_ARCHS=""
 IOQ3_MP_GAME_ARCHS=""
 IOQ3_MP_UI_ARCHS=""
 
-BASEDIR="gpp"
+BASEDIR=$2
 
 CGAME="cgame"
-GAME="game"
 UI="ui"
+if [[ "${2}" == "basemod" ]]; then
+	GAME="game"
+else
+	GAME="core_game"
+fi
 
 RENDERER_OPENGL="renderer_opengl"
 
@@ -142,7 +146,8 @@ GAME_NAME="${GAME}.dylib"
 UI_NAME="${UI}.dylib"
 
 GIT_REV=$(git describe --tags)
-VMS_PK3="vms-${GIT_REV}.pk3"
+VMS_GPP_PK3="vms-gpp-${GIT_REV}.pk3"
+VMS_11_PK3="vms-1.1-${GIT_REV}.pk3"
 DATA_PK3="data-${GIT_REV}.pk3"
 
 RENDERER_OPENGL1_NAME="${RENDERER_OPENGL}1.dylib"
@@ -153,7 +158,7 @@ ICNS="Tremulous.icns"
 PKGINFO="APPLIOQ3"
 
 OBJROOT="build"
-#BUILT_PRODUCTS_DIR="${OBJROOT}/${TARGET_NAME}-darwin-${CURRENT_ARCH}"
+#BUILT_PRODUCTS_DIR="${OBJROOT}/${TARGET_NAME}-macos-${CURRENT_ARCH}"
 PRODUCT_NAME="Tremulous"
 WRAPPER_EXTENSION="app"
 WRAPPER_NAME="${PRODUCT_NAME}.${WRAPPER_EXTENSION}"
@@ -165,7 +170,13 @@ EXECUTABLE_NAME="tremulous"
 # loop through the architectures to build string lists for each universal binary
 for ARCH in $SEARCH_ARCHS; do
 	CURRENT_ARCH=${ARCH}
-	BUILT_PRODUCTS_DIR="${OBJROOT}/${TARGET_NAME}-darwin-${CURRENT_ARCH}"
+	if [ "${CURRENT_ARCH}" == "x86_64" ]; then
+		BUILT_PRODUCTS_DIR="${OBJROOT}/${TARGET_NAME}-macos-64"
+	elif [[ "${CURRENT_ARCH}" == "x86" ]]; then
+		BUILT_PRODUCTS_DIR="${OBJROOT}/${TARGET_NAME}-macos-32"
+	else
+		BUILT_PRODUCTS_DIR="${OBJROOT}/${TARGET_NAME}-macos-${CURRENT_ARCH}"
+	fi
 	IOQ3_CLIENT="${EXECUTABLE_NAME}"
 	IOQ3_SERVER="${DEDICATED_NAME}"
 	IOQ3_RENDERER_GL1="${RENDERER_OPENGL}1.dylib"
@@ -227,13 +238,20 @@ if [ "${IOQ3_CLIENT_ARCHS}" == "" ]; then
 fi
 
 # set the final application bundle output directory
-if [ "${2}" == "" ]; then
-	BUILT_PRODUCTS_DIR="${OBJROOT}/${TARGET_NAME}-darwin-universal"
+if [ "${3}" == "" ]; then
+	BUILT_PRODUCTS_DIR="${OBJROOT}/${TARGET_NAME}-macos-universal"
 	if [ ! -d ${BUILT_PRODUCTS_DIR} ]; then
 		mkdir -p ${BUILT_PRODUCTS_DIR} || exit 1;
 	fi
 else
-	BUILT_PRODUCTS_DIR="${OBJROOT}/${TARGET_NAME}-darwin-${CURRENT_ARCH}"
+	if [ "${CURRENT_ARCH}" == "x86_64" ]; then
+		BUILT_PRODUCTS_DIR="${OBJROOT}/${TARGET_NAME}-macos-64"
+	elif [[ "${CURRENT_ARCH}" == "x86" ]]; then
+		BUILT_PRODUCTS_DIR="${OBJROOT}/${TARGET_NAME}-macos-32"
+	else
+		BUILT_PRODUCTS_DIR="${OBJROOT}/${TARGET_NAME}-macos-${CURRENT_ARCH}"
+	fi
+		#statements
 fi
 
 BUNDLEBINDIR="${BUILT_PRODUCTS_DIR}/${EXECUTABLE_FOLDER_PATH}"
@@ -251,6 +269,12 @@ echo ""
 if [ ! -d ${BUILT_PRODUCTS_DIR}/${EXECUTABLE_FOLDER_PATH}/$BASEDIR ]; then
 	mkdir -p ${BUILT_PRODUCTS_DIR}/${EXECUTABLE_FOLDER_PATH}/$BASEDIR || exit 1;
 fi
+if [ ! -d ${BUILT_PRODUCTS_DIR}/${EXECUTABLE_FOLDER_PATH}/gpp ]; then
+	mkdir -p ${BUILT_PRODUCTS_DIR}/${EXECUTABLE_FOLDER_PATH}/gpp || exit 1;
+fi
+if [ ! -d ${BUILT_PRODUCTS_DIR}/${EXECUTABLE_FOLDER_PATH}/base ]; then
+	mkdir -p ${BUILT_PRODUCTS_DIR}/${EXECUTABLE_FOLDER_PATH}/base || exit 1;
+fi
 if [ ! -d ${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH} ]; then
 	mkdir -p ${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH} || exit 1;
 fi
@@ -258,7 +282,8 @@ fi
 # copy and generate some application bundle resources
 cp external/libs/macosx/*.dylib ${BUILT_PRODUCTS_DIR}/${EXECUTABLE_FOLDER_PATH}
 cp ${ICNSDIR}/${ICNS} ${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/$ICNS || exit 1;
-cp	"${BUILT_PRODUCTS_DIR}/${BASEDIR}/${VMS_PK3}" "${BUNDLEBINDIR}/${BASEDIR}/${VMS_PK3}"
+cp	"${BUILT_PRODUCTS_DIR}/${BASEDIR}/${VMS_GPP_PK3}" "${BUNDLEBINDIR}/${BASEDIR}/${VMS_GPP_PK3}"
+cp	"${BUILT_PRODUCTS_DIR}/${BASEDIR}/${VMS_11_PK3}" "${BUNDLEBINDIR}/${BASEDIR}/${VMS_11_PK3}"
 cp	"${BUILT_PRODUCTS_DIR}/${BASEDIR}/${DATA_PK3}" "${BUNDLEBINDIR}/${BASEDIR}/${DATA_PK3}"
 echo -n ${PKGINFO} > ${BUILT_PRODUCTS_DIR}/${CONTENTS_FOLDER_PATH}/PkgInfo || exit 1;
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
@@ -290,7 +315,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
     <key>LSMinimumSystemVersion</key>
     <string>${MACOSX_DEPLOYMENT_TARGET}</string>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 1999-2015 Id Software LLC, a ZeniMax Media company, ioquake3, Darklegion Development, GrangerHub, and Tremulous community contributors.</string>
+    <string>Copyright © 1999-2020 Id Software LLC, a ZeniMax Media company, ioquake3, Darklegion Development, GrangerHub, and Tremulous community contributors.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
 </dict>

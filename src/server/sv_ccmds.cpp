@@ -58,7 +58,17 @@ static void SV_Map_f( void ) {
 	// make sure the level exists before trying to change, so that
 	// a typo at the server console won't end the game
 	Com_sprintf (expanded, sizeof(expanded), "maps/%s.bsp", map);
+#ifdef NEW_FILESYSTEM
+	// Refresh in case a map was just manually added
+	fs_refresh_auto();
+
+	// Perform the check without respect to current connected pure list
+	// If we go forward loading the map, the pure list will be cleared in SV_SpawnServer
+	// before further access to the bsp
+	if(!fs_general_lookup(expanded, LOOKUPFLAG_IGNORE_PURE_LIST|LOOKUPFLAG_IGNORE_CURRENT_MAP, qfalse)) {
+#else
 	if ( FS_ReadFile (expanded, NULL) == -1 ) {
+#endif
 		Com_Printf ("Can't find map %s\n", expanded);
 		return;
 	}

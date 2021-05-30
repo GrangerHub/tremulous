@@ -79,7 +79,7 @@ VM_Init
 */
 void VM_Init( void ) {
 	Cvar_Get( "vm_cgame", "2", CVAR_ARCHIVE );	// !@# SHIP WITH SET TO 2
-	Cvar_Get( "vm_game", "2", CVAR_ARCHIVE );	// !@# SHIP WITH SET TO 2
+	Cvar_Get( "vm_game", "0", CVAR_ARCHIVE );	// !@# SHIP WITH SET TO 0
 	Cvar_Get( "vm_ui", "2", CVAR_ARCHIVE );		// !@# SHIP WITH SET TO 2
 
 	Cmd_AddCommand ("vmprofile", VM_VmProfile_f );
@@ -386,7 +386,11 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, bool alloc, bool unpure)
 	Com_sprintf( filename, sizeof(filename), "vm/%s.qvm", vm->name );
 	Com_Printf( "Loading vm file %s...\n", filename );
 
+#ifdef NEW_FILESYSTEM
+	header.v = fs_read_data(vm->source_file, 0, 0, "VM_LoadQVM");
+#else
 	FS_ReadFileDir(filename, vm->searchPath, unpure, &header.v);
+#endif
 
 	if ( !header.h ) {
 		Com_Printf( "Failed.\n" );
@@ -398,7 +402,11 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, bool alloc, bool unpure)
 	}
 
 	// show where the qvm was loaded from
+#ifdef NEW_FILESYSTEM
+	fs_print_file_location(vm->source_file);
+#else
 	FS_Which(filename, vm->searchPath);
+#endif
 
 	if( LittleLong( header.h->vmMagic ) == VM_MAGIC_VER2 ) {
 		Com_Printf( "...which has vmMagic VM_MAGIC_VER2\n" );
@@ -543,6 +551,7 @@ vm_t *VM_Restart(vm_t *vm, bool unpure)
 {
 	vmHeader_t	*header;
 
+#ifndef NEW_FILESYSTEM
 	// DLL's can't be restarted in place
 	if ( vm->dllHandle ) {
 		char	name[MAX_QPATH];
@@ -556,9 +565,19 @@ vm_t *VM_Restart(vm_t *vm, bool unpure)
 		vm = VM_Create( name, systemCall, VMI_NATIVE );
 		return vm;
 	}
+#endif
 
 	// load the image
 	Com_Printf("VM_Restart()\n");
+
+#ifdef NEW_FILESYSTEM
+	if ( vm->dllHandle ) {
+		Sys_UnloadDll( vm->dllHandle );
+		vm->dllHandle = fs_load_game_dll(vm->source_file, &vm->entryPoint, VM_DllSyscall);
+		if(!vm->dllHandle) Com_Error(ERR_DROP, "VM_Restart on dll failed");
+		return vm;
+	}
+#endif
 
 	if(!(header = VM_LoadQVM(vm, false, unpure)))
 	{
@@ -584,9 +603,15 @@ vm_t *VM_Create( const char *module, intptr_t (*systemCalls)(intptr_t *),
 				vmInterpret_t interpret ) {
 	vm_t		*vm;
 	vmHeader_t	*header;
+#ifdef NEW_FILESYSTEM
+	int i;
+	int remaining;
+	bool is_dll = false;
+#else
 	int			i, remaining, retval;
 	char filename[MAX_OSPATH];
 	void *startSearch = NULL;
+#endif
 
 	if ( !module || !module[0] || !systemCalls ) {
 		Com_Error( ERR_FATAL, "VM_Create: bad parms" );
@@ -617,6 +642,19 @@ vm_t *VM_Create( const char *module, intptr_t (*systemCalls)(intptr_t *),
 
 	Q_strncpyz(vm->name, module, sizeof(vm->name));
 
+#ifdef NEW_FILESYSTEM
+	vm->source_file = fs_vm_lookup(module, interpret == VMI_NATIVE ? qfalse : qtrue, qfalse, &is_dll);
+	if(!vm->source_file) return 0;
+
+	if(is_dll) {
+		vm->dllHandle = fs_load_game_dll(vm->source_file, &vm->entryPoint, VM_DllSyscall);
+		if(!vm->dllHandle) return 0;
+		vm->systemCall = systemCalls;
+		return vm; }
+
+	header = VM_LoadQVM(vm, qtrue, qfalse);
+	if(!header) return 0;
+#else
 	do
 	{
 		retval = FS_FindVM(&startSearch, filename, sizeof(filename), module, (interpret == VMI_NATIVE));
@@ -648,6 +686,7 @@ vm_t *VM_Create( const char *module, intptr_t (*systemCalls)(intptr_t *),
 	
 	if(retval < 0)
 		return NULL;
+#endif
 
 	vm->systemCall = systemCalls;
 

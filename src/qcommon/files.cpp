@@ -21,6 +21,7 @@
    
 */
 
+#ifndef NEW_FILESYSTEM
 #include "files.h"
 
 #ifdef _WIN32
@@ -462,6 +463,33 @@ bool FS_OpenBaseGamePath( const char *baseGamePath )
         return true;
 
     Com_Printf( S_COLOR_RED "FS_BrowseHomepath: failed to open the homepath with the default file manager.\n" S_COLOR_WHITE );
+    return false;
+}
+
+/*
+============
+FS_OpenModPath
+
+Opens the given path for the
+mod in the default file manager
+============
+*/
+bool FS_OpenModPath( const char *modPath )
+{
+    const char *homePath = Sys_DefaultHomePath( );
+    const char *path;
+
+    if (!homePath || !homePath[0])
+    {
+        homePath = fs_basepath->string;
+    }
+
+    path = FS_BuildOSPath( homePath, modPath, "");
+
+    if( FS_OpenWithDefault( path ) )
+        return true;
+
+    Com_Printf( S_COLOR_RED "FS_OpenModPath: failed to open the mod folder %s with the default file manager.\n" S_COLOR_WHITE, modPath );
     return false;
 }
 
@@ -3984,3 +4012,4 @@ const char *FS_GetCurrentGameDir(void)
     if (fs_gamedirvar->string[0]) return fs_gamedirvar->string;
     return BASEGAME;
 }
+#endif

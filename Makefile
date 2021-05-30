@@ -42,6 +42,9 @@ endif
 ifndef BUILD_RENDERER_OPENGL2
   BUILD_RENDERER_OPENGL2=
 endif
+ifndef BUILD_DATA_PK3
+  BUILD_DATA_PK3=
+endif
 
 #############################################################################
 #
@@ -120,10 +123,14 @@ SERVERBIN=tremded
 endif
 
 ifndef BASEGAME
-BASEGAME=gpp
+BASEGAME=trem13
 endif
 
 BASEGAME_CFLAGS=-I../../${MOUNT_DIR}
+
+ifndef BASEMOD
+BASEMOD=basemod
+endif
 
 ifndef COPYDIR
 COPYDIR="/usr/local/games/tremulous"
@@ -253,8 +260,49 @@ endif
 
 #############################################################################
 
-BD=$(BUILD_DIR)/debug-$(PLATFORM)-$(ARCH)
-BR=$(BUILD_DIR)/release-$(PLATFORM)-$(ARCH)
+ifeq ($(ARCH),x86_64)
+ifeq ($(PLATFORM),mingw32)
+  BD=$(BUILD_DIR)/debug-windows-64
+  BR=$(BUILD_DIR)/release-windows-64
+else
+ifeq ($(PLATFORM),darwin)
+  BD=$(BUILD_DIR)/debug-macos-64
+  BR=$(BUILD_DIR)/release-macos-64
+else
+  BD=$(BUILD_DIR)/debug-$(PLATFORM)-64
+  BR=$(BUILD_DIR)/release-$(PLATFORM)-64
+endif
+endif
+else
+ifeq ($(ARCH),x86)
+ifeq ($(PLATFORM),mingw32)
+  BD=$(BUILD_DIR)/debug-windows-32
+  BR=$(BUILD_DIR)/release-windows-32
+else
+ifeq ($(PLATFORM),darwin)
+  BD=$(BUILD_DIR)/debug-macos-32
+  BR=$(BUILD_DIR)/release-macos-32
+else
+  BD=$(BUILD_DIR)/debug-$(PLATFORM)-32
+  BR=$(BUILD_DIR)/release-$(PLATFORM)-32
+endif
+endif
+else
+ifeq ($(PLATFORM),mingw32)
+  BD=$(BUILD_DIR)/debug-windows-$(ARCH)
+  BR=$(BUILD_DIR)/release-windows-$(ARCH)
+else
+ifeq ($(PLATFORM),darwin)
+  BD=$(BUILD_DIR)/debug-macos-$(ARCH)
+  BR=$(BUILD_DIR)/release-macos-$(ARCH)
+else
+  BD=$(BUILD_DIR)/debug-$(PLATFORM)-$(ARCH)
+  BR=$(BUILD_DIR)/release-$(PLATFORM)-$(ARCH)
+endif
+endif
+endif
+endif
+
 
 CDIR=$(MOUNT_DIR)/client
 SDIR=$(MOUNT_DIR)/server
@@ -262,6 +310,8 @@ RCOMMONDIR=$(MOUNT_DIR)/renderercommon
 RGL1DIR=$(MOUNT_DIR)/renderergl1
 RGL2DIR=$(MOUNT_DIR)/renderergl2
 CMDIR=$(MOUNT_DIR)/qcommon
+FSDIR=$(MOUNT_DIR)/filesystem
+FSDIR_FSCORE=$(MOUNT_DIR)/filesystem/fscore
 SDLDIR=$(MOUNT_DIR)/sdl
 ASMDIR=$(MOUNT_DIR)/asm
 SYSDIR=$(MOUNT_DIR)/sys
@@ -806,30 +856,41 @@ ifneq ($(BUILD_CLIENT),0)
 endif
 
 ifneq ($(BUILD_GAME_SO),0)
-  TARGETS += \
-    $(B)/$(BASEGAME)/cgame$(SHLIBNAME) \
-    $(B)/$(BASEGAME)/game$(SHLIBNAME) \
-    $(B)/$(BASEGAME)/ui$(SHLIBNAME)
+ifneq ($(BASEMOD), basemod)
+TARGETS += \
+  $(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+  $(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
+  $(B)/$(BASEMOD)/ui$(SHLIBNAME)
+else
+TARGETS += \
+  $(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+  $(B)/$(BASEMOD)/game$(SHLIBNAME) \
+  $(B)/$(BASEMOD)/ui$(SHLIBNAME)
+endif
 endif
 
 ifneq ($(BUILD_GAME_QVM),0)
-  TARGETS += \
-    $(B)/$(BASEGAME)/vm/cgame.qvm \
-    $(B)/$(BASEGAME)/vm/game.qvm \
-    $(B)/$(BASEGAME)/vm/ui.qvm \
-	$(B)/$(BASEGAME)/vms-gpp-$(VERSION).pk3
+TARGETS += \
+  $(B)/$(BASEMOD)/vm/cgame.qvm \
+  $(B)/$(BASEMOD)/vm/game.qvm \
+  $(B)/$(BASEMOD)/vm/ui.qvm \
+  $(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3
 endif
 
 ifneq ($(BUILD_GAME_QVM_11),0)
-  TARGETS += \
-    $(B)/$(BASEGAME)_11/vm/cgame.qvm \
-    $(B)/$(BASEGAME)_11/vm/ui.qvm \
-	$(B)/$(BASEGAME)_11/vms-1.1.0-$(VERSION).pk3
+TARGETS += \
+  $(B)/$(BASEMOD)_11/vm/cgame.qvm \
+  $(B)/$(BASEMOD)_11/vm/ui.qvm \
+  $(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3
 endif
 
 ifneq ($(BUILD_DATA_PK3),0)
-  TARGETS += \
-    $(B)/$(BASEGAME)/data-$(VERSION).pk3
+TARGETS += \
+  $(B)/$(BASEMOD)/data-$(VERSION).pk3
+endif
+
+ifneq ($(NEW_FILESYSTEM),0)
+  BASE_CFLAGS += -DNEW_FILESYSTEM
 endif
 
 ifeq ($(USE_OPENAL),1)
@@ -1229,7 +1290,7 @@ endif
 
 $(B).zip: $(TARGETS)
 ifeq ($(PLATFORM),darwin)
-	@("./make-macosx-app.sh" release $(ARCH); if [ "$$?" -eq 0 ] && [ -d "$(B)/Tremulous.app" ]; then rm -f $@; cd $(B) && zip --symlinks -r9 ../../$@ GPL COPYING CC `find "Tremulous.app" -print | sed -e "s!$(B)/!!g"`; else rm -f $@; cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS); fi)
+	@("./make-macosx-app.sh" release $(BASEMOD) $(ARCH); if [ "$$?" -eq 0 ] && [ -d "$(B)/Tremulous.app" ]; then rm -f $@; cd $(B) && zip --symlinks -r9 ../../$@ GPL COPYING CC `find "Tremulous.app" -print | sed -e "s!$(B)/!!g"`; else rm -f $@; cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS); fi)
 else
 	@rm -f $@
 	@(cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS))
@@ -1261,8 +1322,9 @@ makedirs:
 	@if [ ! -d $(B)/$(BASEGAME)/11/cgame ];then $(MKDIR) $(B)/$(BASEGAME)/11/cgame;fi
 	@if [ ! -d $(B)/$(BASEGAME)/11/ui ];then $(MKDIR) $(B)/$(BASEGAME)/11/ui;fi
 	@if [ ! -d $(B)/$(BASEGAME)/vm ];then $(MKDIR) $(B)/$(BASEGAME)/vm;fi
-	@if [ ! -d $(B)/$(BASEGAME)_11 ];then $(MKDIR) $(B)/$(BASEGAME)_11;fi
-	@if [ ! -d $(B)/$(BASEGAME)_11/vm ];then $(MKDIR) $(B)/$(BASEGAME)_11/vm;fi
+	@if [ ! -d $(B)/$(BASEMOD)_11 ];then $(MKDIR) $(B)/$(BASEMOD)_11;fi
+	@if [ ! -d $(B)/$(BASEMOD)_11/vm ];then $(MKDIR) $(B)/$(BASEMOD)_11/vm;fi
+	@if [ ! -d $(B)/$(BASEMOD) ];then $(MKDIR) $(B)/$(BASEMOD);fi
 	@if [ ! -d $(B)/granger.dir ];then $(MKDIR) $(B)/granger.dir;fi
 	@if [ ! -d $(B)/granger.dir/src ];then $(MKDIR) $(B)/granger.dir/src;fi
 	@if [ ! -d $(B)/granger.dir/src/lua ];then $(MKDIR) $(B)/granger.dir/src/lua;fi
@@ -1837,7 +1899,29 @@ Q3OBJ = \
   $(B)/client/sdl_snd.o \
   \
   $(B)/client/con_log.o \
-  $(B)/client/sys_main.o
+  $(B)/client/sys_main.o \
+  \
+  $(B)/client/fsc_cache.o \
+  $(B)/client/fsc_crosshair.o \
+  $(B)/client/fsc_gameparse.o \
+  $(B)/client/fsc_iteration.o \
+  $(B)/client/fsc_main.o \
+  $(B)/client/fsc_md4.o \
+  $(B)/client/fsc_misc.o \
+  $(B)/client/fsc_os.o \
+  $(B)/client/fsc_pk3.o \
+  $(B)/client/fsc_sha256.o \
+  $(B)/client/fsc_shader.o \
+  $(B)/client/fs_commands.o \
+  $(B)/client/fs_download.o \
+  $(B)/client/fs_fileio.o \
+  $(B)/client/fs_filelist.o \
+  $(B)/client/fs_lookup.o \
+  $(B)/client/fs_main.o \
+  $(B)/client/fs_misc.o \
+  $(B)/client/fs_tremulous.o \
+  $(B)/client/fs_reference.o \
+  $(B)/client/fs_trusted_vms.o
 
 ifdef MINGW
   Q3OBJ += \
@@ -2355,7 +2439,29 @@ Q3DOBJ = \
   $(B)/ded/null_snddma.o \
   \
   $(B)/ded/con_log.o \
-  $(B)/ded/sys_main.o
+  $(B)/ded/sys_main.o \
+  \
+  $(B)/ded/fsc_cache.o \
+  $(B)/ded/fsc_crosshair.o \
+  $(B)/ded/fsc_gameparse.o \
+  $(B)/ded/fsc_iteration.o \
+  $(B)/ded/fsc_main.o \
+  $(B)/ded/fsc_md4.o \
+  $(B)/ded/fsc_misc.o \
+  $(B)/ded/fsc_os.o \
+  $(B)/ded/fsc_pk3.o \
+  $(B)/ded/fsc_sha256.o \
+  $(B)/ded/fsc_shader.o \
+  $(B)/ded/fs_commands.o \
+  $(B)/ded/fs_download.o \
+  $(B)/ded/fs_fileio.o \
+  $(B)/ded/fs_filelist.o \
+  $(B)/ded/fs_lookup.o \
+  $(B)/ded/fs_main.o \
+  $(B)/ded/fs_misc.o \
+  $(B)/ded/fs_tremulous.o \
+  $(B)/ded/fs_reference.o \
+  $(B)/ded/fs_trusted_vms.o
 
 ifeq ($(ARCH),x86)
   Q3DOBJ += \
@@ -2455,11 +2561,11 @@ CGOBJ_ = \
 CGOBJ = $(CGOBJ_) $(B)/$(BASEGAME)/cgame/cg_syscalls.o
 CGVMOBJ = $(CGOBJ_:%.o=%.asm)
 
-$(B)/$(BASEGAME)/cgame$(SHLIBNAME): $(CGOBJ)
+$(B)/$(BASEMOD)/cgame$(SHLIBNAME): $(CGOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(SHLIBLDFLAGS) $(LDFLAGS) -o $@ $(CGOBJ)
 
-$(B)/$(BASEGAME)/vm/cgame.qvm: $(CGVMOBJ) $(CGDIR)/cg_syscalls.asm $(Q3ASM)
+$(B)/$(BASEMOD)/vm/cgame.qvm: $(CGVMOBJ) $(CGDIR)/cg_syscalls.asm $(Q3ASM)
 	$(echo_cmd) "Q3ASM $@"
 	$(Q)$(Q3ASM) -o $@ $(CGVMOBJ) $(CGDIR)/cg_syscalls.asm
 
@@ -2504,7 +2610,7 @@ CGOBJ11_ = \
 
 CGVMOBJ11 = $(CGOBJ11_:%.o=%.asm)
 
-$(B)/$(BASEGAME)_11/vm/cgame.qvm: $(CGVMOBJ11) $(CGDIR)/cg_syscalls_11.asm $(Q3ASM)
+$(B)/$(BASEMOD)_11/vm/cgame.qvm: $(CGVMOBJ11) $(CGDIR)/cg_syscalls_11.asm $(Q3ASM)
 	$(echo_cmd) "Q3ASM_11 $@"
 	$(Q)$(Q3ASM) -o $@ $(CGVMOBJ11) $(CGDIR)/cg_syscalls_11.asm
 
@@ -2549,14 +2655,19 @@ GOBJ_ = \
 GOBJ = $(GOBJ_) $(B)/$(BASEGAME)/game/g_syscalls.o
 GVMOBJ = $(GOBJ_:%.o=%.asm)
 
-$(B)/$(BASEGAME)/game$(SHLIBNAME): $(GOBJ)
+ifneq ($(BASEMOD), basemod)
+$(B)/$(BASEMOD)/core_game$(SHLIBNAME): $(GOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(SHLIBLDFLAGS) $(LDFLAGS) -o $@ $(GOBJ)
+else
+$(B)/$(BASEMOD)/game$(SHLIBNAME): $(GOBJ)
+	$(echo_cmd) "LD $@"
+	$(Q)$(CC) $(SHLIBLDFLAGS) $(LDFLAGS) -o $@ $(GOBJ)
+endif
 
-$(B)/$(BASEGAME)/vm/game.qvm: $(GVMOBJ) $(GDIR)/g_syscalls.asm $(Q3ASM)
+$(B)/$(BASEMOD)/vm/game.qvm: $(GVMOBJ) $(GDIR)/g_syscalls.asm $(Q3ASM)
 	$(echo_cmd) "Q3ASM $@"
 	$(Q)$(Q3ASM) -o $@ $(GVMOBJ) $(GDIR)/g_syscalls.asm
-
 
 
 #############################################################################
@@ -2579,9 +2690,13 @@ UIOBJ_ = \
 UIOBJ = $(UIOBJ_) $(B)/$(BASEGAME)/ui/ui_syscalls.o
 UIVMOBJ = $(UIOBJ_:%.o=%.asm)
 
-$(B)/$(BASEGAME)/ui$(SHLIBNAME): $(UIOBJ)
+$(B)/$(BASEMOD)/ui$(SHLIBNAME): $(UIOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) -I${ASSETS_DIR}/ui $(SHLIBLDFLAGS) $(LDFLAGS) -o $@ $(UIOBJ)
+
+$(B)/$(BASEMOD)/vm/ui.qvm: $(UIVMOBJ) $(UIDIR)/ui_syscalls.asm $(Q3ASM)
+	$(echo_cmd) "Q3ASM $@"
+	$(Q)$(Q3ASM) -o $@ $(UIVMOBJ) $(UIDIR)/ui_syscalls.asm
 
 $(B)/$(BASEGAME)/vm/ui.qvm: $(UIVMOBJ) $(UIDIR)/ui_syscalls.asm $(Q3ASM)
 	$(echo_cmd) "Q3ASM $@"
@@ -2607,7 +2722,7 @@ UIVMOBJ11 = $(UIOBJ11_:%.o=%.asm)
 
 # XXX no dynamic library?
 
-$(B)/$(BASEGAME)_11/vm/ui.qvm: $(UIVMOBJ11) $(UIDIR)/ui_syscalls_11.asm $(Q3ASM)
+$(B)/$(BASEMOD)_11/vm/ui.qvm: $(UIVMOBJ11) $(UIDIR)/ui_syscalls_11.asm $(Q3ASM)
 	$(echo_cmd) "Q3ASM $@"
 	$(Q)$(Q3ASM) -o $@ $(UIVMOBJ11) $(UIDIR)/ui_syscalls_11.asm
 
@@ -2615,20 +2730,25 @@ $(B)/$(BASEGAME)_11/vm/ui.qvm: $(UIVMOBJ11) $(UIDIR)/ui_syscalls_11.asm $(Q3ASM)
 ## QVM Package
 #############################################################################
 
-$(B)/$(BASEGAME)/vms-gpp-$(VERSION).pk3: $(B)/$(BASEGAME)/vm/ui.qvm $(B)/$(BASEGAME)/vm/cgame.qvm $(B)/$(BASEGAME)/vm/game.qvm
-	@(cd $(B)/$(BASEGAME) && zip -r vms-$(VERSION).pk3 vm/)
-
-$(B)/$(BASEGAME)_11/vms-1.1.0-$(VERSION).pk3: $(B)/$(BASEGAME)_11/vm/ui.qvm $(B)/$(BASEGAME)_11/vm/cgame.qvm 
-	@(cd $(B)/$(BASEGAME)_11 && zip -r vms-$(VERSION).pk3 vm/)
+ifneq ($(BUILD_GAME_QVM),0)
+$(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3: $(B)/$(BASEMOD)/vm/ui.qvm $(B)/$(BASEMOD)/vm/cgame.qvm $(B)/$(BASEMOD)/vm/game.qvm
+	@(cd $(B)/$(BASEMOD) && zip -r vms-gpp-$(VERSION).pk3 vm/)
+endif
+ifneq ($(BUILD_GAME_QVM_11),0)
+$(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3: $(B)/$(BASEMOD)_11/vm/ui.qvm $(B)/$(BASEMOD)_11/vm/cgame.qvm 
+	@(cd $(B)/$(BASEMOD)_11 && zip -r vms-1.1-$(VERSION).pk3 vm/)
+endif
 
 
 #############################################################################
 ## Assets Package
 #############################################################################
 
-$(B)/$(BASEGAME)/data-$(VERSION).pk3: $(ASSETS_DIR)/ui/main.menu
+ifneq ($(BUILD_DATA_PK3),0)
+$(B)/$(BASEMOD)/data-$(VERSION).pk3: $(ASSETS_DIR)/ui/main.menu
 	@(cd $(ASSETS_DIR) && zip -r data-$(VERSION).pk3 *)
-	@mv $(ASSETS_DIR)/data-$(VERSION).pk3 $(B)/$(BASEGAME)
+	@mv $(ASSETS_DIR)/data-$(VERSION).pk3 $(B)/$(BASEMOD)
+endif
 
 #############################################################################
 ## CLIENT/SERVER RULES
@@ -2649,6 +2769,11 @@ $(B)/client/%.o: $(SDIR)/%.c
 
 $(B)/client/%.o: $(CMDIR)/%.c
 	$(DO_CC)
+
+$(B)/client/%.o: $(FSDIR)/%.cpp
+	$(DO_CXX)
+$(B)/client/%.o: $(FSDIR_FSCORE)/%.cpp
+	$(DO_CXX)
 
 $(B)/client/%.o: $(CDIR)/%.cpp
 	$(DO_CXX)
@@ -2758,6 +2883,11 @@ $(B)/ded/%.o: $(SDIR)/%.cpp
 $(B)/ded/%.o: $(CMDIR)/%.c
 	$(DO_DED_CC)
 
+$(B)/ded/%.o: $(FSDIR)/%.cpp
+	$(DO_DED_CXX)
+$(B)/ded/%.o: $(FSDIR_FSCORE)/%.cpp
+	$(DO_DED_CXX)
+
 $(B)/ded/%.o: $(CMDIR)/%.cpp
 	$(DO_DED_CXX)
 
@@ -2814,13 +2944,13 @@ $(B)/$(BASEGAME)/cgame/%.asm: $(CGDIR)/%.c $(Q3LCC)
 	$(DO_CGAME_Q3LCC)
 
 # CGAME (1.1 COMPATIBLE)
-#$(B)/$(BASEGAME)_11/cgame/bg_%.o: $(GDIR)/bg_%.c
+#$(B)/$(BASEMOD)_11/cgame/bg_%.o: $(GDIR)/bg_%.c
 #	$(DO_CGAME_CC_11)
 #
-#$(B)/$(BASEGAME)_11/cgame/ui_%.o: $(UIDIR)/ui_%.c
+#$(B)/$(BASEMOD)_11/cgame/ui_%.o: $(UIDIR)/ui_%.c
 #	$(DO_CGAME_CC_11)
 #
-#$(B)/$(BASEGAME)_11/cgame/%.o: $(CGDIR)/%.c
+#$(B)/$(BASEMOD)_11/cgame/%.o: $(CGDIR)/%.c
 #	$(DO_CGAME_CC_11)
 
 $(B)/$(BASEGAME)/11/cgame/%.asm: $(CGDIR)/%.c $(Q3LCC)
@@ -2914,14 +3044,203 @@ ifneq ($(B),)
   -include $(OBJ_D_FILES) $(TOOLSOBJ_D_FILES)
 endif
 
+ifneq ($(BUILD_GAME_QVM),0)
+ifneq ($(BUILD_GAME_QVM_11),0)
+ifneq ($(BUILD_DATA_PK3),0)
+ifneq ($(BASEMOD), basemod)
 .PHONY: all clean clean2 clean-debug clean-release \
 	debug default dist distclean makedirs release targets \
 	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
 	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
-	$(B)/$(BASEGAME)/data-$(VERSION).pk3 \
-	$(B)/$(BASEGAME)_11/vms-$(VERSION).pk3 \
-	$(B)/$(BASEGAME)/vms-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/data-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
 	$(B).zip
+else
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/data-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+endif
+else
+ifneq ($(BASEMOD), basemod)
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+else
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+endif
+endif
+else
+ifneq ($(BUILD_DATA_PK3),0)
+ifneq ($(BASEMOD), basemod)
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/data-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+else
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/data-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+endif
+else
+ifneq ($(BASEMOD), basemod)
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+else
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/vms-gpp-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+endif
+endif
+endif
+else
+ifneq ($(BUILD_GAME_QVM_11),0)
+ifneq ($(BUILD_DATA_PK3),0)
+ifneq ($(BASEMOD), basemod)
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/data-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+else
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/data-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+endif
+else
+ifneq ($(BASEMOD), basemod)
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+else
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/vms-1.1-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+endif
+endif
+else
+ifneq ($(BUILD_DATA_PK3),0)
+ifneq ($(BASEMOD), basemod)
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/data-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+else
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/data-$(VERSION).pk3 \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+endif
+else
+ifneq ($(BASEMOD), basemod)
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/core_game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+else
+.PHONY: all clean clean2 clean-debug clean-release \
+	debug default dist distclean makedirs release targets \
+	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
+	$(B)/$(BASEMOD)/cgame$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/game$(SHLIBNAME) \
+	$(B)/$(BASEMOD)/ui$(SHLIBNAME) \
+	$(B).zip
+endif
+endif
+endif
+endif
 
 # If the target name contains "clean", don't do a parallel build
 ifneq ($(findstring clean, $(MAKECMDGOALS)),)

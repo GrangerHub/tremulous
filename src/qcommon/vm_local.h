@@ -23,6 +23,9 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 */
 #include "q_shared.h"
 #include "qcommon.h"
+#ifdef NEW_FILESYSTEM
+#include "qcommon/files.h"
+#endif
 
 // Max number of arguments to pass from engine to vm's vmMain function.
 // command number + 3 arguments
@@ -152,7 +155,11 @@ struct vm_s {
 	//------------------------------------
    
 	char		name[MAX_QPATH];
+#ifdef NEW_FILESYSTEM
+	const fsc_file_t *source_file;		// Can be either qvm or dll
+#else
 	void	*searchPath;				// hint for FS_ReadFileDir()
+#endif
 
 	// for dynamic linked modules
 	void		*dllHandle;

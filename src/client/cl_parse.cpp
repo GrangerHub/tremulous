@@ -342,7 +342,9 @@ void CL_ParseSnapshot( msg_t *msg ) {
 
 //=====================================================================
 
+#ifndef NEW_FILESYSTEM
 bool cl_connectedToPureServer;
+#endif
 bool cl_connectedToCheatServer;
 
 /*
@@ -389,7 +391,11 @@ void CL_SystemInfoChanged( void ) {
 
 	s = Info_ValueForKey( systemInfo, "sv_referencedPaks" );
 	t = Info_ValueForKey( systemInfo, "sv_referencedPakNames" );
+#ifdef NEW_FILESYSTEM
+	fs_register_download_list(s, t);
+#else
 	FS_PureServerSetReferencedPaks( s, t );
+#endif
 
 	gameSet = false;
 	// scan through all the variables in the systeminfo and locally set cvars to match
@@ -405,16 +411,25 @@ void CL_SystemInfoChanged( void ) {
 		// ehw!
 		if (!Q_stricmp(key, "fs_game"))
 		{
+#ifndef NEW_FILESYSTEM
 			if(FS_CheckDirTraversal(value))
 			{
 				Com_Printf(S_COLOR_YELLOW "WARNING: Server sent invalid fs_game value %s\n", value);
 				continue;
 			}
+#endif
 				
 			gameSet = true;
 		} else if ( clc.demoplaying && Q_stricmp(key, "sv_pure" ) ) {
 			continue;
 		}
+
+#ifdef NEW_FILESYSTEM
+		if (!Q_stricmp(key, "sv_pure"))
+		{
+			fs_set_connected_server_sv_pure_value(atoi(value));
+		}
+#endif
 
 		if((cvar_flags = Cvar_Flags(key)) == CVAR_NONEXISTENT)
 			Cvar_Get(key, value, CVAR_SERVER_CREATED | CVAR_ROM);
@@ -438,7 +453,11 @@ void CL_SystemInfoChanged( void ) {
 	if ( !gameSet && *Cvar_VariableString("fs_game") ) {
 		Cvar_Set( "fs_game", "" );
 	}
+#ifdef NEW_FILESYSTEM
+	fs_set_connected_server_profile(clc.netchan.alternateProtocol);
+#else
 	cl_connectedToPureServer = (bool)Cvar_VariableValue( "sv_pure" );
+#endif
 }
 
 /*
@@ -546,7 +565,9 @@ void CL_ParseGamestate( msg_t *msg ) {
 		Q_strncpyz(cl_oldGame, oldGame, sizeof(cl_oldGame));
 	}
 
+#ifndef NEW_FILESYSTEM
 	FS_ConditionalRestart(clc.checksumFeed, false);
+#endif
 
 	// This used to call CL_StartHunkUsers, but now we enter the download state before loading the
 	// cgame
@@ -639,7 +660,11 @@ void CL_ParseDownload ( msg_t *msg ) {
 			clc.download = 0;
 
 			// rename the file
+#ifdef NEW_FILESYSTEM
+			fs_finalize_download();
+#else
 			FS_SV_Rename( clc.downloadTempName, clc.downloadName, false );
+#endif
 		}
 
 		// send intentions now

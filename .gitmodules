@@ -1,0 +1,3 @@
+[submodule "default-assets"]
+	path = default-assets
+	url = https://github.com/GrangerHub/tremulous-default-assets.git

@@ -244,7 +244,11 @@ FILE *Sys_Mkfifo( const char *ospath )
 
 	// if file already exists AND is a pipefile, remove it
 	if( !stat( ospath, &buf ) && S_ISFIFO( buf.st_mode ) )
+#ifdef NEW_FILESYSTEM
+		remove(ospath);
+#else
 		FS_Remove( ospath );
+#endif
 
 	result = mkfifo( ospath, 0600 );
 	if( result != 0 )
@@ -594,11 +598,18 @@ void Sys_ErrorDialog( const char *error )
 	char buffer[ 1024 ];
 	unsigned int size;
 	int f = -1;
+#ifdef NEW_FILESYSTEM
+	char ospath[FS_MAX_PATH];
+	char *fileName = ospath;
+
+	fs_generate_path_writedir("crashlog.txt", 0, 0, 0, ospath, sizeof(ospath));
+#else
 	const char *homepath = Cvar_VariableString( "fs_homepath" );
 	const char *gamedir = Cvar_VariableString( "fs_game" );
 	const char *fileName = "crashlog.txt";
 	char *dirpath = FS_BuildOSPath( homepath, gamedir, "");
 	char *ospath = FS_BuildOSPath( homepath, gamedir, fileName );
+#endif
 
 	Sys_Print( va( "%s\n", error ) );
 
@@ -606,6 +617,7 @@ void Sys_ErrorDialog( const char *error )
 	Sys_Dialog( DT_ERROR, va( "%s. See \"%s\" for details.", error, ospath ), "Error" );
 #endif
 
+#ifndef NEW_FILESYSTEM
 	// Make sure the write path for the crashlog exists...
 
 	if(!Sys_Mkdir(homepath))
@@ -619,6 +631,7 @@ void Sys_ErrorDialog( const char *error )
 		Com_Printf("ERROR: couldn't create path '%s' for crash log.\n", dirpath);
 		return;
 	}
+#endif
 
 	// We might be crashing because we maxed out the Quake MAX_FILE_HANDLES,
 	// which will come through here, so we don't want to recurse forever by

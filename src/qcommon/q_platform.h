@@ -105,8 +105,15 @@ extern "C" {
     
     #if defined( __WIN64__ ) 
     #define ARCH_STRING "x86_64"
+    #define READABLE_ARCH_STRING "64"
+    #elif defined( __WIN32__ )
+    #define ARCH_STRING "x86"
+    #define READABLE_ARCH_STRING "32"
     #elif defined _M_ALPHA
     #define ARCH_STRING "AXP"
+    #define READABLE_ARCH_STRING ARCH_STRING
+    #else
+    #define READABLE_ARCH_STRING ARCH_STRING
     #endif
     
     #define Q3_LITTLE_ENDIAN
@@ -115,8 +122,8 @@ extern "C" {
     #define EXE_EXT ".exe"
 
     // For cl_updates.cpp
-    #define RELEASE_PACKAGE_NAME ( "release-mingw32-" ARCH_STRING ".zip" )
-    #define RELEASE_SIGNATURE_NAME ( "release-mingw32-" ARCH_STRING ".zip.sig" )
+    #define RELEASE_PACKAGE_NAME ( "release-windows-" READABLE_ARCH_STRING ".zip" )
+    #define RELEASE_SIGNATURE_NAME ( "release-windows-" READABLE_ARCH_STRING ".zip.sig" )
     #define GRANGER_EXE ( "granger" EXE_EXT )
 
 #elif defined(_WIN32) || defined(__WIN32__)
@@ -138,8 +145,15 @@ extern "C" {
     
     #if defined( _M_IX86 ) || defined( __i386__ )
     #define ARCH_STRING "x86"
+    #define READABLE_ARCH_STRING "32"
+    #elif defined _M_X64
+    #define ARCH_STRING "x86_64"
+    #define READABLE_ARCH_STRING "64"
     #elif defined _M_ALPHA
     #define ARCH_STRING "AXP"
+    #define READABLE_ARCH_STRING ARCH_STRING
+    #else
+    #define READABLE_ARCH_STRING ARCH_STRING
     #endif
     
     #define Q3_LITTLE_ENDIAN
@@ -148,8 +162,8 @@ extern "C" {
     #define EXE_EXT ".exe"
 
     // For cl_updates.cpp
-    #define RELEASE_PACKAGE_NAME ( "release-mingw32-" ARCH_STRING ".zip" )
-    #define RELEASE_SIGNATURE_NAME ( "release-mingw32-" ARCH_STRING ".zip.sig" )
+    #define RELEASE_PACKAGE_NAME ( "release-windows-" READABLE_ARCH_STRING ".zip" )
+    #define RELEASE_SIGNATURE_NAME ( "release-windows-" READABLE_ARCH_STRING ".zip.sig" )
     #define GRANGER_EXE ( "granger" EXE_EXT )
 
 #endif
@@ -165,23 +179,28 @@ extern "C" {
 
     #ifdef __ppc__
     #define ARCH_STRING "ppc"
+    #define READABLE_ARCH_STRING ARCH_STRING
     #define Q3_BIG_ENDIAN
     #elif defined __i386__
     #define ARCH_STRING "x86"
+    #define READABLE_ARCH_STRING "32"
     #define Q3_LITTLE_ENDIAN
     #elif defined __x86_64__
     #undef idx64
     #define idx64 1
     #define ARCH_STRING "x86_64"
+    #define READABLE_ARCH_STRING "64"
     #define Q3_LITTLE_ENDIAN
+    #else
+    #define READABLE_ARCH_STRING ARCH_STRING
     #endif
 
     #define DLL_EXT ".dylib"
     #define EXE_EXT
 
     // For cl_updates.cpp
-    #define RELEASE_PACKAGE_NAME ( "release-darwin-" ARCH_STRING ".zip" )
-    #define RELEASE_SIGNATURE_NAME ( "release-darwin-" ARCH_STRING ".zip.sig" )
+    #define RELEASE_PACKAGE_NAME ( "release-macos-" READABLE_ARCH_STRING ".zip" )
+    #define RELEASE_SIGNATURE_NAME ( "release-macos-" READABLE_ARCH_STRING ".zip.sig" )
     #define GRANGER_EXE ( "granger" EXE_EXT )
 
 #endif
@@ -206,12 +225,15 @@ extern "C" {
     
     #ifdef __ppc__
      #define ARCH_STRING "ppc"
+     #define READABLE_ARCH_STRING ARCH_STRING
      #define Q3_BIG_ENDIAN
     #elif defined __i386__
      # define ARCH_STRING "x86"
+     # define READABLE_ARCH_STRING "32"
      # define Q3_LITTLE_ENDIAN
     #elif defined __x86_64__
      # define ARCH_STRING "x86_64"
+     # define READABLE_ARCH_STRING "64"
      # define Q3_LITTLE_ENDIAN
      #undef idx64
      #define idx64 1
@@ -221,9 +243,11 @@ extern "C" {
      # endif
      # if defined __armhf__
       # define ARCH_STRING "armhf"
+      #define READABLE_ARCH_STRING ARCH_STRING
       # define Q3_LITTLE_ENDIAN
      # else
       # define ARCH_STRING "armel"
+      #define READABLE_ARCH_STRING ARCH_STRING
       # define Q3_LITTLE_ENDIAN
      # endif
     #elif defined __aarch64__
@@ -231,15 +255,18 @@ extern "C" {
       # error "Big endian ARM is not supported"
      # endif
      # define ARCH_STRING "aarch64"
+     #define READABLE_ARCH_STRING ARCH_STRING
      # define Q3_LITTLE_ENDIAN
+     #else
+     #define READABLE_ARCH_STRING ARCH_STRING
     #endif
     
     #define DLL_EXT ".so"
     #define EXE_EXT
     
     // For cl_updates.cpp
-    #define RELEASE_PACKAGE_NAME ( "release-linux-" ARCH_STRING ".zip" )
-    #define RELEASE_SIGNATURE_NAME ( "release-linux-" ARCH_STRING ".zip.sig" )
+    #define RELEASE_PACKAGE_NAME ( "release-linux-" READABLE_ARCH_STRING ".zip" )
+    #define RELEASE_SIGNATURE_NAME ( "release-linux-" READABLE_ARCH_STRING ".zip.sig" )
     #define GRANGER_EXE ( "granger" EXE_EXT )
  
 #endif

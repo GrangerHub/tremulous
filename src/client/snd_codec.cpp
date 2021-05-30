@@ -38,6 +38,33 @@ then tries all supported codecs.
 */
 static void *S_CodecGetSound(const char *filename, snd_info_t *info)
 {
+#ifdef NEW_FILESYSTEM
+	char localName[MAX_QPATH];
+	const fsc_file_t *file;
+	const char *extension;
+	snd_codec_t *codec;
+
+	COM_StripExtension(filename, localName, MAX_QPATH);
+
+	// Look up the file
+	file = fs_sound_lookup(localName, 0, false);
+	if(!file) {
+		Com_Printf(S_COLOR_YELLOW "WARNING: Failed to %s sound %s!\n", info ? "load" : "open", filename);
+		return NULL; }
+
+	// Get extension
+	extension = fs_file_extension(file);
+	if(!extension) Com_Error(ERR_DROP, "S_CodecGetSound got file with invalid extension from fs_sound_lookup");
+
+	for(codec=codecs; codec; codec=codec->next) {
+			if(!Q_stricmp(extension, codec->ext)) {
+				// Load
+				if(info) return codec->load(va("%s.%s", localName, codec->ext), info);
+				else return codec->open(va("%s.%s", localName, codec->ext)); } }
+
+	Com_Error(ERR_DROP, "S_CodecGetSound got file with unknown extension from fs_sound_lookup");
+	return NULL;
+#else
 	snd_codec_t *codec;
 	snd_codec_t *orgCodec = NULL;
 	bool	orgNameFailed = false;
@@ -115,6 +142,7 @@ static void *S_CodecGetSound(const char *filename, snd_info_t *info)
 	Com_Printf(S_COLOR_YELLOW "WARNING: Failed to %s sound %s!\n", info ? "load" : "open", filename);
 
 	return NULL;
+#endif
 }
 
 /*

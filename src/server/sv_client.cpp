@@ -467,6 +467,12 @@ gotnewcl:
 
 	Cvar_Set( va( "sv_clAltProto%i", clientNum ), ( version == 69 ? "2" : version == 70 ? "1" : "0" ) );
 
+#ifdef NEW_FILESYSTEM
+	// save the client version profile
+	newcl->clientProfile = ( version == 69 ? CLIENT_PROFILE_1_1 : version == 70 ? CLIENT_PROFILE_GPP :
+		CLIENT_PROFILE_1_3 );
+#endif
+
 	// save the challenge
 	newcl->challenge = challenge;
 
@@ -543,6 +549,10 @@ void SV_FreeClient(client_t *client)
 	client->queuedVoipPackets = 0;
 #endif
 
+#ifdef NEW_FILESYSTEM
+	fs_free_client_download_map(client->downloadMap);
+#endif
+
 	SV_Netchan_FreeQueue(client);
 	SV_CloseDownload(client);
 }
@@ -607,7 +617,9 @@ void SV_DropClient( client_t *drop, const char *reason ) {
 	}
 }
 
+#ifndef NEW_FILESYSTEM
 extern char alternateInfos[2][2][BIG_INFO_STRING];
+#endif
 
 /*
 ================
@@ -630,8 +642,17 @@ static void SV_SendClientGameState( client_t *client ) {
  	Com_DPrintf ("SV_SendClientGameState() for %s\n", client->name);
 	Com_DPrintf( "Going from CS_CONNECTED to CS_PRIMED for %s\n", client->name );
 	client->state = CS_PRIMED;
+#ifndef NEW_FILESYSTEM
 	client->pureAuthentic = 0;
 	client->gotCP = false;
+#endif
+
+#ifdef NEW_FILESYSTEM
+	// Store download map for the client so all the pk3s in the gamestate will be available
+	// for the client to download even if the global download list changed during the client
+	// download sequence
+	fs_update_client_download_map(client->clientProfile, client->downloadMap);
+#endif
 
 	// when we receive the first packet from the client, we will
 	// notice that it is from a different serverid and that the
@@ -656,8 +677,13 @@ static void SV_SendClientGameState( client_t *client ) {
 
 	// write the configstrings
 	for ( start = 0 ; start < MAX_CONFIGSTRINGS ; start++ ) {
+#ifdef NEW_FILESYSTEM
+		if ( start <= CS_SYSTEMINFO ) {
+			configstring = sv.versionedConfigstrings[start][client->clientProfile];
+#else
 		if ( start <= CS_SYSTEMINFO && client->netchan.alternateProtocol != 0 ) {
 			configstring = alternateInfos[start][ client->netchan.alternateProtocol - 1 ];
+#endif
 		} else {
 			configstring = sv.configstrings[start].s;
 		}
@@ -838,6 +864,36 @@ static void SV_BeginDownload_f( client_t *cl ) {
 	Q_strncpyz( cl->downloadName, Cmd_Argv(1), sizeof(cl->downloadName) );
 }
 
+#ifdef NEW_FILESYSTEM
+static void SV_OpenDownloadError(client_t *cl, msg_t *msg, const char *errorMessage) {
+	// Sends error message to client
+	MSG_WriteByte( msg, svc_download );
+	MSG_WriteShort( msg, 0 ); // client is expecting block zero
+	MSG_WriteLong( msg, -1 ); // illegal file size
+	MSG_WriteString( msg, errorMessage ); }
+
+static qboolean SV_OpenDownload(client_t *cl, msg_t *msg) {
+	// Returns qtrue on success, qfalse otherwise
+	char pak_name[MAX_QPATH];
+	COM_StripExtension(cl->downloadName, pak_name, sizeof(pak_name));
+
+	if(!(sv_allowDownload->integer & DLF_ENABLE) || (sv_allowDownload->integer & DLF_NO_UDP) ) {
+		Com_Printf("clientDownload: %d : \"%s\" UDP download disabled by server sv_allowDownload setting\n",
+				(int) (cl - svs.clients), cl->downloadName);
+		SV_OpenDownloadError(cl, msg, va("Could not download \"%s\" because autodownloading is disabled on the server.\n"
+				"Set autodownload to No in your settings and you might be able to join the game anyway.\n", cl->downloadName));
+		return qfalse; }
+
+	cl->download = fs_open_download_pak(cl->downloadMap, cl->downloadName, (unsigned int *)&cl->downloadSize);
+	if(!cl->download) {
+		Com_Printf("clientDownload: %d : \"%s\" failed to load download pk3\n", (int) (cl - svs.clients), cl->downloadName);
+		SV_OpenDownloadError(cl, msg, va("File \"%s\" not available on server for downloading.\n"
+				"Try reconnecting to the server.\n", cl->downloadName));
+		return qfalse; }
+
+	return qtrue; }
+#endif
+
 /*
 ==================
 SV_WriteDownloadToClient
@@ -849,16 +905,23 @@ Fill up msg with data, return number of download blocks added
 int SV_WriteDownloadToClient(client_t *cl, msg_t *msg)
 {
 	int curindex;
+#ifndef NEW_FILESYSTEM
 	int unreferenced = 1;
 	char errorMessage[1024];
 	char pakbuf[MAX_QPATH], *pakptr;
 	int numRefPaks;
+#endif
 
 	if (!*cl->downloadName)
 		return 0;	// Nothing being downloaded
 
 	if(!cl->download)
 	{
+#ifdef NEW_FILESYSTEM
+		if(!SV_OpenDownload(cl, msg)) {
+			*cl->downloadName = 0;
+			return 1; }
+#else
  		// Chop off filename extension.
 		Com_sprintf(pakbuf, sizeof(pakbuf), "%s", cl->downloadName);
 		pakptr = strrchr(pakbuf, '.');
@@ -933,6 +996,7 @@ int SV_WriteDownloadToClient(client_t *cl, msg_t *msg)
 			
 			return 1;
 		}
+#endif
  
 		Com_Printf( "clientDownload: %d : beginning \"%s\"\n", (int) (cl - svs.clients), cl->downloadName );
 		
@@ -1099,6 +1163,20 @@ static void SV_Disconnect_f( client_t *cl ) {
 	SV_DropClient( cl, "disconnected" );
 }
 
+#ifdef NEW_FILESYSTEM
+/*
+=================
+SV_VerifyPaks_f / SV_ResetPureClient_f
+
+Placeholder functions to handle the deprecated cp and vdr commands
+=================
+*/
+static void SV_VerifyPaks_f( client_t *cl ) {
+}
+
+static void SV_ResetPureClient_f( client_t *cl ) {
+}
+#else
 /*
 =================
 SV_VerifyPaks_f
@@ -1274,6 +1352,7 @@ static void SV_ResetPureClient_f( client_t *cl ) {
 	cl->pureAuthentic = 0;
 	cl->gotCP = false;
 }
+#endif
 
 /*
 =================
@@ -1619,6 +1698,7 @@ static void SV_UserMove( client_t *cl, msg_t *msg, bool delta ) {
 	// save time for ping calculation
 	cl->frames[ cl->messageAcknowledge & PACKET_MASK ].messageAcked = svs.time;
 
+#ifndef NEW_FILESYSTEM
 	// TTimo
 	// catch the no-cp-yet situation before SV_ClientEnterWorld
 	// if CS_ACTIVE, then it's time to trigger a new gamestate emission
@@ -1632,6 +1712,7 @@ static void SV_UserMove( client_t *cl, msg_t *msg, bool delta ) {
 		}
 		return;
 	}			
+#endif
 	
 	// if this is the first usercmd we have received
 	// this gamestate, put the client into the world
@@ -1640,11 +1721,13 @@ static void SV_UserMove( client_t *cl, msg_t *msg, bool delta ) {
 		// the moves can be processed normaly
 	}
 	
+#ifndef NEW_FILESYSTEM
 	// a bad cp command was sent, drop the client
 	if (sv_pure->integer != 0 && cl->pureAuthentic == 0) {		
 		SV_DropClient( cl, "Cannot validate pure client!");
 		return;
 	}
+#endif
 
 	if ( cl->state != CS_ACTIVE ) {
 		cl->deltaMessage = -1;

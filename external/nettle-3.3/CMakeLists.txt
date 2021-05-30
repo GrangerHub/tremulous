@@ -34,5 +34,4 @@ include_directories (
     include
     )
 
-# command: /usr/bin/clang -Wall -Wextra -DLUA_COMPAT_5_2 -fPIC -fpic -o build/release-darwin-x86_64/nettle/bignum.o -c src/nettle-3.3/nettle/bignum.c
-
+# command: /usr/bin/clang -Wall -Wextra -DLUA_COMPAT_5_2 -fPIC -fpic -o build/release-macos-64/nettle/bignum.o -c src/nettle-3.3/nettle/bignum.c

@@ -1,52 +1,104 @@
 #!/bin/bash
 
-URL="https://github.com/wtfbbqhax/tremulous-data/raw/master/"
+REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/.."
 
-packages="
-data-1.1.0.pk3
-data-gpp1.pk3
-map-arachnid2-1.1.0.pk3
-map-atcs-1.1.0.pk3
-map-karith-1.1.0.pk3
-map-nexus6-1.1.0.pk3
-map-niveus-1.1.0.pk3
-map-transit-1.1.0.pk3
-map-tremor-1.1.0.pk3
-map-uncreation-1.1.0.pk3
-"
+cd $REPO_ROOT
 
-for dir in ./build/*; do
+default_assets_path="${REPO_ROOT}/default-assets"
+
+# prepare the default-assets repo
+git submodule init
+git submodule update
+
+for dir in ${REPO_ROOT}/build/*; do
     if [[ ! -d $dir ]]; then
         continue;
     fi
 
-    # Download
+    # Copy files
 
-    if [[ $dir == "./build/release-darwin-x86_64" ]]; then
+    if [[ $dir == "${REPO_ROOT}/build/release-macos-64" ]]; then
+        pushd $dir/Tremulous.app/Contents/MacOS/base/ 
+    else
+        mkdir -pv $dir/base
+        pushd $dir/base
+    fi
+
+    if [[ $dir == "${REPO_ROOT}/build/release-macos-64" ]]; then
+        for i in $default_assets_path/base/*.pk3; do
+            cp $i "${PWD}/"
+        done
+    else
+        cp -av $default_assets_path/base/*.pk3 ./
+    fi
+
+    popd
+
+    if [[ $dir == "${REPO_ROOT}/build/release-macos-64" ]]; then
         pushd $dir/Tremulous.app/Contents/MacOS/gpp/ 
     else
+        mkdir -pv $dir/gpp
         pushd $dir/gpp
     fi
 
-    for i in $packages; do
-        if [[ -e $package ]]; then
-            rm -f $package # only want 1 copy
-        fi
-        curl -OL $URL/$i
-    done
-
-    popd
-
-    # Repackage
-
-    pushd $dir
-
-    if [[ $dir == "./build/release-darwin-x86_64" ]]; then
-        zip -r ../$(basename $dir).zip Tremulous.app
+    if [[ $dir == "${REPO_ROOT}/build/release-macos-64" ]]; then
+        for i in $default_assets_path/gpp/*.pk3; do
+            cp $i "${PWD}/"
+        done
     else
-        zip -r ../$(basename $dir).zip gpp/*.pk3
+        cp -av $default_assets_path/gpp/*.pk3 ./
     fi
 
     popd
-done
 
+    if [[ $dir == "${REPO_ROOT}/build/release-macos-64" ]]; then
+        pushd $dir/Tremulous.app/Contents/MacOS/trem13/ 
+    else
+        mkdir -pv $dir/trem13
+        pushd $dir/trem13
+    fi
+
+    mv *.pk3 $dir/
+    if [[ $dir == "${REPO_ROOT}/build/release-macos-64" ]]; then
+        for i in $default_assets_path/trem13/*.pk3; do
+            cp $i "${PWD}/"
+        done
+    else
+        cp -a $default_assets_path/trem13/*.pk3 ./
+    fi
+
+    popd
+
+    # Repackage and remove the non-default pk3 files from trem13/
+
+    pushd $dir
+
+    if [[ $dir == "${REPO_ROOT}/build/release-macos-64" ]]; then
+        zip -d ${REPO_ROOT}/build/$(basename $dir).zip "Tremulous.app/Contents/MacOS/trem13/*.pk3"
+        zip -r ${REPO_ROOT}/build/$(basename $dir).zip Tremulous.app
+    else
+        zip -r ${REPO_ROOT}/build/$(basename $dir).zip base/*.pk3
+        zip -r ${REPO_ROOT}/build/$(basename $dir).zip gpp/*.pk3
+        zip -d ${REPO_ROOT}/build/$(basename $dir).zip "trem13/*.pk3"
+        zip -r ${REPO_ROOT}/build/$(basename $dir).zip trem13/*.pk3
+    fi
+
+    popd
+
+    if [[ $dir == "${REPO_ROOT}/build/release-macos-64" ]]; then
+        pushd $dir/Tremulous.app/Contents/MacOS/trem13/ 
+    else
+        pushd $dir/trem13
+    fi
+
+    if [[ $dir == "${REPO_ROOT}/build/release-macos-64" ]]; then
+        for i in $dir/*.pk3; do
+            cp $i "${PWD}/"
+        done
+    else
+        cp -an $dir/*.pk3 ./
+    fi
+    rm -rf $dir/*.pk3
+
+    popd
+done

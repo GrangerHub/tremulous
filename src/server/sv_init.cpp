@@ -31,7 +31,9 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 // we even log attacks when the server is waiting for rcon and doesn't run a map
 int attHandle = 0; // server attack log file handle
 
+#ifndef NEW_FILESYSTEM
 char alternateInfos[2][2][BIG_INFO_STRING];
+#endif
 
 /*
 ===============
@@ -55,10 +57,17 @@ static void SV_SendConfigstring(client_t *client, int i)
         return;
     }
 
+#ifdef NEW_FILESYSTEM
+    if (i <= CS_SYSTEMINFO)
+    {
+        configstring = sv.versionedConfigstrings[i][client->clientProfile];
+    }
+#else
     if (i <= CS_SYSTEMINFO && client->netchan.alternateProtocol != 0)
     {
         configstring = alternateInfos[i][client->netchan.alternateProtocol - 1];
     }
+#endif
     else
     {
         configstring = sv.configstrings[i].s;
@@ -136,7 +145,11 @@ SV_SetConfigstring
 */
 void SV_SetConfigstring(int idx, const char *val)
 {
+#ifdef NEW_FILESYSTEM
+    bool modified[CLIENT_PROFILE_COUNT] = {false};
+#else
     bool modified[3] = {false, false, false};
+#endif
     int i;
     client_t *client;
 
@@ -152,6 +165,53 @@ void SV_SetConfigstring(int idx, const char *val)
 
     if (idx <= CS_SYSTEMINFO)
     {
+#ifdef NEW_FILESYSTEM
+        for (i = 0; i < CLIENT_PROFILE_COUNT; ++i)
+        {
+            clientProfile_t profile = (clientProfile_t)i;
+            char info[BIG_INFO_STRING];
+            Q_strncpyz(info, val, sizeof(info));
+
+            if (idx == CS_SERVERINFO)
+            {
+                if (profile == CLIENT_PROFILE_1_1)
+                    Info_SetValueForKey_Big(info, "protocol", "69");
+                if (profile == CLIENT_PROFILE_GPP)
+                    Info_SetValueForKey_Big(info, "protocol", "70");
+            }
+
+            if (idx == CS_SYSTEMINFO)
+            {
+                // Obtain reference strings from cvars corresponding to version profile
+                FS_ReferenceProfile reference_profile(profile);
+                Info_SetValueForKey_Big(info, "sv_referencedPaks",
+                        Cvar_VariableString(reference_profile.download_hashes_cvar.c_str()));
+                Info_SetValueForKey_Big(info, "sv_referencedPakNames",
+                        Cvar_VariableString(reference_profile.download_names_cvar.c_str()));
+                Info_SetValueForKey_Big(info, "sv_paks",
+                        Cvar_VariableString(reference_profile.pure_hashes_cvar.c_str()));
+                Info_SetValueForKey_Big(info, "sv_pakNames",
+                        Cvar_VariableString(reference_profile.pure_names_cvar.c_str()));
+
+                if (profile == CLIENT_PROFILE_1_1)
+                {
+                    Info_SetValueForKey_Big(info, "cl_allowDownload", "1, you should set it yourself");
+                    if (!(sv_allowDownload->integer & DLF_NO_REDIRECT))
+                    {
+                        Info_SetValueForKey_Big(info, "sv_wwwBaseURL", Cvar_VariableString("sv_dlUrl"));
+                        Info_SetValueForKey_Big(
+                            info, "sv_wwwDownload", Cvar_VariableString("1, you should set it yourself"));
+                    }
+                }
+            }
+
+            if (strcmp(info, sv.versionedConfigstrings[idx][profile]))
+            {
+                modified[profile] = true;
+                strcpy(sv.versionedConfigstrings[idx][profile], info);
+            }
+        }
+#else
         for (i = 1; i < 3; ++i)
         {
             char info[BIG_INFO_STRING];
@@ -195,6 +255,7 @@ void SV_SetConfigstring(int idx, const char *val)
         {
             return;
         }
+#endif
     }
     else
     {
@@ -216,10 +277,17 @@ void SV_SetConfigstring(int idx, const char *val)
         // send the data to all relevent clients
         for (i = 0, client = svs.clients; i < sv_maxclients->integer; i++, client++)
         {
+#ifdef NEW_FILESYSTEM
+            if (idx <= CS_SYSTEMINFO && !modified[client->clientProfile])
+            {
+                continue;
+            }
+#else
             if (idx <= CS_SYSTEMINFO && !modified[client->netchan.alternateProtocol])
             {
                 continue;
             }
+#endif
 
             if (client->state < CS_ACTIVE)
             {
@@ -517,10 +585,12 @@ static void SV_ClearServer(void)
 
     for (i = 0; i < MAX_CONFIGSTRINGS; i++)
     {
+#ifndef NEW_FILESYSTEM
         if (i <= CS_SYSTEMINFO)
         {
             alternateInfos[i][0][0] = alternateInfos[i][1][0] = '\0';
         }
+#endif
         if (sv.configstrings[i].s)
         {
             Z_Free(sv.configstrings[i].s);
@@ -529,6 +599,7 @@ static void SV_ClearServer(void)
     ::memset(&sv, 0, sizeof(sv));
 }
 
+#ifndef NEW_FILESYSTEM
 /*
 ================
 SV_TouchCGame
@@ -548,6 +619,7 @@ static void SV_TouchCGame(void)
         FS_FCloseFile(f);
     }
 }
+#endif
 
 /*
 ================
@@ -563,13 +635,21 @@ void SV_SpawnServer(char *server)
     int i;
     int checksum;
     char systemInfo[16384];
+#ifndef NEW_FILESYSTEM
     const char *p;
+#endif
 
     // shut down the existing game if it is running
     SV_ShutdownGameProgs();
 
     Com_Printf("------ Server Initialization ------\n");
     Com_Printf("Server: %s\n", server);
+
+#ifdef NEW_FILESYSTEM
+	// This is sometimes called in CL_MapLoading->CL_Disconnect, but not in the case
+	// of a previous local game, so do it here to be safe
+	fs_disconnect_cleanup();
+#endif
 
     // if not running a dedicated server CL_MapLoading will connect the client to the server
     // also print some status stuff
@@ -622,10 +702,12 @@ void SV_SpawnServer(char *server)
     SV_ClearServer();
     for (i = 0; i < MAX_CONFIGSTRINGS; i++)
     {
+#ifndef NEW_FILESYSTEM
         if (i <= CS_SYSTEMINFO)
         {
             alternateInfos[i][0][0] = alternateInfos[i][1][0] = '\0';
         }
+#endif
         sv.configstrings[i].s = CopyString("");
         sv.configstrings[i].restricted = false;
         ::memset(&sv.configstrings[i].clientList, 0, sizeof(clientList_t));
@@ -636,7 +718,9 @@ void SV_SpawnServer(char *server)
 
     // get a new checksum feed and restart the file system
     sv.checksumFeed = (((int)rand() << 16) ^ rand()) ^ Com_Milliseconds();
+#ifndef NEW_FILESYSTEM
     FS_Restart(sv.checksumFeed);
+#endif
 
     // advertise GPP-compatible extensions
     Cvar_Set("sv_gppExtension", "1");
@@ -706,6 +790,10 @@ void SV_SpawnServer(char *server)
     sv.time += 100;
     svs.time += 100;
 
+#ifdef NEW_FILESYSTEM
+    // Set download and pure list cvars
+    fs_generate_reference_lists();
+#else
     if (sv_pure->integer)
     {
         // the server sends these to the clients so they will only
@@ -747,6 +835,7 @@ void SV_SpawnServer(char *server)
     Cvar_Set("sv_referencedPakNames", p);
     p = FS_ReferencedPakNames(true);
     Cvar_Set("sv_referencedAlternatePakNames", p);
+#endif
 
     // save systeminfo and serverinfo strings
     Q_strncpyz(systemInfo, Cvar_InfoString_Big(CVAR_SYSTEMINFO), sizeof(systemInfo));
@@ -880,6 +969,7 @@ void SV_Init(void)
     Cvar_CheckRange(sv_voip, 0, 1, true);
     sv_voipProtocol = Cvar_Get("sv_voipProtocol", sv_voip->integer ? "opus" : "", CVAR_SYSTEMINFO | CVAR_ROM);
 #endif
+#ifndef NEW_FILESYSTEM
     Cvar_Get("sv_paks", "", CVAR_SYSTEMINFO | CVAR_ROM);
     Cvar_Get("sv_pakNames", "", CVAR_SYSTEMINFO | CVAR_ROM);
     Cvar_Get("sv_referencedPaks", "", CVAR_SYSTEMINFO | CVAR_ROM);
@@ -888,6 +978,7 @@ void SV_Init(void)
     Cvar_Get("sv_alternatePakNames", "", CVAR_ALTERNATE_SYSTEMINFO | CVAR_ROM);
     Cvar_Get("sv_referencedAlternatePaks", "", CVAR_ALTERNATE_SYSTEMINFO | CVAR_ROM);
     Cvar_Get("sv_referencedAlternatePakNames", "", CVAR_ALTERNATE_SYSTEMINFO | CVAR_ROM);
+#endif
 
     // server vars
     sv_rconPassword = Cvar_Get("rconPassword", "", CVAR_TEMP);

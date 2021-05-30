@@ -325,14 +325,27 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
             return 0;
 
         case G_FS_FOPEN_FILE:
+#ifdef NEW_FILESYSTEM
+			return FS_FOpenFileByModeOwner( (const char*)VMA(1), (fileHandle_t*)VMA(2), (FS_Mode)args[3], FS_HANDLEOWNER_QAGAME );
+#else
             return FS_FOpenFileByMode( (const char*)VMA(1), (fileHandle_t*)VMA(2), (FS_Mode)args[3] );
+#endif
         case G_FS_READ:
+#ifdef NEW_FILESYSTEM
+			if(fs_handle_get_owner(args[3]) != FS_HANDLEOWNER_QAGAME) return 0;
+#endif
             FS_Read( VMA(1), args[2], args[3] );
             return 0;
         case G_FS_WRITE:
+#ifdef NEW_FILESYSTEM
+			if(fs_handle_get_owner(args[3]) != FS_HANDLEOWNER_QAGAME) return 0;
+#endif
             FS_Write( VMA(1), args[2], args[3] );
             return 0;
         case G_FS_FCLOSE_FILE:
+#ifdef NEW_FILESYSTEM
+			if(fs_handle_get_owner(args[1]) != FS_HANDLEOWNER_QAGAME) return 0;
+#endif
             FS_FCloseFile( args[1] );
             return 0;
         case G_FS_GETFILELIST:
@@ -340,6 +353,9 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
         case G_FS_GETFILTEREDFILES:
             return FS_GetFilteredFiles( (const char*)VMA(1), (const char*)VMA(2), (char*)VMA(3), (char*)VMA(4), args[5] );
         case G_FS_SEEK:
+#ifdef NEW_FILESYSTEM
+			if(fs_handle_get_owner(args[1]) != FS_HANDLEOWNER_QAGAME) return 0;
+#endif
             return FS_Seek( args[1], args[2], (FS_Origin)args[3] );
         case G_LOCATE_GAME_DATA:
             SV_LocateGameData( (sharedEntity_t*)VMA(1), args[2], args[3], (playerState_t*)VMA(4), args[5] );
@@ -513,6 +529,9 @@ void SV_ShutdownGameProgs( void ) {
 		return;
 	}
 	VM_Call( sv.gvm, GAME_SHUTDOWN, false );
+#ifdef NEW_FILESYSTEM
+	fs_close_owner_handles(FS_HANDLEOWNER_QAGAME);
+#endif
 	VM_Free( sv.gvm );
 	sv.gvm = NULL;
 }
@@ -557,6 +576,9 @@ void SV_RestartGameProgs( void ) {
 		return;
 	}
 	VM_Call( sv.gvm, GAME_SHUTDOWN, true );
+#ifdef NEW_FILESYSTEM
+	fs_close_owner_handles(FS_HANDLEOWNER_QAGAME);
+#endif
 
 	// do a restart instead of a free
 	sv.gvm = VM_Restart(sv.gvm, true);

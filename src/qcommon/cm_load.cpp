@@ -734,6 +734,16 @@ void CM_LoadMap( const char *name, bool clientload, int *checksum ) {
 #endif
 	Com_DPrintf( "CM_LoadMap( %s, %i )\n", name, clientload );
 
+#ifdef NEW_FILESYSTEM
+	// Register the map here because, in the case of starting a local game through SV_Map_f
+	//    the current map has not been set yet and we don't want the bsp lookup to be
+	//    affected by a preexisting current map setting
+	fs_register_current_map(name);
+
+	// Warning: Check below may be problematic, because sometimes different maps can be loaded
+	// with same name, due to pure lists, mod dirs, etc.
+#endif
+
 	if ( !strcmp( cm.name, name ) && clientload ) {
 		*checksum = last_checksum;
 		return;

@@ -67,28 +67,28 @@ fi
 NCPU=`sysctl -n hw.ncpu`
 
 # x86_64 client and server
-#if [ -d build/release-release-x86_64 ]; then
-#	rm -r build/release-darwin-x86_64
+#if [ -d build/release-macos-64 ]; then
+#	rm -r build/release-macos-64
 #fi
 (ARCH=x86_64 CC=gcc-4.0 CFLAGS=$X86_64_CFLAGS LDFLAGS=$X86_64_LDFLAGS make -j$NCPU) || exit 1;
 
 echo;echo
 
 # x86 client and server
-#if [ -d build/release-darwin-x86 ]; then
-#	rm -r build/release-darwin-x86
+#if [ -d build/release-macos-32 ]; then
+#	rm -r build/release-macos-32
 #fi
 (ARCH=x86 CC=gcc-4.0 CFLAGS=$X86_CFLAGS LDFLAGS=$X86_LDFLAGS make -j$NCPU) || exit 1;
 
 echo;echo
 
 # PPC client and server
-#if [ -d build/release-darwin-ppc ]; then
-#	rm -r build/release-darwin-ppc
+#if [ -d build/release-macos-ppc ]; then
+#	rm -r build/release-macos-ppc
 #fi
 (ARCH=ppc CC=gcc-4.0 CFLAGS=$PPC_CFLAGS LDFLAGS=$PPC_LDFLAGS make -j$NCPU) || exit 1;
 
 echo
 
 # use the following shell script to build a universal application bundle
-"./make-macosx-app.sh" release
+"./make-macosx-app.sh" release basemod

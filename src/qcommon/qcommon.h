@@ -164,6 +164,16 @@ typedef struct {
 	void			*evPtr;			// this must be manually freed if not NULL
 } sysEvent_t;
 
+#ifdef NEW_FILESYSTEM
+// Different client configurations for multiprotocol servers (shared between server and filesystem)
+typedef enum {
+	CLIENT_PROFILE_1_1,
+	CLIENT_PROFILE_GPP,
+	CLIENT_PROFILE_1_3,
+	CLIENT_PROFILE_COUNT
+} clientProfile_t;
+#endif
+
 void  Com_rgb_to_hsl(vec4_t rgb, vec4_t hsl);
 void  Com_hsl_to_rgb(vec4_t hsl, vec4_t rgb);
 

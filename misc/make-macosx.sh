@@ -30,7 +30,14 @@ if [ -z "$DARWIN_GCC_ARCH" ]; then
 fi
 
 CC=gcc-4.0
-DESTDIR=build/release-darwin-${BUILDARCH}
+if [ "${BUILDARCH}" == "x86_64" ]; then
+	DESTDIR=build/release-macos-64
+elif [[ "${BUILDARCH}" == "x86" ]]; then
+	DESTDIR=build/release-macos-32
+else
+	DESTDIR=build/release-macos-${BUILDARCH}
+fi
+	#statements
 
 cd `dirname $0`
 if [ ! -f Makefile ]; then
@@ -68,10 +75,10 @@ NCPU=`sysctl -n hw.ncpu`
 
 
 # intel client and server
-#if [ -d build/release-darwin-${BUILDARCH} ]; then
-#	rm -r build/release-darwin-${BUILDARCH}
+#if [ -d build/release-macos-${BUILDARCH} ]; then
+#	rm -r build/release-macos-${BUILDARCH}
 #fi
 (ARCH=${BUILDARCH} CFLAGS=$ARCH_CFLAGS LDFLAGS=$ARCH_LDFLAGS make -j$NCPU) || exit 1;
 
 # use the following shell script to build an application bundle
-"./make-macosx-app.sh" release ${BUILDARCH}
+"./make-macosx-app.sh" release basemod ${BUILDARCH}
