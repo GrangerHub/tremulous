@@ -467,8 +467,6 @@ static void CG_SetUIVars( void )
   char  carriageCvar[ MAX_TOKEN_CHARS ];
   int   credit;
   playerState_t *ps;
-  alienStates_t *alienStates = &cgs.alienStates;
-  humanStates_t *humanStates = &cgs.humanStates;
 
   if( !cg.snap )
     return;
@@ -496,12 +494,6 @@ static void CG_SetUIVars( void )
   trap_Cvar_Set( "ui_ammoFull", va( "%d", !CG_DoNeedAmmo(ps)));
 
   trap_Cvar_Set( "ui_stages", va( "%d %d", cgs.alienStage, cgs.humanStage ) );
-
-  trap_Cvar_Set( "ui_alienStates", va( "%d %d %d %d %d", alienStates->omBuilding, alienStates->omHealth,
-      alienStates->spawns, alienStates->builders, alienStates->boosters ) );
-
-  trap_Cvar_Set( "ui_humanStates", va( "%d %d %d %d %d %d %d", humanStates->rcBuilding, humanStates->rcHealth,
-      humanStates->spawns, humanStates->builders, humanStates->armourys, humanStates->medicals, humanStates->computers ) );
 }
 
 /*

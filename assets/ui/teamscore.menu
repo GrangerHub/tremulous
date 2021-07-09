@@ -27,23 +27,6 @@
     focusColor .75 .75 .75 1  // Avoid focus
     style WINDOW_STYLE_EMPTY
 
-
-    // TEAM STATUS  //
-
-    itemDef
-    {
-      name teamStatus
-      textalign ALIGN_CENTER
-      textvalign VALIGN_CENTER
-      textscale 0.38
-      rect 0 (-BAR_H - SPACE) W BAR_H
-      forecolor 1 1 1 1
-      decoration
-      visible MENU_TRUE
-      textstyle ITEM_TEXTSTYLE_SHADOWED
-      ownerdraw CG_TEAM_STATUS
-    }
-
     // TEAM NAME  //
 
     itemDef
