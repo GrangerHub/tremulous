@@ -9,27 +9,9 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-10.15]
-        include:
-        - os: ubuntu-latest 
-          install_deps: |
-            sudo apt update
-            sudo apt install -y -qq \
-                make \
-                build-essential \
-                libgl1-mesa-dev \
-                libsdl2-dev \
-                libcurl4-openssl-dev \
-                libopenal-dev \
-                libfreetype6-dev \
-                zip \
-                rsync
 
-    runs-on: ${{ matrix.os }}
-    continue-on-error: true
-    
+    runs-on: macos-10.15
+
     steps:
     - uses: actions/checkout@v3
     - name: dependencies
