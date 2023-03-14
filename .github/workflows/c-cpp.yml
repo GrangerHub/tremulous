@@ -14,7 +14,20 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: dependencies
-      run: sudo apt install -y -qq make gcc g++ libgl1-mesa-dev libsdl2-dev libcurl4-openssl-dev libopenal-dev libfreetype6-dev zip rsync
+      run: |
+        sudo apt update
+        sudo apt install -y -qq \
+          make \
+          gcc \
+          g++ \
+          libgl1-mesa-dev \
+          libsdl2-dev \
+          libcurl4-openssl-dev \
+          libopenal-dev \
+          libfreetype6-dev \
+          zip \
+          rsync
+
     - name: make
       run: make -j
 
