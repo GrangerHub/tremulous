@@ -15,18 +15,18 @@ jobs:
         include:
         - os: ubuntu-latest
           install_deps: |
-          sudo apt update
-          sudo apt install -y -qq \
-              make \
-              gcc \
-              g++ \
-              libgl1-mesa-dev \
-              libsdl2-dev \
-              libcurl4-openssl-dev \
-              libopenal-dev \
-              libfreetype6-dev \
-              zip \
-              rsync
+            sudo apt update
+            sudo apt install -y -qq \
+                make \
+                gcc \
+                g++ \
+                libgl1-mesa-dev \
+                libsdl2-dev \
+                libcurl4-openssl-dev \
+                libopenal-dev \
+                libfreetype6-dev \
+                zip \
+                rsync
 
     runs-on: ${{ matrix.os }}
     steps:
