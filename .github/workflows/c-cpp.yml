@@ -11,9 +11,9 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [debian:stable-slim, macos-10.15]
+        os: [debian-stable, macos-10.15]
         include:
-        - os: ubuntu-latest
+        - os: debian-stable
           install_deps: |
             sudo apt update
             sudo apt install -y -qq \
