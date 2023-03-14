@@ -1,0 +1,32 @@
+name: Build Linux
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y -qq \
+          make \
+          build-essential \
+          libgl1-mesa-dev \
+          libsdl2-dev \
+          libcurl4-openssl-dev \
+          libopenal-dev \
+          libfreetype6-dev \
+          zip \
+          rsync
+    - name: make
+      run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 make -j
+
