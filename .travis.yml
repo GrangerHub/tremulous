@@ -48,8 +48,7 @@ matrix:
 deploy:
   provider: releases
   skip_cleanup: true
-  api_key:
-    secure: "jtNUkZL1TK3nD1LfWi5kypaL2WzUHxM/N72AcwKTmvieQ/3iwL8gRDFOhfWKFkNcyuCsEBw+c2KlpgfNGVNZYJgZrQ3Ozvnno5yN+V8Pb4ODEFU0Ps4EHSY7gsdF6bBdp3ooqsCsg8BkGfIggFsV+R9oKOyWWH1/N1jPWhf8ioWD+mMaAh5ZOsyQIECtSKAKMu9/hikVkdDuNsIAiaiJhYvP8rli5fYrZ4sVJih3YgeJj42i2iLeeWXmOmYNF7T5ywuBpaUjQJBEo83MilglTF0UOb471ADU2Gz3SMrnNCOdqDZLQaBL+QVrrgJUvXy5A92nxkY16mJaIvdDEOeIzWwgWVLoKyil6AFW5bR7lp2YW+/4I6zYEkGrpUaiZ+S1lgvm3CwVgwhg3rVuCi0qrI/7j/ImS9ORmz9DGbVgtg+y7mZnUIcEWX4jRDbbYWYIc/1fN+fGt73+41h0HS5of7d31yH6AyxB8/DlkuoKZIVHiErD0J3ZUkdVJOwhPFiPKViYR/07KEvafhkZkcffZh7arIesFB++4Kmglapb/awHJRh4lhfKd16IiCGjjfof8MDKSkmqAdXUsdCRcPu1Q0/cJaO3TRiTS6M0skrBUeIOOYsV0AdWM1Fy7dTySEEYlqZXnkiD98MG7CwobkWXmeVZHEzOJh2fDtv2w2ojoDI="
+  api_key: $GITHUB_OAUTH_TOKEN
   file_glob: true
   file: build/*.zip
   on:
