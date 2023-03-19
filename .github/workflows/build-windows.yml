@@ -16,7 +16,6 @@ jobs:
     container: debian:oldstable-slim
     env:
       PLATFORM: mingw32
-    defaults:
       release_name: release-mingw32-x86_64
 
     steps:
@@ -43,7 +42,7 @@ jobs:
     - name: change perms
       run: chmod -R ugo+rw build
     - name: pack 
-      run: cd ./build; zip -r ${{ jobs.build.defaults.release_name }}.zip ${{ jobs.build.defaults.release_name }}
+      run: cd ./build; zip -r $release_name.zip $release_name/
 
   upload:
     # only run if this was a tagged release
@@ -57,6 +56,6 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         upload_url: 
-        asset_path: ./build/${{ jobs.build.defaults.release_name }}.zip
-        asset_name: ${{ jobs.build.defaults.release_name }}.zip
+        asset_path: ./build/$release_name.zip
+        asset_name: $release_name.zip
         asset_content_type: application/zip
