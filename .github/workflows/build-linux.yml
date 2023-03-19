@@ -10,7 +10,8 @@ on:
 jobs:
   build:
 
-    runs-on: debian-jesse-slim
+    runs-on: ubuntu-latest
+    container: debian-stable-slim
 
     steps:
     - uses: actions/checkout@v3
