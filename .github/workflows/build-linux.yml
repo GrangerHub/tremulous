@@ -18,7 +18,7 @@ jobs:
     - name: dependencies
       run: |
         apt update -y
-        sudo apt install -y -qq \
+        apt install -y -qq \
           make \
           build-essential \
           libgl1-mesa-dev \
