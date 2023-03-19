@@ -35,5 +35,5 @@ jobs:
     - name: download paks
       run: ./misc/download-paks.sh
     - name: change perms
-      run:chmod -R ugo+rw build
+      run: chmod -R ugo+rw build
 
