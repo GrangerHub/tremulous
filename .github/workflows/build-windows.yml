@@ -30,6 +30,7 @@ jobs:
           libopenal-dev \
           libfreetype6-dev \
           zip \
+          curl \
           rsync
     - name: make
       run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 make -j
