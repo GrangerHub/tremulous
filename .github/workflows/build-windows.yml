@@ -51,7 +51,7 @@ jobs:
     needs: build
 
     steps:
-      - name: upload binaries
+    - name: upload binaries
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ github.token }}
