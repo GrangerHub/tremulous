@@ -24,7 +24,6 @@ jobs:
           make \
           build-essential \
           mingw-w64 \
-          mingw-w32 \
           libgl1-mesa-dev \
           libsdl2-dev \
           libcurl4-openssl-dev \
