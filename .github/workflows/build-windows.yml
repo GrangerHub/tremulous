@@ -44,8 +44,8 @@ jobs:
     - name: pack 
       run: cd ./build; zip -r $release_name.zip $release_name/
     - name: upload binaries
-      # only run if this was a tagged release
-      if: ( github.event_name == "create" ) && ( github.event.ref_type == 'tag' )
+      # only run if this was a tagged release (only works if separate job)
+      # if: ( github.event_name == "create" ) && ( github.event.ref_type == 'tag' )
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ github.token }}
