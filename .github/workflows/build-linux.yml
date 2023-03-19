@@ -12,6 +12,8 @@ jobs:
 
     runs-on: ubuntu-latest
     container: debian:oldstable-slim
+    env:
+      release_name: release-linux-x86_64
 
     steps:
     - uses: actions/checkout@v3
@@ -27,7 +29,19 @@ jobs:
           libopenal-dev \
           libfreetype6-dev \
           zip \
+          curl \
           rsync
     - name: make
       run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 make -j
+    - name: download paks
+      run: ./misc/download-paks.sh
+    - name: change perms
+      run: chmod -R ugo+rw build
+    - name: upload binaries
+      # only run if this was a tagged release (only works if separate job)
+      # if: ( github.event_name == "create" ) && ( github.event.ref_type == 'tag' )
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.release_name }}
+        path: ./build/${{ env.release_name }}.zip
 
