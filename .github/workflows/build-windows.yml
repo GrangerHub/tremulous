@@ -5,7 +5,9 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
-
+    
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,6 +16,8 @@ jobs:
     container: debian:oldstable-slim
     env:
       PLATFORM: mingw32
+    defaults:
+      release_name: release-mingw32-x86_64
 
     steps:
     - uses: actions/checkout@v3
@@ -38,4 +42,21 @@ jobs:
       run: ./misc/download-paks.sh
     - name: change perms
       run: chmod -R ugo+rw build
+    - name: pack 
+      run: cd ./build; zip -r ${{ jobs.build.defaults.release_name }}.zip ${{ jobs.build.defaults.release_name }}
 
+  upload:
+    # only run if this was a tagged release
+    if: ( github.event_name == "create" ) && ( github.event.ref_type == 'tag' )
+    needs: build
+
+    steps:
+      - name: upload binaries
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        upload_url: 
+        asset_path: ./build/${{ jobs.build.defaults.release_name }}.zip
+        asset_name: ${{ jobs.build.defaults.release_name }}.zip
+        asset_content_type: application/zip
