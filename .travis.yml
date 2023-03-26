@@ -48,7 +48,7 @@ matrix:
 deploy:
   provider: releases
   skip_cleanup: true
-  api_key: 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
+  api_key: $GITHUB_API_KEY
   file_glob: true
   file: build/*.zip
   on:
