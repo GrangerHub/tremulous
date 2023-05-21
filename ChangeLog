@@ -3,6 +3,18 @@ GrangerHub 1.3 candidate 0.16 alpha
 
     @dGr8LookinSparky's chat color and bucket system improvements from 38cbdc8 in Mar 29, 2020.
 
+GrangerHub 1.3 candidate 0.15 alpha
+-----------------------------------
+
+    Contains patches from @Buom01 that was merged by @dGr8LookinSparky on Feb 27, 2020.
+
+    Some highlights:
+
+    UI improvements for start and credits screens, menus
+    Player and buildable improvements and animations
+
+    See merge commit 500043f for detailed information.
+
 1.1.0
 -----
 
