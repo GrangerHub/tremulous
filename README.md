@@ -3,9 +3,17 @@
 [![Travis branch](https://travis-ci.org/GrangerHub/tremulous.svg?branch=master)](https://travis-ci.org/GrangerHub/tremulous)
 [![Coverity Scan](https://img.shields.io/coverity/scan/9866.svg?maxAge=3600)](https://scan.coverity.com/projects/wtfbbqhax-tremulous)
 
-# How to Install from GrangerHub's Release Page
+# Installing
 
-You can install the latest released binaries from GrangerHub's release page,
+## Pre-built binaries
+
+- [Arch Linux](https://aur.archlinux.org/packages/tremulous-grangerhub-bin)
+- [Flatpak](https://flathub.org/apps/com.grangerhub.Tremulous) maintained by @AsciiWolf
+- [SnapCraft](https://snapcraft.io/tremulous) maintained by @AsciiWolf
+
+## How to Install from GrangerHub's Release Page
+
+You can install the latest released binaries from [GrangerHub's release page](https://github.com/GrangerHub/tremulous/releases),
 following these steps:
 
 * Download the most recent .zip file for your platform from https://github.com/GrangerHub/tremulous/releases
