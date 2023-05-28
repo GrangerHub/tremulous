@@ -10,7 +10,7 @@ on:
 jobs:
   build:
 
-    runs-on: macos-10.15
+    runs-on: macos-11
     env:
       release_name: release-darwin-x86_64
 
