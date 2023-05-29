@@ -1,6 +1,6 @@
 language: cpp
 sudo: required
-dist: trusty
+dist: xenial
 services:
 - docker
 git:
@@ -48,7 +48,7 @@ matrix:
 deploy:
   provider: releases
   skip_cleanup: true
-  api_key: $GITHUB_OAUTH_TOKEN
+  api_key: $GITHUB_API_KEY
   file_glob: true
   file: build/*.zip
   on:
