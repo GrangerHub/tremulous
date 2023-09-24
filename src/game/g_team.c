@@ -135,8 +135,6 @@ void G_UpdateTeamConfigStrings( void )
 
   trap_SetConfigstringRestrictions( CS_ALIEN_STAGES, &humanTeam );
   trap_SetConfigstringRestrictions( CS_HUMAN_STAGES, &alienTeam );
-  trap_SetConfigstringRestrictions( CS_ALIEN_STATUS, &humanTeam );
-  trap_SetConfigstringRestrictions( CS_HUMAN_STATUS, &alienTeam );
 }
 
 /*
