@@ -2947,27 +2947,24 @@ $(B)/$(SERVERBINSH):
 	@echo 'cd $(COPYBINDIR)' >> $@
 	@echo './$(SERVERBIN) "$$@"' >> $@
 
+# Install the .desktop, icon files, license, etc.
 install: release
 ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu"))
 	$(echo_cmd) "Installing for Linux platform in $(COPYBINDIR) and $(PREFIX)"
-	@$(MKDIR) -p $(COPYBINDIR)
+	@$(INSTALL) -d $(PREFIX)/bin "$(PREFIX)/share/metainfo/" \
+			"$(PREFIX)/share/licenses/$(PACKAGE)/" "$(PREFIX)/share/applications/" \
+			"$(PREFIX)/share/icons/hicolor/128x128/apps" "$(COPYBINDIR)"
 	@cd $(BR) && for file in $(NAKED_TARGETS); do \
 		$(INSTALL) -D $$file $(COPYBINDIR)/$$file; \
 	done
-#	@(cd $(BR) && $(INSTALL) $() $(COPYBINDIR) )
-# TODO: create these .sh files:
-	@$(INSTALL) -d $(PREFIX)/bin
-	@$(INSTALL) -D -m755 $(BR)/$(CLIENTBINSH) $(BR)/$(SERVERBINSH) $(PREFIX)/bin
-# Install the .desktop, icon files, license, etc.
-	@$(INSTALL) -D -m644 "misc/io.github.grangerhub.Tremulous.png" "$(PREFIX)/share/pixmaps/tremulous.png"
-	@$(INSTALL) -D -m644 "misc/io.github.grangerhub.Tremulous.desktop" \
-			 "$(PREFIX)/share/applications/tremulous.desktop"
-	@$(INSTALL) -d "$(PREFIX)/share/metainfo/" "$(PREFIX)/share/licenses/$(PACKAGE)/"
-	@$(INSTALL) -D -m644 "misc/io.github.grangerhub.Tremulous.appdata.xml" \
+	$(INSTALL) -D -m755 $(BR)/$(CLIENTBINSH) $(PREFIX)/bin/tremulous-grangerhub
+	$(INSTALL) -D -m755 $(BR)/$(SERVERBINSH) $(PREFIX)/bin/tremded-grangerhub
+	$(INSTALL) -D -m644 "misc/Tremulous-Grangerhub.png" "$(PREFIX)/share/icons/hicolor/128x128/apps/"
+	$(INSTALL) -D -m644 "misc/Tremulous-Grangerhub.desktop" \
+			 "$(PREFIX)/share/applications/"
+	$(INSTALL) -D -m644 "misc/io.github.grangerhub.Tremulous.appdata.xml" \
 			 "$(PREFIX)/share/metainfo/"
-	@$(INSTALL) -D -m644 "COPYING" "$(PREFIX)/share/licenses/$(PACKAGE)/"
-	@$(INSTALL) -D -m644 "GPL"     "$(PREFIX)/share/licenses/$(PACKAGE)/"
-	@$(INSTALL) -D -m644 "CC"     "$(PREFIX)/share/licenses/$(PACKAGE)/"
+	$(INSTALL) -D -m644 "COPYING" "GPL" "CC" "$(PREFIX)/share/licenses/$(PACKAGE)/"
 endif
 
 
