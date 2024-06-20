@@ -33,7 +33,7 @@ If you want to build against system libraries, the following packages are necess
 
 ### Linux:
 
-* GCC/G++ (version 6+ is recommend)
+* GCC/G++ (version 6+ is recommend, but 10 is currently not supported: https://github.com/GrangerHub/tremulous/issues/119)
 * CMake (Optional)
 * CURL (for downloading assets)
 * rsync (for asset management)
@@ -64,6 +64,24 @@ Currently there is no native Windows build setup, all builds are cross compiled 
 ### OSX
 
 TBD
+
+### Cross Platform build and debug on UNIX
+
+Since some dependencies as GCC<=9 may be hard to install, you may prefer build using Docker.
+
+```bash
+git clone https://github.com/GrangerHub/tremulous.git
+cd tremulous
+docker run -ti -e PLATFOTM=CHOOSE_PLATFORM_HERE -v $(pwd):/usr/src grangerhub/tremulous13:latest ./misc/docker-build.sh
+```
+
+See other possible `PLATFORM` values as `linux` and `mingw32` in `Makefile` file. Default to running env (which is Linux while using Docker).
+
+An other advanced build example could be:
+```bash
+docker run -ti -e USE_RESTCLIENT=1 -e USE_INTERNAL_LUA=1 -v $(pwd):/usr/src grangerhub/tremulous13:latest make debug
+```
+which will include debug symbols for use in debug software like `gdb`.
 
 ## How to Install from the Source Code
 
