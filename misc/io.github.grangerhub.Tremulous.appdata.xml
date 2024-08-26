@@ -21,10 +21,6 @@
       Players on both teams are able to build working structures in-game like an
       RTS. 
     </p>
-    <p>
-      This snap provides the Grangerhub updated client binary that
-      supports new features.
-    </p>
   </description>
   <url type="homepage">https://github.com/GrangerHub/tremulous</url>
   <screenshots>
