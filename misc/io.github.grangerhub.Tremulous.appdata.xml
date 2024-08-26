@@ -5,12 +5,12 @@
   <project_license>GPL-2.0</project_license>
   <metadata_license>CC-BY-SA-3.0</metadata_license>
   <provides>
-    <id>tremulous.desktop</id>
+    <id>tremulous-grangerhub.desktop</id>
   </provides>
   <launchable type="desktop-id">Tremulous-Grangerhub.desktop</launchable>
-  <name>Tremulous-Grangerhub</name>
+  <name>Tremulous</name>
   <developer_name>Dark Legion Development and GrangerHub</developer_name>
-  <summary>Aliens vs Humans, First Person Shooter game with elements of Real Time Strategy</summary>
+  <summary>Aliens vs Humans, First Person Shooter game with elements of Real Time Strategy (Grangerhub version)</summary>
   <description>
     <p>
       Tremulous is a free, open source game that blends a team based FPS with
