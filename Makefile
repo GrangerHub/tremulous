@@ -112,7 +112,7 @@ VERSION=1.3.0
 endif
 
 ifndef PACKAGE
-PACKAGE=tremulous-grangerhub
+PACKAGE=tremulous
 endif
 
 ifndef CLIENTBIN
@@ -137,16 +137,16 @@ endif
 
 BASEGAME_CFLAGS=-I../../${MOUNT_DIR}
 
+ifndef PREFIX
+PREFIX=/usr
+endif
+
 ifndef COPYDIR
-COPYDIR="/opt/$(PACKAGE)"
+COPYDIR="$(PREFIX)/share/$(PACKAGE)"
 endif
 
 ifndef COPYBINDIR
 COPYBINDIR=$(COPYDIR)
-endif
-
-ifndef PREFIX
-PREFIX=/usr
 endif
 
 ifndef MOUNT_DIR
@@ -273,9 +273,9 @@ BD=$(BUILD_DIR)/debug-$(PLATFORM)-$(ARCH)
 BR=$(BUILD_DIR)/release-$(PLATFORM)-$(ARCH)
 
 # If build target not defined, assume release (for install target)
-ifndef B
-B = $(BR)
-endif
+# ifndef B
+# B=$(BR)
+# endif
 
 CDIR=$(MOUNT_DIR)/client
 SDIR=$(MOUNT_DIR)/server
@@ -1152,6 +1152,9 @@ release:
       CXXFLAGS="$(BASE_CFLAGS) $(CXXFLAGS)" \
 	  OPTIMIZE="-DNDEBUG $(OPTIMIZE)" OPTIMIZEVM="-DNDEBUG $(OPTIMIZEVM)" \
 	  CLIENT_CFLAGS="$(CLIENT_CFLAGS)" SERVER_CFLAGS="$(SERVER_CFLAGS)" V=$(V)
+
+install: release
+	@$(MAKE) install_target B=$(BR)
 
 ifneq ($(call bin_path, tput),)
   TERM_COLUMNS=$(shell if c=`tput cols`; then echo $$(($$c-4)); else echo 76; fi)
@@ -2948,19 +2951,26 @@ $(B)/$(SERVERBINSH):
 	@echo './$(SERVERBIN) "$$@"' >> $@
 
 # Install the .desktop, icon files, license, etc.
-install: release
+install_target: 
 ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu"))
-	$(echo_cmd) "Installing for Linux platform in $(COPYBINDIR) and $(PREFIX)"
-	@$(INSTALL) -d $(PREFIX)/bin "$(PREFIX)/share/metainfo/" \
-			"$(PREFIX)/share/licenses/$(PACKAGE)/" "$(PREFIX)/share/applications/" \
+	$(echo_cmd) "Downloading base Tremulous data and maps"
+	misc/download-paks.sh
+	$(echo_cmd) "Installing for Linux platform in $(PREFIX)"
+	@$(INSTALL) -d $(PREFIX)/bin "$(PREFIX)/share/metainfo" \
+			"$(PREFIX)/share/licenses/$(PACKAGE)" "$(PREFIX)/share/applications" \
 			"$(PREFIX)/share/icons/hicolor/128x128/apps" "$(COPYBINDIR)"
 	@cd $(BR) && for file in $(NAKED_TARGETS); do \
-		$(INSTALL) -D $$file $(COPYBINDIR)/$$file; \
+		if [[ "$$file" == "scripts" ]]; then \
+			$(INSTALL) -d $(COPYBINDIR)/scripts; \
+			$(INSTALL) -t $(COPYBINDIR)/scripts scripts/*; \
+		else \
+			$(INSTALL) -D $$file $(COPYBINDIR)/$$file; \
+		fi \
 	done
-	$(INSTALL) -D -m755 $(BR)/$(CLIENTBINSH) $(PREFIX)/bin/tremulous-grangerhub
-	$(INSTALL) -D -m755 $(BR)/$(SERVERBINSH) $(PREFIX)/bin/tremded-grangerhub
-	$(INSTALL) -D -m644 "misc/Tremulous-Grangerhub.png" "$(PREFIX)/share/icons/hicolor/128x128/apps/"
-	$(INSTALL) -D -m644 "misc/Tremulous-Grangerhub.desktop" \
+	$(INSTALL) -D -m755 $(BR)/$(CLIENTBINSH) $(PREFIX)/bin/tremulous
+	$(INSTALL) -D -m755 $(BR)/$(SERVERBINSH) $(PREFIX)/bin/tremded
+	$(INSTALL) -D -m644 "misc/io.github.grangerhub.Tremulous.png" "$(PREFIX)/share/icons/hicolor/128x128/apps/"
+	$(INSTALL) -D -m644 "misc/io.github.grangerhub.Tremulous.desktop" \
 			 "$(PREFIX)/share/applications/"
 	$(INSTALL) -D -m644 "misc/io.github.grangerhub.Tremulous.appdata.xml" \
 			 "$(PREFIX)/share/metainfo/"
