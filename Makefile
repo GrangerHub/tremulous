@@ -138,7 +138,7 @@ endif
 BASEGAME_CFLAGS=-I../../${MOUNT_DIR}
 
 ifndef PREFIX
-PREFIX=/usr
+PREFIX=/usr/local
 endif
 
 ifndef COPYDIR
