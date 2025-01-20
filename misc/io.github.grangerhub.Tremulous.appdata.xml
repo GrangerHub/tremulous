@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright 2017 Daniel Rusek <mail@asciiwolf.com> -->
+<!-- Copyright 2017-2025 Daniel Rusek <mail@asciiwolf.com> and Cengiz Gunay <cengique@users.sf.net> -->
 <component type="desktop-application">
   <id>io.github.grangerhub.Tremulous</id>
   <project_license>GPL-2.0</project_license>
