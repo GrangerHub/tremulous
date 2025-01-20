@@ -28,10 +28,9 @@ jobs:
           libopenal-dev \
           libfreetype6-dev \
           zip \
+          libcurl4-openssl-dev \
+          curl \
           rsync
-        # remove until libcurl is updated:
-        #libcurl4-openssl-dev \
-        #curl \
     - name: make
       run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 make -j
     - name: download paks
