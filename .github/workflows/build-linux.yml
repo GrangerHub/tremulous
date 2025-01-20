@@ -33,7 +33,7 @@ jobs:
         #libcurl4-openssl-dev \
         #curl \
     - name: make
-      run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 make -j
+      run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_LOCAL_HEADERS=1 make -j
     - name: download paks
       run: ./misc/download-paks.sh
     - name: change perms
