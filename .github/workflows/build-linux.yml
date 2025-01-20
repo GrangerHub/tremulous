@@ -25,12 +25,13 @@ jobs:
           build-essential \
           libgl1-mesa-dev \
           libsdl2-dev \
-          libcurl4-openssl-dev \
           libopenal-dev \
           libfreetype6-dev \
           zip \
-          curl \
           rsync
+        # remove until libcurl is updated:
+        #libcurl4-openssl-dev \
+        #curl \
     - name: make
       run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 make -j
     - name: download paks
