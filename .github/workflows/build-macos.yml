@@ -1,4 +1,4 @@
-name: Build MacOS 11
+name: Build for MacOS
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 jobs:
   build:
 
-    runs-on: macos-11
+    runs-on: macos-13
     env:
       release_name: release-darwin-x86_64
 
