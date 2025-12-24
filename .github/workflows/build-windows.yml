@@ -44,7 +44,7 @@ jobs:
     - name: upload binaries
       # only run if this was a tagged release (only works if separate job)
       # if: ( github.event_name == "create" ) && ( github.event.ref_type == 'tag' )
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.release_name }}
         path: ./build/${{ env.release_name }}.zip
