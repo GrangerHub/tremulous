@@ -2,9 +2,12 @@ build
 Makefile.local
 *.swp
 *tags
-misc/patches
-misc/last-merged-ioq3-revision.temp
+TAGS
 *~
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
 
 # OS X
 ####################

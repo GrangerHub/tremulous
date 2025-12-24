@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2017-2025 Daniel Rusek <mail@asciiwolf.com> and Cengiz Gunay <cengique@users.sf.net> -->
+<component type="desktop-application">
+  <id>io.github.grangerhub.Tremulous</id>
+  <project_license>GPL-2.0</project_license>
+  <metadata_license>CC-BY-SA-3.0</metadata_license>
+  <provides>
+    <id>io.github.grangerhub.Tremulous.desktop</id>
+  </provides>
+  <launchable type="desktop-id">io.github.grangerhub.Tremulous.desktop</launchable>
+  <name>Tremulous</name>
+  <developer_name>Dark Legion Development and GrangerHub</developer_name>
+  <summary>Aliens vs Humans, First Person Shooter game with elements of Real Time Strategy (GrangerHub version)</summary>
+  <description>
+    <p>
+      Tremulous is a free, open source game that blends a team based FPS with
+      elements of an RTS.
+    </p>
+    <p>
+      Players can choose from 2 unique races, aliens and humans.
+      Players on both teams are able to build working structures in-game like an
+      RTS. 
+    </p>
+    <p>
+      The GrangerHub version contains the updated game server and
+      client binaries with several stability improvements and new
+      features. See the homepage for more details.
+    </p>
+  </description>
+  <url type="homepage">https://github.com/GrangerHub/tremulous</url>
+  <screenshots>
+    <screenshot type="default">
+      <image type="source" width="1280" height="960">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-trem1.3-7d1b.jpg</image>
+      <caption>Tremulous 1.3 development with shadows</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1366" height="768">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-trem1.3-7672.jpg</image>
+      <caption>Tremulous 1.3 alien dragoon jumping over human player with portal gun</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1366" height="768">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-trem1.3-ca9d.jpg</image>
+      <caption>Human shooting alien acid tube with laser gun</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1366" height="768">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-trem1.3-7628.jpg</image>
+      <caption>Human base with medistation and armory</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1366" height="768">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-trem1.3-6d22.jpg</image>
+      <caption>Human with jetpack</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1366" height="768">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-trem1.3-e81b.jpg</image>
+      <caption>Human outside in ATCS map</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1918" height="1064">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-alien-granger.jpg</image>
+      <caption>Alien builder unit, granger, in front of its base with two eggs and overmind</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1918" height="1064">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-alien-dretch-base-build-bubbles.jpg</image>
+      <caption>Lowest alien unit, dretch, with red building proximity bubbles in ATCS map base</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1119" height="682">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-alien-upgrades.png</image>
+      <caption>Updated alien evolution targets dialog</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1918" height="1064">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-alien-basilisk-evolve.jpg</image>
+      <caption>Alien evolving into second stage unit, basilisk</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1918" height="1064">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-alien-basilisk-gas.jpg</image>
+      <caption>Alien basilisk releasing poison gas</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1918" height="1064">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-alien-marauder.jpg</image>
+      <caption>Alien third stage unit, marauder</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1918" height="1064">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-alien-marauder.jpg</image>
+      <caption>Alien third stage unit, marauder</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1918" height="1064">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-alien-dragoon.jpg</image>
+      <caption>Alien fourth stage unit, dragoon, during pounce</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1918" height="1064">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-alien-dragoon-front.jpg</image>
+      <caption>Alien dragoon - close up</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1918" height="1064">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-alien-tyrant-front.jpg</image>
+      <caption>Alien final stage unit, tyrant</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1918" height="1064">https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/screenshots/grangerhub-alien-tyrant-ret-smoke.jpg</image>
+      <caption>Alien tyrant rampaging in human base</caption>
+    </screenshot>
+    <screenshot>
+      <video>https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/videos/GrangerPub_Quick_Transit_Match-NewSource~tremulousrussian.mkv</video>
+      <caption>Quick match in Transit map. Credit: NewSource/TremulousRussian</caption>
+    </screenshot>
+    <screenshot>
+      <video>https://raw.githubusercontent.com/GrangerHub/tremulous/master/misc/videos/Tremulous_GPP_alien_gameplay-ZdrytchX~ViruS.webm</video>
+      <caption>Tremulous GPP alien gameplay. Credit: ZdrytchX/ViruS</caption>
+    </screenshot>
+  </screenshots>
+  <update_contact>mail@asciiwolf.com</update_contact>
+  <content_rating type="oars-1.1">
+    <content_attribute id="violence-fantasy">moderate</content_attribute>
+    <content_attribute id="violence-realistic">moderate</content_attribute>
+    <content_attribute id="violence-bloodshed">mild</content_attribute>
+    <content_attribute id="social-chat">intense</content_attribute>
+  </content_rating>
+</component>

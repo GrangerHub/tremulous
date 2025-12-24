@@ -1,0 +1,33 @@
+name: Build for macOS
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+
+jobs:
+  build:
+
+    runs-on: macos-13
+    env:
+      release_name: release-darwin-x86_64
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: dependencies
+      run: echo no deps
+    - name: make
+      run: make -j
+    - name: download paks
+      run: ./misc/download-paks.sh
+    - name: change perms
+      run: chmod -R ugo+rw build
+    - name: upload binaries
+      # only run if this was a tagged release (only works if separate job)
+      # if: ( github.event_name == "create" ) && ( github.event.ref_type == 'tag' )
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.release_name }}
+        path: ./build/${{ env.release_name }}.zip

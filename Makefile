@@ -111,12 +111,24 @@ ifndef VERSION
 VERSION=1.3.0
 endif
 
+ifndef PACKAGE
+PACKAGE=tremulous
+endif
+
 ifndef CLIENTBIN
 CLIENTBIN=tremulous
 endif
 
+ifndef CLIENTBINSH
+CLIENTBINSH=$(CLIENTBIN).sh
+endif
+
 ifndef SERVERBIN
 SERVERBIN=tremded
+endif
+
+ifndef SERVERBINSH
+SERVERBINSH=$(SERVERBIN).sh
 endif
 
 ifndef BASEGAME
@@ -125,8 +137,12 @@ endif
 
 BASEGAME_CFLAGS=-I../../${MOUNT_DIR}
 
+ifndef PREFIX
+PREFIX=/usr/local
+endif
+
 ifndef COPYDIR
-COPYDIR="/usr/local/games/tremulous"
+COPYDIR="$(PREFIX)/share/$(PACKAGE)"
 endif
 
 ifndef COPYBINDIR
@@ -256,6 +272,11 @@ endif
 BD=$(BUILD_DIR)/debug-$(PLATFORM)-$(ARCH)
 BR=$(BUILD_DIR)/release-$(PLATFORM)-$(ARCH)
 
+# If build target not defined, assume release (for install target)
+# ifndef B
+# B=$(BR)
+# endif
+
 CDIR=$(MOUNT_DIR)/client
 SDIR=$(MOUNT_DIR)/server
 RCOMMONDIR=$(MOUNT_DIR)/renderercommon
@@ -339,8 +360,10 @@ INSTALL=install
 MKDIR=mkdir
 EXTRA_FILES=
 CLIENT_EXTRA_FILES=
+INSTALL_DIR=
 
 ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu"))
+  INSTALL_DIR=/opt/tremulous-grangerhub
   BASE_CFLAGS += -DUSE_ICON
   CLIENT_CFLAGS += $(SDL_CFLAGS)
 
@@ -1130,6 +1153,9 @@ release:
 	  OPTIMIZE="-DNDEBUG $(OPTIMIZE)" OPTIMIZEVM="-DNDEBUG $(OPTIMIZEVM)" \
 	  CLIENT_CFLAGS="$(CLIENT_CFLAGS)" SERVER_CFLAGS="$(SERVER_CFLAGS)" V=$(V)
 
+install: release
+	@$(MAKE) install_target B=$(BR)
+
 ifneq ($(call bin_path, tput),)
   TERM_COLUMNS=$(shell if c=`tput cols`; then echo $$(($$c-4)); else echo 76; fi)
 else
@@ -1225,14 +1251,15 @@ endif
 	@echo "  Output:"
 	$(call print_list, $(NAKED_TARGETS))
 	@echo ""
-	@$(MAKE) $(TARGETS) $(B).zip V=$(V)
+	@$(MAKE) $(TARGETS) $(B).zip $(B)/$(CLIENTBINSH) $(B)/$(SERVERBINSH) V=$(V)
 
 $(B).zip: $(TARGETS)
 ifeq ($(PLATFORM),darwin)
-	@("./make-macosx-app.sh" release $(ARCH); if [ "$$?" -eq 0 ] && [ -d "$(B)/Tremulous.app" ]; then rm -f $@; cd $(B) && zip --symlinks -r9 ../../$@ GPL COPYING CC `find "Tremulous.app" -print | sed -e "s!$(B)/!!g"`; else rm -f $@; cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS); fi)
+	@("./make-macosx-app.sh" release $(ARCH); if [ "$$?" -eq 0 ] && [ -d "$(B)/Tremulous.app" ]; then rm -f $@; cd $(B) && zip --symlinks -qr9 ../../$@ GPL COPYING CC `find "Tremulous.app" -print | sed -e "s!$(B)/!!g"`; else rm -f $@; cd $(B) && zip -qr9 ../../$@ $(NAKED_TARGETS); fi)
 else
 	@rm -f $@
-	@(cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS))
+	@(cd $(B) && zip -qr9 ../../$@ $(NAKED_TARGETS))
+	@echo "Created $@"
 endif
 
 makedirs:
@@ -2616,10 +2643,12 @@ $(B)/$(BASEGAME)_11/vm/ui.qvm: $(UIVMOBJ11) $(UIDIR)/ui_syscalls_11.asm $(Q3ASM)
 #############################################################################
 
 $(B)/$(BASEGAME)/vms-gpp-$(VERSION).pk3: $(B)/$(BASEGAME)/vm/ui.qvm $(B)/$(BASEGAME)/vm/cgame.qvm $(B)/$(BASEGAME)/vm/game.qvm
-	@(cd $(B)/$(BASEGAME) && zip -r vms-$(VERSION).pk3 vm/)
+	$(echo_cmd) "Created $@"
+	@(cd $(B)/$(BASEGAME) && zip -qr $(@F) vm/)
 
 $(B)/$(BASEGAME)_11/vms-1.1.0-$(VERSION).pk3: $(B)/$(BASEGAME)_11/vm/ui.qvm $(B)/$(BASEGAME)_11/vm/cgame.qvm 
-	@(cd $(B)/$(BASEGAME)_11 && zip -r vms-$(VERSION).pk3 vm/)
+	$(echo_cmd) "Created $@"
+	@(cd $(B)/$(BASEGAME)_11 && zip -qr $(@F) vm/)
 
 
 #############################################################################
@@ -2627,7 +2656,8 @@ $(B)/$(BASEGAME)_11/vms-1.1.0-$(VERSION).pk3: $(B)/$(BASEGAME)_11/vm/ui.qvm $(B)
 #############################################################################
 
 $(B)/$(BASEGAME)/data-$(VERSION).pk3: $(ASSETS_DIR)/ui/main.menu
-	@(cd $(ASSETS_DIR) && zip -r data-$(VERSION).pk3 *)
+	$(echo_cmd) "Created $@"
+	@(cd $(ASSETS_DIR) && zip -qr data-$(VERSION).pk3 *)
 	@mv $(ASSETS_DIR)/data-$(VERSION).pk3 $(B)/$(BASEGAME)
 
 #############################################################################
@@ -2905,6 +2935,50 @@ dist:
 	git archive --format zip --output $(CLIENTBIN)-$(VERSION).zip HEAD
 
 #############################################################################
+# INSTALL (only for Linux platforms)
+#############################################################################
+
+# Shell scripts for running binaries
+
+$(B)/$(CLIENTBINSH): 
+	@echo '#!/usr/bin/env sh' > $@
+	@echo 'cd $(COPYBINDIR)' >> $@
+	@echo './$(CLIENTBIN) "$$@"' >> $@
+
+$(B)/$(SERVERBINSH): 
+	@echo '#!/usr/bin/env sh' > $@
+	@echo 'cd $(COPYBINDIR)' >> $@
+	@echo './$(SERVERBIN) "$$@"' >> $@
+
+# Install the .desktop, icon files, license, etc.
+install_target: 
+ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu"))
+	$(echo_cmd) "Downloading base Tremulous data and maps"
+	misc/download-paks.sh
+	$(echo_cmd) "Installing for Linux platform in $(PREFIX)"
+	@$(INSTALL) -d $(PREFIX)/bin "$(PREFIX)/share/metainfo" \
+			"$(PREFIX)/share/licenses/$(PACKAGE)" "$(PREFIX)/share/applications" \
+			"$(PREFIX)/share/icons/hicolor/128x128/apps" "$(COPYBINDIR)"
+	@cd $(BR) && for file in $(NAKED_TARGETS); do \
+		if [[ "$$file" == "scripts" ]]; then \
+			$(INSTALL) -d $(COPYBINDIR)/scripts; \
+			$(INSTALL) -t $(COPYBINDIR)/scripts scripts/*; \
+		else \
+			$(INSTALL) -D $$file $(COPYBINDIR)/$$file; \
+		fi \
+	done
+	$(INSTALL) -D -m755 $(BR)/$(CLIENTBINSH) $(PREFIX)/bin/tremulous
+	$(INSTALL) -D -m755 $(BR)/$(SERVERBINSH) $(PREFIX)/bin/tremded
+	$(INSTALL) -D -m644 "misc/io.github.grangerhub.Tremulous.png" "$(PREFIX)/share/icons/hicolor/128x128/apps/"
+	$(INSTALL) -D -m644 "misc/io.github.grangerhub.Tremulous.desktop" \
+			 "$(PREFIX)/share/applications/"
+	$(INSTALL) -D -m644 "misc/io.github.grangerhub.Tremulous.appdata.xml" \
+			 "$(PREFIX)/share/metainfo/"
+	$(INSTALL) -D -m644 "COPYING" "GPL" "CC" "$(PREFIX)/share/licenses/$(PACKAGE)/"
+endif
+
+
+#############################################################################
 # DEPENDENCIES
 #############################################################################
 
@@ -2917,11 +2991,13 @@ endif
 .PHONY: all clean clean2 clean-debug clean-release \
 	debug default dist distclean makedirs release targets \
 	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
-	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
-	$(B)/$(BASEGAME)/data-$(VERSION).pk3 \
-	$(B)/$(BASEGAME)_11/vms-$(VERSION).pk3 \
-	$(B)/$(BASEGAME)/vms-$(VERSION).pk3 \
-	$(B).zip
+	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts 
+
+# removing zip files from phony for install target not recreating them as root
+#	$(B)/$(BASEGAME)/data-$(VERSION).pk3 \
+#	$(B)/$(BASEGAME)_11/vms-$(VERSION).pk3 \
+#	$(B)/$(BASEGAME)/vms-$(VERSION).pk3 \
+#	$(B).zip
 
 # If the target name contains "clean", don't do a parallel build
 ifneq ($(findstring clean, $(MAKECMDGOALS)),)
