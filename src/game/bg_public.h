@@ -83,8 +83,6 @@ enum
 
   CS_ALIEN_STAGES,
   CS_HUMAN_STAGES,
-  CS_ALIEN_STATUS,
-  CS_HUMAN_STATUS,
 
   CS_MODELS,
   CS_SOUNDS           = CS_MODELS + MAX_MODELS,
@@ -1107,27 +1105,6 @@ typedef struct
 
   team_t    team;
 } upgradeAttributes_t;
-
-// Teams status provided by the server, also a remplacement for /teamstatus
-typedef struct
-{
-  int omBuilding;
-  int omHealth;
-  int spawns;
-  int builders;
-  int boosters;
-} alienStates_t;
-
-typedef struct
-{
-  int rcBuilding;
-  int rcHealth;
-  int spawns;
-  int builders;
-  int armourys;
-  int medicals;
-  int computers;
-} humanStates_t;
 
 qboolean  BG_WeaponIsFull( weapon_t weapon, int stats[ ], int ammo, int clips );
 qboolean  BG_InventoryContainsWeapon( int weapon, int stats[ ] );
