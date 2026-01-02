@@ -265,7 +265,7 @@ static void InitOpenGL( void )
 		GLimp_Init( qtrue );
 		GLimp_InitExtraExtensions();
 
-		strcpy( renderer_buffer, glConfig.renderer_string );
+		Q_strncpyz( renderer_buffer, glConfig.renderer_string, sizeof(renderer_buffer) );
 		Q_strlwr( renderer_buffer );
 
 		// OpenGL driver constants
