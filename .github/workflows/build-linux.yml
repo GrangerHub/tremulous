@@ -18,7 +18,6 @@ jobs:
       release_name: release-linux-x86_64
 
     steps:
-    - uses: actions/checkout@v3
     - name: dependencies
       run: |
         apt update -y
@@ -32,7 +31,13 @@ jobs:
           zip \
           libcurl4-openssl-dev \
           curl \
-          rsync
+          rsync \
+          git
+    - uses: actions/checkout@v6
+      with:
+        fetch-tags: true
+    - name: Git unsafe
+      run: git config --global --add safe.directory /__w/tremulous/tremulous
     - name: make
       run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 make -j
     - name: download paks
