@@ -107,8 +107,9 @@ else
 endif
 export CROSS_COMPILING
 
+# Always name the version to be alphabetically *after* gpp1
 ifndef VERSION
-VERSION=1.3.0
+VERSION=v1.3.0
 endif
 
 ifndef CLIENTBIN
@@ -594,7 +595,7 @@ ifdef MINGW
 
   # In the absence of wspiapi.h, require Windows XP or later
   ifeq ($(shell test -e $(CMDIR)/wspiapi.h; echo $$?),1)
-  	# FIXIT-L Update WINVER=_WIN32_WINNT_WIN7 (see https://msdn.microsoft.com/en-us/library/6sehtctf.aspx)
+    # FIXIT-L Update WINVER=_WIN32_WINNT_WIN7 (see https://msdn.microsoft.com/en-us/library/6sehtctf.aspx)
     BASE_CFLAGS += -DWINVER=0x501
   endif
 

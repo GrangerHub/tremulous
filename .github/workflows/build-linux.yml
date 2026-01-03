@@ -18,6 +18,13 @@ jobs:
       release_name: release-linux-x86_64
 
     steps:
+    - name: set version by tag name (as alternative to above)
+      run: |
+        echo -n 'VERSION=' >> $GITHUB_ENV
+        ( ( ${{ startsWith(github.ref, 'refs/tags') }} && echo $GITHUB_REF_NAME ) || \
+             ( ${{ startsWith(github.ref_name, 'v1.3.0') }} && echo $GITHUB_REF_NAME ) || \
+             ( echo 'v1.3.0-' ${GITHUB_SHA:0:8} ) ) >> $GITHUB_ENV
+    #  if: ${{ ...  }}
     - name: dependencies
       run: |
         apt update -y
@@ -34,10 +41,11 @@ jobs:
           rsync \
           git
     - uses: actions/checkout@v6
-      with:
-        fetch-tags: true
-    - name: Git unsafe
-      run: git config --global --add safe.directory /__w/tremulous/tremulous
+    ## attempts for setting version via tag, but doesn't work for shallow copy:
+    #  with:
+    #    fetch-tags: true 
+    #- name: Git unsafe
+    #  run: git config --global --add safe.directory /__w/tremulous/tremulous
     - name: make
       run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 make -j
     - name: download paks
