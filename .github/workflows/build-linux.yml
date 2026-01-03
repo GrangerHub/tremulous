@@ -19,11 +19,12 @@ jobs:
 
     steps:
     - name: set version by tag name (as alternative to above)
+      shell: bash
       run: |
         echo -n 'VERSION=' >> $GITHUB_ENV
         ( ( ${{ startsWith(github.ref, 'refs/tags') }} && echo $GITHUB_REF_NAME ) || \
              ( ${{ startsWith(github.ref_name, 'v1.3.0') }} && echo $GITHUB_REF_NAME ) || \
-             ( echo 'v1.3.0-' ${GITHUB_SHA:0:8} ) ) >> $GITHUB_ENV
+             ( echo 'v1.3.0-'${GITHUB_SHA:0:8} ) ) >> $GITHUB_ENV
     #  if: ${{ ...  }}
     - name: dependencies
       run: |
@@ -50,13 +51,22 @@ jobs:
       run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 make -j
     - name: download paks
       run: ./misc/download-paks.sh
+    - name: extract pak
+      shell: bash
+      run: |
+        PKG=tremulous-$VERSION-$release_name
+        echo "PKG="$PKG >> $GITHUB_ENV
+        mkdir ./build/$PKG
+        pushd ./build/$PKG
+        unzip ../$release_name.zip
     - name: change perms
       run: chmod -R ugo+rw build
-    - name: upload binaries
+    - name: repack and upload archives
       # only run if this was a tagged release (only works if separate job)
       # if: ( github.event_name == "create" ) && ( github.event.ref_type == 'tag' )
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.release_name }}
-        path: ./build/${{ env.release_name }}.zip
+        name: ${{ env.PKG }}
+        # use globbing to include subdir in zip
+        path: ./build/${{ env.PKG }}*
 
