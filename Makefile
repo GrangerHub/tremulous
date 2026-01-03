@@ -107,8 +107,9 @@ else
 endif
 export CROSS_COMPILING
 
+# Always name the version to be alphabetically *after* gpp1
 ifndef VERSION
-VERSION=1.3.0
+VERSION=v1.3.0
 endif
 
 ifndef PACKAGE
