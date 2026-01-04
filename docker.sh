@@ -10,8 +10,8 @@ fi
 if [ -z "$(ls /root/.tremulous/gpp/)" ] && [ "$DOWNLOAD" != "0" ];then
 	#case empty
 	echo -e "\e[33mDownloading standard assets.\e[0m"
-	if $(wget http://dl.grangerhub.com/files/downloads/clients/data-1.1.0.pk3 -qO- > /root/.tremulous/gpp/data-1.1.0.pk3 && \
-	wget http://dl.grangerhub.com/files/downloads/clients/data-gpp1.pk3 -qO- > /root/.tremulous/gpp/data-gpp1.pk3); then
+	if $(wget http://dl.grangerhub.org/files/downloads/clients/data-1.1.0.pk3 -qO- > /root/.tremulous/gpp/data-1.1.0.pk3 && \
+	wget http://dl.grangerhub.org/files/downloads/clients/data-gpp1.pk3 -qO- > /root/.tremulous/gpp/data-gpp1.pk3); then
 		echo -e "\e[32mDownloaded standard assets.\e[0m"
 	else
 		echo -e "\e[1;\e[41mStandard asset download failed, is the machine connected to the internet?\e[0m"
