@@ -1,52 +1,50 @@
 #!/bin/bash
 
-URL="https://github.com/wtfbbqhax/tremulous-data/raw/master/"
+#pushd ./build
 
-packages="
-data-1.1.0.pk3
-data-gpp1.pk3
-map-arachnid2-1.1.0.pk3
-map-atcs-1.1.0.pk3
-map-karith-1.1.0.pk3
-map-nexus6-1.1.0.pk3
-map-niveus-1.1.0.pk3
-map-transit-1.1.0.pk3
-map-tremor-1.1.0.pk3
-map-uncreation-1.1.0.pk3
-"
+# Use first command-line argument if provided, else take first directory under build/
+dir=${1:-$( find ./build -maxdepth 1 -type d | head -2 | tail -1 )}
 
-for dir in ./build/*; do
-    if [[ ! -d $dir ]]; then
-        continue;
-    fi
+echo "Installing data and assets under $dir"
+pushd $dir 
 
-    # Download
+download() {
+    local url=$1
+    local file=$2
 
-    if [[ $dir == "./build/release-darwin-x86_64" ]]; then
-        pushd $dir/Tremulous.app/Contents/MacOS/gpp/ 
+    if [ -r ../$file ]; then
+	echo "Using existing $file"
     else
-        pushd $dir/gpp
+	echo "Downloading $url and saving as $file"
+	curl -L --output ../$file $url	
     fi
+}
 
-    for i in $packages; do
-        if [[ -e $package ]]; then
-            rm -f $package # only want 1 copy
-        fi
-        curl -OL -C - $URL/$i
-    done
+# Download tremulous-1.1.0 and gpp assets with base maps
+DATA_110="data-1.1.0.zip"
+download "https://github.com/GrangerHub/tremulous-data/archive/refs/tags/v1.1.0.zip" $DATA_110
 
-    popd
+# named "grhub" so it comes after "gpp"
+DATA_GRHUB="data-grhub-1.3.1.pk3"
+download "https://github.com/GrangerHub/tremulous-assets/releases/download/data-1.3.1/tremulous-grhub-1.3.1.pk3" \
+	 $DATA_GRHUB
 
-    # Repackage
+if [[ $dir == "./build/release-darwin-x86_64" ]]; then
+    subdir=./Tremulous.app/Contents/MacOS/gpp/ 
+else
+    subdir=./gpp
+fi
 
-    pushd $dir
+echo "Extracting 1.1.0 data"
+unzip -jo -d $subdir ../$DATA_110 "*.pk3"
 
-    if [[ $dir == "./build/release-darwin-x86_64" ]]; then
-        zip -r ../$(basename $dir).zip Tremulous.app
-    else
-        zip -r ../$(basename $dir).zip gpp/*.pk3
-    fi
+echo "Adding Grangerhub assets"
+cp ../$DATA_GRHUB $subdir/
 
-    popd
-done
+popd # out of dir
 
+echo "Extracting UI assets for build process"
+mkdir -p assets
+unzip -o -d assets build/$DATA_GRHUB "ui/*.h"
+
+echo "Done downloading data and assets"
