@@ -1,8 +1,11 @@
 name: Build Packages for All Platforms
 
+# TODO:
+# - Mac/Arm package
+
 # run this workflow only one at a time 
 concurrency:
-  group: build-${{ github.sha }}
+  group: build
   cancel-in-progress: true
 
 on:
@@ -39,10 +42,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        release-name: [ release-linux-x86_64, release-mingw32-x86_64 ]
-        include:
-          - release-name: release-mingw32-x86_64
-            PLATFORM: mingw32
+        release:
+          - file: release-linux-x86_64
+            name: Linux64
+          - file: release-mingw32-x86_64
+            name: Windows32
+            platform: mingw32
+            
     env:
       VERSION: ${{ needs.set-version.outputs.version }}
           
@@ -70,20 +76,18 @@ jobs:
     #- name: Git unsafe
     #  run: git config --global --add safe.directory /__w/tremulous/tremulous
     - name: platform
-      if: ${{ matrix.PLATFORM }}
-      run: echo "PLATFORM="${{ matrix.PLATFORM }} >> $GITHUB_ENV
+      if: ${{ matrix.release.platform }}
+      run: echo "PLATFORM="${{ matrix.release.PLATFORM }} >> $GITHUB_ENV
     - name: make
       run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 make -j
-    - name: download paks
-      run: ./misc/download-paks.sh
     - name: extract pak
       shell: bash
       run: |
-        PKG=tremulous-$VERSION-${{ matrix.release-name }}
+        PKG=tremulous-$VERSION-${{ matrix.release.name }}
         echo "PKG="$PKG >> $GITHUB_ENV
         mkdir ./build/$PKG
         pushd ./build/$PKG
-        unzip ../${{ matrix.release-name }}.zip
+        unzip ../${{ matrix.release.file }}.zip
     - name: change perms
       run: chmod -R ugo+rw build
     - name: repack and upload archives

@@ -828,11 +828,6 @@ ifneq ($(BUILD_GAME_QVM_11),0)
 	$(B)/$(BASEGAME)_11/vms-1.1.0-$(VERSION).pk3
 endif
 
-ifneq ($(BUILD_DATA_PK3),0)
-  TARGETS += \
-    $(B)/$(BASEGAME)/data-$(VERSION).pk3
-endif
-
 ifeq ($(USE_OPENAL),1)
   CLIENT_CFLAGS += -DUSE_OPENAL
   ifeq ($(USE_OPENAL_DLOPEN),1)
@@ -1226,14 +1221,18 @@ endif
 	@echo "  Output:"
 	$(call print_list, $(NAKED_TARGETS))
 	@echo ""
+	@echo "Downloading maps and assets"
+	@(misc/download-paks.sh $(B))
+	@echo ""
 	@$(MAKE) $(TARGETS) $(B).zip V=$(V)
 
 $(B).zip: $(TARGETS)
+	${echo_cmd} "Packaging files into $(B).zip"
 ifeq ($(PLATFORM),darwin)
-	@("./make-macosx-app.sh" release $(ARCH); if [ "$$?" -eq 0 ] && [ -d "$(B)/Tremulous.app" ]; then rm -f $@; cd $(B) && zip --symlinks -r9 ../../$@ GPL COPYING CC `find "Tremulous.app" -print | sed -e "s!$(B)/!!g"`; else rm -f $@; cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS); fi)
+	@("./make-macosx-app.sh" release $(ARCH); if [ "$$?" -eq 0 ] && [ -d "$(B)/Tremulous.app" ]; then rm -f $@; cd $(B) && zip --symlinks -r9 ../../$@ GPL COPYING CC `find "Tremulous.app" -print | sed -e "s!$(B)/!!g"`; else rm -f $@; cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS) gpp/*.pk3; fi)
 else
 	@rm -f $@
-	@(cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS))
+	@(cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS) gpp/*.pk3)
 endif
 
 makedirs:
@@ -2624,14 +2623,6 @@ $(B)/$(BASEGAME)_11/vms-1.1.0-$(VERSION).pk3: $(B)/$(BASEGAME)_11/vm/ui.qvm $(B)
 
 
 #############################################################################
-## Assets Package
-#############################################################################
-
-$(B)/$(BASEGAME)/data-$(VERSION).pk3: $(ASSETS_DIR)/ui/main.menu
-	@(cd $(ASSETS_DIR) && zip -r data-$(VERSION).pk3 *)
-	@mv $(ASSETS_DIR)/data-$(VERSION).pk3 $(B)/$(BASEGAME)
-
-#############################################################################
 ## CLIENT/SERVER RULES
 #############################################################################
 
@@ -2919,7 +2910,6 @@ endif
 	debug default dist distclean makedirs release targets \
 	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
 	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES) $(B)/scripts \
-	$(B)/$(BASEGAME)/data-$(VERSION).pk3 \
 	$(B)/$(BASEGAME)_11/vms-$(VERSION).pk3 \
 	$(B)/$(BASEGAME)/vms-$(VERSION).pk3 \
 	$(B).zip
