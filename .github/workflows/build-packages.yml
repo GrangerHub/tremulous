@@ -1,0 +1,92 @@
+name: Build Packages for All Platforms
+
+# run this workflow only one at a time 
+concurrency:
+  group: build-${{ github.sha }}
+  cancel-in-progress: true
+
+on:
+  # disable temporarily
+  #push:
+  #  branches: [ "master" ]
+  #pull_request:
+  #  branches: [ "master" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  set-version:
+    runs-on: ubuntu-latest
+    
+    outputs:
+      colors: ${{ steps.version.outputs.version }}
+
+    steps:
+    - name: set version by tag/branch/ref name
+      id: version
+      run: |
+        echo -n 'version=' >> $GITHUB_ENV
+        ( ( ${{ startsWith(github.ref, 'refs/tags') }} && echo $GITHUB_REF_NAME ) || \
+             ( ${{ startsWith(github.ref_name, 'v1.3.0') }} && echo $GITHUB_REF_NAME ) || \
+             ( echo 'v1.3.0-'${GITHUB_SHA:0:8} ) ) >> "$GITHUB_OUTPUT"
+    
+  build:
+
+    runs-on: ubuntu-latest
+    needs: set-version
+    container: debian:oldstable-slim
+    strategy:
+      matrix:
+        release_name: [ release-linux-x86_64, release-mingw32-x86_64 ]
+        include:
+          - release_name: release-mingw32-x86_64
+            PLATFORM: mingw32
+    env:
+      VERSION: ${{ needs.set-version.outputs.version }}
+          
+    steps:
+    - name: dependencies
+      run: |
+        apt update -y
+        apt install -y -qq \
+          make \
+          build-essential \
+          libgl1-mesa-dev \
+          libsdl2-dev \
+          libopenal-dev \
+          libfreetype6-dev \
+          zip \
+          libcurl4-openssl-dev \
+          curl \
+          rsync \
+          git
+    - uses: actions/checkout@v6
+    ## attempts for setting version via tag, but doesn't work for shallow copy:
+    #  with:
+    #    fetch-tags: true 
+    #- name: Git unsafe
+    #  run: git config --global --add safe.directory /__w/tremulous/tremulous
+    - name: make
+      run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 make -j
+    - name: download paks
+      run: ./misc/download-paks.sh
+    - name: extract pak
+      shell: bash
+      run: |
+        PKG=tremulous-$VERSION-$release_name
+        echo "PKG="$PKG >> $GITHUB_ENV
+        mkdir ./build/$PKG
+        pushd ./build/$PKG
+        unzip ../$release_name.zip
+    - name: change perms
+      run: chmod -R ugo+rw build
+    - name: repack and upload archives
+      # only run if this was a tagged release (only works if separate job)
+      # if: ( github.event_name == "create" ) && ( github.event.ref_type == 'tag' )
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.PKG }}
+        # use globbing to include subdir in zip
+        path: ./build/${{ env.PKG }}*
+
