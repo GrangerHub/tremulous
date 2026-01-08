@@ -1,16 +1,21 @@
 name: Build Packages for All Platforms
 
+# TODO:
+# - Mac/Arm package
+
 # run this workflow only one at a time 
 concurrency:
-  group: build-${{ github.sha }}
+  group: build
   cancel-in-progress: true
 
 on:
   # disable temporarily
-  #push:
-  #  branches: [ "master" ]
-  #pull_request:
-  #  branches: [ "master" ]
+  push:
+    branches: [ "master" ]
+    tags:
+      - v1.3.0**
+  pull_request:
+    branches: [ "master" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -20,13 +25,13 @@ jobs:
     runs-on: ubuntu-latest
     
     outputs:
-      colors: ${{ steps.version.outputs.version }}
+      version: ${{ steps.version.outputs.version }}
 
     steps:
     - name: set version by tag/branch/ref name
       id: version
       run: |
-        echo -n 'version=' >> $GITHUB_ENV
+        echo -n 'version=' >> "$GITHUB_OUTPUT"
         ( ( ${{ startsWith(github.ref, 'refs/tags') }} && echo $GITHUB_REF_NAME ) || \
              ( ${{ startsWith(github.ref_name, 'v1.3.0') }} && echo $GITHUB_REF_NAME ) || \
              ( echo 'v1.3.0-'${GITHUB_SHA:0:8} ) ) >> "$GITHUB_OUTPUT"
@@ -37,11 +42,15 @@ jobs:
     needs: set-version
     container: debian:oldstable-slim
     strategy:
+      fail-fast: false
       matrix:
-        release_name: [ release-linux-x86_64, release-mingw32-x86_64 ]
-        include:
-          - release_name: release-mingw32-x86_64
-            PLATFORM: mingw32
+        release:
+          - file: release-linux-x86_64
+            name: Linux64
+          - file: release-mingw32-x86_64
+            name: Windows32
+            platform: mingw32
+            
     env:
       VERSION: ${{ needs.set-version.outputs.version }}
           
@@ -53,6 +62,7 @@ jobs:
           make \
           build-essential \
           libgl1-mesa-dev \
+          mingw-w64 \
           libsdl2-dev \
           libopenal-dev \
           libfreetype6-dev \
@@ -67,18 +77,19 @@ jobs:
     #    fetch-tags: true 
     #- name: Git unsafe
     #  run: git config --global --add safe.directory /__w/tremulous/tremulous
+    - name: platform
+      if: ${{ matrix.release.platform }}
+      run: echo "PLATFORM="${{ matrix.release.PLATFORM }} >> $GITHUB_ENV
     - name: make
       run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 make -j
-    - name: download paks
-      run: ./misc/download-paks.sh
     - name: extract pak
       shell: bash
       run: |
-        PKG=tremulous-$VERSION-$release_name
+        PKG=tremulous-$VERSION-${{ matrix.release.name }}
         echo "PKG="$PKG >> $GITHUB_ENV
         mkdir ./build/$PKG
         pushd ./build/$PKG
-        unzip ../$release_name.zip
+        unzip ../${{ matrix.release.file }}.zip
     - name: change perms
       run: chmod -R ugo+rw build
     - name: repack and upload archives
