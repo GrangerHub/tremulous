@@ -48,7 +48,7 @@ jobs:
         release:
           - file: release-linux-x86_64
             name: Linux64
-          - file: release-mingw32-x86_64
+          - file: release-mingw32-x86
             name: Windows32
             platform: mingw32
             
@@ -81,6 +81,13 @@ jobs:
     - name: platform
       if: ${{ matrix.release.platform }}
       run: echo "PLATFORM="${{ matrix.release.PLATFORM }} >> $GITHUB_ENV
+    - name: Windows32
+      if: ${{ matrix.release.name == 'Windows32' }}
+      run: |
+        dpkg --add-architecture i386
+        echo "CC=i686-w64-mingw32-gcc" >> $GITHUB_ENV
+        echo "CXX=i686-w64-mingw32-g++" >> $GITHUB_ENV
+        echo "ARCH=x86" >> $GITHUB_ENV
     - name: make
       run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 make -j
     - name: extract pak
