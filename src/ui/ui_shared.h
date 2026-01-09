@@ -29,7 +29,7 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #include "qcommon/q_shared.h"
 #include "renderercommon/tr_types.h"
 
-#include "../../assets/ui/menudef.h"
+#include "../../build/assets/ui/menudef.h"
 
 #define MAX_MENUNAME 32
 #define MAX_ITEMTEXT 64

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#pushd ./build
+# TODO: integrate into Makefile
 
 # Use first command-line argument if provided, else take first directory under build/
 dir=${1:-$( find ./build -maxdepth 1 -type d | head -2 | tail -1 )}
@@ -44,7 +44,7 @@ cp ../$DATA_GRHUB $subdir/
 popd # out of dir
 
 echo "Extracting UI assets for build process"
-mkdir -p assets
-unzip -o -d assets build/$DATA_GRHUB "ui/*.h"
+mkdir -p build/assets
+unzip -o -d build/assets build/$DATA_GRHUB "ui/*.h"
 
 echo "Done downloading data and assets"

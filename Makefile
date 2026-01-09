@@ -2890,6 +2890,7 @@ STRINGOBJ = $(Q3R2STRINGOBJ)
 
 clean: clean-debug clean-release
 	@rm -f $(B)/compile_commands.json $(B)/compile_commands.txt $(B)/compile_commands.txt-e
+	@rm -rf $(BUILD_DIR)/assets
 
 clean-debug:
 	@$(MAKE) clean2 B=$(BD)
