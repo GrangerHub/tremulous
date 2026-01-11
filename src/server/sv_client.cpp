@@ -136,34 +136,21 @@ void SV_GetChallenge(netadr_t from)
 	mpz_t   n;
 
 	if (sv_protect->integer & SVP_IOQ3)
-	if ( SVC_RateLimitAddress( from, 10, 1000 ) ) {
 	{
-		Com_DPrintf( "SV_GetChallenge: rate limit from %s exceeded, dropping request\n",
-		// Prevent using getchallenge as an amplifier
-			NET_AdrToString( from ) );
-		if (SVC_RateLimitAddress(from, 10, 1000))
-		return;
-		{
-	}
-			SV_WriteAttackLog(va("SV_GetChallenge: rate limit from %s exceeded, dropping request\n",
-			                     NET_AdrToString(from)));
+		if ( SVC_RateLimitAddress( from, 10, 1000 ) ) {
+			// Prevent using getchallenge as an amplifier 
+			// Com_DPrintf( "SV_GetChallenge: rate limit from %s exceeded, dropping request\n", NET_AdrToString( from ) );
+			SV_WriteAttackLog(va("SV_GetChallenge: rate limit from %s exceeded, dropping request\n", NET_AdrToString(from)));
 			return;
 		}
-
+	}
 
 	// Allow getchallenge to be DoSed relatively easily, but prevent
-		// Allow getchallenge to be DoSed relatively easily, but prevent
 	// excess outbound bandwidth usage when being flooded inbound
-		// excess outbound bandwidth usage when being flooded inbound
 	if ( SVC_RateLimit( &outboundLeakyBucket, 10, 100 ) ) {
-		if (SVC_RateLimit(&outboundLeakyBucket, 10, 100))
-		Com_DPrintf( "SV_GetChallenge: rate limit exceeded, dropping request\n" );
-		{
+		// Com_DPrintf( "SV_GetChallenge: rate limit exceeded, dropping request\n" );
+		SV_WriteAttackLog("SV_GetChallenge: rate limit exceeded, dropping request\n");
 		return;
-			SV_WriteAttackLog("SV_GetChallenge: rate limit exceeded, dropping request\n");
-			return;
-		}
-	}
 	}
 
 	oldest = 0;
