@@ -1801,13 +1801,14 @@ Parse a client packet
 void SV_ExecuteClientMessage( client_t *cl, msg_t *msg ) {
 	int			c;
 	int			serverId;
+	int			reliableAcknowledge;
 
 	MSG_Bitstream(msg);
 
 	serverId = MSG_ReadLong( msg );
 	cl->messageAcknowledge = MSG_ReadLong( msg );
 
-	if (cl->messageAcknowledge < 0) {
+	if (cl->netchan.outgoingSequence - cl->messageAcknowledge <= 0) {
 		// usually only hackers create messages like this
 		// it is more annoying for them to let them hanging
 #ifndef NDEBUG
@@ -1816,20 +1817,32 @@ void SV_ExecuteClientMessage( client_t *cl, msg_t *msg ) {
 		return;
 	}
 
-	cl->reliableAcknowledge = MSG_ReadLong( msg );
+	reliableAcknowledge = MSG_ReadLong( msg );
+
+	if (cl->reliableSequence - reliableAcknowledge < 0) {
+#ifndef NDEBUG
+		SV_DropClient( cl, "DEBUG: illegible client message" );
+#endif
+		return;
+	}
 
 	// NOTE: when the client message is fux0red the acknowledgement numbers
 	// can be out of range, this could cause the server to send thousands of server
 	// commands which the server thinks are not yet acknowledged in SV_UpdateServerCommandsToClient
-	if (cl->reliableAcknowledge < cl->reliableSequence - MAX_RELIABLE_COMMANDS) {
+	if (reliableAcknowledge < 0 || cl->reliableSequence - reliableAcknowledge > MAX_RELIABLE_COMMANDS || reliableAcknowledge > cl->reliableSequence) {
 		// usually only hackers create messages like this
 		// it is more annoying for them to let them hanging
 #ifndef NDEBUG
 		SV_DropClient( cl, "DEBUG: illegible client message" );
+#else
+		Com_Printf( S_COLOR_YELLOW "WARNING: dropping %i commands from %s\n", cl->reliableSequence - reliableAcknowledge, cl->name );
 #endif
 		cl->reliableAcknowledge = cl->reliableSequence;
 		return;
 	}
+
+	cl->reliableAcknowledge = reliableAcknowledge;
+
 	// if this is a usercmd from a previous gamestate,
 	// ignore it or retransmit the current gamestate
 	// 
