@@ -1243,11 +1243,10 @@ static void SV_VerifyPaks_f( client_t *cl ) {
 			cl->lastSnapshotTime = 0;
 			cl->state = CS_ACTIVE;
 			SV_SendClientSnapshot( cl );
-			SV_SendServerCommand( cl, "disconnect \"Unpure Client. "
+			SV_DropClient( cl, "Unpure Client. "
 				"You may need to enable in-game downloads "
 				"to connect to this server (set "
 				"cl_allowDownload 1)\"" );
-			SV_DropClient( cl, "Unpure client detected. Invalid .PK3 files referenced!" );
 		}
 	}
 }
