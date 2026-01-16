@@ -1834,7 +1834,7 @@ void SV_ExecuteClientMessage( client_t *cl, msg_t *msg ) {
 #ifndef NDEBUG
 		SV_DropClient( cl, "DEBUG: illegible client message" );
 #else
-		Com_Printf( S_COLOR_YELLOW "WARNING: dropping %i commands from %s\n", cl->reliableSequence - reliableAcknowledge, cl->name );
+		Com_Printf( S_COLOR_YELLOW "WARNING: dropping %i commands from %s\n", cl->reliableSequence - cl->reliableAcknowledge, cl->name );
 #endif
 		cl->reliableAcknowledge = cl->reliableSequence;
 		return;
