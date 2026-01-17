@@ -206,7 +206,6 @@ void QDECL SV_SendServerCommand(client_t *cl, const char *fmt, ...) {
 	  SV_WriteAttackLog( va( "SV_SendServerCommand( %ld, %.20s... ) length %ld > 1022, "
 		      "dropping to avoid server buffer overflow.\n",
 		      cl - svs.clients, message, strlen( (char *)message ) ) );
-	  SV_WriteAttackLog( va( "Full message: [%s]\n", message ) );
 	  return;
 	}
 
@@ -403,6 +402,12 @@ static long SVC_HashForAddress( netadr_t address ) {
 		case NA_IP:  ip = address.ip;  size = 4; break;
 		case NA_IP6: ip = address.ip6; size = 16; break;
 		default: break;
+	}
+
+	// Prevent the possibility of a NULL pointer leaking out
+	if ( !ip ) {
+		Com_Printf( "SVC_HashForAddress: Invalid IP - Hash value is zero." );
+		return 0;
 	}
 
 	for ( i = 0; i < size; i++ ) {
