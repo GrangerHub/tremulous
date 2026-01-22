@@ -1462,6 +1462,7 @@ void Com_InitZoneMemory( void )
 
     // allocate the random block zone
     cvar_t* cv = Cvar_Get( "com_zoneMegs", DEF_COMZONEMEGS_S, CVAR_LATCH | CVAR_ARCHIVE );
+    Cvar_SetDescription( cv, "Initial amount of memory (RAM) allocated for the main block zone (in MB)." );
 
     if ( cv->integer < DEF_COMZONEMEGS ) {
         s_zoneTotal = 1024 * 1024 * DEF_COMZONEMEGS;
@@ -1947,6 +1948,7 @@ void Com_InitJournaling( void )
 {
     Com_StartupVariable( "journal" );
     com_journal = Cvar_Get ("journal", "0", CVAR_INIT);
+    Cvar_SetDescription(com_journal, "When enabled, writes events and its data to 'journal.dat' and 'journaldata.dat'.");
     if ( !com_journal->integer ) {
         return;
     }
@@ -2617,6 +2619,7 @@ void Com_Init( char *commandLine )
     com_dedicated = Cvar_Get ("dedicated", "0", CVAR_LATCH);
     Cvar_CheckRange( com_dedicated, 0, 2, true );
 #endif
+    Cvar_SetDescription (com_dedicated, "Enables dedicated server mode.\n 0: Listen server\n 1: Unlisted dedicated server\n 2: Listed dedicated server");
     // allocate the stack based hunk allocator
     Com_InitHunkMemory();
 
@@ -2629,34 +2632,56 @@ void Com_Init( char *commandLine )
     //
     com_altivec = Cvar_Get ("com_altivec", "1", CVAR_ARCHIVE);
     com_maxfps = Cvar_Get ("com_maxfps", "85", CVAR_ARCHIVE);
+    Cvar_SetDescription (com_maxfps, "Sets maximum frames per second.");
 
     com_logfile = Cvar_Get ("logfile", "0", CVAR_TEMP );
+    Cvar_SetDescription (com_logfile, "System console logging:\n"
+            " 0 - disabled\n"
+            " 1 - overwrite mode, buffered\n"
+            " 2 - overwrite mode, synced\n"
+            " 3 - append mode, buffered\n"
+            " 4 - append mode, synced\n");
 
     com_timescale = Cvar_Get ("timescale", "1", CVAR_CHEAT | CVAR_SYSTEMINFO );
+    Cvar_SetDescription (com_timescale, "System timing factor:\n < 1: Slows the game down\n = 1: Regular speed\n > 1: Speeds the game up");
     com_fixedtime = Cvar_Get ("fixedtime", "0", CVAR_CHEAT);
+    Cvar_SetDescription (com_fixedtime, "Toggle the rendering of every frame the game will wait until each frame is completely rendered before sending the next frame.");
     com_showtrace = Cvar_Get ("com_showtrace", "0", CVAR_CHEAT);
+    Cvar_SetDescription (com_showtrace, "Debugging tool that prints out trace information.");
     com_speeds = Cvar_Get ("com_speeds", "0", 0);
+    Cvar_SetDescription (com_speeds, "Prints speed information per frame to the console. Used for debugging.");
     com_timedemo = Cvar_Get ("timedemo", "0", CVAR_CHEAT);
+    Cvar_SetDescription (com_timedemo, "When set to '1' times a demo and returns frames per second like a benchmark.");
     com_cameraMode = Cvar_Get ("com_cameraMode", "0", CVAR_CHEAT);
 
     cl_paused = Cvar_Get ("cl_paused", "0", CVAR_ROM);
+    Cvar_SetDescription (cl_paused, "Read-only CVAR to toggle functionality of paused games (the variable holds the status of the paused flag on the client side).");
     sv_paused = Cvar_Get ("sv_paused", "0", CVAR_ROM);
     cl_packetdelay = Cvar_Get ("cl_packetdelay", "0", CVAR_CHEAT);
+    Cvar_SetDescription (cl_packetdelay, "Artificially set the client's latency. Simulates packet delay, which can lead to packet loss.");
     sv_packetdelay = Cvar_Get ("sv_packetdelay", "0", CVAR_CHEAT);
+    Cvar_SetDescription (sv_packetdelay, "Simulates packet delay, which can lead to packet loss. Server side.");
     com_sv_running = Cvar_Get ("sv_running", "0", CVAR_ROM);
+    Cvar_SetDescription (com_sv_running, "Communicates to game modules if there is a server currently running.");
     com_cl_running = Cvar_Get ("cl_running", "0", CVAR_ROM);
+    Cvar_SetDescription (com_cl_running, "Can be used to check the status of the client game.");
     com_buildScript = Cvar_Get( "com_buildScript", "0", 0 );
+    Cvar_SetDescription( com_buildScript, "Loads all game assets, regardless whether they are required or not." );
     com_ansiColor = Cvar_Get( "com_ansiColor", "0", CVAR_ARCHIVE );
+    Cvar_SetDescription( com_ansiColor, "Use ANSI color in the terminal window instead of color codes.");
 
     com_unfocused = Cvar_Get( "com_unfocused", "0", CVAR_ROM );
     com_maxfpsUnfocused = Cvar_Get( "com_maxfpsUnfocused", "0", CVAR_ARCHIVE );
+    Cvar_SetDescription( com_maxfpsUnfocused, "Sets maximum frames per second in unfocused game window." );
     com_minimized = Cvar_Get( "com_minimized", "0", CVAR_ROM );
     com_maxfpsMinimized = Cvar_Get( "com_maxfpsMinimized", "0", CVAR_ARCHIVE );
+    Cvar_SetDescription( com_maxfpsMinimized, "Sets maximum frames per second in minimized game window." );
     com_busyWait = Cvar_Get("com_busyWait", "0", CVAR_ARCHIVE);
     Cvar_Get("com_errorMessage", "", CVAR_ROM | CVAR_NORESTART);
     Cvar_Get("com_demoErrorMessage", "", CVAR_ROM | CVAR_NORESTART);
 
     com_version = Cvar_Get ("version", PRODUCT_NAME, CVAR_ROM | CVAR_SERVERINFO );
+    Cvar_SetDescription (com_version, "Read-only CVAR to see the version of the game.");
     Cvar_Get ("protocol", va("%i", PROTOCOL_VERSION), CVAR_SERVERINFO | CVAR_ROM);
     com_gamename = Cvar_Get("com_gamename", GAMENAME_FOR_MASTER, CVAR_SERVERINFO | CVAR_INIT);
 

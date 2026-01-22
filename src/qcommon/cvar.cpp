@@ -1475,6 +1475,7 @@ void Cvar_Init(void)
     ::memset(hashTable, '\0', sizeof(hashTable));
 
     cvar_cheats = Cvar_Get("sv_cheats", "1", CVAR_ROM | CVAR_SYSTEMINFO);
+    Cvar_SetDescription(cvar_cheats, "Enabling cheating commands (server side only).");
 
     Cmd_AddCommand("print", Cvar_Print_f);
     Cmd_AddCommand("toggle", Cvar_Toggle_f);

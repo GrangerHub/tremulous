@@ -3336,8 +3336,11 @@ static void FS_Startup(const char *gameName)
     fs_packFiles = 0;
 
     fs_debug = Cvar_Get("fs_debug", "0", 0);
+    Cvar_SetDescription(fs_debug, "Debugging tool for the filesystem. Run the game in debug mode. Prints additional information regarding read files into the console.");
     fs_basepath = Cvar_Get("fs_basepath", Sys_DefaultInstallPath(), CVAR_INIT | CVAR_PROTECTED);
+    Cvar_SetDescription(fs_basepath, "Write-protected CVAR specifying the path to the installation folder of the game.");
     fs_basegame = Cvar_Get("fs_basegame", BASEGAME, CVAR_INIT);
+    Cvar_SetDescription(fs_basegame, "Write-protected CVAR specifying the path to the base game folder.");
 
     const char *homePath = Sys_DefaultHomePath();
     if (!homePath || !homePath[0])
@@ -3346,7 +3349,10 @@ static void FS_Startup(const char *gameName)
     }
 
     fs_homepath = Cvar_Get("fs_homepath", homePath, CVAR_INIT | CVAR_PROTECTED);
+    Cvar_SetDescription(fs_homepath, "Directory to store user configuration and downloaded files.");
+
     fs_gamedirvar = Cvar_Get("fs_game", BASEGAME, CVAR_INIT | CVAR_SYSTEMINFO);
+    Cvar_SetDescription(fs_gamedirvar, "Specify an alternate mod directory and run the game with this mod.");
 
 #ifdef DEDICATED
     // add search path elements in reverse priority order

@@ -856,20 +856,31 @@ void SV_Init(void)
     Cvar_Get("timelimit", "0", CVAR_SERVERINFO);
     Cvar_Get("sv_keywords", "", CVAR_SERVERINFO);
     sv_mapname = Cvar_Get("mapname", "nomap", CVAR_SERVERINFO | CVAR_ROM);
+    Cvar_SetDescription(sv_mapname, "Display the name of the current map being used on the server.");
     sv_privateClients = Cvar_Get("sv_privateClients", "0", CVAR_SERVERINFO);
+    Cvar_SetDescription(sv_privateClients, "The number of spots, out of sv_maxclients, reserved for players with the server password (sv_privatePassword).");
     sv_hostname = Cvar_Get("sv_hostname", "noname", CVAR_SERVERINFO | CVAR_ARCHIVE);
+    Cvar_SetDescription(sv_hostname, "Sets the name of the server.");
     sv_maxclients = Cvar_Get("sv_maxclients", "8", CVAR_SERVERINFO | CVAR_LATCH);
+    Cvar_SetDescription(sv_maxclients, "Maximum number of people allowed to join the server.");
 
     sv_minRate = Cvar_Get("sv_minRate", "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
+    Cvar_SetDescription(sv_minRate, "Minimum server bandwidth (in bit per second) a client can use.");
     sv_maxRate = Cvar_Get("sv_maxRate", "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
+    Cvar_SetDescription(sv_maxRate, "Maximum server bandwidth (in bit per second) a client can use.");
     sv_dlRate = Cvar_Get("sv_dlRate", "100", CVAR_ARCHIVE | CVAR_SERVERINFO);
+    Cvar_SetDescription(sv_dlRate, "Bandwidth allotted to PK3 file downloads via UDP, in kbyte/s.");
     sv_minPing = Cvar_Get("sv_minPing", "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
+    Cvar_SetDescription(sv_minPing, "Minimum ping a client can have to join the server.");
     sv_maxPing = Cvar_Get("sv_maxPing", "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
+    Cvar_SetDescription(sv_maxPing, "Maximum ping a client can have to join the server.");
 
     // systeminfo
     Cvar_Get("sv_cheats", "1", CVAR_SYSTEMINFO | CVAR_ROM);
     sv_serverid = Cvar_Get("sv_serverid", "0", CVAR_SYSTEMINFO | CVAR_ROM);
     sv_pure = Cvar_Get("sv_pure", "1", CVAR_SYSTEMINFO);
+    Cvar_SetDescription(sv_pure, "Requires clients to only get data from pk3 files the server is using.");
+    
 #ifdef USE_VOIP
     sv_voip = Cvar_Get("sv_voip", "1", CVAR_LATCH);
     Cvar_CheckRange(sv_voip, 0, 1, true);
@@ -886,16 +897,24 @@ void SV_Init(void)
 
     // server vars
     sv_rconPassword = Cvar_Get("rconPassword", "", CVAR_TEMP);
+    Cvar_SetDescription(sv_rconPassword, "Password for remote server commands.");
     sv_privatePassword = Cvar_Get("sv_privatePassword", "", CVAR_TEMP);
+    Cvar_SetDescription(sv_privatePassword, "Set password for private clients to login with.");
     sv_fps = Cvar_Get("sv_fps", "40", CVAR_TEMP);
+    Cvar_SetDescription(sv_fps, "Set the max frames per second the server sends the client.");
     sv_timeout = Cvar_Get("sv_timeout", "200", CVAR_TEMP);
+    Cvar_SetDescription(sv_timeout, "Seconds without any message before automatic client disconnect.");
     sv_zombietime = Cvar_Get("sv_zombietime", "2", CVAR_TEMP);
+    Cvar_SetDescription(sv_zombietime, "Seconds to sink messages after disconnect.");
 
     sv_allowDownload = Cvar_Get("sv_allowDownload", "0", CVAR_SERVERINFO);
+    Cvar_SetDescription(sv_allowDownload, "Toggle the ability for clients to download files maps etc. from server.");
     Cvar_Get("sv_dlURL", "http://downloads.tremulous.net", CVAR_SERVERINFO | CVAR_ARCHIVE);
 
     sv_protect    = Cvar_Get("sv_protect", "3", CVAR_ARCHIVE);
+    Cvar_SetDescription(sv_protect, "Sets the desired server protection level. Bitmask:\n 1 - SVP_IOQ3\n 2 - SVP_OWOLF\n 4 - SVP_CONSOLE");
 	sv_protectLog = Cvar_Get("sv_protectLog", "sv_protect.log", CVAR_ARCHIVE);
+	Cvar_SetDescription(sv_protectLog, "Sets the desired name of the sv_protect log file. To disable for developer print output, set to \"\".");
 	SV_InitAttackLog();
 
     for (int a = 0; a < 3; ++a)
@@ -906,11 +925,16 @@ void SV_Init(void)
     }
 
     sv_reconnectlimit = Cvar_Get("sv_reconnectlimit", "3", 0);
+    Cvar_SetDescription(sv_reconnectlimit, "Number of seconds a disconnected client should wait before next reconnect.");
     sv_showloss = Cvar_Get("sv_showloss", "0", 0);
     sv_padPackets = Cvar_Get("sv_padPackets", "0", 0);
+    Cvar_SetDescription(sv_padPackets, "Adds padding bytes to network packets for rate debugging.");
     sv_killserver = Cvar_Get("sv_killserver", "0", 0);
+    Cvar_SetDescription(sv_killserver, "Internal flag to manage server state.");
     sv_mapChecksum = Cvar_Get("sv_mapChecksum", "", CVAR_ROM);
+    Cvar_SetDescription(sv_mapChecksum, "Allows check for client server map to match.");
     sv_lanForceRate = Cvar_Get("sv_lanForceRate", "1", CVAR_ARCHIVE);
+    Cvar_SetDescription(sv_lanForceRate, "Forces LAN clients to the maximum rate instead of accepting client setting.");
     sv_rsaAuth = Cvar_Get("sv_rsaAuth", "1", CVAR_INIT | CVAR_PROTECTED);
 }
 
