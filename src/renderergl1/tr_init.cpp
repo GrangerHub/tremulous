@@ -981,7 +981,7 @@ void R_Register( void )
 	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE );
 	ri.Cvar_SetDescription(r_fullscreen, "Fullscreen mode. Set to 0 for windowed mode.");
 	r_noborder = ri.Cvar_Get("r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	ri.Cvar_SetDescription(r_noborder, "Setting to 1 will remove window borders and title bar in windowed mode, hole ALT to drag & drop it with opened console.");
+	ri.Cvar_SetDescription(r_noborder, "Setting to 1 will remove window borders and title bar in windowed mode, hold ALT to drag & drop it with opened console.");
 	r_width = ri.Cvar_Get( "r_width", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_SetDescription(r_width, "Custom width to use.");
 	r_height = ri.Cvar_Get( "r_height", "0", CVAR_ARCHIVE | CVAR_LATCH );

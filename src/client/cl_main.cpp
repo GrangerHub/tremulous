@@ -4888,7 +4888,7 @@ void CL_Init(void)
     Cvar_SetDescription(cl_anglespeedkey, "Set the speed that the direction keys (not mouse) change the view angle.");
 
     cl_maxpackets = Cvar_Get("cl_maxpackets", "30", CVAR_ARCHIVE);
-    Cvar_SetDescription(cl_maxpackets, "Set the transmission packet size or how many packets are sent to client.\nMaximum packet upload rate.");
+    Cvar_SetDescription(cl_maxpackets, "Sets how many client packets are sent to the server per second, can't exceed \\com_maxFPS.");
     cl_packetdup = Cvar_Get("cl_packetdup", "1", CVAR_ARCHIVE);
     Cvar_SetDescription(cl_packetdup, "Limits the number of previous client commands added in packet, helps in packet loss mitigation, increases client command packets size a bit.");
 

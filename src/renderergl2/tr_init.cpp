@@ -1129,7 +1129,7 @@ void R_Register( void )
 	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE );
 	ri.Cvar_SetDescription(r_fullscreen, "Fullscreen mode. Set to 0 for windowed mode.");
 	r_noborder = ri.Cvar_Get("r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	ri.Cvar_SetDescription(r_noborder, "Setting to 1 will remove window borders and title bar in windowed mode, hole ALT to drag & drop it with opened console.");
+	ri.Cvar_SetDescription(r_noborder, "Setting to 1 will remove window borders and title bar in windowed mode, hold ALT to drag & drop it with opened console.");
 	r_width = ri.Cvar_Get( "r_width", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_SetDescription(r_width, "Custom width to use with \\r_mode -1.");
 	r_height = ri.Cvar_Get( "r_height", "0", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1198,7 +1198,7 @@ void R_Register( void )
 	ri.Cvar_SetDescription(r_dlightMode, "Dynamic light mode:\n 0: VQ3 'fake' dynamic lights\n 1: High-quality per-pixel dynamic lights, slightly faster than VQ3's on modern hardware\n 2: Same as 1 but applies to all MD3 models too");
 	r_pshadowDist = ri.Cvar_Get( "r_pshadowDist", "128", CVAR_ARCHIVE );
 	r_mergeLightmaps = ri.Cvar_Get( "r_mergeLightmaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	ri.Cvar_SetDescription(r_mergeLightmaps, "Merge small lightmaps into 2 or fewer giant lightmaps.");
+	ri.Cvar_SetDescription(r_mergeLightmaps, "Merge built-in small lightmaps into bigger lightmaps (atleas).");
 	r_imageUpsample = ri.Cvar_Get( "r_imageUpsample", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_imageUpsampleMaxSize = ri.Cvar_Get( "r_imageUpsampleMaxSize", "1024", CVAR_ARCHIVE | CVAR_LATCH );
 	r_imageUpsampleType = ri.Cvar_Get( "r_imageUpsampleType", "1", CVAR_ARCHIVE | CVAR_LATCH );

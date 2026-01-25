@@ -426,7 +426,7 @@ void Con_Init (void) {
 	int		i;
 
 	con_conspeed    = Cvar_Get ("scr_conspeed", "3", 0);
-	Cvar_SetDescription (con_conspeed, "Console opening/closing scroll speed.");
+	Cvar_SetDescription (con_conspeed, "Console opening/closing scroll speed, use with \\seta to save in config.");
 	con_useShader   = Cvar_Get ("scr_useShader", "1", CVAR_ARCHIVE);
 	Cvar_SetDescription (con_useShader, "Toggle the use of the background console shader.\n Note: this blocks the \\scr_ color options from being visible");
 	con_height      = Cvar_Get ("scr_height", "50", CVAR_ARCHIVE);
