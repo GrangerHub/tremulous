@@ -82,6 +82,7 @@ redo:
 void SND_setup(void)
 {
     cvar_t* cv = Cvar_Get("com_soundMegs", DEF_COMSOUNDMEGS, CVAR_LATCH | CVAR_ARCHIVE);
+    Cvar_CheckRange(cv, 1, 512, true);
     Cvar_SetDescription(cv, "Amount of memory (RAM) assigned to the sound buffer (in MB).");
     int scs = cv->integer * 1536;
 

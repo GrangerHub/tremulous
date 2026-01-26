@@ -774,15 +774,6 @@ static bool CL_ReadyToSendPacket(void)
         return true;
     }
 
-    // check for exceeding cl_maxpackets
-    if (cl_maxpackets->integer < 15)
-    {
-        Cvar_Set("cl_maxpackets", "15");
-    }
-    else if (cl_maxpackets->integer > 125)
-    {
-        Cvar_Set("cl_maxpackets", "125");
-    }
     oldPacketNum = (clc.netchan.outgoingSequence - 1) & PACKET_MASK;
     delta = cls.realtime - cl.outPackets[oldPacketNum].p_realtime;
     if (delta < 1000 / cl_maxpackets->integer)
@@ -1118,6 +1109,7 @@ void CL_InitInput(void)
     cl_nodelta = Cvar_Get("cl_nodelta", "0", 0);
     Cvar_SetDescription(cl_nodelta, "Flag server to disable delta compression on server snapshots.");
     cl_debugMove = Cvar_Get("cl_debugMove", "0", 0);
+    Cvar_CheckRange(cl_debugMove, 0, 2, true);
     Cvar_SetDescription(cl_debugMove, "Prints a graph of view angle deltas.\n 0: Disabled\n 1: Yaw\n 2: Pitch");
 }
 

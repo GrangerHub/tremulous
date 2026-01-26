@@ -4827,6 +4827,8 @@ CL_Init
 */
 void CL_Init(void)
 {
+    cvar_t *cv;
+
     Com_Printf("----- Client Initialization -----\n");
 
     Con_Init();
@@ -4852,6 +4854,7 @@ void CL_Init(void)
     Cvar_SetDescription(cl_timeout, "Duration of receiving nothing from server for client to decide it must be disconnected (in seconds).");
 
     cl_timeNudge = Cvar_Get("cl_timeNudge", "0", CVAR_TEMP);
+    Cvar_CheckRange(cl_timeNudge, -30, 30, true);
     Cvar_SetDescription(cl_timeNudge, "Allows more or less latency to be added in the interest of better smoothness or better responsiveness.");
 
     cl_shownet = Cvar_Get("cl_shownet", "0", CVAR_TEMP);
@@ -4871,6 +4874,7 @@ void CL_Init(void)
     cl_timedemoLog = Cvar_Get("cl_timedemoLog", "", CVAR_ARCHIVE);
     cl_autoRecordDemo = Cvar_Get("cl_autoRecordDemo", "0", CVAR_ARCHIVE);
     cl_aviFrameRate = Cvar_Get("cl_aviFrameRate", "25", CVAR_ARCHIVE);
+    Cvar_CheckRange(cl_aviFrameRate, 1, 1000, true);
     Cvar_SetDescription(cl_aviFrameRate, "The framerate used for capturing video.");
     cl_aviMotionJpeg = Cvar_Get("cl_aviMotionJpeg", "1", CVAR_ARCHIVE);
     Cvar_SetDescription(cl_aviMotionJpeg, "Enable/disable the MJPEG codec for avi output.");
@@ -4888,6 +4892,7 @@ void CL_Init(void)
     Cvar_SetDescription(cl_anglespeedkey, "Set the speed that the direction keys (not mouse) change the view angle.");
 
     cl_maxpackets = Cvar_Get("cl_maxpackets", "30", CVAR_ARCHIVE);
+    Cvar_CheckRange(cl_maxpackets, 15, 125, true);
     Cvar_SetDescription(cl_maxpackets, "Sets how many client packets are sent to the server per second, can't exceed \\com_maxFPS.");
     cl_packetdup = Cvar_Get("cl_packetdup", "1", CVAR_ARCHIVE);
     Cvar_SetDescription(cl_packetdup, "Limits the number of previous client commands added in packet, helps in packet loss mitigation, increases client command packets size a bit.");
@@ -4908,6 +4913,7 @@ void CL_Init(void)
     // offset for the power function (for style 1, ignored otherwise)
     // this should be set to the max rate value
     cl_mouseAccelOffset = Cvar_Get("cl_mouseAccelOffset", "5", CVAR_ARCHIVE);
+    Cvar_CheckRange(cl_mouseAccelOffset, 0.001, 50000, false);
     Cvar_SetDescription(cl_mouseAccelOffset, "Sets how much base mouse delta will be doubled by acceleration. Requires 'cl_mouseAccelStyle 1'.");
     Cvar_CheckRange(cl_mouseAccelOffset, 0.001f, 50000.0f, false);
 
@@ -4981,7 +4987,9 @@ void CL_Init(void)
     cl_motdString = Cvar_Get("cl_motdString", "", CVAR_ROM);
     Cvar_SetDescription(cl_motdString, "Message of the day string from Tremulous' master server, it is a read only variable.");
 
-    Cvar_Get("cl_maxPing", "800", CVAR_ARCHIVE);
+    cv = Cvar_Get("cl_maxPing", "800", CVAR_ARCHIVE);
+    Cvar_CheckRange(cv, 100, 999, true);
+    Cvar_SetDescription(cv, "Specify the maximum allowed ping to a server.");
 
     cl_lanForcePackets = Cvar_Get("cl_lanForcePackets", "1", CVAR_ARCHIVE);
 

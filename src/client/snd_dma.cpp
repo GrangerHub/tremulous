@@ -1589,6 +1589,7 @@ bool S_Base_Init( soundInterface_t *si )
 	}
 
 	s_mixahead = Cvar_Get ("s_mixahead", "0.2", CVAR_ARCHIVE);
+	Cvar_CheckRange (s_mixahead, 0.001, 0.5, false);
 	Cvar_SetDescription (s_mixahead, "Amount of time to pre-mix sound data to avoid potential skips/stuttering in case of unstable framerate. Higher values add more CPU usage.");
 	s_mixPreStep = Cvar_Get ("s_mixPreStep", "0.05", CVAR_ARCHIVE);
 	s_show = Cvar_Get ("s_show", "0", CVAR_CHEAT);

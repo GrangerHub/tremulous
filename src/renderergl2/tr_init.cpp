@@ -1095,9 +1095,10 @@ void R_Register( void )
 	r_ext_direct_state_access = ri.Cvar_Get("r_ext_direct_state_access", "1", CVAR_ARCHIVE | CVAR_LATCH);
 
 	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_CheckRange(r_ext_texture_filter_anisotropic, 0, 1, true);
 	ri.Cvar_SetDescription(r_ext_texture_filter_anisotropic, "Allow anisotropic filtering.");
 	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
-	ri.Cvar_SetDescription(r_ext_max_anisotropy, "Sets maximum anisotropic level for your graphics driver. Requires \\r_ext_texture_filter_anistropic.");
+	ri.Cvar_SetDescription(r_ext_max_anisotropy, "Sets maximum anisotropic level for your graphics driver. Requires \\r_ext_texture_filter_anisotropic.");
 
 	r_picmip = ri.Cvar_Get ("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, 0, 16, true );
@@ -1111,11 +1112,14 @@ void R_Register( void )
 	r_texturebits = ri.Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_SetDescription(r_texturebits, "Number of texture bits per texture.");
 	r_colorbits = ri.Cvar_Get( "r_colorbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_CheckRange(r_colorbits, 0, 32, true);
 	ri.Cvar_SetDescription(r_colorbits, "Sets color bit depth, set to 0 to use desktop settings.");
 	r_alphabits = ri.Cvar_Get( "r_alphabits", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_stencilbits = ri.Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_CheckRange(r_stencilbits, 0, 8, true);
 	ri.Cvar_SetDescription(r_stencilbits, "Stencil buffer size, required to be 8 for stencil shadows.");
 	r_depthbits = ri.Cvar_Get( "r_depthbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_CheckRange(r_depthbits, 0, 32, true);
 	ri.Cvar_SetDescription(r_depthbits, "Sets precision of Z-buffer.");
 	r_ext_multisample = ri.Cvar_Get( "r_ext_multisample", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_ext_multisample, 0, 4, true );
@@ -1123,6 +1127,7 @@ void R_Register( void )
 	r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_SetDescription(r_overBrightBits, "Sets the intensity of overall brightness of texture pixels.");
 	r_ignorehwgamma = ri.Cvar_Get( "r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	ri.Cvar_CheckRange(r_ignorehwgamma, 0, 1, true);
 	ri.Cvar_SetDescription(r_ignorehwgamma, "Overrides hardware gamma capabilities.");
 	r_mode = ri.Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_SetDescription(r_mode, "Set video mode:\n -2 - use current desktop resolution\n -1 - use \\r_width and \\r_height\n  0..N - enter \\modelist for details");
@@ -1195,6 +1200,7 @@ void R_Register( void )
 	r_baseGloss = ri.Cvar_Get( "r_baseGloss", "0.3", CVAR_ARCHIVE | CVAR_LATCH );
 	r_glossType = ri.Cvar_Get("r_glossType", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_dlightMode = ri.Cvar_Get( "r_dlightMode", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_CheckRange(r_dlightMode, 0, 2, true);
 	ri.Cvar_SetDescription(r_dlightMode, "Dynamic light mode:\n 0: VQ3 'fake' dynamic lights\n 1: High-quality per-pixel dynamic lights, slightly faster than VQ3's on modern hardware\n 2: Same as 1 but applies to all MD3 models too");
 	r_pshadowDist = ri.Cvar_Get( "r_pshadowDist", "128", CVAR_ARCHIVE );
 	r_mergeLightmaps = ri.Cvar_Get( "r_mergeLightmaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1234,6 +1240,7 @@ void R_Register( void )
 	r_mapLightmapMin = ri.Cvar_Get ("r_mapLightmapMin", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_SetDescription(r_mapLightmapMin, "Sets the minimum light map value, mainly useful for dark maps.");
 	r_intensity = ri.Cvar_Get ("r_intensity", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_CheckRange(r_intensity, 1, 255, false);
 	ri.Cvar_SetDescription(r_intensity, "Global texture lighting scale.");
 	r_singleShader = ri.Cvar_Get ("r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH );
 	ri.Cvar_SetDescription(r_singleShader, "Debugging tool that only uses the default shader for all rendering.");
@@ -1242,6 +1249,7 @@ void R_Register( void )
 	// archived variables that can change at any time
 	//
 	r_lodCurveError = ri.Cvar_Get( "r_lodCurveError", "250", CVAR_ARCHIVE|CVAR_CHEAT );
+	ri.Cvar_CheckRange(r_lodCurveError, -1, 8192, false);
 	ri.Cvar_SetDescription(r_lodCurveError, "Level of detail error on curved surface grids. Higher values result in better quality at a distance.");
 	r_lodbias = ri.Cvar_Get( "r_lodbias", "0", CVAR_ARCHIVE );
 	ri.Cvar_SetDescription(r_lodbias, "Sets the level of detail of in-game models:\n -2: Ultra (further delays LOD transition in the distance)\n -1: Very High (delays LOD transition in the distance)\n 0: High\n 1: Medium\n 2: Low");
@@ -1272,6 +1280,7 @@ void R_Register( void )
 	r_swapInterval = ri.Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_SetDescription(r_swapInterval, "V-blanks to wait before swapping buffers.\n 0: No V-Sync\n 1: Synced to the monitor's refresh rate.");
 	r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE );
+	ri.Cvar_CheckRange(r_gamma, 0.5, 3, false);
 	ri.Cvar_SetDescription(r_gamma, "Gamma correction factor.");
 	r_facePlaneCull = ri.Cvar_Get ("r_facePlaneCull", "1", CVAR_ARCHIVE );
 	ri.Cvar_SetDescription(r_facePlaneCull, "Enables culling of planar surfaces with back side test.");
@@ -1317,6 +1326,7 @@ void R_Register( void )
 	ri.Cvar_SetDescription(r_portalOnly, "Set to 1 to render only first mirror/portal view if it is present on the scene.");
 
 	r_flareSize = ri.Cvar_Get ("r_flareSize", "40", CVAR_CHEAT);
+	ri.Cvar_CheckRange(r_flareSize, 1, 40, false);
 	ri.Cvar_SetDescription(r_flareSize, "Radius of light flares. Requires \\r_flares 1.");
 	r_flareFade = ri.Cvar_Get ("r_flareFade", "7", CVAR_CHEAT);
 	ri.Cvar_SetDescription(r_flareFade, "Distance to fade out light flares. Requires \\r_flares 1.");
