@@ -29,13 +29,14 @@ DATA_GRHUB="data-grhub-1.3.1.pk3"
 download "https://github.com/GrangerHub/tremulous-assets/releases/download/data-1.3.1/tremulous-grhub-1.3.1.pk3" \
 	 $DATA_GRHUB
 
-if [[ $dir == "./build/release-darwin-x86_64" ]]; then
+if [[ $dir == *darwin* ]]; then
     subdir=./Tremulous.app/Contents/MacOS/gpp/ 
 else
     subdir=./gpp
 fi
 
 echo "Extracting 1.1.0 data"
+mkdir -p $subdir
 unzip -jo -d $subdir ../$DATA_110 "*.pk3"
 
 echo "Adding Grangerhub assets"

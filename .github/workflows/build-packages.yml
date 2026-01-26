@@ -38,21 +38,33 @@ jobs:
     
   build:
 
-    runs-on: ubuntu-latest
     needs: set-version
-    container: debian:oldstable-slim
+
     strategy:
       fail-fast: false
       matrix:
         release:
           - file: release-linux-x86_64
-            name: Linux64
+            name: Linux-x64
+            runs-on: ubuntu-latest
+            container: debian:oldstable-slim
           - file: release-mingw32-x86_64
-            name: Windows32
+            name: Windows-x32
+            runs-on: ubuntu-latest
+            container: debian:oldstable-slim
             platform: mingw32
+          - file: release-darwin-arm
+            name: Mac-arm
+            runs-on: macos-15
+            ldflags: -ld64
             
+    runs-on: ${{ matrix.release.runs-on }}
+    container:
+      image: ${{ matrix.release.container }}
+    
     env:
       VERSION: ${{ needs.set-version.outputs.version }}
+      LDFLAGS: ${{ matrix.release.ldflags }}
           
     steps:
     - name: dependencies
@@ -71,6 +83,7 @@ jobs:
           curl \
           rsync \
           git
+      if: ${{ ! contains(matrix.release.runs-on, 'macos') }}
     - uses: actions/checkout@v6
     ## attempts for setting version via tag, but doesn't work for shallow copy:
     #  with:
