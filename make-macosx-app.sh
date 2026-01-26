@@ -13,6 +13,7 @@ if [ $# == 0 ] || [ $# -gt 2 ]; then
 	echo "Optional architectures are:"
 	echo " x86"
 	echo " x86_64"
+	echo " arm"
 	echo
 	exit 1
 fi
@@ -38,11 +39,14 @@ if [ "$2" != "" ]; then
 		CURRENT_ARCH="x86"
 	elif [ "$2" == "x86_64" ]; then
 		CURRENT_ARCH="x86_64"
+	elif [ "$2" == "arm" ]; then
+		CURRENT_ARCH="arm"
 	else
 		echo "Invalid architecture: $2"
 		echo "Valid architectures are:"
 		echo " x86"
 		echo " x86_64"
+		echo " arm"
 		echo
 		exit 1
 	fi
