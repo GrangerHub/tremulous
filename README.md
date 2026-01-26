@@ -10,6 +10,7 @@
 - [Arch Linux](https://aur.archlinux.org/packages/tremulous-grangerhub-bin)
 - [Flatpak](https://flathub.org/apps/com.grangerhub.Tremulous) maintained by @AsciiWolf
 - [SnapCraft](https://snapcraft.io/tremulous) maintained by @AsciiWolf
+- [WinGet](https://winget.ragerworks.com/package/GrangerHub.Tremulous) for Windows maintained by https://github.com/AsciiWolf
 
 ## How to Install from GrangerHub's Release Page
 
