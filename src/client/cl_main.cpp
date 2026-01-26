@@ -4711,6 +4711,7 @@ static void CL_InitRef(void)
 
 #ifdef USE_RENDERER_DLOPEN
     cl_renderer = Cvar_Get("cl_renderer", "opengl1", CVAR_ARCHIVE | CVAR_LATCH);
+    Cvar_SetDescription(cl_renderer, "Sets your desired renderer, requires \\vid_restert.");
 
     Com_sprintf(dllName, sizeof(dllName), "renderer_%s" DLL_EXT, cl_renderer->string);
 
@@ -4843,50 +4844,78 @@ void CL_Init(void)
     // register our variables
     //
     cl_noprint = Cvar_Get("cl_noprint", "0", 0);
+    Cvar_SetDescription(cl_noprint, "Disable printing of information in the console.");
     cl_motd = Cvar_Get("cl_motd", "1", 0);
+    Cvar_SetDescription(cl_motd, "Toggle the display of the 'Message of the day'. When Tremulous starts a map up, it sends the GL_RENDERER string to the Message Of The Day server. This responds back with a message of the day to the client.");
 
     cl_timeout = Cvar_Get("cl_timeout", "200", 0);
+    Cvar_SetDescription(cl_timeout, "Duration of receiving nothing from server for client to decide it must be disconnected (in seconds).");
 
     cl_timeNudge = Cvar_Get("cl_timeNudge", "0", CVAR_TEMP);
+    Cvar_SetDescription(cl_timeNudge, "Allows more or less latency to be added in the interest of better smoothness or better responsiveness.");
+
     cl_shownet = Cvar_Get("cl_shownet", "0", CVAR_TEMP);
+    Cvar_SetDescription(cl_shownet, "Toggle the display of current network status.");
     cl_showSend = Cvar_Get("cl_showSend", "0", CVAR_TEMP);
+    Cvar_SetDescription(cl_showSend, "Prints client to server packet information.");
     cl_showTimeDelta = Cvar_Get("cl_showTimeDelta", "0", CVAR_TEMP);
+    Cvar_SetDescription(cl_showTimeDelta, "Prints the time delta of each packet to the console (the time delta between server updates).");
     cl_freezeDemo = Cvar_Get("cl_freezeDemo", "0", CVAR_TEMP);
     rcon_client_password = Cvar_Get("rconPassword", "", CVAR_TEMP);
+    Cvar_SetDescription(rcon_client_password, "Sets a remote console password so clients may change server settings without direct access to the server console.");
+
     cl_activeAction = Cvar_Get("activeAction", "", CVAR_TEMP);
+    Cvar_SetDescription(cl_activeAction, "Contents of this variable will be executed upon first frame of play.\nNote: It is cleared every time it is executed.");
 
     cl_timedemo = Cvar_Get("timedemo", "0", 0);
     cl_timedemoLog = Cvar_Get("cl_timedemoLog", "", CVAR_ARCHIVE);
     cl_autoRecordDemo = Cvar_Get("cl_autoRecordDemo", "0", CVAR_ARCHIVE);
     cl_aviFrameRate = Cvar_Get("cl_aviFrameRate", "25", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_aviFrameRate, "The framerate used for capturing video.");
     cl_aviMotionJpeg = Cvar_Get("cl_aviMotionJpeg", "1", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_aviMotionJpeg, "Enable/disable the MJPEG codec for avi output.");
     cl_forceavidemo = Cvar_Get("cl_forceavidemo", "0", 0);
+    Cvar_SetDescription(cl_forceavidemo, "Forces all demo recording into a sequence of screenshots in TGA format.");
 
     rconAddress = Cvar_Get("rconAddress", "", 0);
+    Cvar_SetDescription(rconAddress, "The IP address of the remote console you wish to connect to.");
 
     cl_yawspeed = Cvar_Get("cl_yawspeed", "140", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_yawspeed, "Side-to-side turning speed using keys (+left and +right).");
     cl_pitchspeed = Cvar_Get("cl_pitchspeed", "140", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_pitchspeed, "Up and down pitching speed using keys (+lookup and +lookdown).");
     cl_anglespeedkey = Cvar_Get("cl_anglespeedkey", "1.5", 0);
+    Cvar_SetDescription(cl_anglespeedkey, "Set the speed that the direction keys (not mouse) change the view angle.");
 
     cl_maxpackets = Cvar_Get("cl_maxpackets", "30", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_maxpackets, "Sets how many client packets are sent to the server per second, can't exceed \\com_maxFPS.");
     cl_packetdup = Cvar_Get("cl_packetdup", "1", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_packetdup, "Limits the number of previous client commands added in packet, helps in packet loss mitigation, increases client command packets size a bit.");
 
     cl_run = Cvar_Get("cl_run", "1", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_run, "Persistent player running movement.");
     cl_sensitivity = Cvar_Get("sensitivity", "5", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_sensitivity, "Sets base mouse sensitivity (mouse speed).");
     cl_mouseAccel = Cvar_Get("cl_mouseAccel", "0", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_mouseAccel, "Toggle the use of mouse acceleration, the mouse speeds up or becomes more sensitive as it continues in one direction.");
     cl_freelook = Cvar_Get("cl_freelook", "1", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_freelook, "Allow pitching or up/down look with mouse.");
 
     // 0: legacy mouse acceleration
     // 1: new implementation
     cl_mouseAccelStyle = Cvar_Get("cl_mouseAccelStyle", "0", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_mouseAccelStyle, "Choose between two different mouse acceleration styles.\n0: legacy mouse acceleration\n1: new implementation");
     // offset for the power function (for style 1, ignored otherwise)
     // this should be set to the max rate value
     cl_mouseAccelOffset = Cvar_Get("cl_mouseAccelOffset", "5", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_mouseAccelOffset, "Sets how much base mouse delta will be doubled by acceleration. Requires 'cl_mouseAccelStyle 1'.");
     Cvar_CheckRange(cl_mouseAccelOffset, 0.001f, 50000.0f, false);
 
     cl_showMouseRate = Cvar_Get("cl_showmouserate", "0", 0);
+    Cvar_SetDescription(cl_showMouseRate, "Prints mouse acceleration info when 'cl_mouseAccel' has a value set (rate of mouse samples per frame).");
 
     cl_allowDownload = Cvar_Get("cl_allowDownload", "1", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_allowDownload, "Enables downloading of content needed in server.");
 
     if (cl_allowDownload->integer != -1) cl_allowDownload->integer = DLF_ENABLE;
 
@@ -4894,6 +4923,7 @@ void CL_Init(void)
     Cvar_Get("com_downloadPromptText", "", CVAR_TEMP);
 
     cl_conXOffset = Cvar_Get("cl_conXOffset", "0", 0);
+    Cvar_SetDescription(cl_conXOffset, "Console notifications X-offset.");
 #ifdef __APPLE__
     // In game video is REALLY slow in Mac OS X right now due to driver slowness
     cl_inGameVideo = Cvar_Get("r_inGameVideo", "0", CVAR_ARCHIVE);
@@ -4902,29 +4932,45 @@ void CL_Init(void)
 #endif
 
     cl_serverStatusResendTime = Cvar_Get("cl_serverStatusResendTime", "750", 0);
+    Cvar_SetDescription(cl_serverStatusResendTime, "Time between resending server status reports if no response is received (in milliseconds).");
 
     m_pitch = Cvar_Get("m_pitch", "0.022", CVAR_ARCHIVE);
+    Cvar_SetDescription(m_pitch, "Set the up and down movement distance of the player in relation to how much the mouse moves.");
     m_yaw = Cvar_Get("m_yaw", "0.022", CVAR_ARCHIVE);
+    Cvar_SetDescription(m_yaw, "Set the speed at which the player's screen moves while using the mouse.");
     m_forward = Cvar_Get("m_forward", "0.25", CVAR_ARCHIVE);
+    Cvar_SetDescription(m_forward, "Set the back and forth movement distance in relation to how much the mouse moves.");
     m_side = Cvar_Get("m_side", "0.25", CVAR_ARCHIVE);
+    Cvar_SetDescription(m_side, "Set the strafe movement distance of the player in relation to how much the mouse moves.");
 #ifdef __APPLE__
     // Input is jittery on OS X w/o this
     m_filter = Cvar_Get("m_filter", "1", CVAR_ARCHIVE);
 #else
     m_filter = Cvar_Get("m_filter", "0", CVAR_ARCHIVE);
 #endif
+    Cvar_SetDescription(m_filter, "Toggle the use of mouse smoothing.");
 
     j_pitch = Cvar_Get("j_pitch", "0.022", CVAR_ARCHIVE);
+    Cvar_SetDescription(j_pitch, "Joystick pitch rotation speed/direction.");
     j_yaw = Cvar_Get("j_yaw", "-0.022", CVAR_ARCHIVE);
+    Cvar_SetDescription(j_yaw, "Joystick yaw rotation speed/direction.");
     j_forward = Cvar_Get("j_forward", "-0.25", CVAR_ARCHIVE);
+    Cvar_SetDescription(j_forward, "Joystick forward movement speed/direction.");
     j_side = Cvar_Get("j_side", "0.25", CVAR_ARCHIVE);
+    Cvar_SetDescription(j_side, "Joystick side movement speed/direction.");
     j_up = Cvar_Get("j_up", "0", CVAR_ARCHIVE);
+    Cvar_SetDescription(j_up, "Joystick up movement speed/direction.");
 
     j_pitch_axis = Cvar_Get("j_pitch_axis", "3", CVAR_ARCHIVE);
+    Cvar_SetDescription(j_pitch_axis, "Selects which joystick axis controls pitch.");
     j_yaw_axis = Cvar_Get("j_yaw_axis", "2", CVAR_ARCHIVE);
+    Cvar_SetDescription(j_yaw_axis, "Selects which joystick axis controls yaw.");
     j_forward_axis = Cvar_Get("j_forward_axis", "1", CVAR_ARCHIVE);
+    Cvar_SetDescription(j_forward_axis, "Selects which joystick axis controls forward/back.");
     j_side_axis = Cvar_Get("j_side_axis", "0", CVAR_ARCHIVE);
+    Cvar_SetDescription(j_side_axis, "Selects which joystick axis controls left/right.");
     j_up_axis = Cvar_Get("j_up_axis", "4", CVAR_ARCHIVE);
+    Cvar_SetDescription(j_up_axis, "Selects which joystick axis controls up/down.");
 
     Cvar_CheckRange(j_pitch_axis, 0, MAX_JOYSTICK_AXIS - 1, true);
     Cvar_CheckRange(j_yaw_axis, 0, MAX_JOYSTICK_AXIS - 1, true);
@@ -4933,23 +4979,27 @@ void CL_Init(void)
     Cvar_CheckRange(j_up_axis, 0, MAX_JOYSTICK_AXIS - 1, true);
 
     cl_motdString = Cvar_Get("cl_motdString", "", CVAR_ROM);
+    Cvar_SetDescription(cl_motdString, "Message of the day string from Tremulous' master server, it is a read only variable.");
 
     Cvar_Get("cl_maxPing", "800", CVAR_ARCHIVE);
 
     cl_lanForcePackets = Cvar_Get("cl_lanForcePackets", "1", CVAR_ARCHIVE);
 
     cl_guidServerUniq = Cvar_Get("cl_guidServerUniq", "1", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_guidServerUniq, "Makes cl_guid unique for each server.");
 
     cl_rsaAuth = Cvar_Get("cl_rsaAuth", "0", CVAR_INIT | CVAR_PROTECTED);
 
     // ~ and `, as keys and characters
     cl_consoleKeys = Cvar_Get("cl_consoleKeys", "~ ` 0x7e 0x60", CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_consoleKeys, "Space delimited list of key names or characters that toggle the console.\n~ and `, as keys and characters.");
 
     cl_clantag = Cvar_Get ("cl_clantag", "", CVAR_ARCHIVE);
 
     // userinfo
     Cvar_Get("name", "UnnamedPlayer", CVAR_USERINFO | CVAR_ARCHIVE);
     cl_rate = Cvar_Get("rate", "25000", CVAR_USERINFO | CVAR_ARCHIVE);
+    Cvar_SetDescription(cl_rate, "Maximum rate in which the client can send and receive packets, value is in bytes.");
     Cvar_Get("snaps", "40", CVAR_USERINFO | CVAR_ARCHIVE);
     Cvar_Get("color1", "4", CVAR_USERINFO | CVAR_ARCHIVE);
     Cvar_Get("color2", "5", CVAR_USERINFO | CVAR_ARCHIVE);
@@ -4974,6 +5024,7 @@ void CL_Init(void)
 
     cl_voip = Cvar_Get("cl_voip", "1", CVAR_ARCHIVE);
     Cvar_CheckRange(cl_voip, 0, 1, true);
+    Cvar_SetDescription(cl_voip, "Toggle the use of VOIP, a way to verbally communicate with any others who may have this feature.");
     cl_voipProtocol = Cvar_Get("cl_voipProtocol", cl_voip->integer ? "opus" : "", CVAR_USERINFO | CVAR_ROM);
 #endif
 

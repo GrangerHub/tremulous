@@ -426,12 +426,19 @@ void Con_Init (void) {
 	int		i;
 
 	con_conspeed    = Cvar_Get ("scr_conspeed", "3", 0);
+	Cvar_SetDescription (con_conspeed, "Console opening/closing scroll speed, use with \\seta to save in config.");
 	con_useShader   = Cvar_Get ("scr_useShader", "1", CVAR_ARCHIVE);
+	Cvar_SetDescription (con_useShader, "Toggle the use of the background console shader.\n Note: this blocks the \\scr_ color options from being visible");
 	con_height      = Cvar_Get ("scr_height", "50", CVAR_ARCHIVE);
+	Cvar_SetDescription (con_height, "Sets the desired height of the console.");
 	con_colorRed    = Cvar_Get ("scr_colorRed", "0", CVAR_ARCHIVE);
+	Cvar_SetDescription (con_colorRed, "Adjusts the red hue of the console background.\n Note: '\\scr_useShader 0' for this to make any difference");
 	con_colorBlue   = Cvar_Get ("scr_colorBlue", "0", CVAR_ARCHIVE);
+	Cvar_SetDescription (con_colorBlue, "Adjusts the blue hue of the console background.\n Note: '\\scr_useShader 0' for this to make any difference");
 	con_colorGreen  = Cvar_Get ("scr_colorGreen", "0", CVAR_ARCHIVE);
+	Cvar_SetDescription (con_colorGreen, "Adjusts the green hue of the console background.\n Note: '\\scr_useShader 0' for this to make any difference");
 	con_colorAlpha  = Cvar_Get ("scr_colorAlpha", ".8", CVAR_ARCHIVE);
+	Cvar_SetDescription (con_colorAlpha, "Adjusts the transparency of the console background.\n Note: '\\scr_useShader 0' for this to make any difference");
     con_versionStr  = Cvar_Get ("scr_versionString", Q3_VERSION, CVAR_ARCHIVE);
 
 	Field_Clear( &g_consoleField );

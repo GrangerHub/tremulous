@@ -937,141 +937,230 @@ void R_Register( void )
 	// latched and archived variables
 	//
 	r_allowExtensions = ri.Cvar_Get( "r_allowExtensions", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_allowExtensions, "Use all of the OpenGL extensions your card is capable of.");
 	r_ext_compressed_textures = ri.Cvar_Get( "r_ext_compressed_textures", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_ext_compressed_textures, "Enables texture compression.");
 	r_ext_multitexture = ri.Cvar_Get( "r_ext_multitexture", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_ext_multitexture, "Enables hardware multi-texturing (0: off, 1: on).");
 	r_ext_compiled_vertex_array = ri.Cvar_Get( "r_ext_compiled_vertex_array", "1", CVAR_ARCHIVE | CVAR_LATCH);
+	ri.Cvar_SetDescription(r_ext_compiled_vertex_array, "Enables hardware-compiled vertex array rendering method.");
 	r_ext_texture_env_add = ri.Cvar_Get( "r_ext_texture_env_add", "1", CVAR_ARCHIVE | CVAR_LATCH);
+	ri.Cvar_SetDescription(r_ext_texture_env_add, "Enables additive blending in multitexturing. Requires \\r_ext_multitexture 1.");
 
-	r_picmip = ri.Cvar_Get ("r_picmip", GENERIC_HW_R_PICMIP_DEFAULT,
-			CVAR_ARCHIVE | CVAR_LATCH );
-	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic",
-			"1", CVAR_ARCHIVE | CVAR_LATCH );
+	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_ext_texture_filter_anisotropic, "Allow anisotropic filtering.");
+
 	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_ext_max_anisotropy, "Sets maximum anisotropic level for your graphics driver. Requires \\r_ext_texture_filter_anistropic.");
+
+	r_picmip = ri.Cvar_Get ("r_picmip", GENERIC_HW_R_PICMIP_DEFAULT, CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_CheckRange( r_picmip, 0, 16, true );
+	ri.Cvar_SetDescription(r_picmip, "Set texture quality, lower is better.");
 
 	r_roundImagesDown = ri.Cvar_Get ("r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_roundImagesDown, "When images are scaled, round images down instead of up.");
 	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
-	ri.Cvar_CheckRange( r_picmip, 0, 16, true );
+	ri.Cvar_SetDescription(r_colorMipLevels, "Debugging tool to artificially color different mipmap levels so they are more apparent.");
 	r_detailTextures = ri.Cvar_Get( "r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_detailTextures, "Enable usage of shader stages flagged as detail.");
 	r_texturebits = ri.Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_texturebits, "Number of texture bits per texture.");
 	r_colorbits = ri.Cvar_Get( "r_colorbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_colorbits, "Sets color bit depth, set to 0 to use desktop settings.");
 	r_alphabits = ri.Cvar_Get( "r_alphabits", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_stencilbits = ri.Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_stencilbits, "Stencil buffer size, required to be 8 for stencil shadows.");
 	r_depthbits = ri.Cvar_Get( "r_depthbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_depthbits, "Sets precision of Z-buffer.");
 	r_ext_multisample = ri.Cvar_Get( "r_ext_multisample", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_ext_multisample, 0, 4, true );
+	ri.Cvar_SetDescription(r_ext_multisample, "For anti-aliasing geometry edes, valid values: 0|2|4.");
 	r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_overBrightBits, "Sets the intensity of overall brightness of texture pixels.");
 	r_ignorehwgamma = ri.Cvar_Get( "r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_fullscreen, "Fullscreen mode. Set to 0 for windowed mode.");
 	r_noborder = ri.Cvar_Get("r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	ri.Cvar_SetDescription(r_noborder, "Setting to 1 will remove window borders and title bar in windowed mode, hold ALT to drag & drop it with opened console.");
 	r_width = ri.Cvar_Get( "r_width", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_width, "Custom width to use.");
 	r_height = ri.Cvar_Get( "r_height", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_height, "Custom height to use.");
 	r_pixelAspect = ri.Cvar_Get( "r_pixelAspect", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_simpleMipMaps, "Whether or not to use a simple mipmapping algorithm or a more correct one:\n 0: off (proper linear filter)\n 1: on (for slower machines)");
 	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_vertexLight, "Set to 1 to use vertex light instead of lightmaps, collapse all multi-stage shaders into single-stage ones, might cause rendering artifacts.");
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
+	ri.Cvar_SetDescription(r_subdivisions, "Distance to subdivide bezier curved surfaces. Higher values mean less subdivision and less geometric complexity.");
 	r_stereoEnabled = ri.Cvar_Get( "r_stereoEnabled", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	ri.Cvar_SetDescription(r_stereoEnabled, "Enable stereo rendering for techniques like shutter glasses.");
 	r_ignoreFastPath = ri.Cvar_Get( "r_ignoreFastPath", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	ri.Cvar_CheckRange(r_greyscale, 0, 1, false);
+	ri.Cvar_SetDescription(r_greyscale, "Desturate rendered frame.");
 
 	//
 	// temporary latched variables that can only change over a restart
 	//
 	r_displayRefresh = ri.Cvar_Get( "r_displayRefresh", "0", CVAR_LATCH );
 	ri.Cvar_CheckRange( r_displayRefresh, 0, 200, true );
+	ri.Cvar_SetDescription(r_displayRefresh, "Override monitor refresh rate in fullscreen mode:\n   0 - use current monitor refresh rate\n > 0 - use custom refresh rate");
+
 	r_fullbright = ri.Cvar_Get ("r_fullbright", "0", CVAR_LATCH|CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_fullbright, "Debugging tool to render the entire level without lighting.");
 	r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_LATCH );
+	ri.Cvar_SetDescription(r_mapOverBrightBits, "Sets the number of overbright bits baked into all lightmaps and map data.");
 	r_intensity = ri.Cvar_Get ("r_intensity", "1", CVAR_LATCH );
+	ri.Cvar_SetDescription(r_intensity, "Global texture lighting scale.");
 	r_singleShader = ri.Cvar_Get ("r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_singleShader, "Debugging tool that only uses the default shader for all rendering.");
 
 	//
 	// archived variables that can change at any time
 	//
 	r_lodCurveError = ri.Cvar_Get( "r_lodCurveError", "250", CVAR_ARCHIVE|CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_lodCurveError, "Level of detail error on curved surface grids. Higher values result in better quality at a distance.");
 	r_lodbias = ri.Cvar_Get( "r_lodbias", "0", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_lodbias, "Sets the level of detail of in-game models:\n -2: Ultra (further delays LOD transition in the distance)\n -1: Very High (delays LOD transition in the distance)\n 0: High\n 1: Medium\n 2: Low");
 	r_flares = ri.Cvar_Get ("r_flares", "0", CVAR_ARCHIVE );
 	r_znear = ri.Cvar_Get( "r_znear", "1", CVAR_CHEAT );
 	ri.Cvar_CheckRange( r_znear, 0.001f, 200, false );
+	ri.Cvar_SetDescription(r_znear, "Viewport distance from view origin (how close objects can be to the player before they're clipped out of the scene).");
 	r_zproj = ri.Cvar_Get( "r_zproj", "64", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_zproj, "Projected viewport frustum.");
 	r_stereoSeparation = ri.Cvar_Get( "r_stereoSeparation", "64", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_stereoSeparation, "Control eye separation. Resulting separation is \\r_zproj divided by this value in standard units.");
 	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_ignoreGLErrors, "Ignore OpenGL errors.");
 	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_fastsky, "Draw flat colored skies.");
 	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
 	r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_drawSun, "Draw sun shader in skies.");
 	r_dynamiclight = ri.Cvar_Get( "r_dynamiclight", "1", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_dynamiclight, "Enables dynamic lighting.");
 	r_dlightBacks = ri.Cvar_Get( "r_dlightBacks", "1", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_dlightBacks, "Whether or not dynamic lights should light up back-face culled geometry, affects only VQ3 dynamic lights.");
 	r_finish = ri.Cvar_Get ("r_finish", "0", CVAR_ARCHIVE);
-	r_textureMode = ri.Cvar_Get( "r_textureMode",
-			GENERIC_HW_R_TEXTUREMODE_DEFAULT, CVAR_ARCHIVE );
-	r_swapInterval = ri.Cvar_Get( "r_swapInterval", "0",
-					CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_finish, "Force a glFinish call after rendering a scene.");
+	r_textureMode = ri.Cvar_Get( "r_textureMode", GENERIC_HW_R_TEXTUREMODE_DEFAULT, CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_textureMode, "Texture interpolation mode:\n GL_NEAREST: Nearest neighbor interpolation and will therefore appear similar to Quake II except with the added colored lighting\n GL_LINEAR: Linear interpolation and will appear to blend in objects that are closer than the resolution that the textures are set as\n GL_NEAREST_MIPMAP_NEAREST: Nearest neighbor interpolation with mipmapping for bilinear hardware, mipmapping will blend objects that are farther away than the resolution that they are set as\n GL_LINEAR_MIPMAP_NEAREST: Linear interpolation with mipmapping for bilinear hardware\n GL_NEAREST_MIPMAP_LINEAR: Nearest neighbor interpolation with mipmapping for trilinear hardware\n GL_LINEAR_MIPMAP_LINEAR: Linear interpolation with mipmapping for trilinear hardware");
+	r_swapInterval = ri.Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_SetDescription(r_swapInterval, "V-blanks to wait before swapping buffers.\n 0: No V-Sync\n 1: Synced to the monitor's refresh rate.");
 	r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_gamma, "Gamma correction factor.");
 	r_facePlaneCull = ri.Cvar_Get ("r_facePlaneCull", "1", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_facePlaneCull, "Enables culling of planar surfaces with back side text.");
 
 	r_railWidth = ri.Cvar_Get( "r_railWidth", "16", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_railWidth, "Radius of railgun trails.");
 	r_railCoreWidth = ri.Cvar_Get( "r_railCoreWidth", "6", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_railCoreWidth, "Size of railgun trail rings when enabled in game code (normally \\cg_oldRail 0).");
 	r_railSegmentLength = ri.Cvar_Get( "r_railSegmentLength", "32", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription(r_railSegmentLength, "Length of segments in railgun trails.");
 
 	r_primitives = ri.Cvar_Get( "r_primitives", "0", CVAR_ARCHIVE );
 
 	r_ambientScale = ri.Cvar_Get( "r_ambientScale", "0.6", CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_ambientScale, "Light grid ambient light scaling on entity models.");
 	r_directedScale = ri.Cvar_Get( "r_directedScale", "1", CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_directedScale, "Light grid direct light scaling on entity models.");
 
 	r_anaglyphMode = ri.Cvar_Get("r_anaglyphMode", "0", CVAR_ARCHIVE);
+	ri.Cvar_SetDescription(r_anaglyphMode, "Enable rendering of anaglyph images. Valid options for 3D glasses types:\n 0: Disabled\n 1: Red-cyan\n 2: Red-blue\n 3: Red-green\n 4: Green-magenta");
+
 
 	//
 	// temporary variables that can change at any time
 	//
 	r_showImages = ri.Cvar_Get( "r_showImages", "0", CVAR_CHEAT|CVAR_TEMP );
+	ri.Cvar_SetDescription(r_showImages, "Draw all images currently loaded into memory:\n 0: Disabled\n 1: Show images set to uniform size\n 2: Show images with scaled relative to largest image");
 
 	r_debugLight = ri.Cvar_Get( "r_debuglight", "0", CVAR_TEMP );
+	ri.Cvar_SetDescription(r_debugLight, "Debugging tool to print ambient and directed lighting information.");
 	r_debugSort = ri.Cvar_Get( "r_debugSort", "0", CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_debugSort, "Debugging tool to filter out shaders with depth sorting order values higher than the set value.");
 	r_printShaders = ri.Cvar_Get( "r_printShaders", "0", 0 );
+	ri.Cvar_SetDescription(r_printShaders, "Debugging tool to print on console of the number of shaders used.");
 	r_saveFontData = ri.Cvar_Get( "r_saveFontData", "0", 0 );
 
 	r_nocurves = ri.Cvar_Get ("r_nocurves", "0", CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_nocurves, "Set to 1 to disable drawing world bezier curves. Set to 0 to enable.");
 	r_drawworld = ri.Cvar_Get ("r_drawworld", "1", CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_drawworld, "Set to 0 to disable drawing the world. Set to 1 to enable.");
 	r_lightmap = ri.Cvar_Get ("r_lightmap", "0", CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_lightmap, "Show only lightmaps on all world surfaces.");
 	r_portalOnly = ri.Cvar_Get ("r_portalOnly", "0", CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_portalOnly, "Set to 1 to render only first mirror/portal view if it is present on the scene.");
 
 	r_flareSize = ri.Cvar_Get ("r_flareSize", "40", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_flareSize, "Radius of lgiht flares. Requires \\r_flares 1.");
 	r_flareFade = ri.Cvar_Get ("r_flareFade", "7", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_flareFade, "Distance to fade out light flares. Requires \\r_flares 1.");
 	r_flareCoeff = ri.Cvar_Get ("r_flareCoeff", FLARE_STDCOEFF, CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_flareCoeff, "Coefficient for the light flare intensity falloff function. Requires \\r_flares 1.");
 
 	r_skipBackEnd = ri.Cvar_Get ("r_skipBackEnd", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_skipBackEnd, "Skips loading rendering backend.");
 
 	r_measureOverdraw = ri.Cvar_Get( "r_measureOverdraw", "0", CVAR_CHEAT );
 	r_lodscale = ri.Cvar_Get( "r_lodscale", "5", CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_lodscale, "Set scale for level of detail adjustment.");
 	r_norefresh = ri.Cvar_Get ("r_norefresh", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_norefresh, "Bypasses refreshing of the rendered scene.");
 	r_drawentities = ri.Cvar_Get ("r_drawentities", "1", CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_drawentities, "Draw all world entities.");
 	r_ignore = ri.Cvar_Get( "r_ignore", "1", CVAR_CHEAT );
 	r_nocull = ri.Cvar_Get ("r_nocull", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_nocull, "Draw all culled objects.");
 	r_novis = ri.Cvar_Get ("r_novis", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_novis, "Disables usage of PVS.");
 	r_showcluster = ri.Cvar_Get ("r_showcluster", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_showcluster, "Shows current cluster index.");
 	r_speeds = ri.Cvar_Get ("r_speeds", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_speeds, "Prints out various debugging stats from PVS:\n 0: Disabled\n 1: Backend BSP\n 2: Frontend grid culling\n 3: Current view cluster index\n 4: Dynamic lighting\n 5: zFar clipping\n 6: Flares");
 	r_verbose = ri.Cvar_Get( "r_verbose", "0", CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_verbose, "Verbose printing of rendering information.");
 	r_logFile = ri.Cvar_Get( "r_logFile", "0", CVAR_CHEAT );
 	r_debugSurface = ri.Cvar_Get ("r_debugSurface", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_debugSurface, "Backend visual debugging tool for bezier mesh surfaces.");
 	r_nobind = ri.Cvar_Get ("r_nobind", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_nobind, "Backend debugging tool: Disables texture binding.");
 	r_showtris = ri.Cvar_Get ("r_showtris", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_showtris, "Debugging tool: Wireframe rendering of polygon triangles in the world.");
 	r_showsky = ri.Cvar_Get ("r_showsky", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_showsky, "Forces sky in front of all surfaces.");
 	r_shownormals = ri.Cvar_Get ("r_shownormals", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_shownormals, "Debugging tool: Show wireframe surface normals.");
 	r_clear = ri.Cvar_Get ("r_clear", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_clear, "Forces screen buffer clearing every frame, removing any hall of mirrors effect in void.");
 	r_offsetFactor = ri.Cvar_Get( "r_offsetfactor", "-1", CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_offsetFactor, "Offset factor for shaders with polygonOffset stages.");
 	r_offsetUnits = ri.Cvar_Get( "r_offsetunits", "-2", CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_offsetUnits, "Offset units for shaders with polygonOffset stages.");
 	r_drawBuffer = ri.Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
+	ri.Cvar_SetDescription(r_drawBuffer, "Sets which frame buffer to draw into.");
 	r_lockpvs = ri.Cvar_Get ("r_lockpvs", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_lockpvs, "Debugging tool: Locks to current potentially visible set. Useful for testing vis-culling in maps.");
 	r_noportals = ri.Cvar_Get ("r_noportals", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription(r_noportals, "Disables in-game portals, valid values: 0: Portals enabled\n 1: Portals disabled\n 2 : Portals and mirrors disabled");
 	r_shadows = ri.Cvar_Get( "cg_shadows", "1", 0 );
 
 	r_marksOnTriangleMeshes = ri.Cvar_Get("r_marksOnTriangleMeshes", "0", CVAR_ARCHIVE);
+	ri.Cvar_SetDescription(r_marksOnTriangleMeshes, "Enables impact marks on triangle mesh surfaces (ie: MD3 models.) Requires impact marks to be enabled in the game code.");
+
 
 	r_aviMotionJpegQuality = ri.Cvar_Get("r_aviMotionJpegQuality", "90", CVAR_ARCHIVE);
+	ri.Cvar_SetDescription(r_aviMotionJpegQuality, "Controls quality of Jpeg video capture when \\cl_aviMotionJpeg 1.");
 	r_screenshotJpegQuality = ri.Cvar_Get("r_screenshotJpegQuality", "90", CVAR_ARCHIVE);
+	ri.Cvar_SetDescription(r_screenshotJpegQuality, "Controls quality of Jpeg screenshots when using screenshotJpeg.");
 
 	r_maxpolys = ri.Cvar_Get( "r_maxpolys", va("%d", MAX_POLYS), 0);
+	ri.Cvar_SetDescription(r_maxpolys, "Maximum number of polygons to draw in a scene.");
 	r_maxpolyverts = ri.Cvar_Get( "r_maxpolyverts", va("%d", MAX_POLYVERTS), 0);
+	ri.Cvar_SetDescription(r_maxpolyverts, "Maximum number of polygon vertices to draw in a scene.");
 
 	// make sure all the commands added here are also
 	// removed in R_Shutdown
