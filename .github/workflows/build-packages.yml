@@ -49,7 +49,7 @@ jobs:
             name: Linux-x64
             runs-on: ubuntu-latest
             container: debian:oldstable-slim
-          - file: release-mingw32-x86
+          - file: release-mingw32-x86_64
             name: Windows-x32
             runs-on: ubuntu-latest
             container: debian:oldstable-slim
