@@ -460,13 +460,15 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, bool alloc, bool unpure)
 	if(alloc)
 	{
 		// allocate zero filled space for initialized and uninitialized data
-		vm->dataBase = (unsigned char*)Hunk_Alloc(dataLength, h_high);
+		// leave some space beyond data mask so we can secure all mask operations
+		vm->dataAlloc = dataLength + 4;
+		vm->dataBase = (unsigned char*)Hunk_Alloc(vm->dataAlloc, h_high);
 		vm->dataMask = dataLength - 1;
 	}
 	else
 	{
 		// clear the data, but make sure we're not clearing more than allocated
-		if(vm->dataMask + 1 != dataLength)
+		if(vm->dataMask != dataLength + 4)
 		{
 			VM_Free(vm);
 			FS_FreeFile(header.v);
@@ -476,7 +478,7 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, bool alloc, bool unpure)
 			return NULL;
 		}
 		
-		::memset(vm->dataBase, 0, dataLength);
+		::memset(vm->dataBase, 0, vm->dataAlloc);
 	}
 
 	// copy the intialized data
