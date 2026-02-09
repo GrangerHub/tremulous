@@ -858,10 +858,12 @@ void SV_Init(void)
     sv_mapname = Cvar_Get("mapname", "nomap", CVAR_SERVERINFO | CVAR_ROM);
     Cvar_SetDescription(sv_mapname, "Display the name of the current map being used on the server.");
     sv_privateClients = Cvar_Get("sv_privateClients", "0", CVAR_SERVERINFO);
+    Cvar_CheckRange(sv_privateClients, 0, MAX_CLIENTS - 1, true);
     Cvar_SetDescription(sv_privateClients, "The number of spots, out of sv_maxclients, reserved for players with the server password (sv_privatePassword).");
     sv_hostname = Cvar_Get("sv_hostname", "noname", CVAR_SERVERINFO | CVAR_ARCHIVE);
     Cvar_SetDescription(sv_hostname, "Sets the name of the server.");
     sv_maxclients = Cvar_Get("sv_maxclients", "8", CVAR_SERVERINFO | CVAR_LATCH);
+    Cvar_CheckRange(sv_maxclients, 1, MAX_CLIENTS, true);
     Cvar_SetDescription(sv_maxclients, "Maximum number of people allowed to join the server.");
 
     sv_minRate = Cvar_Get("sv_minRate", "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
@@ -869,6 +871,7 @@ void SV_Init(void)
     sv_maxRate = Cvar_Get("sv_maxRate", "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
     Cvar_SetDescription(sv_maxRate, "Maximum server bandwidth (in bit per second) a client can use.");
     sv_dlRate = Cvar_Get("sv_dlRate", "100", CVAR_ARCHIVE | CVAR_SERVERINFO);
+    Cvar_CheckRange(sv_dlRate, 0, 500, true);
     Cvar_SetDescription(sv_dlRate, "Bandwidth allotted to PK3 file downloads via UDP, in kbyte/s.");
     sv_minPing = Cvar_Get("sv_minPing", "0", CVAR_ARCHIVE | CVAR_SERVERINFO);
     Cvar_SetDescription(sv_minPing, "Minimum ping a client can have to join the server.");
@@ -901,6 +904,7 @@ void SV_Init(void)
     sv_privatePassword = Cvar_Get("sv_privatePassword", "", CVAR_TEMP);
     Cvar_SetDescription(sv_privatePassword, "Set password for private clients to login with.");
     sv_fps = Cvar_Get("sv_fps", "40", CVAR_TEMP);
+    Cvar_CheckRange(sv_fps, 10, 125, true);
     Cvar_SetDescription(sv_fps, "Set the max frames per second the server sends the client.");
     sv_timeout = Cvar_Get("sv_timeout", "200", CVAR_TEMP);
     Cvar_SetDescription(sv_timeout, "Seconds without any message before automatic client disconnect.");
@@ -925,6 +929,7 @@ void SV_Init(void)
     }
 
     sv_reconnectlimit = Cvar_Get("sv_reconnectlimit", "3", 0);
+    Cvar_CheckRange(sv_reconnectlimit, 0, 12, true);
     Cvar_SetDescription(sv_reconnectlimit, "Number of seconds a disconnected client should wait before next reconnect.");
     sv_showloss = Cvar_Get("sv_showloss", "0", 0);
     sv_padPackets = Cvar_Get("sv_padPackets", "0", 0);

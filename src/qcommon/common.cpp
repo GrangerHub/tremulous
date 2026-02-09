@@ -1948,6 +1948,7 @@ void Com_InitJournaling( void )
 {
     Com_StartupVariable( "journal" );
     com_journal = Cvar_Get ("journal", "0", CVAR_INIT);
+    Cvar_CheckRange(com_journal, 0, 2, true);
     Cvar_SetDescription(com_journal, "When enabled, writes events and its data to 'journal.dat' and 'journaldata.dat'.");
     if ( !com_journal->integer ) {
         return;
@@ -2632,9 +2633,11 @@ void Com_Init( char *commandLine )
     //
     com_altivec = Cvar_Get ("com_altivec", "1", CVAR_ARCHIVE);
     com_maxfps = Cvar_Get ("com_maxfps", "85", CVAR_ARCHIVE);
+    Cvar_CheckRange (com_maxfps, 0, 1000, true);
     Cvar_SetDescription (com_maxfps, "Sets maximum frames per second.");
 
     com_logfile = Cvar_Get ("logfile", "0", CVAR_TEMP );
+    Cvar_CheckRange (com_logfile, 0, 4, true); 
     Cvar_SetDescription (com_logfile, "System console logging:\n"
             " 0 - disabled\n"
             " 1 - overwrite mode, buffered\n"
@@ -2651,6 +2654,7 @@ void Com_Init( char *commandLine )
     com_speeds = Cvar_Get ("com_speeds", "0", 0);
     Cvar_SetDescription (com_speeds, "Prints speed information per frame to the console. Used for debugging.");
     com_timedemo = Cvar_Get ("timedemo", "0", CVAR_CHEAT);
+    Cvar_CheckRange (com_timedemo, 0, 1, true);
     Cvar_SetDescription (com_timedemo, "When set to '1' times a demo and returns frames per second like a benchmark.");
     com_cameraMode = Cvar_Get ("com_cameraMode", "0", CVAR_CHEAT);
 
@@ -2672,9 +2676,11 @@ void Com_Init( char *commandLine )
 
     com_unfocused = Cvar_Get( "com_unfocused", "0", CVAR_ROM );
     com_maxfpsUnfocused = Cvar_Get( "com_maxfpsUnfocused", "0", CVAR_ARCHIVE );
+    Cvar_CheckRange( com_maxfpsUnfocused, 0, 1000, true );
     Cvar_SetDescription( com_maxfpsUnfocused, "Sets maximum frames per second in unfocused game window." );
     com_minimized = Cvar_Get( "com_minimized", "0", CVAR_ROM );
     com_maxfpsMinimized = Cvar_Get( "com_maxfpsMinimized", "0", CVAR_ARCHIVE );
+    Cvar_CheckRange( com_maxfpsMinimized, 0, 1000, true );
     Cvar_SetDescription( com_maxfpsMinimized, "Sets maximum frames per second in minimized game window." );
     com_busyWait = Cvar_Get("com_busyWait", "0", CVAR_ARCHIVE);
     Cvar_Get("com_errorMessage", "", CVAR_ROM | CVAR_NORESTART);

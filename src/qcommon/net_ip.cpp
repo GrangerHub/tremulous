@@ -1582,6 +1582,7 @@ static bool NET_GetCvars(void)
     net_mcast6iface->modified = false;
 
     net_socksEnabled = Cvar_Get("net_socksEnabled", "0", CVAR_LATCH | CVAR_ARCHIVE);
+    Cvar_CheckRange(net_socksEnabled, 0, 1, true);
     Cvar_SetDescription(net_socksEnabled, "Toggle the use of network socks 5 protocol enabling firewall access (can only be set at initialization time from the OS command line).");
     modified += net_socksEnabled->modified;
     net_socksEnabled->modified = false;
@@ -1592,6 +1593,7 @@ static bool NET_GetCvars(void)
     net_socksServer->modified = false;
 
     net_socksPort = Cvar_Get("net_socksPort", "1080", CVAR_LATCH | CVAR_ARCHIVE);
+    Cvar_CheckRange(net_socksPort, 0, 65535, true);
     Cvar_SetDescription(net_socksPort, "Set proxy and/or firewall port, default is 1080 (can only be set at initialization time from the OS command line).");
     modified += net_socksPort->modified;
     net_socksPort->modified = false;
