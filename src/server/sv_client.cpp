@@ -857,11 +857,17 @@ int SV_WriteDownloadToClient(client_t *cl, msg_t *msg)
 			// Check for pk3 filename extension
 			if(!Q_stricmp(pakptr + 1, "pk3"))
 			{
-				const char *referencedPaks = FS_ReferencedPakNames( cl->netchan.alternateProtocol == 2 );
-
 				// Check whether the file appears in the list of referenced
 				// paks to prevent downloading of arbitrary files.
-				Cmd_TokenizeStringIgnoreQuotes(referencedPaks);
+				if (cl->netchan.alternateProtocol == 2)
+				{
+					Cmd_TokenizeStringIgnoreQuotes(sv_referencedAlternatePakNames->string);
+				}
+				else
+				{
+					Cmd_TokenizeStringIgnoreQuotes(sv_referencedPakNames->string);
+				}
+
 				numRefPaks = Cmd_Argc();
 
 				for(curindex = 0; curindex < numRefPaks; curindex++)
