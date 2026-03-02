@@ -1765,7 +1765,7 @@ long FS_ReadFileDir(const char *qpath, void *searchPath, bool unpure, void **buf
             fs_loadStack++;
 
             // guarantee that it will have a trailing 0 for string operations
-            buf[len] = 0;
+            buf[len] = '\0';
 
             return len;
         }
@@ -1825,7 +1825,7 @@ long FS_ReadFileDir(const char *qpath, void *searchPath, bool unpure, void **buf
     FS_Read(buf, len, h);
 
     // guarantee that it will have a trailing 0 for string operations
-    buf[len] = 0;
+    buf[len] = '\0';
     FS_FCloseFile(h);
 
     // if we are journalling and it is a config file, write it to the journal file
@@ -2087,7 +2087,7 @@ static int FS_ReturnPath(const char *zname, char *zpath, int *depth)
     int newdep = 0;
     int len = 0;
     int at = 0;
-    zpath[0] = 0;
+    zpath[0] = '\0';
 
     while (zname[at] != 0)
     {
@@ -2099,7 +2099,7 @@ static int FS_ReturnPath(const char *zname, char *zpath, int *depth)
         at++;
     }
     strcpy(zpath, zname);
-    zpath[len] = 0;
+    zpath[len] = '\0';
     *depth = newdep;
 
     return len;
@@ -3488,7 +3488,7 @@ Servers with sv_pure set will get this string and pass it to clients.
 const char *FS_LoadedPakChecksums(bool alternate)
 {
     static char info[BIG_INFO_STRING];
-    info[0] = 0;
+    info[0] = '\0';
 
     for (auto search = fs_searchpaths; search; search = search->next)
     {
@@ -3513,7 +3513,7 @@ Servers with sv_pure set will get this string and pass it to clients.
 const char *FS_LoadedPakNames(bool alternate)
 {
     static char info[BIG_INFO_STRING];
-    info[0] = 0;
+    info[0] = '\0';
 
     for (auto search = fs_searchpaths; search; search = search->next)
     {
@@ -3540,7 +3540,7 @@ back to the server.
 const char *FS_LoadedPakPureChecksums(bool alternate)
 {
     static char info[BIG_INFO_STRING];
-    info[0] = 0;
+    info[0] = '\0';
 
     for (auto search = fs_searchpaths; search; search = search->next)
     {
@@ -3565,7 +3565,7 @@ The server will send this to the clients so they can check which files should be
 const char *FS_ReferencedPakChecksums(bool alternate)
 {
     static char info[BIG_INFO_STRING];
-    info[0] = 0;
+    info[0] = '\0';
 
     for (auto search = fs_searchpaths; search; search = search->next)
     {
@@ -3602,7 +3602,7 @@ The string has a specific order, "cgame ui @ ref1 ref2 ref3 ..."
 const char *FS_ReferencedPakPureChecksums(void)
 {
     static char info[BIG_INFO_STRING];
-    info[0] = 0;
+    info[0] = '\0';
 
     int checksum = fs_checksumFeed;
     int numPaks = 0;
@@ -3648,7 +3648,7 @@ The server will send this to the clients so they can check which files should be
 const char *FS_ReferencedPakNames(bool alternate)
 {
     static char info[BIG_INFO_STRING];
-    info[0] = 0;
+    info[0] = '\0';
 
     // we want to return ALL pk3's from the fs_game path
     // and referenced one's from base
