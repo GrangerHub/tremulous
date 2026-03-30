@@ -468,7 +468,7 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, bool alloc, bool unpure)
 	else
 	{
 		// clear the data, but make sure we're not clearing more than allocated
-		if(vm->dataMask != dataLength + 4)
+		if(vm->dataAlloc != dataLength + 4)
 		{
 			VM_Free(vm);
 			FS_FreeFile(header.v);
