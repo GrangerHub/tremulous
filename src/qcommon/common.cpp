@@ -2632,7 +2632,7 @@ void Com_Init( char *commandLine )
     // init commands and vars
     //
     com_altivec = Cvar_Get ("com_altivec", "1", CVAR_ARCHIVE);
-    com_maxfps = Cvar_Get ("com_maxfps", "85", CVAR_ARCHIVE);
+    com_maxfps = Cvar_Get ("com_maxfps", "125", CVAR_ARCHIVE);
     Cvar_CheckRange (com_maxfps, 0, 1000, true);
     Cvar_SetDescription (com_maxfps, "Sets maximum frames per second.");
 
@@ -2675,11 +2675,11 @@ void Com_Init( char *commandLine )
     Cvar_SetDescription( com_ansiColor, "Use ANSI color in the terminal window instead of color codes.");
 
     com_unfocused = Cvar_Get( "com_unfocused", "0", CVAR_ROM );
-    com_maxfpsUnfocused = Cvar_Get( "com_maxfpsUnfocused", "0", CVAR_ARCHIVE );
+    com_maxfpsUnfocused = Cvar_Get( "com_maxfpsUnfocused", "60", CVAR_ARCHIVE );
     Cvar_CheckRange( com_maxfpsUnfocused, 0, 1000, true );
     Cvar_SetDescription( com_maxfpsUnfocused, "Sets maximum frames per second in unfocused game window." );
     com_minimized = Cvar_Get( "com_minimized", "0", CVAR_ROM );
-    com_maxfpsMinimized = Cvar_Get( "com_maxfpsMinimized", "0", CVAR_ARCHIVE );
+    com_maxfpsMinimized = Cvar_Get( "com_maxfpsMinimized", "60", CVAR_ARCHIVE );
     Cvar_CheckRange( com_maxfpsMinimized, 0, 1000, true );
     Cvar_SetDescription( com_maxfpsMinimized, "Sets maximum frames per second in minimized game window." );
     com_busyWait = Cvar_Get("com_busyWait", "0", CVAR_ARCHIVE);
