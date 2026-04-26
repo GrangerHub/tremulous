@@ -421,7 +421,7 @@ static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t *fram
         // Doing this have two utility:
         // - Keep sound, alien sense, and range marker behave well
         // - Load builds progressivly on the client, avoiding short freeze on low end computer
-        if (Distance(origin, ent->r.currentOrigin) < 1500)
+        if (sv_sendNearbyEnts->integer && (Distance(origin, ent->r.currentOrigin) < 1500))
         {
             SV_AddEntToSnapshot(svEnt, ent, eNums);
             continue;

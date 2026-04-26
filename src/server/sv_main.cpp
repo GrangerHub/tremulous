@@ -54,6 +54,7 @@ cvar_t	*sv_mapname;
 cvar_t	*sv_mapChecksum;
 cvar_t	*sv_referencedPakNames;
 cvar_t	*sv_referencedAlternatePakNames;
+cvar_t  *sv_sendNearbyEnts;
 cvar_t	*sv_serverid;
 cvar_t	*sv_minRate;
 cvar_t	*sv_maxRate;
