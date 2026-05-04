@@ -138,6 +138,7 @@ vmCvar_t  cg_footsteps;
 vmCvar_t  cg_addMarks;
 vmCvar_t  cg_viewsize;
 vmCvar_t  cg_drawGun;
+vmCvar_t  cg_fovOffset;
 vmCvar_t  cg_gun_frame;
 vmCvar_t  cg_gun_x;
 vmCvar_t  cg_gun_y;
@@ -297,6 +298,7 @@ static cvarTable_t cvarTable[ ] =
   { &cg_tracerChance, "cg_tracerchance", "0.4", CVAR_CHEAT },
   { &cg_tracerWidth, "cg_tracerwidth", "1", CVAR_CHEAT },
   { &cg_tracerLength, "cg_tracerlength", "100", CVAR_CHEAT },
+  { &cg_fovOffset, "cg_fovOffset", "0", CVAR_ARCHIVE | CVAR_USERINFO },
   { &cg_thirdPersonRange, "cg_thirdPersonRange", "75", CVAR_ARCHIVE },
   { &cg_thirdPerson, "cg_thirdPerson", "0", CVAR_CHEAT },
   { &cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", CVAR_CHEAT },
@@ -565,6 +567,7 @@ CG_UpdateCvars
 */
 void CG_UpdateCvars( void )
 {
+  static int fov_offset_mod_count = -1;
   int         i;
   cvarTable_t *cv;
 
@@ -578,6 +581,17 @@ void CG_UpdateCvars( void )
 
   CG_SetUIVars( );
   CG_UpdateBuildableRangeMarkerMask();
+
+  if(cg_fovOffset.modificationCount != fov_offset_mod_count) {
+    if(cg_fovOffset.integer > MAX_FOV_OFFSET) {
+      trap_Cvar_Set("cg_fovOffset", va("%i", MAX_FOV_OFFSET));
+    }
+    else if(cg_fovOffset.integer < -MAX_FOV_OFFSET) {
+      trap_Cvar_Set("cg_fovOffset", va("%i", -MAX_FOV_OFFSET));
+    }
+
+    fov_offset_mod_count = cg_fovOffset.modificationCount;
+  }
 }
 
 
@@ -2047,7 +2061,9 @@ Called before every level change or subsystem restart
 */
 void CG_Shutdown( void )
 {
+#ifndef MODULE_INTERFACE_11
   CG_UnregisterCommands( );
+#endif
 }
 
 /*

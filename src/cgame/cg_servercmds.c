@@ -1285,6 +1285,7 @@ static void CG_PoisonCloud_f( void )
   }
 }
 
+#ifndef MODULE_INTERFACE_11
 static char   registeredCmds[ 8192 ]; // cmd1\0cmd2\0cmdn\0\0
 static size_t gcmdsOffset;
 static void CG_GameCmds_f( void )
@@ -1322,11 +1323,14 @@ void CG_UnregisterCommands( void )
   memset( registeredCmds, 0, 2 );
   gcmdsOffset = 0;
 }
+#endif
 
 static consoleCommand_t svcommands[ ] =
 {
   { "chat", CG_Chat_f },
+#ifndef MODULE_INTERFACE_11
   { "cmds", CG_GameCmds_f },
+#endif
   { "cp", CG_CenterPrint_f },
   { "cs", CG_ConfigStringModified },
   { "map_restart", CG_MapRestart },
