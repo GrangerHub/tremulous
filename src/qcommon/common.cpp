@@ -99,7 +99,6 @@ cvar_t *com_maxfpsUnfocused;
 cvar_t *com_minimized;
 cvar_t *com_maxfpsMinimized;
 cvar_t *com_standalone;
-cvar_t *com_gamename;
 cvar_t *com_protocol;
 #ifdef LEGACY_PROTOCOL
 cvar_t *com_legacyprotocol;
@@ -2689,7 +2688,6 @@ void Com_Init( char *commandLine )
     com_version = Cvar_Get ("version", PRODUCT_NAME, CVAR_ROM | CVAR_SERVERINFO );
     Cvar_SetDescription (com_version, "Read-only CVAR to see the version of the game.");
     Cvar_Get ("protocol", va("%i", PROTOCOL_VERSION), CVAR_SERVERINFO | CVAR_ROM);
-    com_gamename = Cvar_Get("com_gamename", GAMENAME_FOR_MASTER, CVAR_SERVERINFO | CVAR_INIT);
 
     Sys_Init();
 
