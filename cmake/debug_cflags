@@ -1,4 +1,13 @@
 # vim:ft=cmake
-set(DEBUG_FLAGS "-O0 -g3 -fsanitize=address -fsanitize-blacklist=${CMAKE_SOURCE_DIR}/misc/blacklist.txt -fno-omit-frame-pointer")
-set(CMAKE_C_FLAGS_DEBUG ${DEBUG_FLAGS})
-set(CMAKE_CXX_FLAGS_DEBUG ${DEBUG_FLAGS})
+#
+# Debug-build flags. The original code unconditionally assigned GCC-isms
+# (-fsanitize=address, -fno-omit-frame-pointer, -O0, -g3) to
+# CMAKE_C_FLAGS_DEBUG / CMAKE_CXX_FLAGS_DEBUG, which broke MSVC debug builds
+# (cl.exe rejects those flags). Gate the assignment to GCC/Clang/AppleClang
+# only — MSVC keeps its CMake-provided defaults (/Od /Ob0 /Zi /RTC1).
+#
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+    set(DEBUG_FLAGS "-O0 -g3 -fsanitize=address -fsanitize-blacklist=${CMAKE_SOURCE_DIR}/misc/blacklist.txt -fno-omit-frame-pointer")
+    set(CMAKE_C_FLAGS_DEBUG ${DEBUG_FLAGS})
+    set(CMAKE_CXX_FLAGS_DEBUG ${DEBUG_FLAGS})
+endif()

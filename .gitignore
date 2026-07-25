@@ -1,5 +1,4 @@
 build
-assets
 Makefile.local
 *.swp
 *tags

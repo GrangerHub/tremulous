@@ -8,16 +8,42 @@
 #   MMMMMMMMMM                                                                      #
 
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10...4.0)
 project(Tremulous C CXX)
 
-set(CMAKE_CXX_FLAGS -std=c++1y)
-set(CMAKE_C_FLAGS -std=gnu99)
+# C/C++ language standard flags — GCC/Clang only via generator expressions.
+# MSVC does not understand -std=gnu99 / -std=c++1y; it uses /std:c99 etc.
+# (set automatically when CMAKE_C_STANDARD / CMAKE_CXX_STANDARD are used, or
+# defaulted from the toolchain). The generator expression below expands to
+# the -std flag only when the active compiler is GNU, Clang, or AppleClang.
+add_compile_options(
+    $<$<C_COMPILER_ID:GNU,Clang,AppleClang>:-std=gnu99>
+    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-std=c++1y>
+)
 
+# MSVC: enable /permissive- (strict C++ conformance). Required because the
+# codebase uses ISO C++ alternative operator tokens `and`/`or`/`not` as
+# keywords (e.g. files.cpp:3569). Without /permissive- MSVC reports
+# C2146 "syntax error: missing ')' before identifier 'and'".
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/permissive->)
+
+# -fPIC is GCC/Clang-only and only relevant for Linux shared objects.
+# MSVC position-independent code is the default for /MD and needs no flag.
+# Keep the existing Linux gate, but restrict to GCC family too so a future
+# Linux+MSVC (clang-cl) build does not get confused.
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+    add_compile_options(
+        $<$<C_COMPILER_ID:GNU,Clang,AppleClang>:-fPIC>
+        $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-fPIC>
+    )
 endif()
+
+# Global include path — every target needs to resolve headers via their
+# module-relative path (e.g. #include "qcommon/q_platform.h",
+# #include "sys/sys_shared.h", #include "game/g_public.h"). Without this,
+# MSVC builds fail with "Cannot open include file" because each
+# add_subdirectory()'d CMakeLists only adds its OWN directory to the path.
+include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # XXX This one doesn't work yet
 option(USE_RENDERER_DLOPEN "" ON)
@@ -40,8 +66,31 @@ option(USE_RESTCLIENT "" ON)
 include(${CMAKE_SOURCE_DIR}/cmake/build_dir)
 include(${CMAKE_SOURCE_DIR}/cmake/debug_cflags)
 
-# builtins 
-add_subdirectory(external/SDL2)
+# builtins
+# Upgraded to SDL3 (v3.5.0) from external source
+# External paths require explicit binary directory
+add_subdirectory(E:/code/2026/YOLO/quake-repos/libraries/SDL build-vs2022-x64/SDL3)
+
+# Added libcurl (v8.22.0-DEV) from external source
+# Configure with minimal dependencies for game use
+set(CURL_DISABLE_TESTS ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_ALTSVC ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_HSTS ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_COOKIES OFF CACHE BOOL "" FORCE)
+set(CURL_DISABLE_HTTP_AUTH OFF CACHE BOOL "" FORCE)
+set(CURL_DISABLE_DOH ON CACHE BOOL "" FORCE)  # DNS-over-HTTPS not needed
+set(CURL_DISABLE_CAACHE ON CACHE BOOL "" FORCE)  # Disable cache
+set(CURL_DISABLE_WEBSOCKETS ON CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(ENABLE_CURL_MANUAL OFF CACHE BOOL "" FORCE)
+set(CURL_USE_LIBPSL OFF CACHE BOOL "" FORCE)  # Disable Libpsl dependency
+set(CURL_ZLIB OFF CACHE BOOL "" FORCE)  # Disable zlib dependency (we have our own)
+set(CURL_BROTLI OFF CACHE BOOL "" FORCE)  # Disable Brotli
+set(CURL_ZSTD OFF CACHE BOOL "" FORCE)  # Disable Zstd
+set(CURL_NGHTTP2 OFF CACHE BOOL "" FORCE)  # Disable HTTP/2
+set(CURL_USE_LIBIDN2 OFF CACHE BOOL "" FORCE)  # Disable libidn2
+add_subdirectory(E:/code/2026/YOLO/quake-repos/libraries/curl build-vs2022-x64/curl)
+
 add_subdirectory(external/lua-5.3.3)
 add_subdirectory(external/nettle-3.3)
 add_subdirectory(external/zlib)
@@ -133,4 +182,5 @@ add_subdirectory(src/cgame)
 
 # Author: Victor Roemer  wtfbbqhax, <victor@badsec.org>. 
 #  Date: Sat Nov  5 06:49:08 2016 
+
 

@@ -1,4 +1,4 @@
-include("${CMAKE_SOURCE_DIR}/cmake/SDL2.cmake")
+include("${CMAKE_SOURCE_DIR}/cmake/SDL3.cmake")
 
 find_package(OpenGL)
 
@@ -53,16 +53,21 @@ foreach(shader ${GLSL_SHADERS})
     message(STATUS "-- Generating embeded GLSL ${shader}")
 
     file(READ ${in} contents HEX)
-    file(WRITE ${out} "const char *fallbackShader_${shader} = \"")
+    # Build the escaped hex string in memory, then write the entire C file
+    # in ONE file(WRITE) call. The original code did file(APPEND) once per
+    # byte (~23,000 calls for lightall_fp.glsl), which raced with Windows
+    # Defender real-time scanning and produced "Permission denied" errors
+    # during CMake configure on MSVC/VS2022 generators.
+    set(escaped "")
 
     string(LENGTH "${contents}" contents_length)
     math(EXPR contents_length "${contents_length} - 1")
 
     foreach(iter RANGE 0 ${contents_length} 2)
       string(SUBSTRING ${contents} ${iter} 2 line)
-      file(APPEND "${out}" "\\x${line}")
+      string(APPEND escaped "\\x${line}")
     endforeach()
-    file(APPEND "${out}" "\";\n")
+    file(WRITE ${out} "const char *fallbackShader_${shader} = \"${escaped}\";\n")
 
     list(APPEND renderergl2_SHADERS "${out}")
     set_source_files_properties(${out} PROPERTIES GENERATED TRUE)
@@ -107,9 +112,9 @@ set(renderergl2_SRCS
     tr_surface.cpp
     tr_vbo.cpp
     tr_world.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/puff.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/q_shared.c
-    ${CMAKE_SOURCE_DIR}/src/common/q_math.c
+    ${CMAKE_SOURCE_DIR}/src/qcommon/puff.cpp
+    ${CMAKE_SOURCE_DIR}/src/qcommon/q_shared.c
+    ${CMAKE_SOURCE_DIR}/src/qcommon/q_math.c
     )
 
 if(NOT USE_RENDERER_DLOPEN)

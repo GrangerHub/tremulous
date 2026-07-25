@@ -21,6 +21,31 @@ if(APPLE)
 set(APPLE_SOURCES ${PARENT_DIR}/sys/sys_osx.mm)
 endif(APPLE)
 
+# Platform-conditional sys layer sources.
+# sys_unix.cpp / con_tty.cpp use POSIX headers (unistd.h, dirent.h,
+# sys/time.h) that MSVC does not provide. Use the win32 equivalents on
+# Windows instead.
+if(WIN32)
+    set(SYS_PLATFORM_SOURCES
+        ${PARENT_DIR}/sys/con_win32.cpp
+        ${PARENT_DIR}/sys/sys_win32.cpp
+        ${PARENT_DIR}/sys/sys_win32_default_homepath.cpp
+    )
+else()
+    set(SYS_PLATFORM_SOURCES
+        ${PARENT_DIR}/sys/con_tty.cpp
+        ${PARENT_DIR}/sys/sys_unix.cpp
+    )
+endif()
+
+# vm_x86.cpp contains GCC inline assembly (__asm__ volatile) for the JIT
+# VM compiler. MSVC uses a different inline-asm syntax (__asm { ... }).
+# Until the JIT is ported to MSVC, fall back to the interpreted VM only
+# (vm_interpreted.cpp, already in the list) when building with MSVC.
+if(NOT MSVC)
+    list(APPEND VM_SOURCES ${PARENT_DIR}/qcommon/vm_x86.cpp)
+endif()
+
 add_executable(
     tremded
     #
@@ -61,18 +86,22 @@ add_executable(
     ${PARENT_DIR}/qcommon/unzip.cpp
     ${PARENT_DIR}/qcommon/vm.cpp
     ${PARENT_DIR}/qcommon/vm_interpreted.cpp
-    ${PARENT_DIR}/qcommon/vm_x86.cpp
+    # vm_x86.cpp (JIT VM compiler) only included when VM_SOURCES is set
+    # (see above — excluded on MSVC because it uses GCC inline asm).
+    ${VM_SOURCES}
     #
     ${PARENT_DIR}/null/null_client.cpp
     ${PARENT_DIR}/null/null_input.cpp
     ${PARENT_DIR}/null/null_snddma.cpp
     #
-    ${PARENT_DIR}/asm/snapvector.c
+    # snapvector.c uses GCC inline asm (__asm__ volatile AT&T syntax).
+    # Only include it when not building with MSVC (idx64/id386 are gated
+    # to __GNUC__ in q_platform.h, so MSVC uses the portable C fallback).
+    $<$<NOT:$<C_COMPILER_ID:MSVC>>:${PARENT_DIR}/asm/snapvector.c>
     #
     ${PARENT_DIR}/sys/con_log.cpp
-    ${PARENT_DIR}/sys/con_tty.cpp
     ${PARENT_DIR}/sys/sys_main.cpp
-    ${PARENT_DIR}/sys/sys_unix.cpp
+    ${SYS_PLATFORM_SOURCES}
     ${PARENT_DIR}/sys/sys_shared.h
     ${APPLE_SOURCES}
     #

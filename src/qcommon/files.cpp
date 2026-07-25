@@ -18,7 +18,7 @@
 
    You should have received a copy of the GNU General Public License
    along with Tremulous; if not, see <https://www.gnu.org/licenses/>
-   
+
 */
 
 #include "files.h"
@@ -60,10 +60,10 @@ static bool FS_IsDemoExt(const char *filename);
 static bool FS_IsExt(const char *filename, const char *ext, int namelen);
 
 struct fileInPack_t {
-    char* name;
+    char *name;
     unsigned long pos;  // file info position in zip
     unsigned long len;  // uncompressed file size
-    fileInPack_t* next;
+    fileInPack_t *next;
 };
 
 struct pack_t {
@@ -85,7 +85,7 @@ struct pack_t {
     pack_t *primaryVersion;
 
     // member functions
-    inline fileInPack_t* find(string filename);
+    inline fileInPack_t *find(string filename);
     inline bool is_pure();
 };
 
@@ -206,7 +206,7 @@ return load stack
 */
 int FS_LoadStack(void) { return fs_loadStack; }
 
-inline fileInPack_t* pack_t::find(string filename)
+inline fileInPack_t *pack_t::find(string filename)
 {
     long hash = 0;
     auto fn = filename.c_str();
@@ -214,7 +214,7 @@ inline fileInPack_t* pack_t::find(string filename)
     {
         long c = tolower(fn[i]);
         if (c == '.')
-            break; // FIXME probably a bad idea
+            break;  // FIXME probably a bad idea
 
         if (c == '\\')
             c = '/';
@@ -246,9 +246,12 @@ static long FS_HashFileName(const char *fname, int hashSize)
     while (fname[i] != '\0')
     {
         letter = tolower(fname[i]);
-        if (letter == '.') break;  // don't include extension
-        if (letter == '\\') letter = '/';  // damn path names
-        if (letter == PATH_SEP) letter = '/';  // damn path names
+        if (letter == '.')
+            break;  // don't include extension
+        if (letter == '\\')
+            letter = '/';  // damn path names
+        if (letter == PATH_SEP)
+            letter = '/';  // damn path names
         hash += (long)(letter) * (i + 119);
         i++;
     }
@@ -325,7 +328,8 @@ size of the file.
 long FS_filelength(fileHandle_t f)
 {
     FILE *h = FS_FileForHandle(f);
-    if (h == nullptr) return -1;
+    if (h == nullptr)
+        return -1;
 
     return FS_fplength(h);
 }
@@ -390,8 +394,7 @@ char *FS_BuildOSPath(const char *base, const char *game, const char *qpath)
     FS_ReplaceSeparators(temp);
     Com_sprintf(ospath[toggle], sizeof(ospath[0]), "%s%s", base, temp);
 
-    Com_DPrintf(S_COLOR_GREEN "%s: returning " S_COLOR_RED "%s\n",
-            __FUNCTION__, ospath[toggle]);
+    Com_DPrintf(S_COLOR_GREEN "%s: returning " S_COLOR_RED "%s\n", __FUNCTION__, ospath[toggle]);
 
     return ospath[toggle];
 }
@@ -403,12 +406,12 @@ FS_OpenWithDefault
 Wrapper for Sys_OpenWithDefault()
 ============
 */
-static bool FS_OpenWithDefault( const char *path )
+static bool FS_OpenWithDefault(const char *path)
 {
-    if( Sys_OpenWithDefault( path ) )
+    if (Sys_OpenWithDefault(path))
     {
         // minimize the client's window
-        Cmd_ExecuteString( "minimize" );
+        Cmd_ExecuteString("minimize");
         return true;
     }
 
@@ -422,19 +425,20 @@ FS_BrowseHomepath
 Opens the homepath in the default file manager
 ============
 */
-bool FS_BrowseHomepath( void )
+bool FS_BrowseHomepath(void)
 {
-    const char *homePath = Sys_DefaultHomePath( );
+    const char *homePath = Sys_DefaultHomePath();
 
     if (!homePath || !homePath[0])
     {
         homePath = fs_basepath->string;
     }
 
-    if( FS_OpenWithDefault( homePath ) )
+    if (FS_OpenWithDefault(homePath))
         return true;
 
-    Com_Printf( S_COLOR_RED "FS_BrowseHomepath: failed to open the homepath with the default file manager.\n" S_COLOR_WHITE );
+    Com_Printf(
+        S_COLOR_RED "FS_BrowseHomepath: failed to open the homepath with the default file manager.\n" S_COLOR_WHITE);
     return false;
 }
 
@@ -446,9 +450,9 @@ Opens the given path for the
 base game in the default file manager
 ============
 */
-bool FS_OpenBaseGamePath( const char *baseGamePath )
+bool FS_OpenBaseGamePath(const char *baseGamePath)
 {
-    const char *homePath = Sys_DefaultHomePath( );
+    const char *homePath = Sys_DefaultHomePath();
     const char *path;
 
     if (!homePath || !homePath[0])
@@ -456,12 +460,13 @@ bool FS_OpenBaseGamePath( const char *baseGamePath )
         homePath = fs_basepath->string;
     }
 
-    path = FS_BuildOSPath( homePath, fs_basegame->string, baseGamePath);
+    path = FS_BuildOSPath(homePath, fs_basegame->string, baseGamePath);
 
-    if( FS_OpenWithDefault( path ) )
+    if (FS_OpenWithDefault(path))
         return true;
 
-    Com_Printf( S_COLOR_RED "FS_BrowseHomepath: failed to open the homepath with the default file manager.\n" S_COLOR_WHITE );
+    Com_Printf(
+        S_COLOR_RED "FS_BrowseHomepath: failed to open the homepath with the default file manager.\n" S_COLOR_WHITE);
     return false;
 }
 
@@ -523,8 +528,8 @@ static void FS_CheckFilenameIsMutable(const char *filename, const char *function
     if (Sys_DllExtension(filename) || COM_CompareExtension(filename, ".qvm") ||
         COM_CompareExtension(filename, ".lua") || COM_CompareExtension(filename, ".pk3"))
     {
-        Com_Error(ERR_FATAL, "%s: Not allowed to manipulate '%s' due to %s extension",
-                function, filename, COM_GetExtension(filename));
+        Com_Error(ERR_FATAL, "%s: Not allowed to manipulate '%s' due to %s extension", function, filename,
+            COM_GetExtension(filename));
     }
 }
 
@@ -826,7 +831,6 @@ FS_FOpenFileWrite
 */
 fileHandle_t FS_FOpenFileWrite(const char *filename)
 {
-
     if (!fs_searchpaths)
     {
         Com_Error(ERR_FATAL, "Filesystem call made without initialization");
@@ -1004,7 +1008,8 @@ static bool FS_IsExt(const char *filename, const char *ext, int namelen)
 {
     int extlen = strlen(ext);
 
-    if (extlen > namelen) return false;
+    if (extlen > namelen)
+        return false;
 
     filename += namelen - extlen;
 
@@ -1025,10 +1030,12 @@ static bool FS_IsDemoExt(const char *filename)
     if (ext_test && !Q_stricmpn(ext_test + 1, DEMOEXT, ARRAY_LEN(DEMOEXT) - 1))
     {
         int protocol = atoi(ext_test + ARRAY_LEN(DEMOEXT));
-        if (protocol == PROTOCOL_VERSION) return true;
+        if (protocol == PROTOCOL_VERSION)
+            return true;
 
         for (int i = 0; demo_protocols[i]; i++)
-            if (demo_protocols[i] == protocol) return true;
+            if (demo_protocols[i] == protocol)
+                return true;
     }
 
     return false;
@@ -1042,8 +1049,7 @@ Tries opening file "filename" in searchpath "search"
 Returns filesize and an open FILE pointer.
 ===========
 */
-long FS_FOpenFileReadDir(
-    const char *filename, void *_search, fileHandle_t *file, bool uniqueFILE, bool unpure)
+long FS_FOpenFileReadDir(const char *filename, void *_search, fileHandle_t *file, bool uniqueFILE, bool unpure)
 {
     pack_t *pak;
     directory_t *dir;
@@ -1057,14 +1063,16 @@ long FS_FOpenFileReadDir(
         Com_Error(ERR_FATAL, "FS_FOpenFileRead: nullptr 'filename' parameter passed");
 
     // qpaths are not supposed to have a leading slash
-    if (filename[0] == '/' || filename[0] == '\\') filename++;
+    if (filename[0] == '/' || filename[0] == '\\')
+        filename++;
 
     // make absolutely sure that it can't back up the path.
     // The searchpaths do guarantee that something will always
     // be prepended, so we don't need to worry about "c:" or "//limbo"
     if (strstr(filename, "..") || strstr(filename, "::"))
     {
-        if (file == nullptr) return false;
+        if (file == nullptr)
+            return false;
 
         *file = 0;
         return -1;
@@ -1074,7 +1082,7 @@ long FS_FOpenFileReadDir(
     {
         // just wants to see if file is there
 
-        if ( fs_debug->integer )
+        if (fs_debug->integer)
         {
             Com_Printf(S_COLOR_GREEN "Searching for: " S_COLOR_RED "%s\n", filename);
         }
@@ -1126,15 +1134,15 @@ long FS_FOpenFileReadDir(
     {
         pak = search->pack;
         auto pakfile = pak->find(filename);
-        if (pakfile )
+        if (pakfile)
         {
-            if ( fs_debug->integer == 2 )
+            if (fs_debug->integer == 2)
                 Com_Printf(S_COLOR_GREEN "#2 Searching for: " S_COLOR_RED "%s\n", filename);
 
             // disregard if it doesn't match one of the allowed pure pak files
             if (!unpure && !pak->is_pure())
             {
-                if ( fs_debug->integer == 2 )
+                if (fs_debug->integer == 2)
                     Com_Printf(S_COLOR_GREEN "Ugh-oh %s found in unpure pk3\n", filename);
 
                 *file = 0;
@@ -1145,14 +1153,10 @@ long FS_FOpenFileReadDir(
 
             if (!(pak->referenced & FS_GENERAL_REF))
             {
-                if ( !FS_IsExt(filename, ".shader", len)
-                        && !FS_IsExt(filename, ".mtr", len)
-                        && !FS_IsExt(filename, ".txt", len)
-                        && !FS_IsExt(filename, ".cfg", len)
-                        && !FS_IsExt(filename, ".config", len)
-                        && !FS_IsExt(filename, ".arena", len)
-                        && !FS_IsExt(filename, ".menu", len)
-                        && !strstr(filename, "levelshots") )
+                if (!FS_IsExt(filename, ".shader", len) && !FS_IsExt(filename, ".mtr", len) &&
+                    !FS_IsExt(filename, ".txt", len) && !FS_IsExt(filename, ".cfg", len) &&
+                    !FS_IsExt(filename, ".config", len) && !FS_IsExt(filename, ".arena", len) &&
+                    !FS_IsExt(filename, ".menu", len) && !strstr(filename, "levelshots"))
                 {
                     pak->referenced |= FS_GENERAL_REF;
                 }
@@ -1167,7 +1171,7 @@ long FS_FOpenFileReadDir(
             if (uniqueFILE)
             {
                 fsh[*file].handleFiles.file.z = unzOpen(pak->pakFilename);
-                if ( !fsh[*file].handleFiles.file.z )
+                if (!fsh[*file].handleFiles.file.z)
                     Com_Error(ERR_FATAL, "Couldn't open %s", pak->pakFilename);
             }
             else
@@ -1186,10 +1190,9 @@ long FS_FOpenFileReadDir(
             fsh[*file].zipFilePos = pakfile->pos;
             fsh[*file].zipFileLen = pakfile->len;
 
-            if ( fs_debug->integer )
+            if (fs_debug->integer)
             {
-                Com_Printf( "FS_FOpenFileRead: %s (found in '%s')\n",
-                        filename, pak->pakFilename);
+                Com_Printf("FS_FOpenFileRead: %s (found in '%s')\n", filename, pak->pakFilename);
             }
 
             return pakfile->len;
@@ -1210,7 +1213,7 @@ long FS_FOpenFileReadDir(
         if (!unpure && fs_numServerPaks)
         {
             if (!FS_IsExt(filename, ".cfg", len) &&  // for config files
-                !FS_IsExt(filename, ".lua", len) &&  // lua 
+                !FS_IsExt(filename, ".lua", len) &&  // lua
                 !FS_IsExt(filename, ".menu", len) &&  // menu files
                 !FS_IsExt(filename, ".game", len) &&  // menu files
                 !FS_IsExt(filename, ".dat", len) &&  // for journal files
@@ -1237,8 +1240,7 @@ long FS_FOpenFileReadDir(
 
         if (fs_debug->integer)
         {
-            Com_Printf("FS_FOpenFileRead: %s (found in '%s%c%s')\n",
-                    filename, dir->path, PATH_SEP, dir->gamedir);
+            Com_Printf("FS_FOpenFileRead: %s (found in '%s%c%s')\n", filename, dir->path, PATH_SEP, dir->gamedir);
         }
 
         fsh[*file].handleFiles.file.o = filep;
@@ -1264,28 +1266,33 @@ long FS_FOpenFileRead(const char *filename, fileHandle_t *file, bool uniqueFILE)
     searchpath_t *search;
     long len;
 
-    if (!fs_searchpaths) Com_Error(ERR_FATAL, "Filesystem call made without initialization");
+    if (!fs_searchpaths)
+        Com_Error(ERR_FATAL, "Filesystem call made without initialization");
 
     bool isLocalConfig = !strcmp(filename, "autoexec.cfg") || !strcmp(filename, Q3CONFIG_CFG);
     for (search = fs_searchpaths; search; search = search->next)
     {
         // autoexec.cfg and q3config.cfg can only be loaded outside of pk3 files.
-        if (isLocalConfig && search->pack) continue;
+        if (isLocalConfig && search->pack)
+            continue;
 
         len = FS_FOpenFileReadDir(filename, search, file, uniqueFILE, false);
 
         if (file == nullptr)
         {
-            if (len > 0) return len;
+            if (len > 0)
+                return len;
         }
         else
         {
-            if (len >= 0 && *file) return len;
+            if (len >= 0 && *file)
+                return len;
         }
     }
 
 #ifdef FS_MISSING
-    if (missingFiles) fprintf(missingFiles, "%s\n", filename);
+    if (missingFiles)
+        fprintf(missingFiles, "%s\n", filename);
 #endif
 
     if (file)
@@ -1326,9 +1333,11 @@ int FS_FindVM(void **startSearch, char *found, int foundlen, const char *name, i
     char dllName[MAX_OSPATH], qvmName[MAX_OSPATH];
     char *netpath;
 
-    if (!fs_searchpaths) Com_Error(ERR_FATAL, "Filesystem call made without initialization");
+    if (!fs_searchpaths)
+        Com_Error(ERR_FATAL, "Filesystem call made without initialization");
 
-    if (enableDll) Com_sprintf(dllName, sizeof(dllName), "%s" DLL_EXT, name);
+    if (enableDll)
+        Com_sprintf(dllName, sizeof(dllName), "%s" DLL_EXT, name);
 
     Com_sprintf(qvmName, sizeof(qvmName), "vm/%s.qvm", name);
 
@@ -1592,7 +1601,7 @@ int FS_Seek(fileHandle_t f, long offset, enum FS_Origin origin)
                 }
                 unzSetOffset(fsh[f].handleFiles.file.z, fsh[f].zipFilePos);
                 unzOpenCurrentFile(fsh[f].handleFiles.file.z);
-            // fallthrough
+                // fallthrough
 
             case FS_SEEK_END:  // fall through
             case FS_SEEK_CUR:
@@ -1672,8 +1681,7 @@ int FS_FileIsInPAK_A(bool alternate, const char *filename, int *pChecksum)
         if (!search->pack->is_pure())
             continue;
 
-        if ((alternate && search->pack->onlyPrimary) ||
-            (!alternate && search->pack->onlyAlternate))
+        if ((alternate && search->pack->onlyPrimary) || (!alternate && search->pack->onlyAlternate))
             continue;
 
         auto found = search->pack->find(filename);
@@ -1688,10 +1696,7 @@ int FS_FileIsInPAK_A(bool alternate, const char *filename, int *pChecksum)
     return -1;
 }
 
-int FS_FileIsInPAK(const char *filename, int *pChecksum)
-{
-    return FS_FileIsInPAK_A(false, filename, pChecksum);
-}
+int FS_FileIsInPAK(const char *filename, int *pChecksum) { return FS_FileIsInPAK_A(false, filename, pChecksum); }
 /*
 ============
 FS_ReadFileDir
@@ -1732,7 +1737,8 @@ long FS_ReadFileDir(const char *qpath, void *searchPath, bool unpure, void **buf
             int r = FS_Read(&len, sizeof(len), com_journalDataFile);
             if (r != sizeof(len))
             {
-                if (buffer != nullptr) *buffer = nullptr;
+                if (buffer != nullptr)
+                    *buffer = nullptr;
                 return -1;
             }
 
@@ -1847,10 +1853,7 @@ Filename are relative to the quake search path
 a null buffer will just return the file length without loading
 ============
 */
-long FS_ReadFile(const char *qpath, void **buffer)
-{
-    return FS_ReadFileDir(qpath, nullptr, false, buffer);
-}
+long FS_ReadFile(const char *qpath, void **buffer) { return FS_ReadFileDir(qpath, nullptr, false, buffer); }
 /*
 =============
 FS_FreeFile
@@ -1932,25 +1935,26 @@ static pack_t *FS_LoadZipFile(const char *zipfile, const char *basename)
 
     unz_global_info gi;
     int err = unzGetGlobalInfo(z, &gi);
-    if (err) return nullptr;
+    if (err)
+        return nullptr;
 
     err = unzGoToFirstFile(z);
-    if (err) return nullptr;
+    if (err)
+        return nullptr;
 
     for (uLong i = 0; i < gi.number_entry; i++)
     {
         unz_file_info fi;
-        err = unzGetCurrentFileInfo(
-            z, &fi, filename, sizeof(filename), nullptr, 0, nullptr, 0);
+        err = unzGetCurrentFileInfo(z, &fi, filename, sizeof(filename), nullptr, 0, nullptr, 0);
 
-        if (err) break;
+        if (err)
+            break;
 
         len += strlen(filename) + 1;
         unzGoToNextFile(z);
     }
 
-    fileInPack_t *buildBuffer =
-        static_cast<fileInPack_t *>(Z_Malloc((gi.number_entry * sizeof(fileInPack_t)) + len));
+    fileInPack_t *buildBuffer = static_cast<fileInPack_t *>(Z_Malloc((gi.number_entry * sizeof(fileInPack_t)) + len));
 
     char *namePtr = ((char *)buildBuffer) + gi.number_entry * sizeof(fileInPack_t);
 
@@ -1964,7 +1968,8 @@ static pack_t *FS_LoadZipFile(const char *zipfile, const char *basename)
     uLong hashsiz;
     for (hashsiz = 1; hashsiz <= MAX_FILEHASH_SIZE; hashsiz <<= 1)
     {
-        if (hashsiz > gi.number_entry) break;
+        if (hashsiz > gi.number_entry)
+            break;
     }
 
     pack_t *pack = static_cast<pack_t *>(Z_Malloc(sizeof(pack_t) + hashsiz * sizeof(fileInPack_t *)));
@@ -1981,8 +1986,7 @@ static pack_t *FS_LoadZipFile(const char *zipfile, const char *basename)
     Q_strncpyz(pack->pakBasename, basename, sizeof(pack->pakBasename));
 
     // strip .pk3 if needed
-    if ( strlen(pack->pakBasename) > 4 &&
-        !Q_stricmp(pack->pakBasename + strlen(pack->pakBasename) - 4, ".pk3"))
+    if (strlen(pack->pakBasename) > 4 && !Q_stricmp(pack->pakBasename + strlen(pack->pakBasename) - 4, ".pk3"))
     {
         pack->pakBasename[strlen(pack->pakBasename) - 4] = '\0';
     }
@@ -1993,10 +1997,10 @@ static pack_t *FS_LoadZipFile(const char *zipfile, const char *basename)
     for (uLong i = 0; i < gi.number_entry; i++)
     {
         unz_file_info fi;
-        err = unzGetCurrentFileInfo(
-            z, &fi, filename, sizeof(filename), nullptr, 0, nullptr, 0);
+        err = unzGetCurrentFileInfo(z, &fi, filename, sizeof(filename), nullptr, 0, nullptr, 0);
 
-        if (err) break;
+        if (err)
+            break;
 
         if (fi.uncompressed_size)
         {
@@ -2020,10 +2024,8 @@ static pack_t *FS_LoadZipFile(const char *zipfile, const char *basename)
         unzGoToNextFile(z);
     }
 
-    pack->checksum =
-        Com_BlockChecksum(&fs_headerLongs[1], sizeof(*fs_headerLongs) * (fs_numHeaderLongs - 1));
-    pack->pure_checksum =
-        Com_BlockChecksum(fs_headerLongs, sizeof(*fs_headerLongs) * fs_numHeaderLongs);
+    pack->checksum = Com_BlockChecksum(&fs_headerLongs[1], sizeof(*fs_headerLongs) * (fs_numHeaderLongs - 1));
+    pack->pure_checksum = Com_BlockChecksum(fs_headerLongs, sizeof(*fs_headerLongs) * fs_numHeaderLongs);
     pack->checksum = LittleLong(pack->checksum);
     pack->pure_checksum = LittleLong(pack->pure_checksum);
 
@@ -2059,14 +2061,16 @@ bool FS_CompareZipChecksum(const char *zipfile)
 {
     pack_t *thepak = FS_LoadZipFile(zipfile, "");
 
-    if (!thepak) return false;
+    if (!thepak)
+        return false;
 
     int checksum = thepak->checksum;
     FS_FreePak(thepak);
 
     for (int i = 0; i < fs_numServerReferencedPaks; i++)
     {
-        if (checksum == fs_serverReferencedPaks[i]) return true;
+        if (checksum == fs_serverReferencedPaks[i])
+            return true;
     }
 
     return false;
@@ -2138,8 +2142,8 @@ Returns a uniqued list of files that match the given criteria
 from all search paths
 ===============
 */
-char **FS_ListFilteredFiles(const char *path, const char *extension, const char *filter,
-    int *numfiles, bool allowNonPureFilesOnDisk)
+char **FS_ListFilteredFiles(
+    const char *path, const char *extension, const char *filter, int *numfiles, bool allowNonPureFilesOnDisk)
 {
     int nfiles;
     char **listCopy;
@@ -2206,7 +2210,8 @@ char **FS_ListFilteredFiles(const char *path, const char *extension, const char 
                 if (filter)
                 {
                     // case insensitive
-                    if (!Com_FilterPath(filter, name, false)) continue;
+                    if (!Com_FilterPath(filter, name, false))
+                        continue;
                     // unique the match
                     nfiles = FS_AddFileToList(name, list, nfiles);
                 }
@@ -2214,8 +2219,7 @@ char **FS_ListFilteredFiles(const char *path, const char *extension, const char 
                 {
                     zpathLen = FS_ReturnPath(name, zpath, &depth);
 
-                    if ((depth - pathDepth) > 2 || pathLength > zpathLen ||
-                        Q_stricmpn(name, path, pathLength))
+                    if ((depth - pathDepth) > 2 || pathLength > zpathLen || Q_stricmpn(name, path, pathLength))
                     {
                         continue;
                     }
@@ -2363,8 +2367,7 @@ int FS_GetFileList(const char *path, const char *extension, char *listbuf, int b
 FS_GetFilteredFiles
 ================
 */
-int FS_GetFilteredFiles(
-    const char *path, const char *extension, const char *filter, char *listbuf, int bufsize)
+int FS_GetFilteredFiles(const char *path, const char *extension, const char *filter, char *listbuf, int bufsize)
 {
     int nFiles = 0;
     int nTotal = 0;
@@ -2432,12 +2435,14 @@ static char **Sys_ConcatenateFileLists(char **list0, char **list1)
     /* Copy over lists. */
     if (list0)
     {
-        for (char **src = list0; *src; src++, dst++) *dst = *src;
+        for (char **src = list0; *src; src++, dst++)
+            *dst = *src;
     }
 
     if (list1)
     {
-        for (char **src = list1; *src; src++, dst++) *dst = *src;
+        for (char **src = list1; *src; src++, dst++)
+            *dst = *src;
     }
 
     // Terminate the list
@@ -2445,8 +2450,10 @@ static char **Sys_ConcatenateFileLists(char **list0, char **list1)
 
     // Free our old lists.
     // NOTE: not freeing their content, it's been merged in dst and still being used
-    if (list0) Z_Free(list0);
-    if (list1) Z_Free(list1);
+    if (list0)
+        Z_Free(list0);
+    if (list1)
+        Z_Free(list1);
 
     return cat;
 }
@@ -2459,16 +2466,13 @@ Returns a list of mod directory names
 A mod directory is a peer to baseq3 with a pk3 or pk3dir in it
 ================
 */
-int	FS_GetModList( char *listbuf, int bufsize )
+int FS_GetModList(char *listbuf, int bufsize)
 {
-    char * start = listbuf;
+    char *start = listbuf;
     *listbuf = '\0';
 
     // paths to search for mods
-    const char * const paths[] = {
-        fs_basepath->string,
-        fs_homepath->string
-    };
+    const char *const paths[] = {fs_basepath->string, fs_homepath->string};
 
     char **pFiles = nullptr;
     for (int i = 0; i < ARRAY_LEN(paths); i++)
@@ -2482,9 +2486,9 @@ int	FS_GetModList( char *listbuf, int bufsize )
     int nTotal = 0;
     for (int i = 0; i < Sys_CountFileList(pFiles); i++)
     {
-        const char* name = pFiles[i];
+        const char *name = pFiles[i];
 
-        if ( name[0] == '.' )
+        if (name[0] == '.')
             continue;
 
         // In order to be a valid mod the directory must contain at least one
@@ -2495,8 +2499,8 @@ int	FS_GetModList( char *listbuf, int bufsize )
         int nPakDirs = 0;
         for (int j = 0; j < ARRAY_LEN(paths); j++)
         {
-            const char* path = FS_BuildOSPath(paths[j], name, "");
-            int nDirs = 0; 
+            const char *path = FS_BuildOSPath(paths[j], name, "");
+            int nDirs = 0;
 
             char **pPaks = Sys_ListFiles(path, ".pk3", NULL, &nPaks, false);
             char **pDirs = Sys_ListFiles(path, "/", NULL, &nDirs, false);
@@ -2515,26 +2519,26 @@ int	FS_GetModList( char *listbuf, int bufsize )
                 break;
         }
 
-		if (nPaks > 0 || nPakDirs > 0)
+        if (nPaks > 0 || nPakDirs > 0)
         {
-			size_t nLen = strlen(name) + 1;
+            size_t nLen = strlen(name) + 1;
 
-			if (nTotal + nLen + 1 < bufsize)
+            if (nTotal + nLen + 1 < bufsize)
             {
-				strcpy(listbuf, name);
-				listbuf += nLen;
-				nTotal += nLen;
-				nMods++;
-			}
+                strcpy(listbuf, name);
+                listbuf += nLen;
+                nTotal += nLen;
+                nMods++;
+            }
             else
             {
                 Com_Printf(S_COLOR_RED "Warning: Too many mods!\n");
-				break;
-			}
-		}
+                break;
+            }
+        }
     }
 
-    Sys_FreeFileList( pFiles );
+    Sys_FreeFileList(pFiles);
     return nMods;
 }
 
@@ -2660,7 +2664,8 @@ void FS_SortFileList(char **filelist, int numfiles)
         int j;
         for (j = 0; j < numsortedfiles; j++)
         {
-            if (FS_PathCmp(filelist[i], sortedlist[j]) < 0) break;
+            if (FS_PathCmp(filelist[i], sortedlist[j]) < 0)
+                break;
         }
 
         int k;
@@ -2721,15 +2726,13 @@ void FS_Path_f(void)
     {
         if (s->pack)
         {
-            Com_Printf("%s (%i files%s)\n",
-                    s->pack->pakFilename,
-                    s->pack->numfiles,
-                    s->pack->onlyPrimary ? ", not for 1.1"
-                    : s->pack->onlyAlternate ? ", only for 1.1" : "");
+            Com_Printf("%s (%i files%s)\n", s->pack->pakFilename, s->pack->numfiles,
+                s->pack->onlyPrimary     ? ", not for 1.1"
+                : s->pack->onlyAlternate ? ", only for 1.1"
+                                         : "");
 
             if (s->pack->primaryVersion)
-                Com_Printf("        (the 1.1 version of %s)\n",
-                        s->pack->primaryVersion->pakFilename);
+                Com_Printf("        (the 1.1 version of %s)\n", s->pack->primaryVersion->pakFilename);
 
             if (fs_numServerPaks)
             {
@@ -2823,11 +2826,13 @@ void FS_Which_f(void)
     }
 
     // qpaths are not supposed to have a leading slash
-    if (filename[0] == '/' || filename[0] == '\\') filename++;
+    if (filename[0] == '/' || filename[0] == '\\')
+        filename++;
 
     // just wants to see if file is there
     for (searchpath_t *search = fs_searchpaths; search; search = search->next)
-        if (FS_Which(filename, search)) return;
+        if (FS_Which(filename, search))
+            return;
 
     Com_Printf("File not found: \"%s\"\n", filename);
 }
@@ -2846,7 +2851,7 @@ static int QDECL paksort(const void *a, const void *b)
 ================
 FS_AddGameDirectory
 
-Sets fs_gamedir, adds the directory to the head of the path,
+Sets fs_gamedir, adds the directory to the tail of the path (to maintain sorted order),
 then loads the zip headers
 ================
 */
@@ -2901,7 +2906,8 @@ void FS_AddGameDirectory(const char *path, const char *dir)
     int numPairs = 0;
 
     char *p = prefixBuf;
-    if (!p[0]) p = nullptr;
+    if (!p[0])
+        p = nullptr;
 
     const char *prefixes[10][2];
     while (p)
@@ -2934,8 +2940,7 @@ void FS_AddGameDirectory(const char *path, const char *dir)
             continue;
         }
         if (lengths[numPairs][0] != 0 && lengths[numPairs][1] != 0 &&
-            !Q_stricmpn(prefixes[numPairs][0], prefixes[numPairs][1],
-                MIN(lengths[numPairs][0], lengths[numPairs][1])))
+            !Q_stricmpn(prefixes[numPairs][0], prefixes[numPairs][1], MIN(lengths[numPairs][0], lengths[numPairs][1])))
         {
             Com_Printf(S_COLOR_YELLOW
                 "WARNING: in fs_pk3PrefixPairs, one of '%s' and '%s' is a real prefix "
@@ -2991,8 +2996,23 @@ void FS_AddGameDirectory(const char *path, const char *dir)
 
             searchpath_t *search = static_cast<searchpath_t *>(Z_Malloc(sizeof(searchpath_t)));
             search->pack = pak;
-            search->next = fs_searchpaths;
-            fs_searchpaths = search;
+
+            // Add to TAIL of the list instead of HEAD to maintain sorted order
+            if (fs_searchpaths == nullptr)
+            {
+                search->next = nullptr;
+                fs_searchpaths = search;
+            }
+            else
+            {
+                searchpath_t *last = fs_searchpaths;
+                while (last->next)
+                {
+                    last = last->next;
+                }
+                search->next = nullptr;
+                last->next = search;
+            }
 
             pak->onlyPrimary = false;
             pak->onlyAlternate = false;
@@ -3003,8 +3023,7 @@ void FS_AddGameDirectory(const char *path, const char *dir)
                     pak->onlyPrimary = true;
                     break;
                 }
-                else if (lengths[i][1] &&
-                         !Q_stricmpn(pak->pakBasename, prefixes[i][1], lengths[i][1]))
+                else if (lengths[i][1] && !Q_stricmpn(pak->pakBasename, prefixes[i][1], lengths[i][1]))
                 {
                     pak->onlyAlternate = true;
                     break;
@@ -3039,8 +3058,22 @@ void FS_AddGameDirectory(const char *path, const char *dir)
             Q_strncpyz(search->dir->gamedir, pakdirs[pakdirsi],
                 sizeof(search->dir->gamedir));  // mypak.pk3dir
 
-            search->next = fs_searchpaths;
-            fs_searchpaths = search;
+            // Add to TAIL of the list instead of HEAD to maintain sorted order
+            if (fs_searchpaths == nullptr)
+            {
+                search->next = nullptr;
+                fs_searchpaths = search;
+            }
+            else
+            {
+                searchpath_t *last = fs_searchpaths;
+                while (last->next)
+                {
+                    last = last->next;
+                }
+                search->next = nullptr;
+                last->next = search;
+            }
 
             pakdirsi++;
         }
@@ -3053,8 +3086,7 @@ void FS_AddGameDirectory(const char *path, const char *dir)
     if (numPairs > 0)
     {
         int bnlengths[2];
-        for (searchpath_t *search = fs_searchpaths; search != otherSearchpaths;
-             search = search->next)
+        for (searchpath_t *search = fs_searchpaths; search != otherSearchpaths; search = search->next)
         {
             if (!(search->pack && search->pack->onlyPrimary))
             {
@@ -3074,8 +3106,7 @@ void FS_AddGameDirectory(const char *path, const char *dir)
                 {
                     if (lengths[i][0] && lengths[i][1] && bnlengths[0] >= lengths[i][0] &&
                         bnlengths[1] >= lengths[i][1] &&
-                        !Q_stricmp(search->pack->pakBasename + lengths[i][0],
-                            srch->pack->pakBasename + lengths[i][1]))
+                        !Q_stricmp(search->pack->pakBasename + lengths[i][0], srch->pack->pakBasename + lengths[i][1]))
                     {
                         srch->pack->primaryVersion = search->pack;
                         break;
@@ -3095,8 +3126,22 @@ void FS_AddGameDirectory(const char *path, const char *dir)
     Q_strncpyz(search->dir->fullpath, curpath, sizeof(search->dir->fullpath));
     Q_strncpyz(search->dir->gamedir, dir, sizeof(search->dir->gamedir));
 
-    search->next = fs_searchpaths;
-    fs_searchpaths = search;
+    // Add to TAIL of the list instead of HEAD to maintain sorted order
+    if (fs_searchpaths == nullptr)
+    {
+        search->next = nullptr;
+        fs_searchpaths = search;
+    }
+    else
+    {
+        searchpath_t *last = fs_searchpaths;
+        while (last->next)
+        {
+            last = last->next;
+        }
+        search->next = nullptr;
+        last->next = search;
+    }
 }
 
 /*
@@ -3110,7 +3155,8 @@ and return true if it does.
 
 bool FS_CheckDirTraversal(const char *checkdir)
 {
-    if (strstr(checkdir, "../") || strstr(checkdir, "..\\")) return true;
+    if (strstr(checkdir, "../") || strstr(checkdir, "..\\"))
+        return true;
 
     return false;
 }
@@ -3197,8 +3243,8 @@ bool FS_ComparePaks(char *neededpaks, int len, bool dlstring)
                     char st[MAX_ZPATH];
                     // We already have one called this, we need to download it to another name
                     // Make something up with the checksum in it
-                    Com_sprintf(st, sizeof(st), "%s.%08x.pk3", fs_serverReferencedPakNames[i],
-                        fs_serverReferencedPaks[i]);
+                    Com_sprintf(
+                        st, sizeof(st), "%s.%08x.pk3", fs_serverReferencedPakNames[i], fs_serverReferencedPaks[i]);
                     Q_strcat(neededpaks, len, st);
                 }
                 else
@@ -3250,7 +3296,8 @@ void FS_Shutdown(bool closemfp)
 {
     for (int i = 0; i < MAX_FILE_HANDLES; i++)
     {
-        if (fsh[i].fileSize) FS_FCloseFile(i);
+        if (fsh[i].fileSize)
+            FS_FCloseFile(i);
     }
 
     searchpath_t *next;
@@ -3258,8 +3305,10 @@ void FS_Shutdown(bool closemfp)
     for (auto p = fs_searchpaths; p; p = next)
     {
         next = p->next;
-        if (p->pack) FS_FreePak(p->pack);
-        if (p->dir) Z_Free(p->dir);
+        if (p->pack)
+            FS_FreePak(p->pack);
+        if (p->dir)
+            Z_Free(p->dir);
         Z_Free(p);
     }
 
@@ -3294,7 +3343,8 @@ static void FS_ReorderPurePaks(void)
     fs_reordered = false;
 
     // only relevant when connected to pure server
-    if (!fs_numServerPaks) return;
+    if (!fs_numServerPaks)
+        return;
 
     // we insert in order at the beginning of the list
     auto p_insert_index = &fs_searchpaths;
@@ -3354,27 +3404,27 @@ static void FS_Startup(const char *gameName)
         FS_AddGameDirectory(fs_basepath->string, gameName);
 
     // NOTE: same filtering below for mods and basegame
-    if (fs_homepath->string[0] && Q_stricmp(fs_homepath->string,fs_basepath->string))
+    if (fs_homepath->string[0] && Q_stricmp(fs_homepath->string, fs_basepath->string))
     {
         FS_CreatePath(fs_homepath->string);
         FS_AddGameDirectory(fs_homepath->string, gameName);
     }
 
     // check for additional base game so mods can be based upon other mods
-    if ( fs_basegame->string[0] && Q_stricmp( fs_basegame->string, gameName ) )
+    if (fs_basegame->string[0] && Q_stricmp(fs_basegame->string, gameName))
     {
         if (fs_basepath->string[0])
             FS_AddGameDirectory(fs_basepath->string, fs_basegame->string);
-        if (fs_homepath->string[0] && Q_stricmp(fs_homepath->string,fs_basepath->string))
+        if (fs_homepath->string[0] && Q_stricmp(fs_homepath->string, fs_basepath->string))
             FS_AddGameDirectory(fs_homepath->string, fs_basegame->string);
     }
 
     // check for additional game folder for mods
-    if ( fs_gamedirvar->string[0] && Q_stricmp( fs_gamedirvar->string, gameName ) )
+    if (fs_gamedirvar->string[0] && Q_stricmp(fs_gamedirvar->string, gameName))
     {
         if (fs_basepath->string[0])
             FS_AddGameDirectory(fs_basepath->string, fs_gamedirvar->string);
-        if (fs_homepath->string[0] && Q_stricmp(fs_homepath->string,fs_basepath->string))
+        if (fs_homepath->string[0] && Q_stricmp(fs_homepath->string, fs_basepath->string))
             FS_AddGameDirectory(fs_homepath->string, fs_gamedirvar->string);
     }
 
@@ -3487,7 +3537,8 @@ const char *FS_LoadedPakChecksums(bool alternate)
     for (auto search = fs_searchpaths; search; search = search->next)
     {
         // is the element a pak file?
-        if (!search->pack) continue;
+        if (!search->pack)
+            continue;
         if ((alternate && search->pack->onlyPrimary) || (!alternate && search->pack->onlyAlternate))
             continue;
         Q_strcat(info, sizeof(info), va("%i ", search->pack->checksum));
@@ -3512,10 +3563,12 @@ const char *FS_LoadedPakNames(bool alternate)
     for (auto search = fs_searchpaths; search; search = search->next)
     {
         // is the element a pak file?
-        if (!search->pack) continue;
+        if (!search->pack)
+            continue;
         if ((alternate && search->pack->onlyPrimary) || (!alternate && search->pack->onlyAlternate))
             continue;
-        if (info[0]) Q_strcat(info, sizeof(info), " ");
+        if (info[0])
+            Q_strcat(info, sizeof(info), " ");
         Q_strcat(info, sizeof(info), search->pack->pakBasename);
     }
 
@@ -3539,7 +3592,8 @@ const char *FS_LoadedPakPureChecksums(bool alternate)
     for (auto search = fs_searchpaths; search; search = search->next)
     {
         // is the element a pak file?
-        if (!search->pack) continue;
+        if (!search->pack)
+            continue;
         if ((alternate && search->pack->onlyPrimary) || (!alternate && search->pack->onlyAlternate))
             continue;
         Q_strcat(info, sizeof(info), va("%i ", search->pack->pure_checksum));
@@ -3566,8 +3620,7 @@ const char *FS_ReferencedPakChecksums(bool alternate)
         // is the element a pak file?
         if (search->pack)
         {
-            if ((alternate and search->pack->onlyPrimary) or
-                (!alternate and search->pack->onlyAlternate))
+            if ((alternate and search->pack->onlyPrimary) or (!alternate and search->pack->onlyAlternate))
                 continue;
 
             if (search->pack->referenced or
@@ -3617,7 +3670,8 @@ const char *FS_ReferencedPakPureChecksums(void)
             if (search->pack && (search->pack->referenced & nFlags))
             {
                 Q_strcat(info, sizeof(info), va("%i ", search->pack->pure_checksum));
-                if (nFlags & (FS_CGAME_REF | FS_UI_REF)) break;
+                if (nFlags & (FS_CGAME_REF | FS_UI_REF))
+                    break;
 
                 checksum ^= search->pack->pure_checksum;
                 numPaks++;
@@ -3651,8 +3705,7 @@ const char *FS_ReferencedPakNames(bool alternate)
         // is the element a pak file?
         if (search->pack)
         {
-            if ((alternate && search->pack->onlyPrimary) ||
-                (!alternate && search->pack->onlyAlternate))
+            if ((alternate && search->pack->onlyPrimary) || (!alternate && search->pack->onlyAlternate))
                 continue;
 
             if (search->pack->referenced ||
@@ -3660,7 +3713,8 @@ const char *FS_ReferencedPakNames(bool alternate)
                 (fs_gamedirvar->string[0] && Q_stricmp(fs_gamedirvar->string, BASEGAME) &&
                     !Q_stricmp(search->pack->pakGamename, fs_gamedirvar->string)))
             {
-                if (*info) Q_strcat(info, sizeof(info), " ");
+                if (*info)
+                    Q_strcat(info, sizeof(info), " ");
 
                 Q_strcat(info, sizeof(info), search->pack->pakGamename);
                 Q_strcat(info, sizeof(info), "/");
@@ -3679,12 +3733,14 @@ FS_ClearPakReferences
 */
 void FS_ClearPakReferences(int flags)
 {
-    if (!flags) flags = -1;
+    if (!flags)
+        flags = -1;
 
     for (auto search = fs_searchpaths; search; search = search->next)
     {
         // is the element a pak file and has it been referenced?
-        if (search->pack) search->pack->referenced &= ~flags;
+        if (search->pack)
+            search->pack->referenced &= ~flags;
     }
 }
 
@@ -3703,11 +3759,13 @@ void FS_PureServerSetLoadedPaks(const char *pakSums, const char *pakNames)
     Cmd_TokenizeString(pakSums);
 
     int c = Cmd_Argc();
-    if (c > MAX_SEARCH_PATHS) c = MAX_SEARCH_PATHS;
+    if (c > MAX_SEARCH_PATHS)
+        c = MAX_SEARCH_PATHS;
 
     fs_numServerPaks = c;
 
-    for (int i = 0; i < c; i++) fs_serverPaks[i] = atoi(Cmd_Argv(i));
+    for (int i = 0; i < c; i++)
+        fs_serverPaks[i] = atoi(Cmd_Argv(i));
 
     if (fs_numServerPaks)
     {
@@ -3723,7 +3781,8 @@ void FS_PureServerSetLoadedPaks(const char *pakSums, const char *pakNames)
 
     for (int i = 0; i < c; i++)
     {
-        if (fs_serverPakNames[i]) Z_Free(fs_serverPakNames[i]);
+        if (fs_serverPakNames[i])
+            Z_Free(fs_serverPakNames[i]);
         fs_serverPakNames[i] = nullptr;
     }
 
@@ -3732,9 +3791,11 @@ void FS_PureServerSetLoadedPaks(const char *pakSums, const char *pakNames)
         Cmd_TokenizeString(pakNames);
 
         int d = Cmd_Argc();
-        if (d > MAX_SEARCH_PATHS) d = MAX_SEARCH_PATHS;
+        if (d > MAX_SEARCH_PATHS)
+            d = MAX_SEARCH_PATHS;
 
-        for (int i = 0; i < d; i++) fs_serverPakNames[i] = CopyString(Cmd_Argv(i));
+        for (int i = 0; i < d; i++)
+            fs_serverPakNames[i] = CopyString(Cmd_Argv(i));
     }
 }
 
@@ -3752,13 +3813,16 @@ void FS_PureServerSetReferencedPaks(const char *pakSums, const char *pakNames)
     Cmd_TokenizeString(pakSums);
 
     unsigned c = Cmd_Argc();
-    if (c > MAX_SEARCH_PATHS) c = MAX_SEARCH_PATHS;
+    if (c > MAX_SEARCH_PATHS)
+        c = MAX_SEARCH_PATHS;
 
-    for (unsigned i = 0; i < c; i++) fs_serverReferencedPaks[i] = atoi(Cmd_Argv(i));
+    for (unsigned i = 0; i < c; i++)
+        fs_serverReferencedPaks[i] = atoi(Cmd_Argv(i));
 
     for (unsigned i = 0; i < ARRAY_LEN(fs_serverReferencedPakNames); i++)
     {
-        if (fs_serverReferencedPakNames[i]) Z_Free(fs_serverReferencedPakNames[i]);
+        if (fs_serverReferencedPakNames[i])
+            Z_Free(fs_serverReferencedPakNames[i]);
         fs_serverReferencedPakNames[i] = nullptr;
     }
 
@@ -3768,13 +3832,16 @@ void FS_PureServerSetReferencedPaks(const char *pakSums, const char *pakNames)
         Cmd_TokenizeString(pakNames);
 
         d = Cmd_Argc();
-        if (d > c) d = c;
+        if (d > c)
+            d = c;
 
-        for (unsigned i = 0; i < d; i++) fs_serverReferencedPakNames[i] = CopyString(Cmd_Argv(i));
+        for (unsigned i = 0; i < d; i++)
+            fs_serverReferencedPakNames[i] = CopyString(Cmd_Argv(i));
     }
 
     // ensure that there are as many checksums as there are pak names.
-    if (d < c) c = d;
+    if (d < c)
+        c = d;
 
     fs_numServerReferencedPaks = c;
 }
@@ -3798,7 +3865,8 @@ void FS_InitFilesystem(void)
     Com_StartupVariable("fs_game");
     Com_StartupVariable("fs_pk3PrefixPairs");
 
-    if (!FS_FilenameCompare(Cvar_VariableString("fs_game"), BASEGAME)) Cvar_Set("fs_game", "");
+    if (!FS_FilenameCompare(Cvar_VariableString("fs_game"), BASEGAME))
+        Cvar_Set("fs_game", "");
 
     // try to start up normally
     FS_Startup(BASEGAME);
@@ -3920,17 +3988,19 @@ int FS_FOpenFileByMode(const char *qpath, fileHandle_t *f, enum FS_Mode mode)
         case FS_WRITE:
             *f = FS_FOpenFileWrite(qpath);
             r = 0;
-            if (*f == 0) r = -1;
+            if (*f == 0)
+                r = -1;
             break;
 
         case FS_APPEND_SYNC:
             sync = true;
-        // fall through
+            // fall through
 
         case FS_APPEND:
             *f = FS_FOpenFileAppend(qpath);
             r = 0;
-            if (*f == 0) r = -1;
+            if (*f == 0)
+                r = -1;
             break;
 
         default:
@@ -3938,7 +4008,8 @@ int FS_FOpenFileByMode(const char *qpath, fileHandle_t *f, enum FS_Mode mode)
             return -1;
     }
 
-    if (!f) return r;
+    if (!f)
+        return r;
 
     if (*f)
     {
@@ -3951,17 +4022,15 @@ int FS_FOpenFileByMode(const char *qpath, fileHandle_t *f, enum FS_Mode mode)
 
 int FS_FTell(fileHandle_t f)
 {
-    if (fsh[f].zipFile == true) return unztell(fsh[f].handleFiles.file.z);
+    if (fsh[f].zipFile == true)
+        return unztell(fsh[f].handleFiles.file.z);
     return ftell(fsh[f].handleFiles.file.o);
 }
 
-void FS_Flush(fileHandle_t f)
-{
-    fflush(fsh[f].handleFiles.file.o);
-}
+void FS_Flush(fileHandle_t f) { fflush(fsh[f].handleFiles.file.o); }
 
-void FS_FilenameCompletion(const char *dir, const char *ext, bool stripExt,
-    void (*callback)(const char *s), bool allowNonPureFilesOnDisk)
+void FS_FilenameCompletion(
+    const char *dir, const char *ext, bool stripExt, void (*callback)(const char *s), bool allowNonPureFilesOnDisk)
 {
     int nfiles;
     char filename[MAX_STRING_CHARS];
@@ -3973,7 +4042,8 @@ void FS_FilenameCompletion(const char *dir, const char *ext, bool stripExt,
     {
         FS_ConvertPath(filenames[i]);
         Q_strncpyz(filename, filenames[i], MAX_STRING_CHARS);
-        if (stripExt) COM_StripExtension(filename, filename, sizeof(filename));
+        if (stripExt)
+            COM_StripExtension(filename, filename, sizeof(filename));
         callback(filename);
     }
     FS_FreeFileList(filenames);
@@ -3981,6 +4051,7 @@ void FS_FilenameCompletion(const char *dir, const char *ext, bool stripExt,
 
 const char *FS_GetCurrentGameDir(void)
 {
-    if (fs_gamedirvar->string[0]) return fs_gamedirvar->string;
+    if (fs_gamedirvar->string[0])
+        return fs_gamedirvar->string;
     return BASEGAME;
 }

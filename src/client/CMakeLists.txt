@@ -7,10 +7,23 @@
 ##  `Y88P' Y88888P Y888888P Y88888P VP   V8P    YP
 #
 
-find_package(CURL)
+# libcurl is now built from source via add_subdirectory in top-level CMakeLists.txt
+# Use the CMake target provided by libcurl
+if(TARGET libcurl::libcurl)
+    set(CURL_LIBRARIES libcurl::libcurl)
+    # Get the include directory from the target
+    get_target_property(CURL_INCLUDE_DIRS libcurl::libcurl INTERFACE_INCLUDE_DIRECTORIES)
+elseif(TARGET CURL::libcurl)
+    set(CURL_LIBRARIES CURL::libcurl)
+    get_target_property(CURL_INCLUDE_DIRS CURL::libcurl INTERFACE_INCLUDE_DIRECTORIES)
+else()
+    # Fallback to find_package for system installations
+    find_package(CURL)
+endif()
+
 find_package(OpenGL)
 find_package(OpenAL)
-include(${CMAKE_SOURCE_DIR}/cmake/SDL2.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/SDL3.cmake)
 
 add_definitions(
     -DUSE_LOCAL_HEADERS
@@ -162,11 +175,13 @@ include_directories(
     ${EXTERNAL_DIR}/zlib
     ${EXTERNAL_DIR}/restclient
     ${EXTERNAL_DIR}/rapidjson
-    ${EXTERNAL_DIR}/SDL2/include
+    ${EXTERNAL_DIR}/SDL2/include  # Kept for compatibility, SDL3 headers are in SDL3_INCLUDE_DIRS
+    ${SDL2_INCLUDE_DIRS}  # SDL3 include directories from cmake/SDL3.cmake
     ${EXTERNAL_DIR}/jpeg-8c
     ${EXTERNAL_DIR}/libogg-1.3.2/include
     ${EXTERNAL_DIR}/lua-5.3.3/include
     ${EXTERNAL_DIR}/sol
+    ${CURL_INCLUDE_DIRS}  # libcurl include directory
     ${EXTERNAL_DIR}/nettle-3.3
     ${EXTERNAL_DIR}/opus-1.1.4/include
     ${EXTERNAL_DIR}/opusfile-0.8/include
@@ -176,13 +191,23 @@ include_directories(
     ${OPENAL_INCLUDE_DIR}
     )
 
-# TODO: Turn this into a macro 
+# TODO: Turn this into a macro
 if (USE_INTERNAL_SDL2)
-add_custom_command(
-    TARGET tremulous
-    POST_BUILD COMMAND ${CMAKE_COMMAND}
-    ARGS -E copy ${CMAKE_SOURCE_DIR}/external/SDL2/libs/Darwin/libSDL2-2.0.0.dylib ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libSDL2-2.0.0.dylib
-    )
+    # SDL3 on macOS: copy the shared library to runtime directory
+    if(TARGET SDL3::SDL3-shared)
+        add_custom_command(
+            TARGET tremulous
+            POST_BUILD COMMAND ${CMAKE_COMMAND}
+            ARGS -E copy $<TARGET_FILE:SDL3::SDL3-shared> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/
+            )
+    elseif(EXISTS ${CMAKE_SOURCE_DIR}/external/SDL2/libs/Darwin/libSDL2-2.0.0.dylib)
+        # Fallback to old SDL2 location
+        add_custom_command(
+            TARGET tremulous
+            POST_BUILD COMMAND ${CMAKE_COMMAND}
+            ARGS -E copy ${CMAKE_SOURCE_DIR}/external/SDL2/libs/Darwin/libSDL2-2.0.0.dylib ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libSDL2-2.0.0.dylib
+            )
+    endif()
 endif(USE_INTERNAL_SDL2)
 
 if (USE_RENDERER_DLOPEN)
