@@ -32,7 +32,9 @@ extern "C" {
 // q_shared.h -- included first by ALL program modules.
 // A user mod should never modify this file
 
+#ifndef PRODUCT_NAME
 #define PRODUCT_NAME "tremulous"
+#endif
 
 #ifndef PRODUCT_VERSION
 #define PRODUCT_VERSION "1.3.0 alpha"

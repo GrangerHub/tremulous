@@ -46,13 +46,8 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #include "lua.hpp"
 #include "sol.hpp"
 #ifndef DEDICATED
-#ifdef USE_LOCAL_HEADERS
-#include "SDL.h"
-#include "SDL_cpuinfo.h"
-#else
-#include <SDL.h>
-#include <SDL_cpuinfo.h>
-#endif
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_cpuinfo.h>
 #endif
 
 #include "qcommon/files.h"
@@ -278,10 +273,8 @@ cpuFeatures_t Sys_GetProcessorFeatures(void)
     cpuFeatures_t features = CF_NONE;
 
 #ifndef DEDICATED
-    if (SDL_HasRDTSC())
-        features |= CF_RDTSC;
-    if (SDL_Has3DNow())
-        features |= CF_3DNOW;
+    // SDL3: SDL_HasRDTSC() removed - use SDL_GetPerformanceCounter instead
+    // SDL3: SDL_Has3DNow() removed - no replacement
     if (SDL_HasMMX())
         features |= CF_MMX;
     if (SDL_HasSSE())
@@ -685,16 +678,16 @@ void SDLVersionCheck()
 #if !SDL_VERSION_ATLEAST(MINSDL_MAJOR, MINSDL_MINOR, MINSDL_PATCH)
 #error A more recent version of SDL is required
 #endif
-    SDL_version ver;
-    SDL_GetVersion(&ver);
+    // SDL3: SDL_GetVersion returns int version, no more SDL_version struct
+    int version = SDL_GetVersion();
 #define MINSDL_VERSION XSTRING(MINSDL_MAJOR) "." XSTRING(MINSDL_MINOR) "." XSTRING(MINSDL_PATCH)
-    if (SDL_VERSIONNUM(ver.major, ver.minor, ver.patch) < SDL_VERSIONNUM(MINSDL_MAJOR, MINSDL_MINOR, MINSDL_PATCH))
+    if (version < SDL_VERSIONNUM(MINSDL_MAJOR, MINSDL_MINOR, MINSDL_PATCH))
     {
         Sys_Dialog(DT_ERROR,
             va("SDL version " MINSDL_VERSION " or greater is required, "
                "but only version %d.%d.%d was found. You may be able to obtain a more recent copy "
                "from http://www.libsdl.org/.",
-                ver.major, ver.minor, ver.patch),
+                SDL_VERSIONNUM_MAJOR(version), SDL_VERSIONNUM_MINOR(version), SDL_VERSIONNUM_MICRO(version)),
             "SDL Library Too Old");
         Sys_Exit(1);
     }

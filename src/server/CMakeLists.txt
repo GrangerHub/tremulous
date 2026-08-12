@@ -10,7 +10,8 @@
 add_definitions(
     -DDEDICATED
     -DUSE_LOCAL_HEADERS
-    -DPRODUCT_VERSION="1.2.0 pre-release"
+    -DPRODUCT_VERSION="${GAME_PRODUCT_VERSION}"
+    -DPRODUCT_NAME="${GAME_PRODUCT_NAME}"
     -DUSE_VOIP
     -DNDEBUG
     )
@@ -113,14 +114,20 @@ add_executable(
     ${EXTERNAL_DIR}/zlib/zutil.c
     )
 
+# MSVC x64 doesn't support inline assembly, so vm_x86.cpp is excluded.
+# Define NO_VM_COMPILED to fall back to the bytecode interpreter.
+if(MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+    target_compile_definitions(tremded PRIVATE NO_VM_COMPILED)
+endif()
 if(APPLE)
  # FIXME Prefixed with "lua" to prevent cmake from doing "-l-framework Cocoa"
  set(FRAMEWORKS "-framework Cocoa -framework Security -framework OpenAL -framework IOKit")
-else(APPLE)
- if(UNIX)
-  set(SYSLIBS dl rt)
- endif(UNIX)
-endif(APPLE)
+elseif(WIN32)
+ # Windows-specific libraries for networking and multimedia
+ set(SYSLIBS ws2_32 winmm)
+ elseif(UNIX)
+   set(SYSLIBS dl rt)
+ endif()
 
 target_link_libraries(
     tremded

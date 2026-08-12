@@ -7,7 +7,7 @@ include_directories(
     ${PARENT_DIR}/jpeg-8c
     ${PARENT_DIR}/renderercommon 
     ${PARENT_DIR}/nettle-3.3
-    ${SDL2_INCLUDE_DIRS} 
+    ${SDL3_INCLUDE_DIRS} 
     )
 
 set(GLSL_SHADERS
@@ -39,6 +39,8 @@ set(GLSL_SHADERS
     glsl/texturecolor_vp.glsl
     glsl/tonemap_fp.glsl
     glsl/tonemap_vp.glsl
+    glsl/gamma_fp.glsl
+    glsl/gamma_vp.glsl
     )
 
 # Converts ^^^GSLS shaders^^^ into const char* C-strings.
@@ -47,7 +49,7 @@ foreach(shader ${GLSL_SHADERS})
     set(in ${CMAKE_CURRENT_SOURCE_DIR}/${shader})
 
     get_filename_component(out ${in} NAME_WE)
-    set(out ${CMAKE_CURRENT_BINARY_DIR}/glsl/${out}.c)
+    set(out ${CMAKE_CURRENT_BINARY_DIR}/glsl/${out}.cpp)
 
     get_filename_component(shader ${shader} NAME_WE)
     message(STATUS "-- Generating embeded GLSL ${shader}")
@@ -125,7 +127,7 @@ if(NOT USE_RENDERER_DLOPEN)
 
     target_link_libraries(
         renderergl2 renderercommon
-        ${SDL2_LIBRARIES})
+        ${SDL3_LIBRARIES})
 
 else(NOT USE_RENDERER_DLOPEN)
 
@@ -134,17 +136,18 @@ else(NOT USE_RENDERER_DLOPEN)
         ${renderergl2_SRCS}
         )
 
-        target_link_libraries(
-        renderergl2 
+    # When building as a DLL, USE_RENDERER_DLOPEN must be defined at compile
+    # time so GetRefAPI gets extern "C" + __declspec(dllexport).  Without it
+    # the symbol gets C++ name mangling and the client cannot find it via
+    # Sys_LoadFunction(rendererLib, "GetRefAPI").
+    target_compile_definitions(renderergl2 PRIVATE USE_RENDERER_DLOPEN)
+
+    target_link_libraries(
+        renderergl2
         renderercommon
         ${FRAMEWORKS}
         ${OPENGL_LIBRARIES}
-        ${SDL2_LIBRARIES}
-        )
-    add_custom_command(
-        TARGET renderergl2
-        POST_BUILD COMMAND ${CMAKE_COMMAND}
-        ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/librenderergl2${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/renderer_opengl2${CMAKE_SHARED_LIBRARY_SUFFIX}
+        ${SDL3_LIBRARIES}
         )
 
 endif(NOT USE_RENDERER_DLOPEN)

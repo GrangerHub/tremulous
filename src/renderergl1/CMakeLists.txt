@@ -5,7 +5,7 @@ find_package(OpenGL)
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../jpeg-8c
     ${CMAKE_CURRENT_SOURCE_DIR}/../renderercommon 
-    ${SDL2_INCLUDE_DIRS} 
+    ${SDL3_INCLUDE_DIRS} 
     )
 
 set(renderergl1_SRCS
@@ -47,19 +47,26 @@ if(NOT USE_RENDERER_DLOPEN)
 
     target_link_libraries(
         renderergl1 renderercommon
-        ${SDL2_LIBRARIES}
+        ${SDL3_LIBRARIES}
         )
 else(NOT USE_RENDERER_DLOPEN)
     add_library(
         renderergl1 SHARED
         ${renderergl1_SRCS}
         )
+
+    # When building as a DLL, USE_RENDERER_DLOPEN must be defined at compile
+    # time so GetRefAPI gets extern "C" + __declspec(dllexport).  Without it
+    # the symbol gets C++ name mangling and the client cannot find it via
+    # Sys_LoadFunction(rendererLib, "GetRefAPI").
+    target_compile_definitions(renderergl1 PRIVATE USE_RENDERER_DLOPEN)
+
     target_link_libraries(
         renderergl1
         renderercommon
         ${FRAMEWORKS}
         ${OPENGL_LIBRARIES}
-        ${SDL2_LIBRARIES}
+        ${SDL3_LIBRARIES}
         )
 
 endif(NOT USE_RENDERER_DLOPEN)
