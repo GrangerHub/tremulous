@@ -1,3 +1,8 @@
+# ───┬───    ┌─────┐    ┌─────    ┌──┐ ┌──┐    ┬     ┬    ┬         ┌─────┐    ┬     ┬    ┌─────┐
+#    │       │     │    │         │  └┬┘  │    │     │    │         │     │    │     │    │      
+#    │       ├───┬─┘    ├────     │   │   │    │     │    │         │     │    │     │    └─────┐
+#    │       │   └─┐    │         │       │    │     │    │         │     │    │     │          │
+#    ┴       │     │    └─────    ┴       ┴    └─────┘    └─────    └─────┘    └─────┘    └─────┘ 
 #
 # Tremulous Makefile
 #
@@ -309,11 +314,15 @@ LBURGDIR=$(MOUNT_DIR)/tools/lcc/lburg
 Q3CPPDIR=$(MOUNT_DIR)/tools/lcc/cpp
 Q3LCCETCDIR=$(MOUNT_DIR)/tools/lcc/etc
 Q3LCCSRCDIR=$(MOUNT_DIR)/tools/lcc/src
-SDLHDIR=$(EXTERNAL_DIR)/SDL2
+SDLHDIR=$(EXTERNAL_DIR)/SDL3
 CURLHDIR=$(EXTERNAL_DIR)/libcurl-7.35.0
-ALHDIR=$(EXTERNAL_DIR)/AL
+ALHDIR=$(EXTERNAL_DIR)/openal-soft/include
 LIBSDIR=$(EXTERNAL_DIR)/libs
 TEMPDIR=/tmp
+
+# SDL3 build directories
+SDL3_BUILD_DIR=$(B)/SDL3-build
+SDL3_INSTALL_DIR=$(B)/SDL3-install
 
 bin_path=$(shell which $(1) 2> /dev/null)
 
@@ -326,21 +335,43 @@ ifneq ($(BUILD_CLIENT),0)
     CURL_LIBS ?= $(shell pkg-config --silence-errors --libs libcurl)
     OPENAL_CFLAGS ?= $(shell pkg-config --silence-errors --cflags openal)
     OPENAL_LIBS ?= $(shell pkg-config --silence-errors --libs openal)
-    SDL_CFLAGS ?= $(shell pkg-config --silence-errors --cflags sdl2|sed 's/-Dmain=SDL_main//')
-    SDL_LIBS ?= $(shell pkg-config --silence-errors --libs sdl2)
+    SDL_CFLAGS ?= $(shell pkg-config --silence-errors --cflags sdl3|sed 's/-Dmain=SDL_main//')
+    SDL_LIBS ?= $(shell pkg-config --silence-errors --libs sdl3)
   else
     # assume they're in the system default paths (no -I or -L needed)
     CURL_LIBS ?= -lcurl
     OPENAL_LIBS ?= -lopenal
   endif
-  # Use sdl2-config if all else fails
+  # Use sdl3-config if all else fails
   ifeq ($(SDL_CFLAGS),)
-    ifneq ($(call bin_path, sdl2-config),)
-      SDL_CFLAGS ?= $(shell sdl2-config --cflags)
-      SDL_LIBS ?= $(shell sdl2-config --libs)
+    ifneq ($(call bin_path, sdl3-config),)
+      SDL_CFLAGS ?= $(shell sdl3-config --cflags)
+      SDL_LIBS ?= $(shell sdl3-config --libs)
     endif
   endif
+  # If no system SDL3 found, use vendored SDL3 from external/SDL3
+  ifeq ($(SDL_CFLAGS),)
+    SDL_CFLAGS = -I$(SDLHDIR)/include
+    SDL_LIBS = -L$(SDL3_INSTALL_DIR)/lib -lSDL3
+    USE_VENDORED_SDL3 = 1
+  endif
 endif
+
+# SDL3 build target (for vendored SDL3)
+.PHONY: build-sdl3
+build-sdl3:
+	@echo "Building vendored SDL3..."
+	@mkdir -p $(SDL3_BUILD_DIR)
+	@cd $(SDL3_BUILD_DIR) && cmake ../../../external/SDL3 \
+		-DCMAKE_INSTALL_PREFIX=$(SDL3_INSTALL_DIR) \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DSDL_TESTS=OFF \
+		-DSDL_INSTALL_TESTS=OFF \
+		-DSDL_EXAMPLES=OFF \
+		-DSDL_DISABLE_INSTALL=OFF
+	@$(MAKE) -C $(SDL3_BUILD_DIR) -j$(shell nproc)
+	@$(MAKE) -C $(SDL3_BUILD_DIR) install
+	@echo "SDL3 built successfully"
 
 # Add git version info
 USE_GIT=
@@ -524,8 +555,8 @@ ifeq ($(PLATFORM),darwin)
 
   BASE_CFLAGS += -D_THREAD_SAFE=1
 
-  # FIXME: It is not possible to build using system SDL2 framework
-  #  1. IF you try, this Makefile will still drop libSDL-2.0.0.dylib into the builddir
+  # FIXME: It is not possible to build using system SDL3 framework
+  #  1. IF you try, this Makefile will still drop libSDL-3.0.0.dylib into the builddir
   #  2. Debugger warns that you have 2- which one will be used is undefined
   ifeq ($(USE_LOCAL_HEADERS),1)
     BASE_CFLAGS += -I$(SDLHDIR)/include -I$(CURLHDIR) -I$(ALHDIR)
@@ -533,12 +564,12 @@ ifeq ($(PLATFORM),darwin)
 
   # We copy sdlmain before ranlib'ing it so that subversion doesn't think
   #  the file has been modified by each build.
-  LIBSDLMAIN=$(B)/libSDL2main.a
-  LIBSDLMAINSRC=$(LIBSDIR)/macosx/libSDL2main.a
+  LIBSDLMAIN=$(B)/libSDL3main.a
+  LIBSDLMAINSRC=$(LIBSDIR)/macosx/libSDL3main.a
   CLIENT_LIBS += -framework IOKit \
-    $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
-  RENDERER_LIBS += -framework OpenGL $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
-  CLIENT_EXTRA_FILES += $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
+    $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
+  RENDERER_LIBS += -framework OpenGL $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
+  CLIENT_EXTRA_FILES += $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
 
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
@@ -649,7 +680,7 @@ ifdef MINGW
   SHLIBEXT=dll
   SHLIBCFLAGS=
   #SHLIBLDFLAGS=-shared $(LDFLAGS)
-  SHLIBLDFLAGS=-shared
+  SHLIBLDFLAGS=-shared -static-libgcc
 
   BINEXT=.exe
 
@@ -690,28 +721,28 @@ ifdef MINGW
     endif
   endif
 
-  # libmingw32 must be linked before libSDLmain
+  # libmingw32 must be linked before SDL3
   CLIENT_LIBS += -lmingw32
   RENDERER_LIBS += -lmingw32
 
   ifeq ($(USE_LOCAL_HEADERS),1)
     CLIENT_CFLAGS += -I$(SDLHDIR)/include
     ifeq ($(ARCH), x86)
-      CLIENT_LIBS += $(LIBSDIR)/win32/libSDL2main.a $(LIBSDIR)/win32/libSDL2.dll.a
-      RENDERER_LIBS += $(LIBSDIR)/win32/libSDL2main.a $(LIBSDIR)/win32/libSDL2.dll.a
-      SDLDLL=SDL2.dll
-      CLIENT_EXTRA_FILES += $(LIBSDIR)/win32/SDL2.dll
+      CLIENT_LIBS += $(LIBSDIR)/win32/libSDL3.dll.a
+      RENDERER_LIBS += $(LIBSDIR)/win32/libSDL3.dll.a
+      SDLDLL=SDL3.dll
+      CLIENT_EXTRA_FILES += $(LIBSDIR)/win32/SDL3.dll
     else
-      CLIENT_LIBS += $(LIBSDIR)/win64/libSDL264main.a  $(LIBSDIR)/win64/libSDL264.dll.a
-      RENDERER_LIBS += $(LIBSDIR)/win64/libSDL264main.a $(LIBSDIR)/win64/libSDL264.dll.a
-      SDLDLL=SDL264.dll
-      CLIENT_EXTRA_FILES += $(LIBSDIR)/win64/SDL264.dll
+      CLIENT_LIBS += $(LIBSDIR)/win64/libSDL364.dll.a
+      RENDERER_LIBS += $(LIBSDIR)/win64/libSDL364.dll.a
+      SDLDLL=SDL364.dll
+      CLIENT_EXTRA_FILES += $(LIBSDIR)/win64/SDL364.dll
     endif
   else
     CLIENT_CFLAGS += $(SDL_CFLAGS)
     CLIENT_LIBS += $(SDL_LIBS)
     RENDERER_LIBS += $(SDL_LIBS)
-    SDLDLL=SDL2.dll
+    SDLDLL=SDL3.dll
   endif
 
 else # ifdef MINGW
@@ -799,6 +830,7 @@ endif
 ifneq ($(HAVE_VM_COMPILED),true)
   BASE_CFLAGS += -DNO_VM_COMPILED
   BUILD_GAME_QVM=0
+  BUILD_GAME_QVM_11=0
 endif
 
 TARGETS =
@@ -1608,7 +1640,7 @@ TARGETS += $(B)/granger$(FULLBINEXT)
 endif
 
 $(B)/scripts:
-	rsync -rupE --exclude=".*" scripts $(B)
+	rsync -rpu --exclude=".*" scripts $(B) || true
 
 TARGETS += $(B)/scripts
 
@@ -1939,6 +1971,8 @@ Q3R2STRINGOBJ = \
   $(B)/renderergl2/glsl/down4x_vp.o \
   $(B)/renderergl2/glsl/fogpass_fp.o \
   $(B)/renderergl2/glsl/fogpass_vp.o \
+  $(B)/renderergl2/glsl/gamma_fp.o \
+  $(B)/renderergl2/glsl/gamma_vp.o \
   $(B)/renderergl2/glsl/generic_fp.o \
   $(B)/renderergl2/glsl/generic_vp.o \
   $(B)/renderergl2/glsl/lightall_fp.o \
@@ -2569,6 +2603,7 @@ GOBJ_ = \
   $(B)/$(BASEGAME)/game/g_weapondrop.o \
   $(B)/$(BASEGAME)/game/g_admin.o \
   $(B)/$(BASEGAME)/game/g_namelog.o \
+  $(B)/$(BASEGAME)/game/g_spec_layout.o \
   \
   $(B)/$(BASEGAME)/qcommon/q_math.o \
   $(B)/$(BASEGAME)/qcommon/q_shared.o
@@ -2825,6 +2860,7 @@ $(B)/$(BASEGAME)/cgame/ui_%.o: $(UIDIR)/ui_%.c
 $(B)/$(BASEGAME)/cgame/%.o: $(CGDIR)/%.c
 	$(DO_CGAME_CC)
 
+ifneq ($(BUILD_GAME_QVM),0)
 $(B)/$(BASEGAME)/cgame/bg_%.asm: $(GDIR)/bg_%.c $(Q3LCC)
 	$(DO_CGAME_Q3LCC)
 
@@ -2847,19 +2883,8 @@ $(B)/$(BASEGAME)/cgame/%.asm: $(CGDIR)/%.c $(Q3LCC)
 $(B)/$(BASEGAME)/11/cgame/%.asm: $(CGDIR)/%.c $(Q3LCC)
 	$(DO_CGAME_Q3LCC_11)
 
-# GAME
-$(B)/$(BASEGAME)/game/%.o: $(GDIR)/%.c
-	$(DO_GAME_CC)
-
 $(B)/$(BASEGAME)/game/%.asm: $(GDIR)/%.c $(Q3LCC)
 	$(DO_GAME_Q3LCC)
-
-# UI
-$(B)/$(BASEGAME)/ui/bg_%.o: $(GDIR)/bg_%.c
-	$(DO_UI_CC)
-
-$(B)/$(BASEGAME)/ui/%.o: $(UIDIR)/%.c
-	$(DO_UI_CC)
 
 $(B)/$(BASEGAME)/ui/bg_%.asm: $(GDIR)/bg_%.c $(Q3LCC)
 	$(DO_UI_Q3LCC)
@@ -2870,12 +2895,21 @@ $(B)/$(BASEGAME)/ui/%.asm: $(UIDIR)/%.c $(Q3LCC)
 # UI (1.1 COMPATIBLE)
 $(B)/$(BASEGAME)/11/ui/%.asm: $(UIDIR)/%.c $(Q3LCC)
 	$(DO_UI_Q3LCC_11)
+endif
+
+# GAME
+$(B)/$(BASEGAME)/game/%.o: $(GDIR)/%.c
+	$(DO_GAME_CC)
+
+# UI
+$(B)/$(BASEGAME)/ui/bg_%.o: $(GDIR)/bg_%.c
+	$(DO_UI_CC)
+
+$(B)/$(BASEGAME)/ui/%.o: $(UIDIR)/%.c
+	$(DO_UI_CC)
 
 $(B)/$(BASEGAME)/qcommon/%.o: $(CMDIR)/%.c
 	$(DO_SHLIB_CC)
-
-$(B)/$(BASEGAME)/qcommon/%.asm: $(CMDIR)/%.c $(Q3LCC)
-	$(DO_Q3LCC)
 
 
 #############################################################################
@@ -2884,7 +2918,10 @@ $(B)/$(BASEGAME)/qcommon/%.asm: $(CMDIR)/%.c $(Q3LCC)
 
 OBJ = $(Q3OBJ) $(Q3ROBJ) $(Q3R2OBJ) $(Q3DOBJ) $(JPGOBJ) \
   $(GOBJ) $(CGOBJ) $(UIOBJ) $(LUAOBJ) $(SCRIPTOBJ) $(NETTLEOBJ) \
-  $(GVMOBJ) $(CGVMOBJ) $(UIVMOBJ) $(GRANGEROBJ)
+  $(GRANGEROBJ)
+ifneq ($(BUILD_GAME_QVM),0)
+  OBJ += $(GVMOBJ) $(CGVMOBJ) $(UIVMOBJ)
+endif
 TOOLSOBJ = $(LBURGOBJ) $(Q3CPPOBJ) $(Q3RCCOBJ) $(Q3LCCOBJ) $(Q3ASMOBJ)
 STRINGOBJ = $(Q3R2STRINGOBJ)
 

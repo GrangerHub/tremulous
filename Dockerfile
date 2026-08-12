@@ -14,9 +14,9 @@
 #     renderer_opengl1.dll   — Legacy OpenGL 1.x renderer
 #     renderer_opengl2.dll   — Modern OpenGL 2+ renderer
 #
-#   SDL2 runtime:
-#     SDL264.dll             — SDL2 for x86_64 (Tremulous naming convention)
-#     SDL2.dll               — SDL2 for x86    (32-bit)
+#   SDL3 runtime:
+#     SDL364.dll             — SDL3 for x86_64 (Tremulous naming convention)
+#     SDL3.dll               — SDL3 for x86    (32-bit)
 #
 #   Game logic (native DLLs):
 #     gpp/cgame.dll          — Client-side game logic
@@ -56,7 +56,7 @@ ARG TARGET_ARCH=x86_64
 # Stage 1: Shared base — source copy, line-ending fix, asset setup
 #          (shared between builder stages for better layer caching)
 # -----------------------------------------------------------------------------
-FROM debian:oldstable-slim AS build-base
+FROM debian:stable-slim AS build-base
 WORKDIR /usr/src
 ENV DEBIAN_FRONTEND=noninteractive \
     TERM=dumb
@@ -64,12 +64,14 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # Common build dependencies (combined for single layer + better caching).
 # dos2unix added for CRLF→LF conversion (repo checked out on Windows).
 # zip is needed by the Makefile's release target (it creates build/*.zip).
+# cmake is needed to cross-compile SDL3 for MinGW (see Stage 1.5 below).
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
       make \
       build-essential \
+      cmake \
       libgl1-mesa-dev \
       mingw-w64 \
-      libsdl2-dev \
+      libsdl3-dev \
       libopenal-dev \
       libfreetype6-dev \
       zip \
@@ -122,10 +124,86 @@ RUN mkdir -p /usr/src/build/assets/ui \
 RUN printf '#!/bin/bash\nexit 0\n' > /usr/src/misc/download-paks.sh \
     && chmod +x /usr/src/misc/download-paks.sh
 
+# -- OpenAL headers (FIX #4) --------------------------------------------------
+# The Makefile's ALHDIR now points to external/openal-soft/include where
+# the OpenAL headers actually live (AL/al.h, AL/alc.h). No symlink needed.
+
+# -----------------------------------------------------------------------------
+# Stage 1.5: SDL3 MinGW cross-compilation
+#         (CRITICAL FIX #5 - produces the .a/.dll files the Makefile expects)
+# -----------------------------------------------------------------------------
+# The Makefile (lines 702-713) links against Tremulous-specific names:
+#   win64: libSDL364main.a, libSDL364.dll.a, SDL364.dll
+#   win32: libSDL3main.a,   libSDL3.dll.a,   SDL3.dll
+#
+# external/libs/win{32,64}/ currently contains only SDL2-named files left over
+# from the SDL2 era.  The SDL3 source tree is vendored at external/SDL3/ but
+# has never been compiled for MinGW.  This stage cross-compiles it and copies
+# the outputs into the expected locations with the Tremulous naming convention.
+#
+# SDL3's CMake build always produces libSDL3.dll.a / libSDL3main.a / SDL3.dll
+# regardless of architecture.  For x86_64 we rename to the "SDL364" convention
+# expected by the Makefile; for x86 the standard names already match.
+FROM build-base AS sdl3-builder
+ARG TARGET_ARCH
+
+RUN set -e; \
+    if [ "${TARGET_ARCH}" = "x86_64" ]; then \
+      MINGW_PREFIX="x86_64-w64-mingw32"; \
+      LIBSDIR="/usr/src/external/libs/win64"; \
+      SDL_PREFIX="SDL364"; \
+    else \
+      MINGW_PREFIX="i686-w64-mingw32"; \
+      LIBSDIR="/usr/src/external/libs/win32"; \
+      SDL_PREFIX="SDL3"; \
+    fi; \
+    echo "=== Cross-compiling SDL3 for ${MINGW_PREFIX} ===" ; \
+    mkdir -p /tmp/sdl3-build && cd /tmp/sdl3-build ; \
+    cmake /usr/src/external/SDL3 \
+      -DCMAKE_SYSTEM_NAME=Windows \
+      -DCMAKE_SYSTEM_PROCESSOR="${TARGET_ARCH}" \
+      -DCMAKE_C_COMPILER="${MINGW_PREFIX}-gcc" \
+      -DCMAKE_CXX_COMPILER="${MINGW_PREFIX}-g++" \
+      -DCMAKE_RC_COMPILER="${MINGW_PREFIX}-windres" \
+      -DCMAKE_INSTALL_PREFIX=/tmp/sdl3-install \
+      -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+      -DCMAKE_C_FLAGS="-I/usr/${MINGW_PREFIX}/include" \
+      -DCMAKE_CXX_FLAGS="-I/usr/${MINGW_PREFIX}/include" \
+      -DSDL_SHARED=ON \
+      -DSDL_STATIC=OFF \
+      -DSDL_TEST=OFF \
+      -DSDL_VULKAN=OFF \
+      -DCMAKE_BUILD_TYPE=Release ; \
+    cmake --build . -j"$(nproc)" ; \
+    echo "=== Installing SDL3 to /tmp/sdl3-install ===" ; \
+    cmake --install . ; \
+    \
+    echo "=== Checking installed SDL3 files ===" ; \
+    find /tmp/sdl3-install -type f -name '*.a' -o -name '*.dll' -o -name '*.so' ; \
+    \
+    echo "=== Installing SDL3 libs to ${LIBSDIR} ===" ; \
+    mkdir -p "${LIBSDIR}" ; \
+    if [ -f /tmp/sdl3-install/bin/SDL3.dll ]; then \
+      cp /tmp/sdl3-install/bin/SDL3.dll "${LIBSDIR}/${SDL_PREFIX}.dll" ; \
+    else echo "ERROR: SDL3.dll not found in /tmp/sdl3-install/bin/" ; ls -la /tmp/sdl3-install/bin/ ; fi ; \
+    if [ -f /tmp/sdl3-install/lib/libSDL3.dll.a ]; then \
+      cp /tmp/sdl3-install/lib/libSDL3.dll.a "${LIBSDIR}/lib${SDL_PREFIX}.dll.a" ; \
+    else echo "ERROR: libSDL3.dll.a not found in /tmp/sdl3-install/lib/" ; ls -la /tmp/sdl3-install/lib/ ; fi ; \
+    # SDL3 main library - find it under the arch-specific subdir or flat
+    MAIN_A=$(find /tmp/sdl3-install -name 'libSDL3main.a' | head -1) ; \
+    if [ -n "${MAIN_A}" ]; then \
+      echo "Found SDL3main.a at: ${MAIN_A}" ; \
+      cp "${MAIN_A}" "${LIBSDIR}/lib${SDL_PREFIX}main.a" ; \
+    else echo "WARNING: libSDL3main.a not found, searching for SDL3main*.a..." ; \
+         find /tmp/sdl3-install -name '*SDL3main*' ; fi ; \
+    echo "=== Final contents of ${LIBSDIR} ===" ; \
+    ls -la "${LIBSDIR}" ; \
+    echo "=== SDL3 cross-compilation complete ==="
+
 # -----------------------------------------------------------------------------
 # Stage 2: Windows builder — compile all binaries + Windows-native tools
 # -----------------------------------------------------------------------------
-FROM build-base AS builder
+FROM sdl3-builder AS builder
 ARG TARGET_ARCH
 
 # ═─ Main build ─═════════════════════════════════════════════════════════════
@@ -141,9 +219,10 @@ ARG TARGET_ARCH
 #   x86    → i686-w64-mingw32-gcc   / i686-w64-mingw32-g++
 #
 # Vendored Windows libraries in external/libs/win{32,64}/ are used automatically
-# (USE_INTERNAL_LIBS=1 and USE_LOCAL_HEADERS=1 are defaults) — no SDL2 download
+# (USE_INTERNAL_LIBS=1 and USE_LOCAL_HEADERS=1 are defaults) — no SDL3 download
 # needed.
 RUN USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 \
+    BUILD_GAME_QVM=0 BUILD_GAME_QVM_11=0 \
     make PLATFORM=mingw32 ARCH="${TARGET_ARCH}" -j"$(nproc)"
 
 # ═─ Build Windows-native toolchain (CRITICAL FIX #3) ─═══════════════════════
@@ -182,7 +261,8 @@ RUN set -e; \
          USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 \
          TOOLS_CC="${MINGW_CC}" \
          TOOLS_BINEXT=.exe \
-         BUILD_CLIENT=0 BUILD_SERVER=0 BUILD_GAME_SO=0 BUILD_GAME_QVM=0 BUILD_GRANGER=0 \
+         TOOLS_LDFLAGS="-static -static-libgcc" \
+         BUILD_CLIENT=0 BUILD_SERVER=0 BUILD_GAME_SO=0 BUILD_GAME_QVM=0 BUILD_GAME_QVM_11=0 BUILD_GRANGER=0 \
          -o "${DAGCHECK_C}" \
          "${BUILD_DIR}/tools/q3lcc.exe" \
          "${BUILD_DIR}/tools/q3rcc.exe" \
@@ -190,7 +270,7 @@ RUN set -e; \
          "${BUILD_DIR}/tools/q3asm.exe" \
          -j"$(nproc)" \
     && echo "=== Windows tools built successfully ===" \
-    || echo "WARNING: Windows tools build failed — q3lcc.exe/q3asm.exe not included"
+    || echo "WARNING: Windows tools build failed - q3lcc.exe/q3asm.exe not included"
 
 # ── Verification: list all produced binaries ─────────────────────────────────
 RUN echo "=== Build output ===" \
