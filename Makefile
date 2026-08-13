@@ -588,11 +588,33 @@ ifeq ($(PLATFORM),darwin)
 
   BASE_CFLAGS += -D_THREAD_SAFE=1
 
-  # Detect a system SDL3 (e.g. via Homebrew) using pkg-config. Fall back to
-  # the local dylibs in external/libs/macosx if no system SDL3 is found.
+  # Detect a system SDL3 (e.g. via Homebrew). Try pkg-config first, then
+  # sdl3-config, then explicit Homebrew paths. Fall back to the local dylibs
+  # in external/libs/macosx if no system SDL3 is found.
   ifneq ($(call bin_path, pkg-config),)
     DARWIN_SDL_CFLAGS ?= $(shell pkg-config --silence-errors --cflags sdl3)
     DARWIN_SDL_LIBS ?= $(shell pkg-config --silence-errors --libs sdl3)
+  endif
+
+  # Try sdl3-config if pkg-config did not find SDL3
+  ifeq ($(DARWIN_SDL_LIBS),)
+    ifneq ($(call bin_path, sdl3-config),)
+      DARWIN_SDL_CFLAGS ?= $(shell sdl3-config --cflags)
+      DARWIN_SDL_LIBS ?= $(shell sdl3-config --libs)
+    endif
+  endif
+
+  # Try explicit Homebrew paths (Intel and Apple Silicon)
+  ifeq ($(DARWIN_SDL_LIBS),)
+    ifneq ($(wildcard /opt/homebrew/lib/libSDL3.dylib),)
+      DARWIN_SDL_CFLAGS ?= -I/opt/homebrew/include
+      DARWIN_SDL_LIBS ?= -L/opt/homebrew/lib -lSDL3
+    else
+      ifneq ($(wildcard /usr/local/lib/libSDL3.dylib),)
+        DARWIN_SDL_CFLAGS ?= -I/usr/local/include
+        DARWIN_SDL_LIBS ?= -L/usr/local/lib -lSDL3
+      endif
+    endif
   endif
 
   ifeq ($(DARWIN_SDL_LIBS),)
@@ -612,6 +634,7 @@ ifeq ($(PLATFORM),darwin)
     RENDERER_LIBS += -framework OpenGL $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
     CLIENT_EXTRA_FILES += $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
   else
+    BASE_CFLAGS += $(DARWIN_SDL_CFLAGS)
     CLIENT_CFLAGS += $(DARWIN_SDL_CFLAGS)
     CLIENT_LIBS += -framework IOKit $(DARWIN_SDL_LIBS)
     RENDERER_LIBS += -framework OpenGL $(DARWIN_SDL_LIBS)
