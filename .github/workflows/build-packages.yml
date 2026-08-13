@@ -85,7 +85,22 @@ jobs:
           curl \
           rsync \
           git \
-          dos2unix
+          dos2unix \
+          libasound2-dev \
+          libpulse-dev \
+          libx11-dev \
+          libxext-dev \
+          libxrandr-dev \
+          libxcursor-dev \
+          libxfixes-dev \
+          libxi-dev \
+          libxss-dev \
+          libxtst-dev \
+          libxkbcommon-dev \
+          libdrm-dev \
+          libgbm-dev \
+          libwayland-dev \
+          libdecor-0-dev
       if: ${{ ! contains(matrix.release.runs-on, 'macos') }}
     - name: dependencies (macos)
       run: |
@@ -96,11 +111,15 @@ jobs:
           curl \
           rsync \
           dos2unix \
-          coreutils
+          coreutils \
+          sdl3 \
+          openal-soft
       if: ${{ contains(matrix.release.runs-on, 'macos') }}
     - name: Git safe directory
       run: git config --global --add safe.directory ${{ github.workspace }}
     - uses: actions/checkout@v6
+      with:
+        submodules: true
     ## attempts for setting version via tag, but doesn't work for shallow copy:
     #  with:
     #    fetch-tags: true

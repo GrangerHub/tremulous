@@ -352,23 +352,56 @@ ifneq ($(BUILD_CLIENT),0)
   # If no system SDL3 found, use vendored SDL3 from external/SDL3
   ifeq ($(SDL_CFLAGS),)
     SDL_CFLAGS = -I$(SDLHDIR)/include
-    SDL_LIBS = -L$(SDL3_INSTALL_DIR)/lib -lSDL3
+    SDL_LIBS = -L$(CURDIR)/$(SDL3_INSTALL_DIR)/lib -lSDL3
     USE_VENDORED_SDL3 = 1
   endif
 endif
 
 # SDL3 build target (for vendored SDL3)
+# NOTE: Use absolute paths so this works regardless of the value of B, and
+# guard it so an empty B never resolves to a filesystem-root directory.
+SDL3_SRCDIR=$(CURDIR)/$(EXTERNAL_DIR)/SDL3
+
+# When cross-compiling for Windows (MINGW), tell SDL's cmake to use the
+# MinGW toolchain. We point it directly at the cross compiler binaries that
+# were detected earlier in the MINGW section.
+ifdef MINGW
+  SDL3_TOOLCHAIN=$(CURDIR)/$(B)/sdl3-mingw-toolchain.cmake
+  SDL3_CMAKE_ARGS=-DCMAKE_TOOLCHAIN_FILE=$(SDL3_TOOLCHAIN) \
+	-DCMAKE_SYSTEM_NAME=Windows \
+	-DSDL_RENDER=ON -DSDL_OPENGL=ON -DSDL_OPENGLES=OFF \
+	-DSDL_VULKAN=OFF -DSDL_PTHREADS=ON -DSDL_THREADS=ON \
+	-DSDL_AUDIO=ON -DSDL_JOYSTICK=ON -DSDL_HIDAPI=ON \
+	-DSDL_LOADSO=ON -DSDL_DLOPEN=ON -DSDL_FILESYSTEM=ON \
+	-DSDL_TIMERS=ON -DSDL_POWER=ON -DSDL_SYSTEMS=ON \
+	-DSDL_VIDEO=ON -DSDL_EVENTS=ON -DSDL_FILE=ON
+else
+  SDL3_CMAKE_ARGS=
+endif
+
 .PHONY: build-sdl3
 build-sdl3:
-	@echo "Building vendored SDL3..."
+	@test -n "$(B)" || (echo "build-sdl3: B is empty (run via 'release'/'debug' targets)"; exit 1)
+	@test -f "$(SDL3_SRCDIR)/CMakeLists.txt" || (echo "build-sdl3: $(SDL3_SRCDIR)/CMakeLists.txt not found"; exit 1)
+ifdef MINGW
+	@test -n "$(CC)" || (echo "build-sdl3: no MINGW cross compiler (CC) detected"; exit 1)
+	@echo "Generating SDL3 MinGW toolchain file..."
+	@mkdir -p $(B)
+	@echo "set(CMAKE_SYSTEM_NAME Windows)" > $(SDL3_TOOLCHAIN)
+	@echo "set(CMAKE_C_COMPILER $(CC))" >> $(SDL3_TOOLCHAIN)
+	@echo "set(CMAKE_CXX_COMPILER $(CXX))" >> $(SDL3_TOOLCHAIN)
+	@echo "set(CMAKE_RC_COMPILER $(WINDRES))" >> $(SDL3_TOOLCHAIN)
+endif
+	@echo "Building vendored SDL3 from $(SDL3_SRCDIR)..."
 	@mkdir -p $(SDL3_BUILD_DIR)
-	@cd $(SDL3_BUILD_DIR) && cmake ../../../external/SDL3 \
-		-DCMAKE_INSTALL_PREFIX=$(SDL3_INSTALL_DIR) \
+	@cd $(SDL3_BUILD_DIR) && cmake $(SDL3_SRCDIR) \
+		-DCMAKE_INSTALL_PREFIX=$(CURDIR)/$(SDL3_INSTALL_DIR) \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DSDL_TESTS=OFF \
 		-DSDL_INSTALL_TESTS=OFF \
 		-DSDL_EXAMPLES=OFF \
-		-DSDL_DISABLE_INSTALL=OFF
+		-DSDL_DISABLE_INSTALL=OFF \
+		$(SDL3_CMAKE_ARGS)
 	@$(MAKE) -C $(SDL3_BUILD_DIR) -j$(or $(PARALLEL_JOBS),$(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1))
 	@$(MAKE) -C $(SDL3_BUILD_DIR) install
 	@echo "SDL3 built successfully"
@@ -555,21 +588,34 @@ ifeq ($(PLATFORM),darwin)
 
   BASE_CFLAGS += -D_THREAD_SAFE=1
 
-  # FIXME: It is not possible to build using system SDL3 framework
-  #  1. IF you try, this Makefile will still drop libSDL-3.0.0.dylib into the builddir
-  #  2. Debugger warns that you have 2- which one will be used is undefined
-  ifeq ($(USE_LOCAL_HEADERS),1)
-    BASE_CFLAGS += -I$(SDLHDIR)/include -I$(CURLHDIR) -I$(ALHDIR)
+  # Detect a system SDL3 (e.g. via Homebrew) using pkg-config. Fall back to
+  # the local dylibs in external/libs/macosx if no system SDL3 is found.
+  ifneq ($(call bin_path, pkg-config),)
+    DARWIN_SDL_CFLAGS ?= $(shell pkg-config --silence-errors --cflags sdl3)
+    DARWIN_SDL_LIBS ?= $(shell pkg-config --silence-errors --libs sdl3)
   endif
 
-  # We copy sdlmain before ranlib'ing it so that subversion doesn't think
-  #  the file has been modified by each build.
-  LIBSDLMAIN=$(B)/libSDL3main.a
-  LIBSDLMAINSRC=$(LIBSDIR)/macosx/libSDL3main.a
-  CLIENT_LIBS += -framework IOKit \
-    $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
-  RENDERER_LIBS += -framework OpenGL $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
-  CLIENT_EXTRA_FILES += $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
+  ifeq ($(DARWIN_SDL_LIBS),)
+    # FIXME: It is not possible to build using system SDL3 framework
+    #  1. IF you try, this Makefile will still drop libSDL-3.0.0.dylib into the builddir
+    #  2. Debugger warns that you have 2- which one will be used is undefined
+    ifeq ($(USE_LOCAL_HEADERS),1)
+      BASE_CFLAGS += -I$(SDLHDIR)/include -I$(CURLHDIR) -I$(ALHDIR)
+    endif
+
+    # We copy sdlmain before ranlib'ing it so that subversion doesn't think
+    #  the file has been modified by each build.
+    LIBSDLMAIN=$(B)/libSDL3main.a
+    LIBSDLMAINSRC=$(LIBSDIR)/macosx/libSDL3main.a
+    CLIENT_LIBS += -framework IOKit \
+      $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
+    RENDERER_LIBS += -framework OpenGL $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
+    CLIENT_EXTRA_FILES += $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
+  else
+    CLIENT_CFLAGS += $(DARWIN_SDL_CFLAGS)
+    CLIENT_LIBS += -framework IOKit $(DARWIN_SDL_LIBS)
+    RENDERER_LIBS += -framework OpenGL $(DARWIN_SDL_LIBS)
+  endif
 
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
@@ -725,25 +771,18 @@ ifdef MINGW
   CLIENT_LIBS += -lmingw32
   RENDERER_LIBS += -lmingw32
 
-  ifeq ($(USE_LOCAL_HEADERS),1)
-    CLIENT_CFLAGS += -I$(SDLHDIR)/include
-    ifeq ($(ARCH), x86)
-      CLIENT_LIBS += $(LIBSDIR)/win32/libSDL3.dll.a
-      RENDERER_LIBS += $(LIBSDIR)/win32/libSDL3.dll.a
-      SDLDLL=SDL3.dll
-      CLIENT_EXTRA_FILES += $(LIBSDIR)/win32/SDL3.dll
-    else
-      CLIENT_LIBS += $(LIBSDIR)/win64/libSDL364.dll.a
-      RENDERER_LIBS += $(LIBSDIR)/win64/libSDL364.dll.a
-      SDLDLL=SDL364.dll
-      CLIENT_EXTRA_FILES += $(LIBSDIR)/win64/SDL364.dll
-    endif
-  else
-    CLIENT_CFLAGS += $(SDL_CFLAGS)
-    CLIENT_LIBS += $(SDL_LIBS)
-    RENDERER_LIBS += $(SDL_LIBS)
-    SDLDLL=SDL3.dll
-  endif
+  # SDL3 for MinGW: build the vendored SDL3 for the cross target and link
+  # against it. The committed SDL2 import libraries were removed, so there is
+  # no point referencing the (non-existent) SDL3 local libraries. The vendored
+  # build installs SDL3.dll + libSDL3.dll.a into $(SDL3_INSTALL_DIR).
+  # Reference the import library by its full path: the global -static flag would
+  # otherwise make "-lSDL3" prefer/require a static libSDL3.a which we don't build.
+  CLIENT_CFLAGS += -I$(SDLHDIR)/include
+  CLIENT_LIBS += $(CURDIR)/$(SDL3_INSTALL_DIR)/lib/libSDL3.dll.a
+  RENDERER_LIBS += $(CURDIR)/$(SDL3_INSTALL_DIR)/lib/libSDL3.dll.a
+  SDLDLL=SDL3.dll
+  CLIENT_EXTRA_FILES += $(CURDIR)/$(SDL3_INSTALL_DIR)/bin/SDL3.dll
+  USE_VENDORED_SDL3 = 1
 
 else # ifdef MINGW
 
@@ -1170,6 +1209,10 @@ endef
 default: release
 all: debug release
 
+# Ensure `make` with no arguments builds the default target (release),
+# not whichever recipe-bearing target happens to appear first in this file.
+.DEFAULT_GOAL := default
+
 debug:
 	@$(MAKE) targets B=$(BD) CFLAGS="$(CFLAGS) $(BASE_CFLAGS) $(DEPEND_CFLAGS)" \
       CXXFLAGS="$(BASE_CFLAGS) $(CXXFLAGS)" \
@@ -1235,6 +1278,11 @@ endif
 # Create the build directories, check libraries and print out
 # an informational message, then start building
 targets: makedirs
+ifeq ($(USE_VENDORED_SDL3),1)
+  ifneq ($(BUILD_CLIENT),0)
+targets: build-sdl3
+  endif
+endif
 	@echo ""
 	@echo "Building in $(B):"
 	@echo "  PLATFORM: $(PLATFORM)"
@@ -2603,7 +2651,6 @@ GOBJ_ = \
   $(B)/$(BASEGAME)/game/g_weapondrop.o \
   $(B)/$(BASEGAME)/game/g_admin.o \
   $(B)/$(BASEGAME)/game/g_namelog.o \
-  $(B)/$(BASEGAME)/game/g_spec_layout.o \
   \
   $(B)/$(BASEGAME)/qcommon/q_math.o \
   $(B)/$(BASEGAME)/qcommon/q_shared.o
@@ -2895,6 +2942,10 @@ $(B)/$(BASEGAME)/ui/%.asm: $(UIDIR)/%.c $(Q3LCC)
 # UI (1.1 COMPATIBLE)
 $(B)/$(BASEGAME)/11/ui/%.asm: $(UIDIR)/%.c $(Q3LCC)
 	$(DO_UI_Q3LCC_11)
+
+# QCOMMON (shared by cgame/game/ui QVMs)
+$(B)/$(BASEGAME)/qcommon/%.asm: $(CMDIR)/%.c $(Q3LCC)
+	$(DO_Q3LCC)
 endif
 
 # GAME
