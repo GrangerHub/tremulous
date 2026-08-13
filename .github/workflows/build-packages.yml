@@ -66,6 +66,7 @@ jobs:
     env:
       VERSION: ${{ needs.set-version.outputs.version }}
       LDFLAGS: ${{ matrix.release.ldflags }}
+      TERM: xterm
           
     steps:
     - name: dependencies (linux)
@@ -106,6 +107,7 @@ jobs:
       run: |
         brew install \
           cmake \
+          pkg-config \
           mesa \
           freetype \
           curl \
@@ -115,14 +117,13 @@ jobs:
           sdl3 \
           openal-soft
       if: ${{ contains(matrix.release.runs-on, 'macos') }}
-    - name: Git safe directory
-      run: git config --global --add safe.directory ${{ github.workspace }}
     - uses: actions/checkout@v6
       with:
-        submodules: true
-    ## attempts for setting version via tag, but doesn't work for shallow copy:
-    #  with:
-    #    fetch-tags: true
+        submodules: recursive
+        fetch-depth: 0
+    - name: Git safe directory
+      shell: bash
+      run: git config --global --add safe.directory "$(git rev-parse --show-toplevel)"
     - name: platform
       if: ${{ matrix.release.platform }}
       run: echo "PLATFORM="${{ matrix.release.platform }} >> $GITHUB_ENV
