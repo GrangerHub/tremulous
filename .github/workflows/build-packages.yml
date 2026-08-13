@@ -75,7 +75,9 @@ jobs:
           make \
           build-essential \
           cmake \
+          pkg-config \
           libgl1-mesa-dev \
+          libopenal-dev \
           mingw-w64 \
           libfreetype6-dev \
           zip \
@@ -96,15 +98,21 @@ jobs:
           dos2unix \
           coreutils
       if: ${{ contains(matrix.release.runs-on, 'macos') }}
+    - name: Git safe directory
+      run: git config --global --add safe.directory ${{ github.workspace }}
     - uses: actions/checkout@v6
     ## attempts for setting version via tag, but doesn't work for shallow copy:
     #  with:
-    #    fetch-tags: true 
-    #- name: Git unsafe
-    #  run: git config --global --add safe.directory /__w/tremulous/tremulous
+    #    fetch-tags: true
     - name: platform
       if: ${{ matrix.release.platform }}
       run: echo "PLATFORM="${{ matrix.release.platform }} >> $GITHUB_ENV
+    - name: Fetch SDL3 source
+      shell: bash
+      run: |
+        if [ ! -f "external/SDL3/CMakeLists.txt" ]; then
+          git clone --depth 1 --branch release-3.4.12 https://github.com/libsdl-org/SDL.git external/SDL3
+        fi
     - name: make
       shell: bash
       run: |
