@@ -369,7 +369,7 @@ build-sdl3:
 		-DSDL_INSTALL_TESTS=OFF \
 		-DSDL_EXAMPLES=OFF \
 		-DSDL_DISABLE_INSTALL=OFF
-	@$(MAKE) -C $(SDL3_BUILD_DIR) -j$(shell nproc)
+	@$(MAKE) -C $(SDL3_BUILD_DIR) -j$(or $(PARALLEL_JOBS),$(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1))
 	@$(MAKE) -C $(SDL3_BUILD_DIR) install
 	@echo "SDL3 built successfully"
 

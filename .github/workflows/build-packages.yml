@@ -47,15 +47,16 @@ jobs:
           - file: release-linux-x86_64
             name: Linux-x64
             runs-on: ubuntu-latest
-            container: debian:oldstable-slim
+            container: debian:stable-slim
           - file: release-mingw32-x86_64
             name: Windows-x32
             runs-on: ubuntu-latest
-            container: debian:oldstable-slim
+            container: debian:stable-slim
             platform: mingw32
           - file: release-darwin-arm
             name: Mac-arm
             runs-on: macos-15
+            platform: darwin
             ldflags: -ld64
             
     runs-on: ${{ matrix.release.runs-on }}
@@ -67,23 +68,34 @@ jobs:
       LDFLAGS: ${{ matrix.release.ldflags }}
           
     steps:
-    - name: dependencies
+    - name: dependencies (linux)
       run: |
         apt update -y
         apt install -y -qq \
           make \
           build-essential \
+          cmake \
           libgl1-mesa-dev \
           mingw-w64 \
-          libsdl2-dev \
-          libopenal-dev \
           libfreetype6-dev \
           zip \
           libcurl4-openssl-dev \
           curl \
           rsync \
-          git
+          git \
+          dos2unix
       if: ${{ ! contains(matrix.release.runs-on, 'macos') }}
+    - name: dependencies (macos)
+      run: |
+        brew install \
+          cmake \
+          mesa \
+          freetype \
+          curl \
+          rsync \
+          dos2unix \
+          coreutils
+      if: ${{ contains(matrix.release.runs-on, 'macos') }}
     - uses: actions/checkout@v6
     ## attempts for setting version via tag, but doesn't work for shallow copy:
     #  with:
@@ -92,9 +104,19 @@ jobs:
     #  run: git config --global --add safe.directory /__w/tremulous/tremulous
     - name: platform
       if: ${{ matrix.release.platform }}
-      run: echo "PLATFORM="${{ matrix.release.PLATFORM }} >> $GITHUB_ENV
+      run: echo "PLATFORM="${{ matrix.release.platform }} >> $GITHUB_ENV
     - name: make
-      run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 make -j
+      shell: bash
+      run: |
+        # Detect CPU count for parallel builds (macOS doesn't have nproc)
+        if command -v nproc >/dev/null 2>&1; then
+          JOBS=$(nproc)
+        elif command -v sysctl >/dev/null 2>&1; then
+          JOBS=$(sysctl -n hw.ncpu)
+        else
+          JOBS=1
+        fi
+        USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 make -j$JOBS
     - name: extract pak
       shell: bash
       run: |
