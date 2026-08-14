@@ -1861,6 +1861,7 @@ NETTLEOBJ = \
   $(B)/nettle/write-be32.o
 
 CFLAGS += -I$(NETTLEDIR)
+BASE_CFLAGS += -I$(NETTLEDIR)
 
 $(B)/nettle/%.o: $(NETTLEDIR)/nettle/%.c
 	$(DO_NETTLE_CC)
