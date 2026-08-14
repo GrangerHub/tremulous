@@ -1,22 +1,22 @@
-project(SDL2)
+project(SDL3)
 
-add_library(SDL2 INTERFACE IMPORTED)
+add_library(SDL3 INTERFACE IMPORTED)
 
-set_property(TARGET SDL2 
+set_property(TARGET SDL3
     PROPERTY INTERFACE_INCLUDE_DIRECTORES
-    "${CMAKE_SOURCE_DIR}/src/SDL2/include")
+    "${CMAKE_SOURCE_DIR}/src/SDL3/include")
 
-set_property(TARGET SDL2
+set_property(TARGET SDL3
     PROPERTY INTERFACE_LINK_LIBRARIES
-    "libSDL2main.a"
-    "libSDL2-2.0.0.dylib" )
+    "libSDL3main.a"
+    "libSDL3-3.0.0.dylib" )
 
-set_property(TARGET SDL2
+set_property(TARGET SDL3
     PROPERTY INTERFACE_COMPILE_OPTIONS
     "-L${CMAKE_CURRENT_SOURCE_DIR}")
 
 set_property(
-    TARGET SDL2 
+    TARGET SDL3
     APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:>

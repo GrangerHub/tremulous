@@ -44,6 +44,7 @@ set( GAME_SOURCES
     g_public.h
     g_session.c
     g_spawn.c
+    g_spec_layout.c
     g_svcmds.c
     g_target.c
     g_team.c
@@ -63,8 +64,10 @@ include( ${CMAKE_SOURCE_DIR}/cmake/AddQVM.cmake )
 add_qvm( game ${GAME_SOURCES} g_syscalls.asm )
 
 add_custom_command(
-    TARGET game POST_BUILD
-    COMMAND ${CMAKE_COMMAND}
-    ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/libgame${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gpp/game${CMAKE_SHARED_LIBRARY_SUFFIX}
+    TARGET game
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:game>
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gpp/game${CMAKE_SHARED_LIBRARY_SUFFIX}
     )
 

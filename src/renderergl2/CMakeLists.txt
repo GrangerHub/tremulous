@@ -1,4 +1,4 @@
-include("${CMAKE_SOURCE_DIR}/cmake/SDL2.cmake")
+include("${CMAKE_SOURCE_DIR}/cmake/SDL3.cmake")
 
 find_package(OpenGL)
 
@@ -7,7 +7,7 @@ include_directories(
     ${PARENT_DIR}/jpeg-8c
     ${PARENT_DIR}/renderercommon 
     ${PARENT_DIR}/nettle-3.3
-    ${SDL2_INCLUDE_DIRS} 
+    ${SDL3_INCLUDE_DIRS} 
     )
 
 set(GLSL_SHADERS
@@ -39,6 +39,8 @@ set(GLSL_SHADERS
     glsl/texturecolor_vp.glsl
     glsl/tonemap_fp.glsl
     glsl/tonemap_vp.glsl
+    glsl/gamma_fp.glsl
+    glsl/gamma_vp.glsl
     )
 
 # Converts ^^^GSLS shaders^^^ into const char* C-strings.
@@ -47,22 +49,27 @@ foreach(shader ${GLSL_SHADERS})
     set(in ${CMAKE_CURRENT_SOURCE_DIR}/${shader})
 
     get_filename_component(out ${in} NAME_WE)
-    set(out ${CMAKE_CURRENT_BINARY_DIR}/glsl/${out}.c)
+    set(out ${CMAKE_CURRENT_BINARY_DIR}/glsl/${out}.cpp)
 
     get_filename_component(shader ${shader} NAME_WE)
     message(STATUS "-- Generating embeded GLSL ${shader}")
 
     file(READ ${in} contents HEX)
-    file(WRITE ${out} "const char *fallbackShader_${shader} = \"")
+    # Build the escaped hex string in memory, then write the entire C file
+    # in ONE file(WRITE) call. The original code did file(APPEND) once per
+    # byte (~23,000 calls for lightall_fp.glsl), which raced with Windows
+    # Defender real-time scanning and produced "Permission denied" errors
+    # during CMake configure on MSVC/VS2022 generators.
+    set(escaped "")
 
     string(LENGTH "${contents}" contents_length)
     math(EXPR contents_length "${contents_length} - 1")
 
     foreach(iter RANGE 0 ${contents_length} 2)
       string(SUBSTRING ${contents} ${iter} 2 line)
-      file(APPEND "${out}" "\\x${line}")
+      string(APPEND escaped "\\x${line}")
     endforeach()
-    file(APPEND "${out}" "\";\n")
+    file(WRITE ${out} "const char *fallbackShader_${shader} = \"${escaped}\";\n")
 
     list(APPEND renderergl2_SHADERS "${out}")
     set_source_files_properties(${out} PROPERTIES GENERATED TRUE)
@@ -107,9 +114,9 @@ set(renderergl2_SRCS
     tr_surface.cpp
     tr_vbo.cpp
     tr_world.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/puff.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/q_shared.c
-    ${CMAKE_SOURCE_DIR}/src/common/q_math.c
+    ${CMAKE_SOURCE_DIR}/src/qcommon/puff.cpp
+    ${CMAKE_SOURCE_DIR}/src/qcommon/q_shared.c
+    ${CMAKE_SOURCE_DIR}/src/qcommon/q_math.c
     )
 
 if(NOT USE_RENDERER_DLOPEN)
@@ -120,7 +127,7 @@ if(NOT USE_RENDERER_DLOPEN)
 
     target_link_libraries(
         renderergl2 renderercommon
-        ${SDL2_LIBRARIES})
+        ${SDL3_LIBRARIES})
 
 else(NOT USE_RENDERER_DLOPEN)
 
@@ -129,17 +136,18 @@ else(NOT USE_RENDERER_DLOPEN)
         ${renderergl2_SRCS}
         )
 
-        target_link_libraries(
-        renderergl2 
+    # When building as a DLL, USE_RENDERER_DLOPEN must be defined at compile
+    # time so GetRefAPI gets extern "C" + __declspec(dllexport).  Without it
+    # the symbol gets C++ name mangling and the client cannot find it via
+    # Sys_LoadFunction(rendererLib, "GetRefAPI").
+    target_compile_definitions(renderergl2 PRIVATE USE_RENDERER_DLOPEN)
+
+    target_link_libraries(
+        renderergl2
         renderercommon
         ${FRAMEWORKS}
         ${OPENGL_LIBRARIES}
-        ${SDL2_LIBRARIES}
-        )
-    add_custom_command(
-        TARGET renderergl2
-        POST_BUILD COMMAND ${CMAKE_COMMAND}
-        ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/librenderergl2${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/renderer_opengl2${CMAKE_SHARED_LIBRARY_SUFFIX}
+        ${SDL3_LIBRARIES}
         )
 
 endif(NOT USE_RENDERER_DLOPEN)

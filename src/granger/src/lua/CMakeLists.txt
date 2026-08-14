@@ -1,4 +1,4 @@
-set(PARENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
+set(PARENT_DIR ${CMAKE_SOURCE_DIR}/external)
 
 add_library( granger_lua STATIC
     ${PARENT_DIR}/lua-5.3.3/src/lapi.c

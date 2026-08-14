@@ -1,6 +1,6 @@
-include(${CMAKE_SOURCE_DIR}/cmake/SDL2.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/SDL3.cmake)
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../external/jpeg-8c ${SDL2_INCLUDE_DIRS} )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../external/jpeg-8c ${SDL3_INCLUDE_DIRS} )
 
 add_library(
     renderercommon STATIC
@@ -71,7 +71,7 @@ add_definitions(
     -DHAVE_LRINTF
     -DUSE_INTERNAL_JPEG
     -DUSE_RENDERER_DLOPEN
-    ${SDL2_DEFINES}
+    ${SDL3_DEFINES}
     )
 
-target_link_libraries( renderercommon ${SDL2_LIBRARIES} )
+target_link_libraries( renderercommon ${SDL3_LIBRARIES} )

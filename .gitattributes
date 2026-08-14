@@ -1,1 +1,5 @@
 * text=auto
+
+# Dockerfiles must always use LF line endings
+Dockerfile text eol=lf
+*.dockerfile text eol=lf

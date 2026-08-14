@@ -77,7 +77,9 @@ add_qvm( cgame ${CGAME_SOURCES} cg_syscalls.asm )
 
 
 add_custom_command(
-    TARGET cgame POST_BUILD
-    COMMAND ${CMAKE_COMMAND}
-    ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/libcgame${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gpp/cgame${CMAKE_SHARED_LIBRARY_SUFFIX}
+    TARGET cgame
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:cgame>
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gpp/cgame${CMAKE_SHARED_LIBRARY_SUFFIX}
     )
