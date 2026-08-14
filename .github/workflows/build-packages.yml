@@ -134,15 +134,28 @@ jobs:
         if [ ! -f "external/SDL3/CMakeLists.txt" ]; then
           git clone --depth 1 --branch release-3.4.12 https://github.com/libsdl-org/SDL.git external/SDL3
         fi
-    - name: Build SDL3 (native targets only)
-      if: ${{ matrix.release.platform != 'mingw32' }}
+    - name: Build SDL3
       shell: bash
       run: |
         SDL3_PREFIX="$GITHUB_WORKSPACE/sdl3-install"
         mkdir -p external/SDL3/build
         cd external/SDL3/build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SDL3_PREFIX" \
-          -DSDL_TESTS=OFF -DSDL_INSTALL_TESTS=OFF -DSDL_EXAMPLES=OFF -DSDL_DISABLE_INSTALL=OFF
+        # Cross-compile for MinGW or build natively
+        if [ "${{ matrix.release.platform }}" = "mingw32" ]; then
+          # Generate MinGW toolchain file
+          cat > mingw-toolchain.cmake << EOF
+        set(CMAKE_SYSTEM_NAME Windows)
+        set(CMAKE_C_COMPILER x86_64-w64-mingw32-gcc)
+        set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
+        set(CMAKE_RC_COMPILER x86_64-w64-mingw32-windres)
+        EOF
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SDL3_PREFIX" \
+            -DCMAKE_TOOLCHAIN_FILE=mingw-toolchain.cmake \
+            -DSDL_TESTS=OFF -DSDL_INSTALL_TESTS=OFF -DSDL_EXAMPLES=OFF -DSDL_DISABLE_INSTALL=OFF
+        else
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SDL3_PREFIX" \
+            -DSDL_TESTS=OFF -DSDL_INSTALL_TESTS=OFF -DSDL_EXAMPLES=OFF -DSDL_DISABLE_INSTALL=OFF
+        fi
         if command -v nproc >/dev/null 2>&1; then
           JOBS=$(nproc)
         elif command -v sysctl >/dev/null 2>&1; then
