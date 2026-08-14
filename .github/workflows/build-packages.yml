@@ -116,8 +116,8 @@ jobs:
           coreutils \
           sdl3 \
           openal-soft
-        # Ensure pkg-config can find Homebrew's SDL3
-        echo "PKG_CONFIG_PATH=$(brew --prefix sdl3)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+        # Ensure pkg-config can find Homebrew's SDL3 and openal-soft
+        echo "PKG_CONFIG_PATH=$(brew --prefix sdl3)/lib/pkgconfig:$(brew --prefix openal-soft)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
       if: ${{ contains(matrix.release.runs-on, 'macos') }}
     - name: Git safe directory
       run: git config --global --add safe.directory '*'
