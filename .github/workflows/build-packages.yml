@@ -131,15 +131,16 @@ jobs:
     - name: Fetch and build SDL3
       shell: bash
       run: |
+        SDL3_PREFIX="$GITHUB_WORKSPACE/sdl3-install"
         # Clone SDL3 if not present
         if [ ! -f "external/SDL3/CMakeLists.txt" ]; then
           git clone --depth 1 --branch release-3.4.12 https://github.com/libsdl-org/SDL.git external/SDL3
         fi
-        # Build and install SDL3 to /usr/local so pkg-config finds it
+        # Build and install SDL3 to a workspace-local prefix (writable on all platforms)
         mkdir -p external/SDL3/build
         cd external/SDL3/build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
-          -DSDL_TESTS=OFF -DSDL_INSTALL_TESTS=OFF -DSDL_EXAMPLES=OFF
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SDL3_PREFIX" \
+          -DSDL_TESTS=OFF -DSDL_INSTALL_TESTS=OFF -DSDL_EXAMPLES=OFF -DSDL_DISABLE_INSTALL=OFF
         if command -v nproc >/dev/null 2>&1; then
           JOBS=$(nproc)
         elif command -v sysctl >/dev/null 2>&1; then
@@ -151,7 +152,8 @@ jobs:
         cmake --install .
         cd ../..
         # Ensure pkg-config finds installed SDL3
-        echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=${SDL3_PREFIX}/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+        echo "SDL3_PREFIX=${SDL3_PREFIX}" >> $GITHUB_ENV
     - name: make
       shell: bash
       run: |
