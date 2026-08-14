@@ -805,7 +805,7 @@ ifdef MINGW
   # build installs SDL3.dll + libSDL3.dll.a into $(SDL3_INSTALL_DIR).
   # Reference the import library by its full path: the global -static flag would
   # otherwise make "-lSDL3" prefer/require a static libSDL3.a which we don't build.
-  CLIENT_CFLAGS += -I$(CURDIR)/$(SDL3_INSTALL_DIR)/include
+  CLIENT_CFLAGS += $(SDL_CFLAGS)
   CLIENT_LIBS += $(CURDIR)/$(SDL3_INSTALL_DIR)/lib/libSDL3.dll.a
   RENDERER_LIBS += $(CURDIR)/$(SDL3_INSTALL_DIR)/lib/libSDL3.dll.a
   SDLDLL=SDL3.dll
