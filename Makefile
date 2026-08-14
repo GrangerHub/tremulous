@@ -349,9 +349,11 @@ ifneq ($(BUILD_CLIENT),0)
       SDL_LIBS ?= $(shell sdl3-config --libs)
     endif
   endif
-  # If no system SDL3 found, use vendored SDL3 from external/SDL3
+  # If no system SDL3 found, use vendored SDL3 from external/SDL3.
+  # Use the install directory for includes (has generated SDL_build_config.h
+  # after build-sdl3 runs make install), not the source tree.
   ifeq ($(SDL_CFLAGS),)
-    SDL_CFLAGS = -I$(SDLHDIR)/include
+    SDL_CFLAGS = -I$(CURDIR)/$(SDL3_INSTALL_DIR)/include
     SDL_LIBS = -L$(CURDIR)/$(SDL3_INSTALL_DIR)/lib -lSDL3
     USE_VENDORED_SDL3 = 1
   endif
@@ -800,7 +802,7 @@ ifdef MINGW
   # build installs SDL3.dll + libSDL3.dll.a into $(SDL3_INSTALL_DIR).
   # Reference the import library by its full path: the global -static flag would
   # otherwise make "-lSDL3" prefer/require a static libSDL3.a which we don't build.
-  CLIENT_CFLAGS += -I$(SDLHDIR)/include
+  CLIENT_CFLAGS += -I$(CURDIR)/$(SDL3_INSTALL_DIR)/include
   CLIENT_LIBS += $(CURDIR)/$(SDL3_INSTALL_DIR)/lib/libSDL3.dll.a
   RENDERER_LIBS += $(CURDIR)/$(SDL3_INSTALL_DIR)/lib/libSDL3.dll.a
   SDLDLL=SDL3.dll
