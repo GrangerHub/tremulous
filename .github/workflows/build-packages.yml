@@ -119,13 +119,12 @@ jobs:
         # Ensure pkg-config can find Homebrew's SDL3
         echo "PKG_CONFIG_PATH=$(brew --prefix sdl3)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
       if: ${{ contains(matrix.release.runs-on, 'macos') }}
+    - name: Git safe directory
+      run: git config --global --add safe.directory '*'
     - uses: actions/checkout@v6
       with:
         submodules: recursive
         fetch-depth: 0
-    - name: Git safe directory
-      shell: bash
-      run: git config --global --add safe.directory "$(git rev-parse --show-toplevel)"
     - name: platform
       if: ${{ matrix.release.platform }}
       run: echo "PLATFORM="${{ matrix.release.platform }} >> $GITHUB_ENV
