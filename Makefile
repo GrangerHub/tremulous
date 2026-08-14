@@ -575,6 +575,9 @@ ifeq ($(PLATFORM),darwin)
 
   BASE_CFLAGS += -fno-strict-aliasing -fno-common
 
+  # OpenAL headers: always include the vendored path so AL/al.h is found
+  BASE_CFLAGS += -I$(ALHDIR)
+
   ifeq ($(USE_OPENAL),1)
     ifneq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LIBS += -framework OpenAL
