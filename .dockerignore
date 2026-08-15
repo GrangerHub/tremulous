@@ -1,0 +1,28 @@
+# Docker ignore file for Tremulous
+# Excludes build artifacts, git data, and editor files from Docker context
+
+# Build output
+build/
+
+# Git
+.git/
+.gitignore
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*tags
+TAGS
+*~
+
+# Documentation (not needed for build)
+docs/
+
+# CI
+.travis.yml
+.github/
+
+# OS files
+.DS_Store
+._*
