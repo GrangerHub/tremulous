@@ -110,7 +110,11 @@ static bool GetNews(bool begin)
                 return true;
             }
             clc.activeCURLNotGameRelated = true;
-            CL_cURL_BeginDownload("news.dat", "http://grangerhub.com/wp-content/uploads/clientnews.txt");
+
+            // News URL is configurable via cl_newsURL cvar.
+            // Default points to the official Tremulous news feed.
+            cvar_t *newsURL = Cvar_Get("cl_newsURL", "https://tremulo.us/news/clientnews.txt", CVAR_ARCHIVE);
+            CL_cURL_BeginDownload("news.dat", newsURL->string);
             return false;
         }
     }
@@ -128,7 +132,8 @@ static bool GetNews(bool begin)
             clc.activeCURLNotGameRelated = false;
         }
     }
-    if (!finished) strcpy(clc.newsString, "Retrieving...");
+    if (!finished)
+        strcpy(clc.newsString, "Retrieving...");
     Cvar_Set("cl_newsString", clc.newsString);
     return finished;
     Cvar_Set("cl_newsString", "^1You must compile your client with CURL support to use this feature");
@@ -499,14 +504,14 @@ static int LAN_CompareServers(int source, int sortKey, int sortDir, int s1, int 
         (server2->label[0] && server2->ping <= FEATURED_MAXPING))
     {
         res = Q_stricmpn(server1->label, server2->label, MAX_FEATLABEL_CHARS);
-        if (res) return -res;
+        if (res)
+            return -res;
     }
 
     res = 0;
     switch (sortKey)
     {
-        case SORT_HOST:
-        {
+        case SORT_HOST: {
             char hostName1[MAX_HOSTNAME_LENGTH];
             char hostName2[MAX_HOSTNAME_LENGTH];
             char *p;
@@ -514,13 +519,15 @@ static int LAN_CompareServers(int source, int sortKey, int sortDir, int s1, int 
 
             for (p = server1->hostName, i = 0; *p != '\0'; p++)
             {
-                if (Q_isalpha(*p)) hostName1[i++] = *p;
+                if (Q_isalpha(*p))
+                    hostName1[i++] = *p;
             }
             hostName1[i] = '\0';
 
             for (p = server2->hostName, i = 0; *p != '\0'; p++)
             {
-                if (Q_isalpha(*p)) hostName2[i++] = *p;
+                if (Q_isalpha(*p))
+                    hostName2[i++] = *p;
             }
             hostName2[i] = '\0';
 
@@ -566,8 +573,10 @@ static int LAN_CompareServers(int source, int sortKey, int sortDir, int s1, int 
 
     if (sortDir)
     {
-        if (res < 0) return 1;
-        if (res > 0) return -1;
+        if (res < 0)
+            return 1;
+        if (res > 0)
+            return -1;
         return 0;
     }
     return res;
@@ -720,12 +729,14 @@ static bool GetConfigString(int i, char *buf, int size)
 {
     int offset;
 
-    if (i < 0 || i >= MAX_CONFIGSTRINGS) return false;
+    if (i < 0 || i >= MAX_CONFIGSTRINGS)
+        return false;
 
     offset = cl.gameState.stringOffsets[i];
     if (!offset)
     {
-        if (size) buf[0] = '\0';
+        if (size)
+            buf[0] = '\0';
         return false;
     }
 
@@ -868,9 +879,8 @@ intptr_t CL_UISystemCalls(intptr_t *args)
         case UI_CMD_EXECUTETEXT:
             if (args[1] == EXEC_NOW)
             {
-                if (!strncmp((const char *)VMA(2), "snd_restart", 11)
-                 || !strncmp((const char *)VMA(2), "vid_restart", 11)
-                 || !strncmp((const char *)VMA(2), "quit", 5))
+                if (!strncmp((const char *)VMA(2), "snd_restart", 11) ||
+                    !strncmp((const char *)VMA(2), "vid_restart", 11) || !strncmp((const char *)VMA(2), "quit", 5))
                 {
                     Com_Printf(S_COLOR_YELLOW "turning EXEC_NOW '%.11s' into EXEC_INSERT\n", (const char *)VMA(2));
                     args[1] = EXEC_INSERT;
@@ -1203,7 +1213,8 @@ void CL_InitUI(void)
     if (cl_connectedToPureServer)
     {
         // if sv_pure is set we only allow qvms to be loaded
-        if (interpret != VMI_COMPILED && interpret != VMI_BYTECODE) interpret = VMI_COMPILED;
+        if (interpret != VMI_COMPILED && interpret != VMI_BYTECODE)
+            interpret = VMI_COMPILED;
     }
 
     cls.ui = VM_Create("ui", CL_UISystemCalls, interpret);
@@ -1231,7 +1242,7 @@ void CL_InitUI(void)
     Cmd_TokenizeString("");
     cls.uiInterface = 0;
     probingUI = true;
-    if ( VM_Call(cls.ui, UI_CONSOLE_COMMAND, 0) < 0 )
+    if (VM_Call(cls.ui, UI_CONSOLE_COMMAND, 0) < 0)
         cls.uiInterface = 2;
 
     probingUI = false;
@@ -1241,7 +1252,9 @@ void CL_InitUI(void)
     {
         Com_Printf(S_COLOR_YELLOW "WARNING: %s protocol %i, but a ui module using the %s interface was found\n",
             (clc.demoplaying ? "Demo was recorded using" : "Server uses"),
-            (clc.netchan.alternateProtocol == 0 ? PROTOCOL_VERSION : clc.netchan.alternateProtocol == 1 ? 70 : 69),
+            (clc.netchan.alternateProtocol == 0      ? PROTOCOL_VERSION
+                : clc.netchan.alternateProtocol == 1 ? 70
+                                                     : 69),
             (cls.uiInterface == 2 ? "1.1" : "non-1.1"));
     }
 
@@ -1263,7 +1276,8 @@ See if the current console command is claimed by the ui
 */
 bool UI_GameCommand(void)
 {
-    if (!cls.ui) return false;
+    if (!cls.ui)
+        return false;
 
     return (bool)VM_Call(cls.ui, UI_CONSOLE_COMMAND - (cls.uiInterface == 2 ? 2 : 0), cls.realtime);
 }

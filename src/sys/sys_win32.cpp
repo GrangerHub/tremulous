@@ -23,26 +23,27 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA	02110-1301	USA
 ===========================================================================
 */
 
+#include "dialog.h"
 #include "qcommon/q_shared.h"
 #include "qcommon/qcommon.h"
-#include "dialog.h"
 #include "sys_local.h"
 
+/* windows.h must be included before lmwksta.h and other LM headers */
 #include <windows.h>
-#include <lmerr.h>
-#include <lmcons.h>
-#include <lmwksta.h>
+#include <conio.h>
+#include <direct.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <direct.h>
-#include <io.h>
-#include <conio.h>
-#include <wincrypt.h>
-#include <shlobj.h>
-#include <psapi.h>
 #include <float.h>
+#include <io.h>
+#include <lmcons.h>
+#include <lmerr.h>
+#include <lmwksta.h>
+#include <psapi.h>
 #include <shellapi.h>
+#include <shlobj.h>
+#include <stdio.h>
+#include <wincrypt.h>
 
 #ifndef DEDICATED
 static UINT timerResolution = 0;
@@ -58,27 +59,42 @@ Set FPU control word to default value
 #ifndef _RC_CHOP
 // mingw doesn't seem to have these defined :(
 
-	#define _MCW_EM	0x0008001fU
-	#define _MCW_RC	0x00000300U
-	#define _MCW_PC	0x00030000U
-	#define _RC_NEAR			0x00000000U
-	#define _PC_53	0x00010000U
-	
-	extern "C" unsigned int _controlfp(unsigned int _new, unsigned int mask);
+#define _MCW_EM 0x0008001fU
+#define _MCW_RC 0x00000300U
+#define _MCW_PC 0x00030000U
+#define _RC_NEAR 0x00000000U
+#define _PC_53 0x00010000U
+
+extern "C" unsigned int _controlfp(unsigned int _new, unsigned int mask);
 #endif
 
 #define FPUCWMASK1 (_MCW_RC | _MCW_EM)
 #define FPUCW (_RC_NEAR | _MCW_EM | _PC_53)
 
 #if idx64
-#define FPUCWMASK	(FPUCWMASK1)
+#define FPUCWMASK (FPUCWMASK1)
 #else
-#define FPUCWMASK	(FPUCWMASK1 | _MCW_PC)
+#define FPUCWMASK (FPUCWMASK1 | _MCW_PC)
 #endif
 
 void Sys_SetFloatEnv(void)
 {
-	_controlfp(FPUCW, FPUCWMASK);
+/*
+ * Only manipulate the x87 FPU control word on 32-bit (x86) builds.
+ *
+ * On x64, SSE2 is the default floating-point mode.  Calling
+ * _controlfp() with masks like _MCW_EM / _MCW_PC triggers a UCRT
+ * Debug assertion in ieee.c (line 104) because the UCRT validates
+ * that external code does not modify the FP control word in
+ * unexpected ways.  Since x64 uses SSE2 for all FP math, x87
+ * control word manipulation is both unnecessary and harmful.
+ *
+ * Note: idx64 is 0 even on MSVC x64 (it only gates GCC inline-asm
+ * paths), so we also check _WIN64 / _M_X64 for a reliable test.
+ */
+#if !idx64 && !defined(_WIN64) && !defined(_M_X64)
+    _controlfp(FPUCW, FPUCWMASK);
+#endif
 }
 
 /*
@@ -87,18 +103,19 @@ Sys_Milliseconds
 ================
 */
 int sys_timeBase;
-int Sys_Milliseconds (void)
+int Sys_Milliseconds(void)
 {
-	int					sys_curtime;
-	static bool initialized = false;
+    int sys_curtime;
+    static bool initialized = false;
 
-	if (!initialized) {
-		sys_timeBase = timeGetTime();
-		initialized = true;
-	}
-	sys_curtime = timeGetTime() - sys_timeBase;
+    if (!initialized)
+    {
+        sys_timeBase = timeGetTime();
+        initialized = true;
+    }
+    sys_curtime = timeGetTime() - sys_timeBase;
 
-	return sys_curtime;
+    return sys_curtime;
 }
 
 /*
@@ -106,22 +123,22 @@ int Sys_Milliseconds (void)
 Sys_RandomBytes
 ================
 */
-bool Sys_RandomBytes( byte *string, int len )
+bool Sys_RandomBytes(byte *string, int len)
 {
-	HCRYPTPROV	prov;
+    HCRYPTPROV prov;
 
-	if( !CryptAcquireContext( &prov, NULL, NULL,
-		PROV_RSA_FULL, CRYPT_VERIFYCONTEXT ) )	{
+    if (!CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
+    {
+        return false;
+    }
 
-		return false;
-	}
-
-	if( !CryptGenRandom( prov, len, (BYTE *)string ) )	{
-		CryptReleaseContext( prov, 0 );
-		return false;
-	}
-	CryptReleaseContext( prov, 0 );
-	return true;
+    if (!CryptGenRandom(prov, len, (BYTE *)string))
+    {
+        CryptReleaseContext(prov, 0);
+        return false;
+    }
+    CryptReleaseContext(prov, 0);
+    return true;
 }
 
 /*
@@ -129,20 +146,20 @@ bool Sys_RandomBytes( byte *string, int len )
 Sys_GetCurrentUser
 ================
 */
-char *Sys_GetCurrentUser( void )
+char *Sys_GetCurrentUser(void)
 {
-	static char s_userName[1024];
-	unsigned long size = sizeof( s_userName );
+    static char s_userName[1024];
+    unsigned long size = sizeof(s_userName);
 
-	if( !GetUserName( s_userName, &size ) )
-		strcpy( s_userName, "player" );
+    if (!GetUserName(s_userName, &size))
+        strcpy(s_userName, "player");
 
-	if( !s_userName[0] )
-	{
-		strcpy( s_userName, "player" );
-	}
+    if (!s_userName[0])
+    {
+        strcpy(s_userName, "player");
+    }
 
-	return s_userName;
+    return s_userName;
 }
 
 /*
@@ -150,24 +167,24 @@ char *Sys_GetCurrentUser( void )
 Sys_CryptoRandomBytes
 ==================
 */
-void Sys_CryptoRandomBytes( byte *string, int len )
+void Sys_CryptoRandomBytes(byte *string, int len)
 {
-	if ( !Sys_RandomBytes( string, len ) )
-		Com_Error( ERR_FATAL, "Sys_CryptoRandomBytes: error generating random data" );
+    if (!Sys_RandomBytes(string, len))
+        Com_Error(ERR_FATAL, "Sys_CryptoRandomBytes: error generating random data");
 }
 
-#define MEM_THRESHOLD 96*1024*1024
+#define MEM_THRESHOLD 96 * 1024 * 1024
 
 /*
 ==================
 Sys_LowPhysicalMemory
 ==================
 */
-bool Sys_LowPhysicalMemory( void )
+bool Sys_LowPhysicalMemory(void)
 {
-	MEMORYSTATUS stat;
-	GlobalMemoryStatus (&stat);
-	return (stat.dwTotalPhys <= MEM_THRESHOLD) ? true : false;
+    MEMORYSTATUS stat;
+    GlobalMemoryStatus(&stat);
+    return (stat.dwTotalPhys <= MEM_THRESHOLD) ? true : false;
 }
 
 /*
@@ -175,29 +192,29 @@ bool Sys_LowPhysicalMemory( void )
 Sys_Basename
 ==============
 */
-const char *Sys_Basename( char *path )
+const char *Sys_Basename(char *path)
 {
-	static char base[ MAX_OSPATH ] = { 0 };
-	int length;
+    static char base[MAX_OSPATH] = {0};
+    int length;
 
-	length = strlen( path ) - 1;
+    length = strlen(path) - 1;
 
-	// Skip trailing slashes
-	while( length > 0 && path[ length ] == '\\' )
-		length--;
+    // Skip trailing slashes
+    while (length > 0 && path[length] == '\\')
+        length--;
 
-	while( length > 0 && path[ length - 1 ] != '\\' )
-		length--;
+    while (length > 0 && path[length - 1] != '\\')
+        length--;
 
-	Q_strncpyz( base, &path[ length ], sizeof( base ) );
+    Q_strncpyz(base, &path[length], sizeof(base));
 
-	length = strlen( base ) - 1;
+    length = strlen(base) - 1;
 
-	// Strip trailing slashes
-	while( length > 0 && base[ length ] == '\\' )
-		base[ length-- ] = '\0';
+    // Strip trailing slashes
+    while (length > 0 && base[length] == '\\')
+        base[length--] = '\0';
 
-	return base;
+    return base;
 }
 
 /*
@@ -205,20 +222,20 @@ const char *Sys_Basename( char *path )
 Sys_Dirname
 ==============
 */
-const char *Sys_Dirname( char *path )
+const char *Sys_Dirname(char *path)
 {
-	static char dir[ MAX_OSPATH ] = { 0 };
-	int length;
+    static char dir[MAX_OSPATH] = {0};
+    int length;
 
-	Q_strncpyz( dir, path, sizeof( dir ) );
-	length = strlen( dir ) - 1;
+    Q_strncpyz(dir, path, sizeof(dir));
+    length = strlen(dir) - 1;
 
-	while( length > 0 && dir[ length ] != '\\' )
-		length--;
+    while (length > 0 && dir[length] != '\\')
+        length--;
 
-	dir[ length ] = '\0';
+    dir[length] = '\0';
 
-	return dir;
+    return dir;
 }
 
 /*
@@ -226,24 +243,22 @@ const char *Sys_Dirname( char *path )
 Sys_FOpen
 ==============
 */
-FILE *Sys_FOpen( const char *ospath, const char *mode ) {
-	return fopen( ospath, mode );
-}
+FILE *Sys_FOpen(const char *ospath, const char *mode) { return fopen(ospath, mode); }
 
 /*
 ==============
 Sys_Mkdir
 ==============
 */
-bool Sys_Mkdir( const char *path )
+bool Sys_Mkdir(const char *path)
 {
-	if( !CreateDirectory( path, NULL ) )
-	{
-		if( GetLastError( ) != ERROR_ALREADY_EXISTS )
-			return false;
-	}
+    if (!CreateDirectory(path, NULL))
+    {
+        if (GetLastError() != ERROR_ALREADY_EXISTS)
+            return false;
+    }
 
-	return true;
+    return true;
 }
 
 /*
@@ -252,10 +267,7 @@ Sys_Mkfifo
 Noop on windows because named pipes do not function the same way
 ==================
 */
-FILE *Sys_Mkfifo( const char *ospath )
-{
-	return NULL;
-}
+FILE *Sys_Mkfifo(const char *ospath) { return NULL; }
 
 /*
 ==============
@@ -264,107 +276,92 @@ Sys_OpenWithDefault
 Opens a path with the default application
 ==============
 */
-bool Sys_OpenWithDefault( const char *path )
+bool Sys_OpenWithDefault(const char *path)
 {
     HINSTANCE hInst;
     uint64_t err;
 
-    Com_Printf( S_COLOR_WHITE "Sys_OpenWithDefault: opening %s .....\n", path );
+    Com_Printf(S_COLOR_WHITE "Sys_OpenWithDefault: opening %s .....\n", path);
 
-    hInst = ShellExecute(0, "open", path, 0, 0 , SW_SHOWNORMAL );
+    hInst = ShellExecute(0, "open", path, 0, 0, SW_SHOWNORMAL);
     err = (uint64_t)hInst;
 
-    if( err > 32 )
+    if (err > 32)
     {
-        //success
+        // success
         return true;
     }
 
     // failure
-    switch ( err )
+    switch (err)
     {
         case 0:
-            Sys_Dialog( DT_WARNING,
-                        "Sys_OpenWithDefault: The operating system is out of memory or resources.\n",
-                        "warning" );
+            Sys_Dialog(
+                DT_WARNING, "Sys_OpenWithDefault: The operating system is out of memory or resources.\n", "warning");
             break;
 
         case ERROR_FILE_NOT_FOUND:
-            Sys_Dialog( DT_WARNING,
-                        "Sys_OpenWithDefault: The specified file was not found.\n",
-                        "warning" );
+            Sys_Dialog(DT_WARNING, "Sys_OpenWithDefault: The specified file was not found.\n", "warning");
             break;
 
         case ERROR_PATH_NOT_FOUND:
-            Sys_Dialog( DT_WARNING,
-                        "Sys_OpenWithDefault: The specified path was not found.\n",
-                        "warning" );
+            Sys_Dialog(DT_WARNING, "Sys_OpenWithDefault: The specified path was not found.\n", "warning");
             break;
 
         case ERROR_BAD_FORMAT:
-            Sys_Dialog( DT_WARNING,
-                        "Sys_OpenWithDefault: The .exe file is invalid (non-Win32 .exe or error in .exe image).\n",
-                        "warning" );
+            Sys_Dialog(DT_WARNING,
+                "Sys_OpenWithDefault: The .exe file is invalid (non-Win32 .exe or error in .exe image).\n", "warning");
             break;
 
         case SE_ERR_ACCESSDENIED:
-            Sys_Dialog( DT_WARNING,
-                        "Sys_OpenWithDefault: The operating system denied access to the specified file.\n",
-                        "warning" );
+            Sys_Dialog(DT_WARNING, "Sys_OpenWithDefault: The operating system denied access to the specified file.\n",
+                "warning");
             break;
 
         case SE_ERR_ASSOCINCOMPLETE:
-            Sys_Dialog( DT_WARNING,
-                        "Sys_OpenWithDefault: The file name association is incomplete or invalid.\n",
-                        "warning" );
+            Sys_Dialog(
+                DT_WARNING, "Sys_OpenWithDefault: The file name association is incomplete or invalid.\n", "warning");
             break;
 
         case SE_ERR_DDEBUSY:
-            Sys_Dialog( DT_WARNING,
-                        "Sys_OpenWithDefault: The DDE transaction could not be completed because other DDE transactions were being processed.\n",
-                        "warning" );
+            Sys_Dialog(DT_WARNING,
+                "Sys_OpenWithDefault: The DDE transaction could not be completed because other DDE transactions were "
+                "being processed.\n",
+                "warning");
             break;
 
         case SE_ERR_DDEFAIL:
-            Sys_Dialog( DT_WARNING,
-                        "Sys_OpenWithDefault: The DDE transaction failed.\n",
-                        "warning" );
+            Sys_Dialog(DT_WARNING, "Sys_OpenWithDefault: The DDE transaction failed.\n", "warning");
             break;
 
         case SE_ERR_DDETIMEOUT:
-            Sys_Dialog( DT_WARNING,
-                        "Sys_OpenWithDefault: The DDE transaction could not be completed because the request timed out.\n",
-                        "warning" );
+            Sys_Dialog(DT_WARNING,
+                "Sys_OpenWithDefault: The DDE transaction could not be completed because the request timed out.\n",
+                "warning");
             break;
 
         case SE_ERR_DLLNOTFOUND:
-            Sys_Dialog( DT_WARNING,
-                        "Sys_OpenWithDefault: The specified DLL was not found.\n",
-                        "warning" );
+            Sys_Dialog(DT_WARNING, "Sys_OpenWithDefault: The specified DLL was not found.\n", "warning");
             break;
 
         case SE_ERR_NOASSOC:
-            Sys_Dialog( DT_WARNING,
-                        "Sys_OpenWithDefault: There is no application associated with the given file name extension. This error will also be returned if you attempt to print a file that is not printable.\n",
-                        "warning" );
+            Sys_Dialog(DT_WARNING,
+                "Sys_OpenWithDefault: There is no application associated with the given file name extension. This "
+                "error will also be returned if you attempt to print a file that is not printable.\n",
+                "warning");
             break;
 
         case SE_ERR_OOM:
-            Sys_Dialog( DT_WARNING, 
-                        "Sys_OpenWithDefault: There was not enough memory to complete the operation.\n",
-                        "warning" );
+            Sys_Dialog(
+                DT_WARNING, "Sys_OpenWithDefault: There was not enough memory to complete the operation.\n", "warning");
             break;
 
         case SE_ERR_SHARE:
-            Sys_Dialog( DT_WARNING, 
-                        "Sys_OpenWithDefault: A sharing violation occurred.\n",
-                        "warning" );
+            Sys_Dialog(DT_WARNING, "Sys_OpenWithDefault: A sharing violation occurred.\n", "warning");
             break;
 
         default:
-            Sys_Dialog( DT_WARNING, 
-                        "Sys_OpenWithDefault: Failed to open path.\n",
-                        "warning" );
+            Sys_Dialog(DT_WARNING, "Sys_OpenWithDefault: Failed to open path.\n", "warning");
             break;
     }
 
@@ -376,13 +373,14 @@ bool Sys_OpenWithDefault( const char *path )
 Sys_Cwd
 ==============
 */
-char *Sys_Cwd( void ) {
-	static char cwd[MAX_OSPATH];
+char *Sys_Cwd(void)
+{
+    static char cwd[MAX_OSPATH];
 
-	_getcwd( cwd, sizeof( cwd ) - 1 );
-	cwd[MAX_OSPATH-1] = 0;
+    _getcwd(cwd, sizeof(cwd) - 1);
+    cwd[MAX_OSPATH - 1] = 0;
 
-	return cwd;
+    return cwd;
 }
 
 /*
@@ -400,53 +398,62 @@ DIRECTORY SCANNING
 Sys_ListFilteredFiles
 ==============
 */
-void Sys_ListFilteredFiles( const char *basedir, const char *subdirs,
-				const char *filter, char **list, int *numfiles )
+void Sys_ListFilteredFiles(const char *basedir, const char *subdirs, const char *filter, char **list, int *numfiles)
 {
-	char		search[MAX_OSPATH], newsubdirs[MAX_OSPATH];
-	char		filename[MAX_OSPATH];
-	intptr_t	findhandle;
-	struct _finddata_t findinfo;
+    char search[MAX_OSPATH], newsubdirs[MAX_OSPATH];
+    char filename[MAX_OSPATH];
+    intptr_t findhandle;
+    struct _finddata_t findinfo;
 
-	if ( *numfiles >= MAX_FOUND_FILES - 1 ) {
-		return;
-	}
+    if (*numfiles >= MAX_FOUND_FILES - 1)
+    {
+        return;
+    }
 
-	if (strlen(subdirs)) {
-		Com_sprintf( search, sizeof(search), "%s\\%s\\*", basedir, subdirs );
-	}
-	else {
-		Com_sprintf( search, sizeof(search), "%s\\*", basedir );
-	}
+    if (strlen(subdirs))
+    {
+        Com_sprintf(search, sizeof(search), "%s\\%s\\*", basedir, subdirs);
+    }
+    else
+    {
+        Com_sprintf(search, sizeof(search), "%s\\*", basedir);
+    }
 
-	findhandle = _findfirst (search, &findinfo);
-	if (findhandle == -1) {
-		return;
-	}
+    findhandle = _findfirst(search, &findinfo);
+    if (findhandle == -1)
+    {
+        return;
+    }
 
-	do {
-		if (findinfo.attrib & _A_SUBDIR) {
-			if (Q_stricmp(findinfo.name, ".") && Q_stricmp(findinfo.name, "..")) {
-				if (strlen(subdirs)) {
-					Com_sprintf( newsubdirs, sizeof(newsubdirs), "%s\\%s", subdirs, findinfo.name);
-				}
-				else {
-					Com_sprintf( newsubdirs, sizeof(newsubdirs), "%s", findinfo.name);
-				}
-				Sys_ListFilteredFiles( basedir, newsubdirs, filter, list, numfiles );
-			}
-		}
-		if ( *numfiles >= MAX_FOUND_FILES - 1 ) {
-			break;
-		}
-		Com_sprintf( filename, sizeof(filename), "%s\\%s", subdirs, findinfo.name );
-		if (!Com_FilterPath( filter, filename, false ))
-			continue;
-		list[ *numfiles ] = CopyString( filename );
-		(*numfiles)++;
-	} while ( _findnext (findhandle, &findinfo) != -1 );
+    do
+    {
+        if (findinfo.attrib & _A_SUBDIR)
+        {
+            if (Q_stricmp(findinfo.name, ".") && Q_stricmp(findinfo.name, ".."))
+            {
+                if (strlen(subdirs))
+                {
+                    Com_sprintf(newsubdirs, sizeof(newsubdirs), "%s\\%s", subdirs, findinfo.name);
+                }
+                else
+                {
+                    Com_sprintf(newsubdirs, sizeof(newsubdirs), "%s", findinfo.name);
+                }
+                Sys_ListFilteredFiles(basedir, newsubdirs, filter, list, numfiles);
+            }
+        }
+        if (*numfiles >= MAX_FOUND_FILES - 1)
+        {
+            break;
+        }
+        Com_sprintf(filename, sizeof(filename), "%s\\%s", subdirs, findinfo.name);
+        if (!Com_FilterPath(filter, filename, false))
+            continue;
+        list[*numfiles] = CopyString(filename);
+        (*numfiles)++;
+    } while (_findnext(findhandle, &findinfo) != -1);
 
-	_findclose (findhandle);
+    _findclose(findhandle);
 }
 
 /*
@@ -456,24 +463,28 @@ strgtr
 */
 static bool strgtr(const char *s0, const char *s1)
 {
-	int l0, l1, i;
+    int l0, l1, i;
 
-	l0 = strlen(s0);
-	l1 = strlen(s1);
+    l0 = strlen(s0);
+    l1 = strlen(s1);
 
-	if (l1<l0) {
-		l0 = l1;
-	}
+    if (l1 < l0)
+    {
+        l0 = l1;
+    }
 
-	for(i=0;i<l0;i++) {
-		if (s1[i] > s0[i]) {
-			return true;
-		}
-		if (s1[i] < s0[i]) {
-			return false;
-		}
-	}
-	return false;
+    for (i = 0; i < l0; i++)
+    {
+        if (s1[i] > s0[i])
+        {
+            return true;
+        }
+        if (s1[i] < s0[i])
+        {
+            return false;
+        }
+    }
+    return false;
 }
 
 /*
@@ -481,112 +492,125 @@ static bool strgtr(const char *s0, const char *s1)
 Sys_ListFiles
 ==============
 */
-char **Sys_ListFiles( const char *directory, const char *extension,
-				const char *filter, int *numfiles, bool wantsubs )
+char **Sys_ListFiles(const char *directory, const char *extension, const char *filter, int *numfiles, bool wantsubs)
 {
-	char		search[MAX_OSPATH];
-	int			nfiles;
-	char		**listCopy;
-	char		*list[MAX_FOUND_FILES];
-	struct _finddata_t findinfo;
-	intptr_t		findhandle;
-	int			flag;
-	int			i;
-	int			extLen;
+    char search[MAX_OSPATH];
+    int nfiles;
+    char **listCopy;
+    char *list[MAX_FOUND_FILES];
+    struct _finddata_t findinfo;
+    intptr_t findhandle;
+    int flag;
+    int i;
+    int extLen;
 
-	if (filter) {
+    if (filter)
+    {
+        nfiles = 0;
+        Sys_ListFilteredFiles(directory, "", filter, list, &nfiles);
 
-		nfiles = 0;
-		Sys_ListFilteredFiles( directory, "", filter, list, &nfiles );
+        list[nfiles] = 0;
+        *numfiles = nfiles;
 
-		list[ nfiles ] = 0;
-		*numfiles = nfiles;
+        if (!nfiles)
+            return NULL;
 
-		if (!nfiles)
-			return NULL;
+        listCopy = (char **)Z_Malloc((nfiles + 1) * sizeof(*listCopy));
+        for (i = 0; i < nfiles; i++)
+        {
+            listCopy[i] = list[i];
+        }
+        listCopy[i] = NULL;
 
-		listCopy = (char**)Z_Malloc( ( nfiles + 1 ) * sizeof( *listCopy ) );
-		for ( i = 0 ; i < nfiles ; i++ ) {
-			listCopy[i] = list[i];
-		}
-		listCopy[i] = NULL;
+        return listCopy;
+    }
 
-		return listCopy;
-	}
+    if (!extension)
+    {
+        extension = "";
+    }
 
-	if ( !extension) {
-		extension = "";
-	}
+    // passing a slash as extension will find directories
+    if (extension[0] == '/' && extension[1] == 0)
+    {
+        extension = "";
+        flag = 0;
+    }
+    else
+    {
+        flag = _A_SUBDIR;
+    }
 
-	// passing a slash as extension will find directories
-	if ( extension[0] == '/' && extension[1] == 0 ) {
-		extension = "";
-		flag = 0;
-	} else {
-		flag = _A_SUBDIR;
-	}
+    extLen = strlen(extension);
 
-	extLen = strlen( extension );
+    Com_sprintf(search, sizeof(search), "%s\\*%s", directory, extension);
 
-	Com_sprintf( search, sizeof(search), "%s\\*%s", directory, extension );
+    // search
+    nfiles = 0;
 
-	// search
-	nfiles = 0;
+    findhandle = _findfirst(search, &findinfo);
+    if (findhandle == -1)
+    {
+        *numfiles = 0;
+        return NULL;
+    }
 
-	findhandle = _findfirst (search, &findinfo);
-	if (findhandle == -1) {
-		*numfiles = 0;
-		return NULL;
-	}
+    do
+    {
+        if ((!wantsubs && flag ^ (findinfo.attrib & _A_SUBDIR)) || (wantsubs && findinfo.attrib & _A_SUBDIR))
+        {
+            if (*extension)
+            {
+                if (strlen(findinfo.name) < extLen ||
+                    Q_stricmp(findinfo.name + strlen(findinfo.name) - extLen, extension))
+                {
+                    continue;  // didn't match
+                }
+            }
+            if (nfiles == MAX_FOUND_FILES - 1)
+            {
+                break;
+            }
+            list[nfiles] = CopyString(findinfo.name);
+            nfiles++;
+        }
+    } while (_findnext(findhandle, &findinfo) != -1);
 
-	do {
-		if ( (!wantsubs && flag ^ ( findinfo.attrib & _A_SUBDIR )) || (wantsubs && findinfo.attrib & _A_SUBDIR) ) {
-			if (*extension) {
-				if ( strlen( findinfo.name ) < extLen ||
-					Q_stricmp(
-						findinfo.name + strlen( findinfo.name ) - extLen,
-						extension ) ) {
-					continue; // didn't match
-				}
-			}
-			if ( nfiles == MAX_FOUND_FILES - 1 ) {
-				break;
-			}
-			list[ nfiles ] = CopyString( findinfo.name );
-			nfiles++;
-		}
-	} while ( _findnext (findhandle, &findinfo) != -1 );
+    list[nfiles] = 0;
 
-	list[ nfiles ] = 0;
+    _findclose(findhandle);
 
-	_findclose (findhandle);
+    // return a copy of the list
+    *numfiles = nfiles;
 
-	// return a copy of the list
-	*numfiles = nfiles;
+    if (!nfiles)
+    {
+        return NULL;
+    }
 
-	if ( !nfiles ) {
-		return NULL;
-	}
+    listCopy = (char **)Z_Malloc((nfiles + 1) * sizeof(*listCopy));
+    for (i = 0; i < nfiles; i++)
+    {
+        listCopy[i] = list[i];
+    }
+    listCopy[i] = NULL;
 
-	listCopy = (char**)Z_Malloc( ( nfiles + 1 ) * sizeof( *listCopy ) );
-	for ( i = 0 ; i < nfiles ; i++ ) {
-		listCopy[i] = list[i];
-	}
-	listCopy[i] = NULL;
+    do
+    {
+        flag = 0;
+        for (i = 1; i < nfiles; i++)
+        {
+            if (strgtr(listCopy[i - 1], listCopy[i]))
+            {
+                char *temp = listCopy[i];
+                listCopy[i] = listCopy[i - 1];
+                listCopy[i - 1] = temp;
+                flag = 1;
+            }
+        }
+    } while (flag);
 
-	do {
-		flag = 0;
-		for(i=1; i<nfiles; i++) {
-			if (strgtr(listCopy[i-1], listCopy[i])) {
-				char *temp = listCopy[i];
-				listCopy[i] = listCopy[i-1];
-				listCopy[i-1] = temp;
-				flag = 1;
-			}
-		}
-	} while(flag);
-
-	return listCopy;
+    return listCopy;
 }
 
 /*
@@ -594,21 +618,22 @@ char **Sys_ListFiles( const char *directory, const char *extension,
 Sys_FreeFileList
 ==============
 */
-void Sys_FreeFileList( char **list )
+void Sys_FreeFileList(char **list)
 {
-	int i;
+    int i;
 
-	if ( !list ) {
-		return;
-	}
+    if (!list)
+    {
+        return;
+    }
 
-	for ( i = 0 ; list[i] ; i++ ) {
-		Z_Free( list[i] );
-	}
+    for (i = 0; list[i]; i++)
+    {
+        Z_Free(list[i]);
+    }
 
-	Z_Free( list );
+    Z_Free(list);
 }
-
 
 /*
 ==============
@@ -617,22 +642,22 @@ Sys_Sleep
 Block execution for msec or until input is received.
 ==============
 */
-void Sys_Sleep( int msec )
+void Sys_Sleep(int msec)
 {
-	if( msec == 0 )
-		return;
+    if (msec == 0)
+        return;
 
 #ifdef DEDICATED
-	if( msec < 0 )
-		WaitForSingleObject( GetStdHandle( STD_INPUT_HANDLE ), INFINITE );
-	else
-		WaitForSingleObject( GetStdHandle( STD_INPUT_HANDLE ), msec );
+    if (msec < 0)
+        WaitForSingleObject(GetStdHandle(STD_INPUT_HANDLE), INFINITE);
+    else
+        WaitForSingleObject(GetStdHandle(STD_INPUT_HANDLE), msec);
 #else
-	// Client Sys_Sleep doesn't support waiting on stdin
-	if( msec < 0 )
-		return;
+    // Client Sys_Sleep doesn't support waiting on stdin
+    if (msec < 0)
+        return;
 
-	Sleep( msec );
+    Sleep(msec);
 #endif
 }
 
@@ -643,38 +668,37 @@ Sys_ErrorDialog
 Display an error message
 ==============
 */
-void Sys_ErrorDialog( const char *error )
+void Sys_ErrorDialog(const char *error)
 {
-	if( Sys_Dialog( DT_YES_NO, va( "%s. Copy console log to clipboard?", error ),
-			"Error" ) == DR_YES )
-	{
-		HGLOBAL memoryHandle;
-		char *clipMemory;
+    if (Sys_Dialog(DT_YES_NO, va("%s. Copy console log to clipboard?", error), "Error") == DR_YES)
+    {
+        HGLOBAL memoryHandle;
+        char *clipMemory;
 
-		memoryHandle = GlobalAlloc( GMEM_MOVEABLE|GMEM_DDESHARE, CON_LogSize( ) + 1 );
-		clipMemory = (char *)GlobalLock( memoryHandle );
+        memoryHandle = GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, CON_LogSize() + 1);
+        clipMemory = (char *)GlobalLock(memoryHandle);
 
-		if( clipMemory )
-		{
-			char *p = clipMemory;
-			char buffer[ 1024 ];
-			unsigned int size;
+        if (clipMemory)
+        {
+            char *p = clipMemory;
+            char buffer[1024];
+            unsigned int size;
 
-			while( ( size = CON_LogRead( buffer, sizeof( buffer ) ) ) > 0 )
-			{
-				memcpy( p, buffer, size );
-				p += size;
-			}
+            while ((size = CON_LogRead(buffer, sizeof(buffer))) > 0)
+            {
+                memcpy(p, buffer, size);
+                p += size;
+            }
 
-			*p = '\0';
+            *p = '\0';
 
-			if( OpenClipboard( NULL ) && EmptyClipboard( ) )
-				SetClipboardData( CF_TEXT, memoryHandle );
+            if (OpenClipboard(NULL) && EmptyClipboard())
+                SetClipboardData(CF_TEXT, memoryHandle);
 
-			GlobalUnlock( clipMemory );
-			CloseClipboard( );
-		}
-	}
+            GlobalUnlock(clipMemory);
+            CloseClipboard();
+        }
+    }
 }
 
 /*
@@ -684,28 +708,42 @@ Sys_Dialog
 Display a win32 dialog box
 ==============
 */
-dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *title )
+dialogResult_t Sys_Dialog(dialogType_t type, const char *message, const char *title)
 {
-	UINT uType;
+    UINT uType;
 
-	switch( type )
-	{
-		default:
-		case DT_INFO:			uType = MB_ICONINFORMATION|MB_OK; break;
-		case DT_WARNING:	 uType = MB_ICONWARNING|MB_OK; break;
-		case DT_ERROR:		 uType = MB_ICONERROR|MB_OK; break;
-		case DT_YES_NO:		uType = MB_ICONQUESTION|MB_YESNO; break;
-		case DT_OK_CANCEL: uType = MB_ICONWARNING|MB_OKCANCEL; break;
-	}
+    switch (type)
+    {
+        default:
+        case DT_INFO:
+            uType = MB_ICONINFORMATION | MB_OK;
+            break;
+        case DT_WARNING:
+            uType = MB_ICONWARNING | MB_OK;
+            break;
+        case DT_ERROR:
+            uType = MB_ICONERROR | MB_OK;
+            break;
+        case DT_YES_NO:
+            uType = MB_ICONQUESTION | MB_YESNO;
+            break;
+        case DT_OK_CANCEL:
+            uType = MB_ICONWARNING | MB_OKCANCEL;
+            break;
+    }
 
-	switch( MessageBox( NULL, message, title, uType ) )
-	{
-		default:
-		case IDOK:			return DR_OK;
-		case IDCANCEL:	return DR_CANCEL;
-		case IDYES:		 return DR_YES;
-		case IDNO:			return DR_NO;
-	}
+    switch (MessageBox(NULL, message, title, uType))
+    {
+        default:
+        case IDOK:
+            return DR_OK;
+        case IDCANCEL:
+            return DR_CANCEL;
+        case IDYES:
+            return DR_YES;
+        case IDNO:
+            return DR_NO;
+    }
 }
 
 /*
@@ -715,9 +753,7 @@ Sys_GLimpSafeInit
 Windows specific "safe" GL implementation initialisation
 ==============
 */
-void Sys_GLimpSafeInit( void )
-{
-}
+void Sys_GLimpSafeInit(void) {}
 
 /*
 ==============
@@ -726,9 +762,7 @@ Sys_GLimpInit
 Windows specific GL implementation initialisation
 ==============
 */
-void Sys_GLimpInit( void )
-{
-}
+void Sys_GLimpInit(void) {}
 
 /*
 ==============
@@ -737,29 +771,31 @@ Sys_PlatformInit
 Windows specific initialisation
 ==============
 */
-void Sys_PlatformInit( void )
+void Sys_PlatformInit(void)
 {
 #ifndef DEDICATED
-	TIMECAPS ptc;
+    TIMECAPS ptc;
 #endif
 
-	Sys_SetFloatEnv();
+    Sys_SetFloatEnv();
 
 #ifndef DEDICATED
-	if(timeGetDevCaps(&ptc, sizeof(ptc)) == MMSYSERR_NOERROR)
-	{
-		timerResolution = ptc.wPeriodMin;
+    if (timeGetDevCaps(&ptc, sizeof(ptc)) == MMSYSERR_NOERROR)
+    {
+        timerResolution = ptc.wPeriodMin;
 
-		if(timerResolution > 1)
-		{
-			Com_Printf("Warning: Minimum supported timer resolution is %ums "
-				"on this system, recommended resolution 1ms\n", timerResolution);
-		}
-		
-		timeBeginPeriod(timerResolution);				
-	}
-	else
-		timerResolution = 0;
+        if (timerResolution > 1)
+        {
+            Com_Printf(
+                "Warning: Minimum supported timer resolution is %ums "
+                "on this system, recommended resolution 1ms\n",
+                timerResolution);
+        }
+
+        timeBeginPeriod(timerResolution);
+    }
+    else
+        timerResolution = 0;
 #endif
 }
 
@@ -770,11 +806,11 @@ Sys_PlatformExit
 Windows specific initialisation
 ==============
 */
-void Sys_PlatformExit( void )
+void Sys_PlatformExit(void)
 {
 #ifndef DEDICATED
-	if(timerResolution)
-		timeEndPeriod(timerResolution);
+    if (timerResolution)
+        timeEndPeriod(timerResolution);
 #endif
 }
 
@@ -787,10 +823,10 @@ set/unset environment variables (empty value removes it)
 */
 void Sys_SetEnv(const char *name, const char *value)
 {
-	if(value)
-		_putenv(va("%s=%s", name, value));
-	else
-		_putenv(va("%s=", name));
+    if (value)
+        _putenv(va("%s=%s", name, value));
+    else
+        _putenv(va("%s=", name));
 }
 
 /*
@@ -798,35 +834,32 @@ void Sys_SetEnv(const char *name, const char *value)
 Sys_PID
 ==============
 */
-int Sys_PID( void )
-{
-	return GetCurrentProcessId( );
-}
+int Sys_PID(void) { return GetCurrentProcessId(); }
 
 /*
 ==============
 Sys_PIDIsRunning
 ==============
 */
-bool Sys_PIDIsRunning( int pid )
+bool Sys_PIDIsRunning(int pid)
 {
-	DWORD processes[ 1024 ];
-	DWORD numBytes, numProcesses;
-	int i;
+    DWORD processes[1024];
+    DWORD numBytes, numProcesses;
+    int i;
 
-	if( !EnumProcesses( processes, sizeof( processes ), &numBytes ) )
-		return false; // Assume it's not running
+    if (!EnumProcesses(processes, sizeof(processes), &numBytes))
+        return false;  // Assume it's not running
 
-	numProcesses = numBytes / sizeof( DWORD );
+    numProcesses = numBytes / sizeof(DWORD);
 
-	// Search for the pid
-	for( i = 0; i < numProcesses; i++ )
-	{
-		if( processes[ i ] == pid )
-			return true;
-	}
+    // Search for the pid
+    for (i = 0; i < numProcesses; i++)
+    {
+        if (processes[i] == pid)
+            return true;
+    }
 
-	return false;
+    return false;
 }
 
 /*
@@ -836,7 +869,4 @@ Sys_DllExtension
 Check if filename should be allowed to be loaded as a DLL.
 =================
 */
-bool Sys_DllExtension( const char *name )
-{
-		return COM_CompareExtension( name, DLL_EXT );
-}
+bool Sys_DllExtension(const char *name) { return COM_CompareExtension(name, DLL_EXT); }

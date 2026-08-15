@@ -2652,6 +2652,7 @@ $(B)/$(BASEGAME)_11/vm/cgame.qvm: $(CGVMOBJ11) $(CGDIR)/cg_syscalls_11.asm $(Q3A
 
 GOBJ_ = \
   $(B)/$(BASEGAME)/game/g_main.o \
+  $(B)/$(BASEGAME)/game/g_spec_layout.o \
   $(B)/$(BASEGAME)/game/bg_misc.o \
   $(B)/$(BASEGAME)/game/bg_pmove.o \
   $(B)/$(BASEGAME)/game/bg_slidemove.o \

@@ -3,6 +3,16 @@
 
 #include <stdint.h>
 
+// Ignore __attribute__ on non-gcc platforms. Other qcommon headers
+// (q_shared.h, qcommon.h) carry this shim, but net.h is sometimes included
+// before them, leaving __attribute__ undefined on MSVC and producing
+// C3646 "unknown override specifier" errors.
+#ifndef __GNUC__
+#ifndef __attribute__
+#define __attribute__(x)
+#endif
+#endif
+
 /*
 ==============================================================
 
@@ -22,8 +32,9 @@ NET
 #define NET_ENABLEALT2PROTO 0x02
 #define NET_DISABLEPRIMPROTO 0x04
 
-#define PACKET_BACKUP 32  // number of old messages that must be kept on client and
-                          // server for delta compression and ping estimation
+#define PACKET_BACKUP \
+    32  // number of old messages that must be kept on client and
+        // server for delta compression and ping estimation
 #define PACKET_MASK (PACKET_BACKUP - 1)
 
 #define MAX_PACKET_USERCMDS 32  // max number of usercmd_t in a packet
@@ -83,8 +94,9 @@ void NET_Sleep(int msec);
 
 #define MAX_MSGLEN 16384  // max length of a message, which may be fragmented into multiple packets
 
-#define MAX_DOWNLOAD_WINDOW 48  // ACK window of 48 download chunks. Cannot set this higher, or clients
-			 	// will overflow the reliable commands buffer
+#define MAX_DOWNLOAD_WINDOW \
+    48  // ACK window of 48 download chunks. Cannot set this higher, or clients
+        // will overflow the reliable commands buffer
 #define MAX_DOWNLOAD_BLKSIZE 1024  // 896 uint8_t block chunks
 
 #define NETCHAN_GENCHECKSUM(challenge, sequence) ((challenge) ^ ((sequence) * (challenge)))
@@ -133,9 +145,10 @@ void Netchan_TransmitNextFragment(netchan_t *chan);
 bool Netchan_Process(netchan_t *chan, struct msg_t *msg);
 
 void Sys_SendPacket(int length, const void *data, struct netadr_t to);
-bool Sys_StringToAdr(const char *s, struct netadr_t *a, enum netadrtype_t family); // Does NOT parse port numbers, only base addresses.
+bool Sys_StringToAdr(
+    const char *s, struct netadr_t *a, enum netadrtype_t family);  // Does NOT parse port numbers, only base addresses.
 bool Sys_IsLANAddress(struct netadr_t adr);
-void Sys_ShowIP(void); 
+void Sys_ShowIP(void);
 
 #define SV_ENCODE_START 4
 #define SV_DECODE_START 12
