@@ -906,7 +906,7 @@ void SV_Init(void)
     sv_fps = Cvar_Get("sv_fps", "40", CVAR_TEMP);
     Cvar_CheckRange(sv_fps, 10, 125, true);
     sv_sendNearbyEnts = Cvar_Get("sv_sendNearbyEnts", "0", CVAR_ARCHIVE);
-    Cvar_SetDescription(sv_sendNearbyEnts, "Sends entities to players within 1500 units, regardless of if the players can see the entities or not. \nNote: useful to ensure radar blips work or footstep sounds get played through walls.");
+    Cvar_SetDescription(sv_sendNearbyEnts, "Sends entities to players within this distance in units, regardless of if the players can see the entities or not. \nNote: useful to ensure radar blips work or footstep sounds get played through walls.");
     Cvar_SetDescription(sv_fps, "Set the max frames per second the server sends the client.");
     sv_timeout = Cvar_Get("sv_timeout", "200", CVAR_TEMP);
     Cvar_SetDescription(sv_timeout, "Seconds without any message before automatic client disconnect.");
