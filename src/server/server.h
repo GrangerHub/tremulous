@@ -343,6 +343,7 @@ extern cvar_t *sv_mapname;
 extern cvar_t *sv_mapChecksum;
 extern cvar_t *sv_referencedPakNames;
 extern cvar_t *sv_referencedAlternatePakNames;
+extern cvar_t *sv_sendNearbyEnts;
 extern cvar_t *sv_serverid;
 extern cvar_t *sv_minRate;
 extern cvar_t *sv_maxRate;

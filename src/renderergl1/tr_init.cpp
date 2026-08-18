@@ -65,6 +65,8 @@ cvar_t	*r_greyscale;
 cvar_t	*r_ignorehwgamma;
 cvar_t	*r_measureOverdraw;
 
+cvar_t  *r_teleporterFlash;
+
 cvar_t	*r_inGameVideo;
 cvar_t	*r_fastsky;
 cvar_t	*r_drawSun;
@@ -1014,7 +1016,7 @@ void R_Register( void )
 	ri.Cvar_CheckRange( r_displayRefresh, 0, 200, true );
 	ri.Cvar_SetDescription(r_displayRefresh, "Override monitor refresh rate in fullscreen mode:\n   0 - use current monitor refresh rate\n > 0 - use custom refresh rate");
 
-	r_fullbright = ri.Cvar_Get ("r_fullbright", "0", CVAR_LATCH|CVAR_CHEAT );
+	r_fullbright = ri.Cvar_Get ("r_fullbright", "0", CVAR_LATCH );
 	ri.Cvar_SetDescription(r_fullbright, "Debugging tool to render the entire level without lighting.");
 	r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_LATCH );
 	ri.Cvar_SetDescription(r_mapOverBrightBits, "Sets the number of overbright bits baked into all lightmaps and map data.");
@@ -1042,6 +1044,8 @@ void R_Register( void )
 	ri.Cvar_SetDescription(r_stereoSeparation, "Control eye separation. Resulting separation is \\r_zproj divided by this value in standard units.");
 	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_ARCHIVE );
 	ri.Cvar_SetDescription(r_ignoreGLErrors, "Ignore OpenGL errors.");
+	r_teleporterFlash = ri.Cvar_Get( "r_teleporterFlash", "1", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription( r_teleporterFlash, "Show a white screen instead of a black screen when being teleported in hyperspace." );
 	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
 	ri.Cvar_SetDescription(r_fastsky, "Draw flat colored skies.");
 	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
@@ -1099,7 +1103,7 @@ void R_Register( void )
 	ri.Cvar_SetDescription(r_nocurves, "Set to 1 to disable drawing world bezier curves. Set to 0 to enable.");
 	r_drawworld = ri.Cvar_Get ("r_drawworld", "1", CVAR_CHEAT );
 	ri.Cvar_SetDescription(r_drawworld, "Set to 0 to disable drawing the world. Set to 1 to enable.");
-	r_lightmap = ri.Cvar_Get ("r_lightmap", "0", CVAR_CHEAT );
+	r_lightmap = ri.Cvar_Get ("r_lightmap", "0", 0 );
 	ri.Cvar_SetDescription(r_lightmap, "Show only lightmaps on all world surfaces.");
 	r_portalOnly = ri.Cvar_Get ("r_portalOnly", "0", CVAR_CHEAT );
 	ri.Cvar_SetDescription(r_portalOnly, "Set to 1 to render only first mirror/portal view if it is present on the scene.");

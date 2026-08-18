@@ -2472,7 +2472,7 @@ static void CL_CheckForResend(void)
                 Com_sprintf(data, sizeof(data), "getchallenge %d", clc.challenge);
             }
             else
-                Com_sprintf(data, sizeof(data), "getchallenge %d %s", clc.challenge, com_gamename->string);
+                Com_sprintf(data, sizeof(data), "getchallenge %d %s", clc.challenge, GAMENAME_FOR_MASTER);
 
             NET_OutOfBandPrint(NS_CLIENT, clc.serverAddress, "%s", data);
             break;
@@ -3592,7 +3592,7 @@ static void CL_ServerInfoPacket(netadr_t from, msg_t *msg)
         // if this isn't the correct gamename, ignore it
         gamename = Info_ValueForKey(infoString, "gamename");
 
-        gameMismatch = !*gamename || strcmp(gamename, com_gamename->string) != 0;
+        gameMismatch = !*gamename || strcmp(gamename, GAMENAME_FOR_MASTER) != 0;
 
         if (gameMismatch)
         {
@@ -4287,7 +4287,7 @@ static void CL_GlobalServers_f(void)
         cls.pingUpdateSource = AS_GLOBAL;
 
         Com_sprintf(command, sizeof(command), "getserversExt %s %i%s",
-                com_gamename->string,
+                GAMENAME_FOR_MASTER,
                 a == 0 ? PROTOCOL_VERSION : a == 1 ? 70 : 69,
                 Cvar_VariableIntegerValue("net_enabled") & NET_ENABLEV4 ? "" : " ipv6");
 

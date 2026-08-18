@@ -69,6 +69,8 @@ cvar_t	*r_greyscale;
 cvar_t	*r_ignorehwgamma;
 cvar_t	*r_measureOverdraw;
 
+cvar_t  *r_teleporterFlash;
+
 cvar_t	*r_inGameVideo;
 cvar_t	*r_fastsky;
 cvar_t	*r_drawSun;
@@ -1204,15 +1206,15 @@ void R_Register( void )
 	ri.Cvar_SetDescription(r_dlightMode, "Dynamic light mode:\n 0: VQ3 'fake' dynamic lights\n 1: High-quality per-pixel dynamic lights, slightly faster than VQ3's on modern hardware\n 2: Same as 1 but applies to all MD3 models too");
 	r_pshadowDist = ri.Cvar_Get( "r_pshadowDist", "128", CVAR_ARCHIVE );
 	r_mergeLightmaps = ri.Cvar_Get( "r_mergeLightmaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	ri.Cvar_SetDescription(r_mergeLightmaps, "Merge built-in small lightmaps into bigger lightmaps (atleas).");
+	ri.Cvar_SetDescription(r_mergeLightmaps, "Merge built-in small lightmaps into bigger lightmaps (atlases).");
 	r_imageUpsample = ri.Cvar_Get( "r_imageUpsample", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_imageUpsampleMaxSize = ri.Cvar_Get( "r_imageUpsampleMaxSize", "1024", CVAR_ARCHIVE | CVAR_LATCH );
 	r_imageUpsampleType = ri.Cvar_Get( "r_imageUpsampleType", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_genNormalMaps = ri.Cvar_Get( "r_genNormalMaps", "0", CVAR_ARCHIVE | CVAR_LATCH );
 
-	r_forceSun = ri.Cvar_Get( "r_forceSun", "0", CVAR_CHEAT );
-	r_forceSunLightScale = ri.Cvar_Get( "r_forceSunLightScale", "1.0", CVAR_CHEAT );
-	r_forceSunAmbientScale = ri.Cvar_Get( "r_forceSunAmbientScale", "0.5", CVAR_CHEAT );
+	r_forceSun = ri.Cvar_Get( "r_forceSun", "0", CVAR_ARCHIVE );
+	r_forceSunLightScale = ri.Cvar_Get( "r_forceSunLightScale", "1.0", CVAR_ARCHIVE );
+	r_forceSunAmbientScale = ri.Cvar_Get( "r_forceSunAmbientScale", "0.5", CVAR_ARCHIVE );
 	r_drawSunRays = ri.Cvar_Get( "r_drawSunRays", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_sunlightMode = ri.Cvar_Get( "r_sunlightMode", "1", CVAR_ARCHIVE | CVAR_LATCH );
 
@@ -1233,7 +1235,7 @@ void R_Register( void )
 	//
 	// temporary latched variables that can only change over a restart
 	//
-	r_fullbright = ri.Cvar_Get ("r_fullbright", "0", CVAR_LATCH|CVAR_CHEAT );
+	r_fullbright = ri.Cvar_Get ("r_fullbright", "0", CVAR_LATCH );
 	ri.Cvar_SetDescription(r_fullbright, "Debug tool to render the entire level without lighting.");
 	r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_LATCH );
 	ri.Cvar_SetDescription(r_mapOverBrightBits, "Sets the number of overbright bits baked into all lightmaps and map data.");
@@ -1264,6 +1266,8 @@ void R_Register( void )
 	ri.Cvar_SetDescription(r_stereoSeparation, "Control eye separation. Resulting separation is \\r_zproj divided by this value in standard units.");
 	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_ARCHIVE );
 	ri.Cvar_SetDescription(r_ignoreGLErrors, "Ignore OpenGL errors.");
+	r_teleporterFlash = ri.Cvar_Get( "r_teleporterFlash", "1", CVAR_ARCHIVE );
+	ri.Cvar_SetDescription( r_teleporterFlash, "Show a white screen instead of a black screen when being teleported in hyperspace." );
 	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
 	ri.Cvar_SetDescription(r_fastsky, "Draw flat colored skies.");
 	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );

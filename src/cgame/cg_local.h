@@ -58,6 +58,9 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #define ATTACKER_HEAD_TIME  10000
 #define REWARD_TIME         3000
 
+#define BASE_FOV_Y          (73.739792f) // atan2( 3, 4 / tan( 90 ) )
+#define MAX_FOV_OFFSET      (30)
+
 #define PULSE_SCALE         1.5     // amount to scale up the icons when activating
 
 #define MAX_STEP_CHANGE     32
@@ -1505,6 +1508,7 @@ extern  vmCvar_t    cg_gun_z;
 extern  vmCvar_t    cg_tracerChance;
 extern  vmCvar_t    cg_tracerWidth;
 extern  vmCvar_t    cg_tracerLength;
+extern  vmCvar_t    cg_fovOffset;
 extern  vmCvar_t    cg_thirdPerson;
 extern  vmCvar_t    cg_thirdPersonAngle;
 extern  vmCvar_t    cg_thirdPersonShoulderViewMode;
@@ -1861,7 +1865,9 @@ void          CG_ExecuteNewServerCommands( int latestSequence );
 void          CG_ParseServerinfo( void );
 void          CG_SetConfigValues( void );
 void          CG_ShaderStateChanged(void);
+#ifndef MODULE_INTERFACE_11
 void          CG_UnregisterCommands( void );
+#endif
 void          CG_CenterPrint_f( void );
 
 //
@@ -2009,7 +2015,9 @@ void          trap_SendConsoleCommand( const char *text );
 // register a command name so the console can perform command completion.
 // FIXME: replace this with a normal console command "defineCommand"?
 void          trap_AddCommand( const char *cmdName );
+#ifndef MODULE_INTERFACE_11
 void          trap_RemoveCommand( const char *cmdName );
+#endif
 
 // send a string to the server over the network
 void          trap_SendClientCommand( const char *s );

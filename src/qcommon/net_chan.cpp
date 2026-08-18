@@ -78,7 +78,7 @@ void Netchan_Init(int port)
 {
     port &= 0xffff;
     showpackets = Cvar_Get("showpackets", "0", CVAR_TEMP);
-    Cvar_SetDescription(showpackets, "Tiggles information of all packets sent and received.");
+    Cvar_SetDescription(showpackets, "Toggles information of all packets sent and received.");
     showdrop = Cvar_Get("showdrop", "0", CVAR_TEMP);
     Cvar_SetDescription(showdrop, "Toggles information of dropped packet traffic.");
     qport = Cvar_Get("net_qport", va("%i", port), CVAR_INIT);

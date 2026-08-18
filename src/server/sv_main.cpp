@@ -54,6 +54,7 @@ cvar_t	*sv_mapname;
 cvar_t	*sv_mapChecksum;
 cvar_t	*sv_referencedPakNames;
 cvar_t	*sv_referencedAlternatePakNames;
+cvar_t  *sv_sendNearbyEnts;
 cvar_t	*sv_serverid;
 cvar_t	*sv_minRate;
 cvar_t	*sv_maxRate;
@@ -692,7 +693,7 @@ void SVC_Info( netadr_t from ) {
 	Info_SetValueForKey( infostring, "challenge", Cmd_Argv(1) );
 
 	Info_SetValueForKey( infostring, "protocol", va("%i", from.alternateProtocol == 2 ? 69 : from.alternateProtocol == 1 ? 70 : PROTOCOL_VERSION) );
-	Info_SetValueForKey( infostring, "gamename", com_gamename->string );
+	Info_SetValueForKey( infostring, "gamename", GAMENAME_FOR_MASTER );
 	Info_SetValueForKey( infostring, "hostname", sv_hostname->string );
 	Info_SetValueForKey( infostring, "mapname", sv_mapname->string );
 	Info_SetValueForKey( infostring, "clients", va("%i", count) );

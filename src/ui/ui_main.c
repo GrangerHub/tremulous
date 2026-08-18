@@ -5650,10 +5650,10 @@ static void UI_DisplayDownloadInfo(const char *downloadName, float centerPoint, 
     static char etaText[] = "Estimated time left:";
     static char xferText[] = "Transfer rate:";
 
-    int downloadSize, downloadCount, downloadTime, downloadTotal, downloadDone;
+    int downloadSize, downloadCount, downloadTime, percentage, downloadTotal, downloadDone;
     char dlSizeBuf[64], totalSizeBuf[64], xferRateBuf[64], dlTimeBuf[64];
     int xferRate;
-    int leftWidth;
+    int leftWidth, div;
     const char *s;
 
     downloadSize = trap_Cvar_VariableValue("cl_downloadSize");
@@ -5670,7 +5670,24 @@ static void UI_DisplayDownloadInfo(const char *downloadName, float centerPoint, 
     Text_PaintCenter(centerPoint, yStart + 248, scale, colorWhite, xferText, 0);
 
     if (downloadSize > 0)
-        s = va("%s (%d%%, %d/%d)", downloadName, (int)((float)downloadCount * 100.0f / downloadSize), downloadDone + 1, downloadTotal);
+    {
+        if (downloadCount > 21474836) // x100 could cause overflow!
+        {
+            div = downloadSize >> 8;
+
+            if (div)
+                percentage = (downloadCount >> 8) * 100 / div;
+            else
+                percentage = 0;
+        }
+        else
+            percentage = downloadCount * 100 / downloadSize;
+
+        if (percentage > 100)
+            percentage = 100;
+
+        s = va("%s (%d%%, %d/%d)", downloadName, percentage, downloadDone + 1, downloadTotal);
+    }
     else
         s = downloadName;
 

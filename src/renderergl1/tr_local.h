@@ -986,6 +986,8 @@ extern cvar_t	*r_measureOverdraw;		// enables stencil buffer overdraw measuremen
 extern cvar_t	*r_lodbias;				// push/pull LOD transitions
 extern cvar_t	*r_lodscale;
 
+extern cvar_t	*r_teleporterFlash;		// teleport hyperspace visual
+
 extern cvar_t	*r_primitives;			// "0" = based on compiled vertex array existance
 										// "1" = glDrawElemet tristrips
 										// "2" = glDrawElements triangles
