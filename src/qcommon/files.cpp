@@ -2997,22 +2997,12 @@ void FS_AddGameDirectory(const char *path, const char *dir)
             searchpath_t *search = static_cast<searchpath_t *>(Z_Malloc(sizeof(searchpath_t)));
             search->pack = pak;
 
-            // Add to TAIL of the list instead of HEAD to maintain sorted order
-            if (fs_searchpaths == nullptr)
-            {
-                search->next = nullptr;
-                fs_searchpaths = search;
-            }
-            else
-            {
-                searchpath_t *last = fs_searchpaths;
-                while (last->next)
-                {
-                    last = last->next;
-                }
-                search->next = nullptr;
-                last->next = search;
-            }
+            // Add to HEAD (ioquake3 semantics): entries are prepended while
+            // walking the ascending-sorted list, so the alphabetically-last
+            // pak (e.g. data-1.3.0 over data-1.1.0) is searched FIRST and
+            // overrides older ones. Tail-insertion inverted this precedence.
+            search->next = fs_searchpaths;
+            fs_searchpaths = search;
 
             pak->onlyPrimary = false;
             pak->onlyAlternate = false;
@@ -3058,22 +3048,9 @@ void FS_AddGameDirectory(const char *path, const char *dir)
             Q_strncpyz(search->dir->gamedir, pakdirs[pakdirsi],
                 sizeof(search->dir->gamedir));  // mypak.pk3dir
 
-            // Add to TAIL of the list instead of HEAD to maintain sorted order
-            if (fs_searchpaths == nullptr)
-            {
-                search->next = nullptr;
-                fs_searchpaths = search;
-            }
-            else
-            {
-                searchpath_t *last = fs_searchpaths;
-                while (last->next)
-                {
-                    last = last->next;
-                }
-                search->next = nullptr;
-                last->next = search;
-            }
+            // Add to HEAD (ioquake3 semantics) - see the .pk3 case above.
+            search->next = fs_searchpaths;
+            fs_searchpaths = search;
 
             pakdirsi++;
         }
@@ -3126,22 +3103,11 @@ void FS_AddGameDirectory(const char *path, const char *dir)
     Q_strncpyz(search->dir->fullpath, curpath, sizeof(search->dir->fullpath));
     Q_strncpyz(search->dir->gamedir, dir, sizeof(search->dir->gamedir));
 
-    // Add to TAIL of the list instead of HEAD to maintain sorted order
-    if (fs_searchpaths == nullptr)
-    {
-        search->next = nullptr;
-        fs_searchpaths = search;
-    }
-    else
-    {
-        searchpath_t *last = fs_searchpaths;
-        while (last->next)
-        {
-            last = last->next;
-        }
-        search->next = nullptr;
-        last->next = search;
-    }
+    // Add to HEAD (ioquake3 semantics) - see the .pk3 case above. The
+    // gamedir directory is prepended last, so loose files override paks,
+    // exactly like upstream ioquake3.
+    search->next = fs_searchpaths;
+    fs_searchpaths = search;
 }
 
 /*
