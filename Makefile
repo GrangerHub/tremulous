@@ -315,14 +315,26 @@ Q3CPPDIR=$(MOUNT_DIR)/tools/lcc/cpp
 Q3LCCETCDIR=$(MOUNT_DIR)/tools/lcc/etc
 Q3LCCSRCDIR=$(MOUNT_DIR)/tools/lcc/src
 SDLHDIR=$(EXTERNAL_DIR)/SDL3
-CURLHDIR=$(EXTERNAL_DIR)/libcurl-7.35.0
+CURLHDIR=$(EXTERNAL_DIR)/curl-src/include
 ALHDIR=$(EXTERNAL_DIR)/AL
 LIBSDIR=$(EXTERNAL_DIR)/libs
 TEMPDIR=/tmp
 
 # SDL3 build directories
-SDL3_BUILD_DIR=$(B)/SDL3-build
-SDL3_INSTALL_DIR=$(B)/SDL3-install
+# NOTE: These use $(BUILD_DIR), NOT $(B), so the vendored -I/-L paths baked
+# into CLIENT_CFLAGS/CLIENT_LIBS expand correctly in the debug/release
+# wrapper sub-makes (where B is not yet defined at expansion time). The
+# dependencies are Release builds shared by both engine configurations.
+SDL3_BUILD_DIR=$(BUILD_DIR)/SDL3-build
+SDL3_INSTALL_DIR=$(BUILD_DIR)/SDL3-install
+
+# OpenAL Soft build directories (for vendored external/openal-soft)
+OPENAL_BUILD_DIR=$(BUILD_DIR)/openal-build
+OPENAL_INSTALL_DIR=$(BUILD_DIR)/openal-install
+
+# libcurl build directories (for the curl-src git submodule)
+CURL_BUILD_DIR=$(BUILD_DIR)/curl-build
+CURL_INSTALL_DIR=$(BUILD_DIR)/curl-install
 
 bin_path=$(shell which $(1) 2> /dev/null)
 
@@ -357,6 +369,23 @@ ifneq ($(BUILD_CLIENT),0)
     SDL_LIBS = -L$(CURDIR)/$(SDL3_INSTALL_DIR)/lib -lSDL3
     USE_VENDORED_SDL3 = 1
   endif
+
+  # OpenAL Soft: if the vendored source tree is present (external/openal-soft,
+  # not vendored in git due to LGPL), build it as a static library linked
+  # directly into the client (matches the CMake build behavior). Otherwise use
+  # the system OpenAL found above via pkg-config. If neither is available,
+  # fall back to the classic OpenAL headers in external/AL and load the system
+  # OpenAL library at runtime (USE_OPENAL_DLOPEN, the default).
+  ifneq ($(wildcard $(EXTERNAL_DIR)/openal-soft/CMakeLists.txt),)
+    OPENAL_CFLAGS = -I$(CURDIR)/$(OPENAL_INSTALL_DIR)/include
+    OPENAL_LIBS = $(CURDIR)/$(OPENAL_INSTALL_DIR)/lib/libopenal.a
+    USE_VENDORED_OPENAL = 1
+    # Vendored static OpenAL is linked directly; disable runtime dlopen
+    USE_OPENAL_DLOPEN = 0
+  else ifeq ($(OPENAL_LIBS),)
+    # No vendored source tree and no system OpenAL: bundled headers only
+    OPENAL_CFLAGS = -I$(ALHDIR)
+  endif
 endif
 
 # SDL3 build target (for vendored SDL3)
@@ -390,6 +419,7 @@ ifdef MINGW
 	@echo "Generating SDL3 MinGW toolchain file..."
 	@mkdir -p $(B)
 	@echo "set(CMAKE_SYSTEM_NAME Windows)" > $(SDL3_TOOLCHAIN)
+	@echo "set(CMAKE_SYSTEM_PROCESSOR x86_64)" >> $(SDL3_TOOLCHAIN)
 	@echo "set(CMAKE_C_COMPILER $(CC))" >> $(SDL3_TOOLCHAIN)
 	@echo "set(CMAKE_CXX_COMPILER $(CXX))" >> $(SDL3_TOOLCHAIN)
 	@echo "set(CMAKE_RC_COMPILER $(WINDRES))" >> $(SDL3_TOOLCHAIN)
@@ -404,9 +434,137 @@ endif
 		-DSDL_EXAMPLES=OFF \
 		-DSDL_DISABLE_INSTALL=OFF \
 		$(SDL3_CMAKE_ARGS)
-	@$(MAKE) -C $(SDL3_BUILD_DIR) -j$(or $(PARALLEL_JOBS),$(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1))
-	@$(MAKE) -C $(SDL3_BUILD_DIR) install
+	@cmake --build $(SDL3_BUILD_DIR) --config Release -j$(or $(PARALLEL_JOBS),$(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1))
+	@cmake --build $(SDL3_BUILD_DIR) --config Release --target install
 	@echo "SDL3 built successfully"
+
+# OpenAL Soft build target (for vendored external/openal-soft)
+# NOTE: Use absolute paths so this works regardless of the value of B, and
+# guard it so an empty B never resolves to a filesystem-root directory.
+OPENAL_SRCDIR=$(CURDIR)/$(EXTERNAL_DIR)/openal-soft
+
+# When cross-compiling for Windows (MINGW), tell OpenAL's cmake to use the
+# MinGW toolchain, reusing the same compiler detection as the SDL3 target.
+ifdef MINGW
+	 OPENAL_TOOLCHAIN=$(CURDIR)/$(B)/openal-mingw-toolchain.cmake
+	 OPENAL_CMAKE_ARGS=-DCMAKE_TOOLCHAIN_FILE=$(OPENAL_TOOLCHAIN) \
+	-DCMAKE_SYSTEM_NAME=Windows
+else
+	 OPENAL_CMAKE_ARGS=
+endif
+
+.PHONY: build-openal
+build-openal:
+	@test -n "$(B)" || (echo "build-openal: B is empty (run via 'release'/'debug' targets)"; exit 1)
+	@test -f "$(OPENAL_SRCDIR)/CMakeLists.txt" || (echo "build-openal: $(OPENAL_SRCDIR)/CMakeLists.txt not found"; exit 1)
+ifdef MINGW
+	@test -n "$(CC)" || (echo "build-openal: no MINGW cross compiler (CC) detected"; exit 1)
+	@echo "Generating OpenAL MinGW toolchain file..."
+	@mkdir -p $(B)
+	@echo "set(CMAKE_SYSTEM_NAME Windows)" > $(OPENAL_TOOLCHAIN)
+	@echo "set(CMAKE_SYSTEM_PROCESSOR x86_64)" >> $(OPENAL_TOOLCHAIN)
+	@echo "set(CMAKE_C_COMPILER $(CC))" >> $(OPENAL_TOOLCHAIN)
+	@echo "set(CMAKE_CXX_COMPILER $(CXX))" >> $(OPENAL_TOOLCHAIN)
+	@echo "set(CMAKE_RC_COMPILER $(WINDRES))" >> $(OPENAL_TOOLCHAIN)
+endif
+	@echo "Building vendored OpenAL Soft from $(OPENAL_SRCDIR)..."
+	@mkdir -p $(OPENAL_BUILD_DIR)
+	@cd $(OPENAL_BUILD_DIR) && cmake $(OPENAL_SRCDIR) \
+		-DCMAKE_INSTALL_PREFIX=$(CURDIR)/$(OPENAL_INSTALL_DIR) \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DLIBTYPE=STATIC \
+		-DALSOFT_EXAMPLES=OFF \
+		-DALSOFT_TESTS=OFF \
+		-DALSOFT_UTILS=OFF \
+		-DALSOFT_UPDATE_BUILD_VERSION=OFF \
+		-DALSOFT_DLOPEN=OFF \
+		-DALSOFT_WERROR=OFF \
+		$(OPENAL_CMAKE_ARGS)
+	@cmake --build $(OPENAL_BUILD_DIR) --config Release -j$(or $(PARALLEL_JOBS),$(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1))
+	@cmake --build $(OPENAL_BUILD_DIR) --config Release --target install
+	@echo "OpenAL Soft built successfully"
+
+# libcurl build target (for the curl-src git submodule)
+# NOTE: Use absolute paths so this works regardless of the value of B, and
+# guard it so an empty B never resolves to a filesystem-root directory.
+CURL_SRCDIR=$(CURDIR)/$(EXTERNAL_DIR)/curl-src
+
+# When cross-compiling for Windows (MINGW), tell curl's cmake to use the
+# MinGW toolchain (same pattern as SDL3/OpenAL) and the native Windows
+# Schannel TLS backend so HTTPS needs no external TLS dependency.
+ifdef MINGW
+	 CURL_TOOLCHAIN=$(CURDIR)/$(B)/curl-mingw-toolchain.cmake
+	 CURL_CMAKE_ARGS=-DCMAKE_TOOLCHAIN_FILE=$(CURL_TOOLCHAIN) \
+	-DCMAKE_SYSTEM_NAME=Windows \
+	-DCURL_USE_SCHANNEL=ON
+else
+	 CURL_CMAKE_ARGS=
+endif
+
+.PHONY: build-curl
+build-curl:
+	@test -n "$(B)" || (echo "build-curl: B is empty (run via 'release'/'debug' targets)"; exit 1)
+	@test -f "$(CURL_SRCDIR)/CMakeLists.txt" || (echo "build-curl: $(CURL_SRCDIR)/CMakeLists.txt not found"; exit 1)
+ifdef MINGW
+	@test -n "$(CC)" || (echo "build-curl: no MINGW cross compiler (CC) detected"; exit 1)
+	@echo "Generating curl MinGW toolchain file..."
+	@mkdir -p $(B)
+	@echo "set(CMAKE_SYSTEM_NAME Windows)" > $(CURL_TOOLCHAIN)
+	@echo "set(CMAKE_SYSTEM_PROCESSOR x86_64)" >> $(CURL_TOOLCHAIN)
+	@echo "set(CMAKE_C_COMPILER $(CC))" >> $(CURL_TOOLCHAIN)
+	@echo "set(CMAKE_CXX_COMPILER $(CXX))" >> $(CURL_TOOLCHAIN)
+	@echo "set(CMAKE_RC_COMPILER $(WINDRES))" >> $(CURL_TOOLCHAIN)
+endif
+	@echo "Building vendored libcurl from $(CURL_SRCDIR)..."
+	@mkdir -p $(CURL_BUILD_DIR)
+	@cd $(CURL_BUILD_DIR) && cmake $(CURL_SRCDIR) \
+		-DCMAKE_INSTALL_PREFIX=$(CURDIR)/$(CURL_INSTALL_DIR) \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DBUILD_CURL_EXE=OFF \
+		-DBUILD_STATIC_LIBS=ON \
+		-DBUILD_SHARED_LIBS=OFF \
+		-DBUILD_LIBCURL_DOCS=OFF \
+		-DCURL_DISABLE_TESTS=ON \
+		-DBUILD_TESTING=OFF \
+		-DCURL_DISABLE_DICT=ON \
+		-DCURL_DISABLE_TELNET=ON \
+		-DCURL_DISABLE_TFTP=ON \
+		-DCURL_DISABLE_POP3=ON \
+		-DCURL_DISABLE_SMTP=ON \
+		-DCURL_DISABLE_IMAP=ON \
+		-DCURL_DISABLE_GOPHER=ON \
+		-DCURL_DISABLE_RTSP=ON \
+		-DCURL_DISABLE_SMB=ON \
+		-DCURL_DISABLE_MQTT=ON \
+		-DCURL_DISABLE_LDAP=ON \
+		-DCURL_DISABLE_LDAPS=ON \
+		-DCURL_DISABLE_DOH=ON \
+		-DCURL_DISABLE_WEBSOCKETS=ON \
+		-DCURL_USE_LDAP=OFF \
+		-DCURL_USE_LDAPS=OFF \
+		-DCURL_USE_LIBSSH2=OFF \
+		-DCURL_USE_LIBPSL=OFF \
+		-DCURL_ZLIB=OFF \
+		-DCURL_BROTLI=OFF \
+		-DCURL_ZSTD=OFF \
+		-DCURL_NGHTTP2=OFF \
+		-DUSE_NGHTTP2=OFF \
+		-DCURL_USE_LIBIDN2=OFF \
+		-DUSE_LIBIDN2=OFF \
+		-DENABLE_ARES=OFF \
+		-DENABLE_CURLDEBUG=OFF \
+		-DENABLE_CURL_MANUAL=OFF \
+		-DENABLE_DEBUG=OFF \
+		-DENABLE_WEBSOCKETS=OFF \
+		-DPICKY_COMPILER=OFF \
+		-DUSE_MSH3=OFF \
+		-DUSE_NGTCP2=OFF \
+		-DUSE_QUICHE=OFF \
+		-DUSE_WIN32_IDN=OFF \
+		$(CURL_CMAKE_ARGS)
+	@cmake --build $(CURL_BUILD_DIR) --config Release -j$(or $(PARALLEL_JOBS),$(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1))
+	@cmake --build $(CURL_BUILD_DIR) --config Release --target install
+	@echo "libcurl built successfully"
 
 # Add git version info
 USE_GIT=
@@ -484,6 +642,7 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   RENDERER_LIBS = $(SDL_LIBS) -lGL
 
   ifeq ($(USE_OPENAL),1)
+    CLIENT_CFLAGS += $(OPENAL_CFLAGS)
     ifneq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LIBS += $(THREAD_LIBS) $(OPENAL_LIBS)
     endif
@@ -577,9 +736,15 @@ ifeq ($(PLATFORM),darwin)
 
   # OpenAL headers: always include the vendored path so AL/al.h is found
   BASE_CFLAGS += -I$(ALHDIR)
+  ifdef USE_VENDORED_OPENAL
+    # Vendored OpenAL headers take precedence over the bundled external/AL set
+    BASE_CFLAGS := $(OPENAL_CFLAGS) $(BASE_CFLAGS)
+  endif
 
   ifeq ($(USE_OPENAL),1)
-    ifneq ($(USE_OPENAL_DLOPEN),1)
+    ifeq ($(USE_VENDORED_OPENAL),1)
+      CLIENT_LIBS += $(OPENAL_LIBS)
+    else ifneq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LIBS += -framework OpenAL
     endif
   endif
@@ -729,11 +894,15 @@ ifdef MINGW
 
   ifeq ($(USE_OPENAL),1)
     CLIENT_CFLAGS += $(OPENAL_CFLAGS)
-    ifneq ($(USE_OPENAL_DLOPEN),1)
+    ifeq ($(USE_VENDORED_OPENAL),1)
+      CLIENT_LIBS += $(OPENAL_LIBS)
+    else ifneq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LDFLAGS += $(OPENAL_LDFLAGS)
     endif
     ifeq ($(USE_LOCAL_HEADERS),1)
-    CLIENT_CFLAGS += -I$(ALHDIR) 
+      ifneq ($(USE_VENDORED_OPENAL),1)
+        CLIENT_CFLAGS += -I$(ALHDIR)
+      endif
     endif
   endif
 
@@ -754,7 +923,9 @@ ifdef MINGW
   SHLIBEXT=dll
   SHLIBCFLAGS=
   #SHLIBLDFLAGS=-shared $(LDFLAGS)
-  SHLIBLDFLAGS=-shared -static-libgcc
+  # -static-libstdc++: renderer/game modules contain C++ code; link the C++
+  # runtime statically so no libstdc++-6.dll must ship next to them.
+  SHLIBLDFLAGS=-shared -static-libgcc -static-libstdc++
 
   BINEXT=.exe
 
@@ -779,17 +950,34 @@ ifdef MINGW
     FREETYPE_CFLAGS = -Ifreetype2
   endif
 
+  # libcurl: default to the committed prebuilt static library in
+  # external/libs (pure make+gcc flow, no cmake). Set USE_VENDORED_CURL=1 to
+  # build the curl-src submodule with cmake instead. NOTE: this assignment
+  # must stay BEFORE the link branch below - ifeq directives expand their
+  # arguments at parse time.
+  USE_VENDORED_CURL = 0
+
   ifeq ($(USE_CURL),1)
     ifneq ($(USE_CURL_DLOPEN),1)
-      ifeq ($(USE_LOCAL_HEADERS),1)
+      # Schannel/SSPI static libcurl needs these system libs AFTER the
+      # archive reference (GNU ld resolves archives left-to-right).
+      ifeq ($(USE_VENDORED_CURL),1)
+        # Fresh libcurl built from the curl-src submodule by build-curl
+        CLIENT_CFLAGS += -DCURL_STATICLIB -I$(CURLHDIR)
+        CLIENT_LIBS += $(CURDIR)/$(CURL_INSTALL_DIR)/lib/libcurl.a
+        CLIENT_LIBS += -lcrypt32 -lsecur32 -lbcrypt -liphlpapi -ladvapi32
+      else ifeq ($(USE_LOCAL_HEADERS),1)
+        # Headers come from the curl-src git submodule; link against the
+        # committed prebuilt import libraries in external/libs.
         CLIENT_CFLAGS += -DCURL_STATICLIB -I$(CURLHDIR)
         ifeq ($(ARCH),x86_64)
           CLIENT_LIBS += $(LIBSDIR)/win64/libcurl.a
         else
           CLIENT_LIBS += $(LIBSDIR)/win32/libcurl.a
         endif
+        CLIENT_LIBS += -lcrypt32 -lsecur32 -lbcrypt -liphlpapi -ladvapi32
       else
-		CLIENT_CFLAGS += $(CURL_CFLAGS)
+  CLIENT_CFLAGS += $(CURL_CFLAGS)
         CLIENT_LIBS += $(CURL_LIBS)
       endif
     endif
@@ -799,18 +987,31 @@ ifdef MINGW
   CLIENT_LIBS += -lmingw32
   RENDERER_LIBS += -lmingw32
 
-  # SDL3 for MinGW: build the vendored SDL3 for the cross target and link
-  # against it. The committed SDL2 import libraries were removed, so there is
-  # no point referencing the (non-existent) SDL3 local libraries. The vendored
-  # build installs SDL3.dll + libSDL3.dll.a into $(SDL3_INSTALL_DIR).
-  # Reference the import library by its full path: the global -static flag would
-  # otherwise make "-lSDL3" prefer/require a static libSDL3.a which we don't build.
+  # SDL3: prefer the system SDL3 found via pkg-config above (MSYS2 package
+  # mingw-w64-x86_64-sdl3) so a plain "make debug"/"make release" needs
+  # nothing but make+gcc. Only when no system SDL3 exists (USE_VENDORED_SDL3
+  # set by the detection block) do we build the vendored external/SDL3 with
+  # cmake. The vendored import library is referenced by its full path: the
+  # global -static flag would otherwise make "-lSDL3" prefer/require a static
+  # libSDL3.a which we don't build.
+  ifeq ($(USE_VENDORED_SDL3),1)
+    CLIENT_LIBS += $(CURDIR)/$(SDL3_INSTALL_DIR)/lib/libSDL3.dll.a
+    RENDERER_LIBS += $(CURDIR)/$(SDL3_INSTALL_DIR)/lib/libSDL3.dll.a
+    CLIENT_EXTRA_FILES += $(CURDIR)/$(SDL3_INSTALL_DIR)/bin/SDL3.dll
+  else
+    # Reference the DLL import library by full path: the global -static
+    # flag would otherwise make "-lSDL3" prefer/require the static libSDL3.a
+    # shipped alongside it (which needs a pile of extra system libs).
+    # The MSYS2 SDL3.dll depends on libiconv-2.dll - ship it when present
+    # (wildcard keeps the copy target away when it is not needed).
+    SDL3_PREFIX := $(shell pkg-config --variable=prefix sdl3)
+    CLIENT_LIBS += $(SDL3_PREFIX)/lib/libSDL3.dll.a
+    RENDERER_LIBS += $(SDL3_PREFIX)/lib/libSDL3.dll.a
+    CLIENT_EXTRA_FILES += $(SDL3_PREFIX)/bin/SDL3.dll
+    CLIENT_EXTRA_FILES += $(wildcard $(SDL3_PREFIX)/bin/libiconv-2.dll)
+  endif
   CLIENT_CFLAGS += $(SDL_CFLAGS)
-  CLIENT_LIBS += $(CURDIR)/$(SDL3_INSTALL_DIR)/lib/libSDL3.dll.a
-  RENDERER_LIBS += $(CURDIR)/$(SDL3_INSTALL_DIR)/lib/libSDL3.dll.a
   SDLDLL=SDL3.dll
-  CLIENT_EXTRA_FILES += $(CURDIR)/$(SDL3_INSTALL_DIR)/bin/SDL3.dll
-  USE_VENDORED_SDL3 = 1
 
 else # ifdef MINGW
 
@@ -846,7 +1047,10 @@ ifeq ($(PLATFORM),freebsd)
 
   # optional features/libraries
   ifeq ($(USE_OPENAL),1)
-    ifeq ($(USE_OPENAL_DLOPEN),1)
+    CLIENT_CFLAGS += $(OPENAL_CFLAGS)
+    ifeq ($(USE_VENDORED_OPENAL),1)
+      CLIENT_LIBS += $(THREAD_LIBS) $(OPENAL_LIBS)
+    else ifeq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LIBS += $(THREAD_LIBS) $(OPENAL_LIBS)
     endif
   endif
@@ -1309,6 +1513,16 @@ targets: makedirs
 ifeq ($(USE_VENDORED_SDL3),1)
   ifneq ($(BUILD_CLIENT),0)
 targets: build-sdl3
+  endif
+endif
+ifeq ($(USE_VENDORED_OPENAL),1)
+  ifneq ($(BUILD_CLIENT),0)
+targets: build-openal
+  endif
+endif
+ifeq ($(USE_VENDORED_CURL),1)
+  ifneq ($(BUILD_CLIENT),0)
+targets: build-curl
   endif
 endif
 	@echo ""
