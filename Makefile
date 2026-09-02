@@ -1,3 +1,8 @@
+# ───┬───    ┌─────┐    ┌─────    ┌──┐ ┌──┐    ┬     ┬    ┬         ┌─────┐    ┬     ┬    ┌─────┐
+#    │       │     │    │         │  └┬┘  │    │     │    │         │     │    │     │    │      
+#    │       ├───┬─┘    ├────     │   │   │    │     │    │         │     │    │     │    └─────┐
+#    │       │   └─┐    │         │       │    │     │    │         │     │    │     │          │
+#    ┴       │     │    └─────    ┴       ┴    └─────┘    └─────    └─────┘    └─────┘    └─────┘ 
 #
 # Tremulous Makefile
 #
@@ -309,11 +314,27 @@ LBURGDIR=$(MOUNT_DIR)/tools/lcc/lburg
 Q3CPPDIR=$(MOUNT_DIR)/tools/lcc/cpp
 Q3LCCETCDIR=$(MOUNT_DIR)/tools/lcc/etc
 Q3LCCSRCDIR=$(MOUNT_DIR)/tools/lcc/src
-SDLHDIR=$(EXTERNAL_DIR)/SDL2
-CURLHDIR=$(EXTERNAL_DIR)/libcurl-7.35.0
+SDLHDIR=$(EXTERNAL_DIR)/SDL3
+CURLHDIR=$(EXTERNAL_DIR)/curl-src/include
 ALHDIR=$(EXTERNAL_DIR)/AL
 LIBSDIR=$(EXTERNAL_DIR)/libs
 TEMPDIR=/tmp
+
+# SDL3 build directories
+# NOTE: These use $(BUILD_DIR), NOT $(B), so the vendored -I/-L paths baked
+# into CLIENT_CFLAGS/CLIENT_LIBS expand correctly in the debug/release
+# wrapper sub-makes (where B is not yet defined at expansion time). The
+# dependencies are Release builds shared by both engine configurations.
+SDL3_BUILD_DIR=$(BUILD_DIR)/SDL3-build
+SDL3_INSTALL_DIR=$(BUILD_DIR)/SDL3-install
+
+# OpenAL Soft build directories (for vendored external/openal-soft)
+OPENAL_BUILD_DIR=$(BUILD_DIR)/openal-build
+OPENAL_INSTALL_DIR=$(BUILD_DIR)/openal-install
+
+# libcurl build directories (for the curl-src git submodule)
+CURL_BUILD_DIR=$(BUILD_DIR)/curl-build
+CURL_INSTALL_DIR=$(BUILD_DIR)/curl-install
 
 bin_path=$(shell which $(1) 2> /dev/null)
 
@@ -326,21 +347,224 @@ ifneq ($(BUILD_CLIENT),0)
     CURL_LIBS ?= $(shell pkg-config --silence-errors --libs libcurl)
     OPENAL_CFLAGS ?= $(shell pkg-config --silence-errors --cflags openal)
     OPENAL_LIBS ?= $(shell pkg-config --silence-errors --libs openal)
-    SDL_CFLAGS ?= $(shell pkg-config --silence-errors --cflags sdl2|sed 's/-Dmain=SDL_main//')
-    SDL_LIBS ?= $(shell pkg-config --silence-errors --libs sdl2)
+    SDL_CFLAGS ?= $(shell pkg-config --silence-errors --cflags sdl3|sed 's/-Dmain=SDL_main//')
+    SDL_LIBS ?= $(shell pkg-config --silence-errors --libs sdl3)
   else
     # assume they're in the system default paths (no -I or -L needed)
     CURL_LIBS ?= -lcurl
     OPENAL_LIBS ?= -lopenal
   endif
-  # Use sdl2-config if all else fails
+  # Use sdl3-config if all else fails
   ifeq ($(SDL_CFLAGS),)
-    ifneq ($(call bin_path, sdl2-config),)
-      SDL_CFLAGS ?= $(shell sdl2-config --cflags)
-      SDL_LIBS ?= $(shell sdl2-config --libs)
+    ifneq ($(call bin_path, sdl3-config),)
+      SDL_CFLAGS ?= $(shell sdl3-config --cflags)
+      SDL_LIBS ?= $(shell sdl3-config --libs)
     endif
   endif
+  # If no system SDL3 found, use vendored SDL3 from external/SDL3.
+  # Use the install directory for includes (has generated SDL_build_config.h
+  # after build-sdl3 runs make install), not the source tree.
+  ifeq ($(SDL_CFLAGS),)
+    SDL_CFLAGS = -I$(CURDIR)/$(SDL3_INSTALL_DIR)/include
+    SDL_LIBS = -L$(CURDIR)/$(SDL3_INSTALL_DIR)/lib -lSDL3
+    USE_VENDORED_SDL3 = 1
+  endif
+
+  # OpenAL Soft: if the vendored source tree is present (external/openal-soft,
+  # not vendored in git due to LGPL), build it as a static library linked
+  # directly into the client (matches the CMake build behavior). Otherwise use
+  # the system OpenAL found above via pkg-config. If neither is available,
+  # fall back to the classic OpenAL headers in external/AL and load the system
+  # OpenAL library at runtime (USE_OPENAL_DLOPEN, the default).
+  ifneq ($(wildcard $(EXTERNAL_DIR)/openal-soft/CMakeLists.txt),)
+    OPENAL_CFLAGS = -I$(CURDIR)/$(OPENAL_INSTALL_DIR)/include
+    OPENAL_LIBS = $(CURDIR)/$(OPENAL_INSTALL_DIR)/lib/libopenal.a
+    USE_VENDORED_OPENAL = 1
+    # Vendored static OpenAL is linked directly; disable runtime dlopen
+    USE_OPENAL_DLOPEN = 0
+  else ifeq ($(OPENAL_LIBS),)
+    # No vendored source tree and no system OpenAL: bundled headers only
+    OPENAL_CFLAGS = -I$(ALHDIR)
+  endif
 endif
+
+# SDL3 build target (for vendored SDL3)
+# NOTE: Use absolute paths so this works regardless of the value of B, and
+# guard it so an empty B never resolves to a filesystem-root directory.
+SDL3_SRCDIR=$(CURDIR)/$(EXTERNAL_DIR)/SDL3
+
+# When cross-compiling for Windows (MINGW), tell SDL's cmake to use the
+# MinGW toolchain. We point it directly at the cross compiler binaries that
+# were detected earlier in the MINGW section.
+ifdef MINGW
+  SDL3_TOOLCHAIN=$(CURDIR)/$(B)/sdl3-mingw-toolchain.cmake
+  SDL3_CMAKE_ARGS=-DCMAKE_TOOLCHAIN_FILE=$(SDL3_TOOLCHAIN) \
+	-DCMAKE_SYSTEM_NAME=Windows \
+	-DSDL_RENDER=ON -DSDL_OPENGL=ON -DSDL_OPENGLES=OFF \
+	-DSDL_VULKAN=OFF -DSDL_PTHREADS=ON -DSDL_THREADS=ON \
+	-DSDL_AUDIO=ON -DSDL_JOYSTICK=ON -DSDL_HIDAPI=ON \
+	-DSDL_LOADSO=ON -DSDL_DLOPEN=ON -DSDL_FILESYSTEM=ON \
+	-DSDL_TIMERS=ON -DSDL_POWER=ON -DSDL_SYSTEMS=ON \
+	-DSDL_VIDEO=ON -DSDL_EVENTS=ON -DSDL_FILE=ON
+else
+  SDL3_CMAKE_ARGS=
+endif
+
+.PHONY: build-sdl3
+build-sdl3:
+	@test -n "$(B)" || (echo "build-sdl3: B is empty (run via 'release'/'debug' targets)"; exit 1)
+	@test -f "$(SDL3_SRCDIR)/CMakeLists.txt" || (echo "build-sdl3: $(SDL3_SRCDIR)/CMakeLists.txt not found"; exit 1)
+ifdef MINGW
+	@test -n "$(CC)" || (echo "build-sdl3: no MINGW cross compiler (CC) detected"; exit 1)
+	@echo "Generating SDL3 MinGW toolchain file..."
+	@mkdir -p $(B)
+	@echo "set(CMAKE_SYSTEM_NAME Windows)" > $(SDL3_TOOLCHAIN)
+	@echo "set(CMAKE_SYSTEM_PROCESSOR x86_64)" >> $(SDL3_TOOLCHAIN)
+	@echo "set(CMAKE_C_COMPILER $(CC))" >> $(SDL3_TOOLCHAIN)
+	@echo "set(CMAKE_CXX_COMPILER $(CXX))" >> $(SDL3_TOOLCHAIN)
+	@echo "set(CMAKE_RC_COMPILER $(WINDRES))" >> $(SDL3_TOOLCHAIN)
+endif
+	@echo "Building vendored SDL3 from $(SDL3_SRCDIR)..."
+	@mkdir -p $(SDL3_BUILD_DIR)
+	@cd $(SDL3_BUILD_DIR) && cmake $(SDL3_SRCDIR) \
+		-DCMAKE_INSTALL_PREFIX=$(CURDIR)/$(SDL3_INSTALL_DIR) \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DSDL_TESTS=OFF \
+		-DSDL_INSTALL_TESTS=OFF \
+		-DSDL_EXAMPLES=OFF \
+		-DSDL_DISABLE_INSTALL=OFF \
+		$(SDL3_CMAKE_ARGS)
+	@cmake --build $(SDL3_BUILD_DIR) --config Release -j$(or $(PARALLEL_JOBS),$(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1))
+	@cmake --build $(SDL3_BUILD_DIR) --config Release --target install
+	@echo "SDL3 built successfully"
+
+# OpenAL Soft build target (for vendored external/openal-soft)
+# NOTE: Use absolute paths so this works regardless of the value of B, and
+# guard it so an empty B never resolves to a filesystem-root directory.
+OPENAL_SRCDIR=$(CURDIR)/$(EXTERNAL_DIR)/openal-soft
+
+# When cross-compiling for Windows (MINGW), tell OpenAL's cmake to use the
+# MinGW toolchain, reusing the same compiler detection as the SDL3 target.
+ifdef MINGW
+	 OPENAL_TOOLCHAIN=$(CURDIR)/$(B)/openal-mingw-toolchain.cmake
+	 OPENAL_CMAKE_ARGS=-DCMAKE_TOOLCHAIN_FILE=$(OPENAL_TOOLCHAIN) \
+	-DCMAKE_SYSTEM_NAME=Windows
+else
+	 OPENAL_CMAKE_ARGS=
+endif
+
+.PHONY: build-openal
+build-openal:
+	@test -n "$(B)" || (echo "build-openal: B is empty (run via 'release'/'debug' targets)"; exit 1)
+	@test -f "$(OPENAL_SRCDIR)/CMakeLists.txt" || (echo "build-openal: $(OPENAL_SRCDIR)/CMakeLists.txt not found"; exit 1)
+ifdef MINGW
+	@test -n "$(CC)" || (echo "build-openal: no MINGW cross compiler (CC) detected"; exit 1)
+	@echo "Generating OpenAL MinGW toolchain file..."
+	@mkdir -p $(B)
+	@echo "set(CMAKE_SYSTEM_NAME Windows)" > $(OPENAL_TOOLCHAIN)
+	@echo "set(CMAKE_SYSTEM_PROCESSOR x86_64)" >> $(OPENAL_TOOLCHAIN)
+	@echo "set(CMAKE_C_COMPILER $(CC))" >> $(OPENAL_TOOLCHAIN)
+	@echo "set(CMAKE_CXX_COMPILER $(CXX))" >> $(OPENAL_TOOLCHAIN)
+	@echo "set(CMAKE_RC_COMPILER $(WINDRES))" >> $(OPENAL_TOOLCHAIN)
+endif
+	@echo "Building vendored OpenAL Soft from $(OPENAL_SRCDIR)..."
+	@mkdir -p $(OPENAL_BUILD_DIR)
+	@cd $(OPENAL_BUILD_DIR) && cmake $(OPENAL_SRCDIR) \
+		-DCMAKE_INSTALL_PREFIX=$(CURDIR)/$(OPENAL_INSTALL_DIR) \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DLIBTYPE=STATIC \
+		-DALSOFT_EXAMPLES=OFF \
+		-DALSOFT_TESTS=OFF \
+		-DALSOFT_UTILS=OFF \
+		-DALSOFT_UPDATE_BUILD_VERSION=OFF \
+		-DALSOFT_DLOPEN=OFF \
+		-DALSOFT_WERROR=OFF \
+		$(OPENAL_CMAKE_ARGS)
+	@cmake --build $(OPENAL_BUILD_DIR) --config Release -j$(or $(PARALLEL_JOBS),$(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1))
+	@cmake --build $(OPENAL_BUILD_DIR) --config Release --target install
+	@echo "OpenAL Soft built successfully"
+
+# libcurl build target (for the curl-src git submodule)
+# NOTE: Use absolute paths so this works regardless of the value of B, and
+# guard it so an empty B never resolves to a filesystem-root directory.
+CURL_SRCDIR=$(CURDIR)/$(EXTERNAL_DIR)/curl-src
+
+# When cross-compiling for Windows (MINGW), tell curl's cmake to use the
+# MinGW toolchain (same pattern as SDL3/OpenAL) and the native Windows
+# Schannel TLS backend so HTTPS needs no external TLS dependency.
+ifdef MINGW
+	 CURL_TOOLCHAIN=$(CURDIR)/$(B)/curl-mingw-toolchain.cmake
+	 CURL_CMAKE_ARGS=-DCMAKE_TOOLCHAIN_FILE=$(CURL_TOOLCHAIN) \
+	-DCMAKE_SYSTEM_NAME=Windows \
+	-DCURL_USE_SCHANNEL=ON
+else
+	 CURL_CMAKE_ARGS=
+endif
+
+.PHONY: build-curl
+build-curl:
+	@test -n "$(B)" || (echo "build-curl: B is empty (run via 'release'/'debug' targets)"; exit 1)
+	@test -f "$(CURL_SRCDIR)/CMakeLists.txt" || (echo "build-curl: $(CURL_SRCDIR)/CMakeLists.txt not found"; exit 1)
+ifdef MINGW
+	@test -n "$(CC)" || (echo "build-curl: no MINGW cross compiler (CC) detected"; exit 1)
+	@echo "Generating curl MinGW toolchain file..."
+	@mkdir -p $(B)
+	@echo "set(CMAKE_SYSTEM_NAME Windows)" > $(CURL_TOOLCHAIN)
+	@echo "set(CMAKE_SYSTEM_PROCESSOR x86_64)" >> $(CURL_TOOLCHAIN)
+	@echo "set(CMAKE_C_COMPILER $(CC))" >> $(CURL_TOOLCHAIN)
+	@echo "set(CMAKE_CXX_COMPILER $(CXX))" >> $(CURL_TOOLCHAIN)
+	@echo "set(CMAKE_RC_COMPILER $(WINDRES))" >> $(CURL_TOOLCHAIN)
+endif
+	@echo "Building vendored libcurl from $(CURL_SRCDIR)..."
+	@mkdir -p $(CURL_BUILD_DIR)
+	@cd $(CURL_BUILD_DIR) && cmake $(CURL_SRCDIR) \
+		-DCMAKE_INSTALL_PREFIX=$(CURDIR)/$(CURL_INSTALL_DIR) \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DBUILD_CURL_EXE=OFF \
+		-DBUILD_STATIC_LIBS=ON \
+		-DBUILD_SHARED_LIBS=OFF \
+		-DBUILD_LIBCURL_DOCS=OFF \
+		-DCURL_DISABLE_TESTS=ON \
+		-DBUILD_TESTING=OFF \
+		-DCURL_DISABLE_DICT=ON \
+		-DCURL_DISABLE_TELNET=ON \
+		-DCURL_DISABLE_TFTP=ON \
+		-DCURL_DISABLE_POP3=ON \
+		-DCURL_DISABLE_SMTP=ON \
+		-DCURL_DISABLE_IMAP=ON \
+		-DCURL_DISABLE_GOPHER=ON \
+		-DCURL_DISABLE_RTSP=ON \
+		-DCURL_DISABLE_SMB=ON \
+		-DCURL_DISABLE_MQTT=ON \
+		-DCURL_DISABLE_LDAP=ON \
+		-DCURL_DISABLE_LDAPS=ON \
+		-DCURL_DISABLE_DOH=ON \
+		-DCURL_DISABLE_WEBSOCKETS=ON \
+		-DCURL_USE_LDAP=OFF \
+		-DCURL_USE_LDAPS=OFF \
+		-DCURL_USE_LIBSSH2=OFF \
+		-DCURL_USE_LIBPSL=OFF \
+		-DCURL_ZLIB=OFF \
+		-DCURL_BROTLI=OFF \
+		-DCURL_ZSTD=OFF \
+		-DCURL_NGHTTP2=OFF \
+		-DUSE_NGHTTP2=OFF \
+		-DCURL_USE_LIBIDN2=OFF \
+		-DUSE_LIBIDN2=OFF \
+		-DENABLE_ARES=OFF \
+		-DENABLE_CURLDEBUG=OFF \
+		-DENABLE_CURL_MANUAL=OFF \
+		-DENABLE_DEBUG=OFF \
+		-DENABLE_WEBSOCKETS=OFF \
+		-DPICKY_COMPILER=OFF \
+		-DUSE_MSH3=OFF \
+		-DUSE_NGTCP2=OFF \
+		-DUSE_QUICHE=OFF \
+		-DUSE_WIN32_IDN=OFF \
+		$(CURL_CMAKE_ARGS)
+	@cmake --build $(CURL_BUILD_DIR) --config Release -j$(or $(PARALLEL_JOBS),$(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1))
+	@cmake --build $(CURL_BUILD_DIR) --config Release --target install
+	@echo "libcurl built successfully"
 
 # Add git version info
 USE_GIT=
@@ -358,7 +582,7 @@ endif
 #############################################################################
 
 INSTALL=install
-MKDIR=mkdir
+MKDIR=mkdir -p
 EXTRA_FILES=
 CLIENT_EXTRA_FILES=
 INSTALL_DIR=
@@ -418,6 +642,7 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   RENDERER_LIBS = $(SDL_LIBS) -lGL
 
   ifeq ($(USE_OPENAL),1)
+    CLIENT_CFLAGS += $(OPENAL_CFLAGS)
     ifneq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LIBS += $(THREAD_LIBS) $(OPENAL_LIBS)
     endif
@@ -509,8 +734,17 @@ ifeq ($(PLATFORM),darwin)
 
   BASE_CFLAGS += -fno-strict-aliasing -fno-common
 
+  # OpenAL headers: always include the vendored path so AL/al.h is found
+  BASE_CFLAGS += -I$(ALHDIR)
+  ifdef USE_VENDORED_OPENAL
+    # Vendored OpenAL headers take precedence over the bundled external/AL set
+    BASE_CFLAGS := $(OPENAL_CFLAGS) $(BASE_CFLAGS)
+  endif
+
   ifeq ($(USE_OPENAL),1)
-    ifneq ($(USE_OPENAL_DLOPEN),1)
+    ifeq ($(USE_VENDORED_OPENAL),1)
+      CLIENT_LIBS += $(OPENAL_LIBS)
+    else ifneq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LIBS += -framework OpenAL
     endif
   endif
@@ -524,21 +758,57 @@ ifeq ($(PLATFORM),darwin)
 
   BASE_CFLAGS += -D_THREAD_SAFE=1
 
-  # FIXME: It is not possible to build using system SDL2 framework
-  #  1. IF you try, this Makefile will still drop libSDL-2.0.0.dylib into the builddir
-  #  2. Debugger warns that you have 2- which one will be used is undefined
-  ifeq ($(USE_LOCAL_HEADERS),1)
-    BASE_CFLAGS += -I$(SDLHDIR)/include -I$(CURLHDIR) -I$(ALHDIR)
+  # Detect a system SDL3 (e.g. via Homebrew). Try pkg-config first, then
+  # sdl3-config, then explicit Homebrew paths. Fall back to the local dylibs
+  # in external/libs/macosx if no system SDL3 is found.
+  ifneq ($(call bin_path, pkg-config),)
+    DARWIN_SDL_CFLAGS ?= $(shell pkg-config --silence-errors --cflags sdl3)
+    DARWIN_SDL_LIBS ?= $(shell pkg-config --silence-errors --libs sdl3)
   endif
 
-  # We copy sdlmain before ranlib'ing it so that subversion doesn't think
-  #  the file has been modified by each build.
-  LIBSDLMAIN=$(B)/libSDL2main.a
-  LIBSDLMAINSRC=$(LIBSDIR)/macosx/libSDL2main.a
-  CLIENT_LIBS += -framework IOKit \
-    $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
-  RENDERER_LIBS += -framework OpenGL $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
-  CLIENT_EXTRA_FILES += $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
+  # Try sdl3-config if pkg-config did not find SDL3
+  ifeq ($(DARWIN_SDL_LIBS),)
+    ifneq ($(call bin_path, sdl3-config),)
+      DARWIN_SDL_CFLAGS ?= $(shell sdl3-config --cflags)
+      DARWIN_SDL_LIBS ?= $(shell sdl3-config --libs)
+    endif
+  endif
+
+  # Try explicit Homebrew paths (Intel and Apple Silicon)
+  ifeq ($(DARWIN_SDL_LIBS),)
+    ifneq ($(wildcard /opt/homebrew/lib/libSDL3.dylib),)
+      DARWIN_SDL_CFLAGS ?= -I/opt/homebrew/include
+      DARWIN_SDL_LIBS ?= -L/opt/homebrew/lib -lSDL3
+    else
+      ifneq ($(wildcard /usr/local/lib/libSDL3.dylib),)
+        DARWIN_SDL_CFLAGS ?= -I/usr/local/include
+        DARWIN_SDL_LIBS ?= -L/usr/local/lib -lSDL3
+      endif
+    endif
+  endif
+
+  ifeq ($(DARWIN_SDL_LIBS),)
+    # FIXME: It is not possible to build using system SDL3 framework
+    #  1. IF you try, this Makefile will still drop libSDL-3.0.0.dylib into the builddir
+    #  2. Debugger warns that you have 2- which one will be used is undefined
+    ifeq ($(USE_LOCAL_HEADERS),1)
+      BASE_CFLAGS += -I$(SDLHDIR)/include -I$(CURLHDIR) -I$(ALHDIR)
+    endif
+
+    # We copy sdlmain before ranlib'ing it so that subversion doesn't think
+    #  the file has been modified by each build.
+    LIBSDLMAIN=$(B)/libSDL3main.a
+    LIBSDLMAINSRC=$(LIBSDIR)/macosx/libSDL3main.a
+    CLIENT_LIBS += -framework IOKit \
+      $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
+    RENDERER_LIBS += -framework OpenGL $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
+    CLIENT_EXTRA_FILES += $(LIBSDIR)/macosx/libSDL3-3.0.0.dylib
+  else
+    BASE_CFLAGS += $(DARWIN_SDL_CFLAGS)
+    CLIENT_CFLAGS += $(DARWIN_SDL_CFLAGS)
+    CLIENT_LIBS += -framework IOKit $(DARWIN_SDL_LIBS)
+    RENDERER_LIBS += -framework OpenGL $(DARWIN_SDL_LIBS)
+  endif
 
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
@@ -624,11 +894,15 @@ ifdef MINGW
 
   ifeq ($(USE_OPENAL),1)
     CLIENT_CFLAGS += $(OPENAL_CFLAGS)
-    ifneq ($(USE_OPENAL_DLOPEN),1)
+    ifeq ($(USE_VENDORED_OPENAL),1)
+      CLIENT_LIBS += $(OPENAL_LIBS)
+    else ifneq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LDFLAGS += $(OPENAL_LDFLAGS)
     endif
     ifeq ($(USE_LOCAL_HEADERS),1)
-    CLIENT_CFLAGS += -I$(ALHDIR) 
+      ifneq ($(USE_VENDORED_OPENAL),1)
+        CLIENT_CFLAGS += -I$(ALHDIR)
+      endif
     endif
   endif
 
@@ -649,7 +923,9 @@ ifdef MINGW
   SHLIBEXT=dll
   SHLIBCFLAGS=
   #SHLIBLDFLAGS=-shared $(LDFLAGS)
-  SHLIBLDFLAGS=-shared
+  # -static-libstdc++: renderer/game modules contain C++ code; link the C++
+  # runtime statically so no libstdc++-6.dll must ship next to them.
+  SHLIBLDFLAGS=-shared -static-libgcc -static-libstdc++
 
   BINEXT=.exe
 
@@ -674,45 +950,68 @@ ifdef MINGW
     FREETYPE_CFLAGS = -Ifreetype2
   endif
 
+  # libcurl: default to the committed prebuilt static library in
+  # external/libs (pure make+gcc flow, no cmake). Set USE_VENDORED_CURL=1 to
+  # build the curl-src submodule with cmake instead. NOTE: this assignment
+  # must stay BEFORE the link branch below - ifeq directives expand their
+  # arguments at parse time.
+  USE_VENDORED_CURL = 0
+
   ifeq ($(USE_CURL),1)
     ifneq ($(USE_CURL_DLOPEN),1)
-      ifeq ($(USE_LOCAL_HEADERS),1)
+      # Schannel/SSPI static libcurl needs these system libs AFTER the
+      # archive reference (GNU ld resolves archives left-to-right).
+      ifeq ($(USE_VENDORED_CURL),1)
+        # Fresh libcurl built from the curl-src submodule by build-curl
+        CLIENT_CFLAGS += -DCURL_STATICLIB -I$(CURLHDIR)
+        CLIENT_LIBS += $(CURDIR)/$(CURL_INSTALL_DIR)/lib/libcurl.a
+        CLIENT_LIBS += -lcrypt32 -lsecur32 -lbcrypt -liphlpapi -ladvapi32
+      else ifeq ($(USE_LOCAL_HEADERS),1)
+        # Headers come from the curl-src git submodule; link against the
+        # committed prebuilt import libraries in external/libs.
         CLIENT_CFLAGS += -DCURL_STATICLIB -I$(CURLHDIR)
         ifeq ($(ARCH),x86_64)
           CLIENT_LIBS += $(LIBSDIR)/win64/libcurl.a
         else
           CLIENT_LIBS += $(LIBSDIR)/win32/libcurl.a
         endif
+        CLIENT_LIBS += -lcrypt32 -lsecur32 -lbcrypt -liphlpapi -ladvapi32
       else
-		CLIENT_CFLAGS += $(CURL_CFLAGS)
+  CLIENT_CFLAGS += $(CURL_CFLAGS)
         CLIENT_LIBS += $(CURL_LIBS)
       endif
     endif
   endif
 
-  # libmingw32 must be linked before libSDLmain
+  # libmingw32 must be linked before SDL3
   CLIENT_LIBS += -lmingw32
   RENDERER_LIBS += -lmingw32
 
-  ifeq ($(USE_LOCAL_HEADERS),1)
-    CLIENT_CFLAGS += -I$(SDLHDIR)/include
-    ifeq ($(ARCH), x86)
-      CLIENT_LIBS += $(LIBSDIR)/win32/libSDL2main.a $(LIBSDIR)/win32/libSDL2.dll.a
-      RENDERER_LIBS += $(LIBSDIR)/win32/libSDL2main.a $(LIBSDIR)/win32/libSDL2.dll.a
-      SDLDLL=SDL2.dll
-      CLIENT_EXTRA_FILES += $(LIBSDIR)/win32/SDL2.dll
-    else
-      CLIENT_LIBS += $(LIBSDIR)/win64/libSDL264main.a  $(LIBSDIR)/win64/libSDL264.dll.a
-      RENDERER_LIBS += $(LIBSDIR)/win64/libSDL264main.a $(LIBSDIR)/win64/libSDL264.dll.a
-      SDLDLL=SDL264.dll
-      CLIENT_EXTRA_FILES += $(LIBSDIR)/win64/SDL264.dll
-    endif
+  # SDL3: prefer the system SDL3 found via pkg-config above (MSYS2 package
+  # mingw-w64-x86_64-sdl3) so a plain "make debug"/"make release" needs
+  # nothing but make+gcc. Only when no system SDL3 exists (USE_VENDORED_SDL3
+  # set by the detection block) do we build the vendored external/SDL3 with
+  # cmake. The vendored import library is referenced by its full path: the
+  # global -static flag would otherwise make "-lSDL3" prefer/require a static
+  # libSDL3.a which we don't build.
+  ifeq ($(USE_VENDORED_SDL3),1)
+    CLIENT_LIBS += $(CURDIR)/$(SDL3_INSTALL_DIR)/lib/libSDL3.dll.a
+    RENDERER_LIBS += $(CURDIR)/$(SDL3_INSTALL_DIR)/lib/libSDL3.dll.a
+    CLIENT_EXTRA_FILES += $(CURDIR)/$(SDL3_INSTALL_DIR)/bin/SDL3.dll
   else
-    CLIENT_CFLAGS += $(SDL_CFLAGS)
-    CLIENT_LIBS += $(SDL_LIBS)
-    RENDERER_LIBS += $(SDL_LIBS)
-    SDLDLL=SDL2.dll
+    # Reference the DLL import library by full path: the global -static
+    # flag would otherwise make "-lSDL3" prefer/require the static libSDL3.a
+    # shipped alongside it (which needs a pile of extra system libs).
+    # The MSYS2 SDL3.dll depends on libiconv-2.dll - ship it when present
+    # (wildcard keeps the copy target away when it is not needed).
+    SDL3_PREFIX := $(shell pkg-config --variable=prefix sdl3)
+    CLIENT_LIBS += $(SDL3_PREFIX)/lib/libSDL3.dll.a
+    RENDERER_LIBS += $(SDL3_PREFIX)/lib/libSDL3.dll.a
+    CLIENT_EXTRA_FILES += $(SDL3_PREFIX)/bin/SDL3.dll
+    CLIENT_EXTRA_FILES += $(wildcard $(SDL3_PREFIX)/bin/libiconv-2.dll)
   endif
+  CLIENT_CFLAGS += $(SDL_CFLAGS)
+  SDLDLL=SDL3.dll
 
 else # ifdef MINGW
 
@@ -748,7 +1047,10 @@ ifeq ($(PLATFORM),freebsd)
 
   # optional features/libraries
   ifeq ($(USE_OPENAL),1)
-    ifeq ($(USE_OPENAL_DLOPEN),1)
+    CLIENT_CFLAGS += $(OPENAL_CFLAGS)
+    ifeq ($(USE_VENDORED_OPENAL),1)
+      CLIENT_LIBS += $(THREAD_LIBS) $(OPENAL_LIBS)
+    else ifeq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LIBS += $(THREAD_LIBS) $(OPENAL_LIBS)
     endif
   endif
@@ -799,6 +1101,7 @@ endif
 ifneq ($(HAVE_VM_COMPILED),true)
   BASE_CFLAGS += -DNO_VM_COMPILED
   BUILD_GAME_QVM=0
+  BUILD_GAME_QVM_11=0
 endif
 
 TARGETS =
@@ -1138,6 +1441,10 @@ endef
 default: release
 all: debug release
 
+# Ensure `make` with no arguments builds the default target (release),
+# not whichever recipe-bearing target happens to appear first in this file.
+.DEFAULT_GOAL := default
+
 debug:
 	@$(MAKE) targets B=$(BD) CFLAGS="$(CFLAGS) $(BASE_CFLAGS) $(DEPEND_CFLAGS)" \
       CXXFLAGS="$(BASE_CFLAGS) $(CXXFLAGS)" \
@@ -1203,6 +1510,21 @@ endif
 # Create the build directories, check libraries and print out
 # an informational message, then start building
 targets: makedirs
+ifeq ($(USE_VENDORED_SDL3),1)
+  ifneq ($(BUILD_CLIENT),0)
+targets: build-sdl3
+  endif
+endif
+ifeq ($(USE_VENDORED_OPENAL),1)
+  ifneq ($(BUILD_CLIENT),0)
+targets: build-openal
+  endif
+endif
+ifeq ($(USE_VENDORED_CURL),1)
+  ifneq ($(BUILD_CLIENT),0)
+targets: build-curl
+  endif
+endif
 	@echo ""
 	@echo "Building in $(B):"
 	@echo "  PLATFORM: $(PLATFORM)"
@@ -1608,7 +1930,7 @@ TARGETS += $(B)/granger$(FULLBINEXT)
 endif
 
 $(B)/scripts:
-	rsync -rupE --exclude=".*" scripts $(B)
+	rsync -rpu --exclude=".*" scripts $(B) || true
 
 TARGETS += $(B)/scripts
 
@@ -1756,6 +2078,7 @@ NETTLEOBJ = \
   $(B)/nettle/write-be32.o
 
 CFLAGS += -I$(NETTLEDIR)
+BASE_CFLAGS += -I$(NETTLEDIR)
 
 $(B)/nettle/%.o: $(NETTLEDIR)/nettle/%.c
 	$(DO_NETTLE_CC)
@@ -1939,6 +2262,8 @@ Q3R2STRINGOBJ = \
   $(B)/renderergl2/glsl/down4x_vp.o \
   $(B)/renderergl2/glsl/fogpass_fp.o \
   $(B)/renderergl2/glsl/fogpass_vp.o \
+  $(B)/renderergl2/glsl/gamma_fp.o \
+  $(B)/renderergl2/glsl/gamma_vp.o \
   $(B)/renderergl2/glsl/generic_fp.o \
   $(B)/renderergl2/glsl/generic_vp.o \
   $(B)/renderergl2/glsl/lightall_fp.o \
@@ -2541,6 +2866,7 @@ $(B)/$(BASEGAME)_11/vm/cgame.qvm: $(CGVMOBJ11) $(CGDIR)/cg_syscalls_11.asm $(Q3A
 
 GOBJ_ = \
   $(B)/$(BASEGAME)/game/g_main.o \
+  $(B)/$(BASEGAME)/game/g_spec_layout.o \
   $(B)/$(BASEGAME)/game/bg_misc.o \
   $(B)/$(BASEGAME)/game/bg_pmove.o \
   $(B)/$(BASEGAME)/game/bg_slidemove.o \
@@ -2825,6 +3151,7 @@ $(B)/$(BASEGAME)/cgame/ui_%.o: $(UIDIR)/ui_%.c
 $(B)/$(BASEGAME)/cgame/%.o: $(CGDIR)/%.c
 	$(DO_CGAME_CC)
 
+ifneq ($(BUILD_GAME_QVM),0)
 $(B)/$(BASEGAME)/cgame/bg_%.asm: $(GDIR)/bg_%.c $(Q3LCC)
 	$(DO_CGAME_Q3LCC)
 
@@ -2847,19 +3174,8 @@ $(B)/$(BASEGAME)/cgame/%.asm: $(CGDIR)/%.c $(Q3LCC)
 $(B)/$(BASEGAME)/11/cgame/%.asm: $(CGDIR)/%.c $(Q3LCC)
 	$(DO_CGAME_Q3LCC_11)
 
-# GAME
-$(B)/$(BASEGAME)/game/%.o: $(GDIR)/%.c
-	$(DO_GAME_CC)
-
 $(B)/$(BASEGAME)/game/%.asm: $(GDIR)/%.c $(Q3LCC)
 	$(DO_GAME_Q3LCC)
-
-# UI
-$(B)/$(BASEGAME)/ui/bg_%.o: $(GDIR)/bg_%.c
-	$(DO_UI_CC)
-
-$(B)/$(BASEGAME)/ui/%.o: $(UIDIR)/%.c
-	$(DO_UI_CC)
 
 $(B)/$(BASEGAME)/ui/bg_%.asm: $(GDIR)/bg_%.c $(Q3LCC)
 	$(DO_UI_Q3LCC)
@@ -2871,11 +3187,24 @@ $(B)/$(BASEGAME)/ui/%.asm: $(UIDIR)/%.c $(Q3LCC)
 $(B)/$(BASEGAME)/11/ui/%.asm: $(UIDIR)/%.c $(Q3LCC)
 	$(DO_UI_Q3LCC_11)
 
-$(B)/$(BASEGAME)/qcommon/%.o: $(CMDIR)/%.c
-	$(DO_SHLIB_CC)
-
+# QCOMMON (shared by cgame/game/ui QVMs)
 $(B)/$(BASEGAME)/qcommon/%.asm: $(CMDIR)/%.c $(Q3LCC)
 	$(DO_Q3LCC)
+endif
+
+# GAME
+$(B)/$(BASEGAME)/game/%.o: $(GDIR)/%.c
+	$(DO_GAME_CC)
+
+# UI
+$(B)/$(BASEGAME)/ui/bg_%.o: $(GDIR)/bg_%.c
+	$(DO_UI_CC)
+
+$(B)/$(BASEGAME)/ui/%.o: $(UIDIR)/%.c
+	$(DO_UI_CC)
+
+$(B)/$(BASEGAME)/qcommon/%.o: $(CMDIR)/%.c
+	$(DO_SHLIB_CC)
 
 
 #############################################################################
@@ -2884,7 +3213,10 @@ $(B)/$(BASEGAME)/qcommon/%.asm: $(CMDIR)/%.c $(Q3LCC)
 
 OBJ = $(Q3OBJ) $(Q3ROBJ) $(Q3R2OBJ) $(Q3DOBJ) $(JPGOBJ) \
   $(GOBJ) $(CGOBJ) $(UIOBJ) $(LUAOBJ) $(SCRIPTOBJ) $(NETTLEOBJ) \
-  $(GVMOBJ) $(CGVMOBJ) $(UIVMOBJ) $(GRANGEROBJ)
+  $(GRANGEROBJ)
+ifneq ($(BUILD_GAME_QVM),0)
+  OBJ += $(GVMOBJ) $(CGVMOBJ) $(UIVMOBJ)
+endif
 TOOLSOBJ = $(LBURGOBJ) $(Q3CPPOBJ) $(Q3RCCOBJ) $(Q3LCCOBJ) $(Q3ASMOBJ)
 STRINGOBJ = $(Q3R2STRINGOBJ)
 

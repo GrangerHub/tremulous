@@ -26,11 +26,7 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #include <windows.h>
 #endif
 
-#ifdef USE_LOCAL_HEADERS
-# include "SDL.h"
-#else
-# include <SDL.h>
-#endif
+#include <SDL3/SDL.h>
 
 #include "qcommon/cvar.h"
 #include "qcommon/qcommon.h"
@@ -41,60 +37,23 @@ extern SDL_Window *SDL_window;
 /*
 =================
 GLimp_SetGamma
+
+SDL3 removed SDL_SetWindowGammaRamp and SDL_SetWindowBrightness.
+Gamma/brightness correction is now handled via shader-based post-processing
+in the renderer. This function is kept as a no-op stub for API compatibility.
+
+TODO: Once shader-based gamma post-processing is fully integrated into
+both renderergl1 and renderergl2, this stub can be removed entirely
+and the call sites in tr_image.cpp updated.
 =================
 */
-void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] )
+void GLimp_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256])
 {
-	Uint16 table[3][256];
-	int i, j;
-
-	if( !glConfig.deviceSupportsGamma || r_ignorehwgamma->integer > 0 )
-		return;
-
-	for (i = 0; i < 256; i++)
-	{
-		table[0][i] = ( ( ( Uint16 ) red[i] ) << 8 ) | red[i];
-		table[1][i] = ( ( ( Uint16 ) green[i] ) << 8 ) | green[i];
-		table[2][i] = ( ( ( Uint16 ) blue[i] ) << 8 ) | blue[i];
-	}
-
-#ifdef _WIN32
-	// Win2K and newer put this odd restriction on gamma ramps...
-	{
-		OSVERSIONINFO	vinfo;
-
-		vinfo.dwOSVersionInfoSize = sizeof( vinfo );
-		GetVersionEx( &vinfo );
-		if( vinfo.dwMajorVersion >= 5 && vinfo.dwPlatformId == VER_PLATFORM_WIN32_NT )
-		{
-			ri.Printf( PRINT_DEVELOPER, "performing gamma clamp.\n" );
-			for( j = 0 ; j < 3 ; j++ )
-			{
-				for( i = 0 ; i < 128 ; i++ )
-				{
-					if( table[ j ] [ i] > ( ( 128 + i ) << 8 ) )
-						table[ j ][ i ] = ( 128 + i ) << 8;
-				}
-
-				if( table[ j ] [127 ] > 254 << 8 )
-					table[ j ][ 127 ] = 254 << 8;
-			}
-		}
-	}
-#endif
-
-	// enforce constantly increasing
-	for (j = 0; j < 3; j++)
-	{
-		for (i = 1; i < 256; i++)
-		{
-			if (table[j][i] < table[j][i-1])
-				table[j][i] = table[j][i-1];
-		}
-	}
-
-	if (SDL_SetWindowGammaRamp(SDL_window, table[0], table[1], table[2]) < 0)
-	{
-		ri.Printf( PRINT_DEVELOPER, "SDL_SetWindowGammaRamp() failed: %s\n", SDL_GetError() );
-	}
+    // SDL3 removed hardware gamma ramp support.
+    // Gamma is now handled by shader-based post-processing.
+    // The texture-level gamma tables (s_gammatable) are still applied
+    // via R_LightScaleTexture() in tr_image.cpp for texture brightness.
+    (void)red;
+    (void)green;
+    (void)blue;
 }

@@ -29,7 +29,7 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #include "qcommon/q_shared.h"
 #include "renderercommon/tr_types.h"
 
-#include "../../build/assets/ui/menudef.h"
+#include "../../assets/ui/menudef.h"
 
 #define MAX_MENUNAME 32
 #define MAX_ITEMTEXT 64
@@ -309,9 +309,9 @@ typedef struct {
     const char *onClose;  // run when the menu is closed
     const char *onESC;  // run when the menu is closed
     const char *soundName;  // background loop sound for menu
-    qboolean     play_looped_bucket_allocated;
-    unsigned int play_looped_bucket_handle; // for bucket selection of
-                                            // background loop sounds
+    qboolean play_looped_bucket_allocated;
+    unsigned int play_looped_bucket_handle;  // for bucket selection of
+                                             // background loop sounds
 
     vec4_t focusColor;  // focus color for items
     vec4_t disableColor;  // focus color for items
@@ -374,8 +374,8 @@ typedef struct {
     int (*lerpTag)(orientation_t *tag, clipHandle_t mod, int startFrame, int endFrame, float frac, const char *tagName);
     void (*fillRect)(float x, float y, float w, float h, const vec4_t color);
     void (*drawRect)(float x, float y, float w, float h, float size, const vec4_t color);
-    void (*drawRoundedRect) (float x, float y, float w, float h, float size, const vec4_t style, const vec4_t color);
-    void (*fillRoundedRect) (float x, float y, float w, float h, float size, const vec4_t style, const vec4_t color);
+    void (*drawRoundedRect)(float x, float y, float w, float h, float size, const vec4_t style, const vec4_t color);
+    void (*fillRoundedRect)(float x, float y, float w, float h, float size, const vec4_t style, const vec4_t color);
     void (*drawSides)(float x, float y, float w, float h, float size);
     void (*drawTopBottom)(float x, float y, float w, float h, float size);
     void (*clearScene)(void);
@@ -422,10 +422,10 @@ typedef struct {
     unsigned int (*Bucket_Create_Bucket)(void);
     void (*Bucket_Delete_Bucket)(unsigned int bucket_handle);
     void (*Bucket_Destroy_All_Buckets)(void);
-    void (*Bucket_Add_Item_To_Bucket)(unsigned int bucket_handle, void* item);
-    void (*Bucket_Remove_Item_From_Bucket)(unsigned int bucket_handle, void* item);
-    void* (*Bucket_Select_A_Random_Item)(unsigned int bucket_handle);
-    void (*Bucket_Select_A_Specific_Item)(unsigned int bucket_handle, void* item);
+    void (*Bucket_Add_Item_To_Bucket)(unsigned int bucket_handle, void *item);
+    void (*Bucket_Remove_Item_From_Bucket)(unsigned int bucket_handle, void *item);
+    void *(*Bucket_Select_A_Random_Item)(unsigned int bucket_handle);
+    void (*Bucket_Select_A_Specific_Item)(unsigned int bucket_handle, void *item);
     int (*FS_GetFileList)(const char *path, const char *extension, char *listbuf, int bufsize);
 
     float yscale;
@@ -539,36 +539,34 @@ void BindingFromName(const char *cvar);
 extern char g_nameBind1[32];
 extern char g_nameBind2[32];
 
-typedef enum
-{
-  CHAT_GLOBAL = 0,
-  CHAT_TEAM,
-  CHAT_ADMINS,
-  CHAT_CLAN,
+typedef enum {
+    CHAT_GLOBAL = 0,
+    CHAT_TEAM,
+    CHAT_ADMINS,
+    CHAT_CLAN,
 
-  NUM_CHAT_MODES
+    NUM_CHAT_MODES
 } chatMode_t;
 
-extern int key_pressed_onCharEntry; // used by onCharEntry
+extern int key_pressed_onCharEntry;  // used by onCharEntry
 extern qboolean ctrl_held;
 
 #define MAX_SAY_HISTORY_LINES 32
 
-typedef struct chatInfo_s
-{
-  chatMode_t chat_mode;
-  int        chat_mode_blink_time;
+typedef struct chatInfo_s {
+    chatMode_t chat_mode;
+    int chat_mode_blink_time;
 
-  qboolean   say_history_current;
-  qboolean   say_make_current_line_blank;
-  char       say_unsubmitted_line[MAX_CVAR_VALUE_STRING];
-  char       say_history_lines[MAX_SAY_HISTORY_LINES][MAX_CVAR_VALUE_STRING];
-  int        nextHistoryLine; // the last line in the history buffer, not masked
-  int        historyLine;     // the line being displayed from history buffer
-                              // will be <= chatInfo.nextHistoryLine
-  int        *say_cursor_pos;
-  int        say_max_chars;
-  int        say_length;
+    qboolean say_history_current;
+    qboolean say_make_current_line_blank;
+    char say_unsubmitted_line[MAX_CVAR_VALUE_STRING];
+    char say_history_lines[MAX_SAY_HISTORY_LINES][MAX_CVAR_VALUE_STRING];
+    int nextHistoryLine;  // the last line in the history buffer, not masked
+    int historyLine;  // the line being displayed from history buffer
+                      // will be <= chatInfo.nextHistoryLine
+    int *say_cursor_pos;
+    int say_max_chars;
+    int say_length;
 } chatInfo_t;
 
 extern chatInfo_t chatInfo;

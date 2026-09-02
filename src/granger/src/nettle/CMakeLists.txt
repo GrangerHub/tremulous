@@ -6,7 +6,7 @@ if(WIN32)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif(WIN32)
 
-add_library(granger_nettle
+add_library(granger_nettle STATIC
     macros.h
     md5-compress.c
     md5.c

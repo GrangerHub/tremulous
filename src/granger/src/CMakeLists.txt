@@ -29,6 +29,7 @@ add_definitions (
 
 include_directories (
     include
+    ${CMAKE_SOURCE_DIR}/external/lua-5.3.3/src
     )
 target_link_libraries(granger granger_lua granger_nettle premake)
 

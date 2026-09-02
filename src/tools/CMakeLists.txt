@@ -141,5 +141,5 @@ set_property(
     )
 
 # Victor Roemer (wtfbbqhax), <victor@badsec.org>.
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10...4.0)
 project(QVMCompiler C)

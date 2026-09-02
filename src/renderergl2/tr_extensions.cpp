@@ -22,14 +22,10 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 */
 // tr_extensions.c - extensions needed by the renderer not in sdl_glimp.c
 
-#ifdef USE_LOCAL_HEADERS
-#include "SDL.h"
-#else
-#include <SDL.h>
-#endif
+#include <SDL3/SDL.h>
 
-#include "tr_local.h"
 #include "tr_dsa.h"
+#include "tr_local.h"
 
 #define GLE(ret, name, ...) name##proc *qgl##name;
 QGL_1_3_PROCS;
@@ -48,18 +44,20 @@ void GLimp_InitExtraExtensions()
 
     // Check OpenGL version
     sscanf(glConfig.version_string, "%d.%d", &glRefConfig.openglMajorVersion, &glRefConfig.openglMinorVersion);
-    if (glRefConfig.openglMajorVersion < 2) ri.Error(ERR_FATAL, "OpenGL 2.0 required!");
+    if (glRefConfig.openglMajorVersion < 2)
+        ri.Error(ERR_FATAL, "OpenGL 2.0 required!");
     ri.Printf(PRINT_ALL, "...using OpenGL %s\n", glConfig.version_string);
 
     bool q_gl_version_at_least_3_0 = (glRefConfig.openglMajorVersion >= 3);
     bool q_gl_version_at_least_3_2 = (glRefConfig.openglMajorVersion > 3 ||
-            (glRefConfig.openglMajorVersion == 3 && glRefConfig.openglMinorVersion > 2));
+                                      (glRefConfig.openglMajorVersion == 3 && glRefConfig.openglMinorVersion > 2));
 
     // Check if we need Intel graphics specific fixes.
     glRefConfig.intelGraphics = qfalse;
-    if (strstr((char *)qglGetString(GL_RENDERER), "Intel")) glRefConfig.intelGraphics = qtrue;
+    if (strstr((char *)qglGetString(GL_RENDERER), "Intel"))
+        glRefConfig.intelGraphics = qtrue;
 
-        // set DSA fallbacks
+    // set DSA fallbacks
 #define GLE(ret, name, ...) qgl##name = GLDSA_##name;
     QGL_EXT_direct_state_access_PROCS;
 #undef GLE
@@ -229,7 +227,8 @@ void GLimp_InitExtraExtensions()
     {
         bool useRgtc = r_ext_compressed_textures->integer >= 1;
 
-        if (useRgtc) glRefConfig.textureCompression |= TCR_RGTC;
+        if (useRgtc)
+            glRefConfig.textureCompression |= TCR_RGTC;
 
         ri.Printf(PRINT_ALL, result[useRgtc], extension);
     }
@@ -246,7 +245,8 @@ void GLimp_InitExtraExtensions()
     {
         bool useBptc = r_ext_compressed_textures->integer >= 2;
 
-        if (useBptc) glRefConfig.textureCompression |= TCR_BPTC;
+        if (useBptc)
+            glRefConfig.textureCompression |= TCR_BPTC;
 
         ri.Printf(PRINT_ALL, result[useBptc], extension);
     }

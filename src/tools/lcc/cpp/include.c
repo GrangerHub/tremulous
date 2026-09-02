@@ -12,9 +12,24 @@ void appendDirToIncludeList(char *dir)
     int i;
     char *fqdir;
 
-    fqdir = (char *)newstring((uchar *)includelist[NINCLUDE - 1].file, 256, 0);
-    strcat(fqdir, "/");
-    strcat(fqdir, dir);
+    /* If dir is an absolute path, use it directly instead of prepending
+       the source file's base directory (which would corrupt the path).
+       Windows absolute paths start with a drive letter (e.g., "C:") or
+       a backslash. Unix absolute paths start with '/'. */
+    if (dir[0] == '/' || dir[0] == '\\'
+#ifdef WIN32
+        || (strlen(dir) >= 2 && dir[1] == ':')
+#endif
+    )
+    {
+        fqdir = (char *)newstring((uchar *)dir, strlen(dir), 0);
+    }
+    else
+    {
+        fqdir = (char *)newstring((uchar *)includelist[NINCLUDE - 1].file, 256, 0);
+        strcat(fqdir, "/");
+        strcat(fqdir, dir);
+    }
 
     // avoid adding it more than once
     for (i = NINCLUDE - 2; i >= 0; i--)

@@ -47,15 +47,16 @@ jobs:
           - file: release-linux-x86_64
             name: Linux-x64
             runs-on: ubuntu-latest
-            container: debian:oldstable-slim
+            container: debian:stable-slim
           - file: release-mingw32-x86_64
             name: Windows-x32
             runs-on: ubuntu-latest
-            container: debian:oldstable-slim
+            container: debian:stable-slim
             platform: mingw32
           - file: release-darwin-arm
             name: Mac-arm
             runs-on: macos-15
+            platform: darwin
             ldflags: -ld64
             
     runs-on: ${{ matrix.release.runs-on }}
@@ -65,36 +66,132 @@ jobs:
     env:
       VERSION: ${{ needs.set-version.outputs.version }}
       LDFLAGS: ${{ matrix.release.ldflags }}
+      TERM: xterm
           
     steps:
-    - name: dependencies
+    - name: dependencies (linux)
       run: |
         apt update -y
         apt install -y -qq \
           make \
           build-essential \
+          cmake \
+          pkg-config \
           libgl1-mesa-dev \
-          mingw-w64 \
-          libsdl2-dev \
           libopenal-dev \
+          mingw-w64 \
           libfreetype6-dev \
           zip \
           libcurl4-openssl-dev \
           curl \
           rsync \
-          git
+          git \
+          dos2unix \
+          libasound2-dev \
+          libpulse-dev \
+          libx11-dev \
+          libxext-dev \
+          libxrandr-dev \
+          libxcursor-dev \
+          libxfixes-dev \
+          libxi-dev \
+          libxss-dev \
+          libxtst-dev \
+          libxkbcommon-dev \
+          libdrm-dev \
+          libgbm-dev \
+          libwayland-dev \
+          libdecor-0-dev
       if: ${{ ! contains(matrix.release.runs-on, 'macos') }}
+    - name: dependencies (macos)
+      run: |
+        brew install \
+          cmake \
+          pkg-config \
+          mesa \
+          freetype \
+          curl \
+          rsync \
+          dos2unix \
+          coreutils \
+          sdl3 \
+          openal-soft
+        # Ensure pkg-config can find Homebrew's SDL3 and openal-soft
+        echo "PKG_CONFIG_PATH=$(brew --prefix sdl3)/lib/pkgconfig:$(brew --prefix openal-soft)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+      if: ${{ contains(matrix.release.runs-on, 'macos') }}
+    - name: Git safe directory
+      run: git config --global --add safe.directory '*'
     - uses: actions/checkout@v6
-    ## attempts for setting version via tag, but doesn't work for shallow copy:
-    #  with:
-    #    fetch-tags: true 
-    #- name: Git unsafe
-    #  run: git config --global --add safe.directory /__w/tremulous/tremulous
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - name: Ensure assets submodule (menudef.h for ui/cgame/game)
+      shell: bash
+      run: |
+        if [ ! -f "assets/ui/menudef.h" ]; then
+          git submodule update --init --recursive
+        fi
+        test -f "assets/ui/menudef.h" || { echo "ERROR: assets/ui/menudef.h still missing"; exit 1; }
     - name: platform
       if: ${{ matrix.release.platform }}
-      run: echo "PLATFORM="${{ matrix.release.PLATFORM }} >> $GITHUB_ENV
+      run: echo "PLATFORM="${{ matrix.release.platform }} >> $GITHUB_ENV
+    - name: Fetch SDL3 source
+      shell: bash
+      run: |
+        # external/SDL3 ships only the public headers in git; overlay the full
+        # source (cloned to a temp dir) so git clone works with a non-empty dir
+        if [ ! -f "external/SDL3/CMakeLists.txt" ]; then
+          rm -rf tmp_sdl3_src
+          git clone --depth 1 --branch release-3.4.12 https://github.com/libsdl-org/SDL.git tmp_sdl3_src
+          cp -a tmp_sdl3_src/. external/SDL3/
+          rm -rf tmp_sdl3_src
+        fi
+    - name: Build SDL3
+      shell: bash
+      run: |
+        SDL3_PREFIX="$GITHUB_WORKSPACE/sdl3-install"
+        mkdir -p external/SDL3/build
+        cd external/SDL3/build
+        # Cross-compile for MinGW or build natively
+        if [ "${{ matrix.release.platform }}" = "mingw32" ]; then
+          # Generate MinGW toolchain file
+          cat > mingw-toolchain.cmake << EOF
+        set(CMAKE_SYSTEM_NAME Windows)
+        set(CMAKE_C_COMPILER x86_64-w64-mingw32-gcc)
+        set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
+        set(CMAKE_RC_COMPILER x86_64-w64-mingw32-windres)
+        EOF
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SDL3_PREFIX" \
+            -DCMAKE_TOOLCHAIN_FILE=mingw-toolchain.cmake \
+            -DSDL_TESTS=OFF -DSDL_INSTALL_TESTS=OFF -DSDL_EXAMPLES=OFF -DSDL_DISABLE_INSTALL=OFF
+        else
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SDL3_PREFIX" \
+            -DSDL_TESTS=OFF -DSDL_INSTALL_TESTS=OFF -DSDL_EXAMPLES=OFF -DSDL_DISABLE_INSTALL=OFF
+        fi
+        if command -v nproc >/dev/null 2>&1; then
+          JOBS=$(nproc)
+        elif command -v sysctl >/dev/null 2>&1; then
+          JOBS=$(sysctl -n hw.ncpu)
+        else
+          JOBS=1
+        fi
+        cmake --build . -j$JOBS
+        cmake --install .
+        cd ../..
+        echo "PKG_CONFIG_PATH=${SDL3_PREFIX}/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+        echo "SDL3_PREFIX=${SDL3_PREFIX}" >> $GITHUB_ENV
     - name: make
-      run: USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 make -j
+      shell: bash
+      run: |
+        # Detect CPU count for parallel builds (macOS doesn't have nproc)
+        if command -v nproc >/dev/null 2>&1; then
+          JOBS=$(nproc)
+        elif command -v sysctl >/dev/null 2>&1; then
+          JOBS=$(sysctl -n hw.ncpu)
+        else
+          JOBS=1
+        fi
+        USE_RESTCLIENT=1 USE_INTERNAL_LUA=1 USE_CURL_DLOPEN=0 make -j$JOBS
     - name: extract pak
       shell: bash
       run: |

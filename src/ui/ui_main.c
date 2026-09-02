@@ -95,6 +95,15 @@ vmCvar_t ui_winner;
 vmCvar_t ui_chatCommands;
 vmCvar_t ui_clantag;
 
+// Spectator Builder Layouts
+vmCvar_t ui_specLayoutName;
+vmCvar_t ui_specLayoutNewName;
+vmCvar_t ui_specLayoutIndex;
+vmCvar_t ui_specDialog;
+vmCvar_t ui_specTeamIndex;
+vmCvar_t ui_specLayoutRating;
+vmCvar_t ui_specLayoutSortBy;
+
 static cvarTable_t cvarTable[] = {{&ui_browserShowFull, "ui_browserShowFull", "1", CVAR_ARCHIVE},
     {&ui_browserShowEmpty, "ui_browserShowEmpty", "1", CVAR_ARCHIVE},
 
@@ -115,8 +124,14 @@ static cvarTable_t cvarTable[] = {{&ui_browserShowFull, "ui_browserShowFull", "1
     {&ui_textWrapCache, "ui_textWrapCache", "1", CVAR_ARCHIVE},
     {&ui_developer, "ui_developer", "0", CVAR_ARCHIVE | CVAR_CHEAT},
     {&ui_emoticons, "cg_emoticons", "1", CVAR_LATCH | CVAR_ARCHIVE}, {&ui_winner, "ui_winner", "", CVAR_ROM},
-    { &ui_chatCommands, "ui_chatCommands", "1", CVAR_ARCHIVE },
-    { &ui_clantag, "ui_clantag", "", CVAR_ARCHIVE }};
+    {&ui_chatCommands, "ui_chatCommands", "1", CVAR_ARCHIVE}, {&ui_clantag, "ui_clantag", "", CVAR_ARCHIVE},
+    // Spectator Builder Layouts
+    {&ui_specLayoutName, "ui_specLayoutName", "", CVAR_ARCHIVE},
+    {&ui_specLayoutNewName, "ui_specLayoutNewName", "", CVAR_ARCHIVE},
+    {&ui_specLayoutIndex, "ui_specLayoutIndex", "0", CVAR_ARCHIVE}, {&ui_specDialog, "ui_specDialog", "", CVAR_ARCHIVE},
+    {&ui_specTeamIndex, "ui_specTeamIndex", "0", CVAR_ARCHIVE},
+    {&ui_specLayoutRating, "ui_specLayoutRating", "0", CVAR_ARCHIVE},
+    {&ui_specLayoutSortBy, "ui_specLayoutSortBy", "rating", CVAR_ARCHIVE}};
 
 static size_t cvarTableSize = ARRAY_LEN(cvarTable);
 
@@ -207,12 +222,12 @@ void AssetCache(void)
     uiInfo.uiDC.Assets.sliderBar = trap_R_RegisterShaderNoMip(ASSET_SLIDER_BAR);
     uiInfo.uiDC.Assets.sliderThumb = trap_R_RegisterShaderNoMip(ASSET_SLIDER_THUMB);
 
-    uiInfo.uiDC.Assets.cornerIn[BORDER_SQUARE]         = trap_R_RegisterShaderNoMip( ASSET_CORNERIN_SQUARE );
-    uiInfo.uiDC.Assets.cornerOut[BORDER_SQUARE]        = trap_R_RegisterShaderNoMip( ASSET_CORNEROUT_SQUARE );
-    uiInfo.uiDC.Assets.cornerIn[BORDER_ROUNDED]        = trap_R_RegisterShaderNoMip( ASSET_CORNERIN_ROUNDED );
-    uiInfo.uiDC.Assets.cornerOut[BORDER_ROUNDED]       = trap_R_RegisterShaderNoMip( ASSET_CORNEROUT_ROUNDED );
-    uiInfo.uiDC.Assets.cornerIn[BORDER_FOLD]           = trap_R_RegisterShaderNoMip( ASSET_CORNERIN_FOLD );
-    uiInfo.uiDC.Assets.cornerOut[BORDER_FOLD]          = trap_R_RegisterShaderNoMip( ASSET_CORNEROUT_FOLD );
+    uiInfo.uiDC.Assets.cornerIn[BORDER_SQUARE] = trap_R_RegisterShaderNoMip(ASSET_CORNERIN_SQUARE);
+    uiInfo.uiDC.Assets.cornerOut[BORDER_SQUARE] = trap_R_RegisterShaderNoMip(ASSET_CORNEROUT_SQUARE);
+    uiInfo.uiDC.Assets.cornerIn[BORDER_ROUNDED] = trap_R_RegisterShaderNoMip(ASSET_CORNERIN_ROUNDED);
+    uiInfo.uiDC.Assets.cornerOut[BORDER_ROUNDED] = trap_R_RegisterShaderNoMip(ASSET_CORNEROUT_ROUNDED);
+    uiInfo.uiDC.Assets.cornerIn[BORDER_FOLD] = trap_R_RegisterShaderNoMip(ASSET_CORNERIN_FOLD);
+    uiInfo.uiDC.Assets.cornerOut[BORDER_FOLD] = trap_R_RegisterShaderNoMip(ASSET_CORNEROUT_FOLD);
 
     if (ui_emoticons.integer)
     {
@@ -245,17 +260,17 @@ void UI_DrawTopBottom(float x, float y, float w, float h, float size)
     trap_R_DrawStretchPic(x, y + h - size, w, size, 0, 0, 0, 0, uiInfo.uiDC.whiteShader);
 }
 
-void UI_DrawCorners( float x, float y, float w, float h, float size, const float *style, qhandle_t *pic )
+void UI_DrawCorners(float x, float y, float w, float h, float size, const float *style, qhandle_t *pic)
 {
-  float hs, vs;
-  UI_AdjustFrom640( &x, &y, &w, &h );
-  hs = size * uiInfo.uiDC.xscale;
-  vs = size * uiInfo.uiDC.yscale;
+    float hs, vs;
+    UI_AdjustFrom640(&x, &y, &w, &h);
+    hs = size * uiInfo.uiDC.xscale;
+    vs = size * uiInfo.uiDC.yscale;
 
-  trap_R_DrawStretchPic( x, y, hs, vs, 0, 0, 0.5, 0.5, pic[(int)(style[0])] );
-  trap_R_DrawStretchPic( x + w - hs, y, hs, vs, 0.5, 0, 1, 0.5, pic[(int)(style[1])] );
-  trap_R_DrawStretchPic( x + w - hs, y + h - vs, hs, vs, 0.5, 0.5, 1, 1, pic[(int)(style[2])] );
-  trap_R_DrawStretchPic( x, y + h - vs, hs, vs, 0, 0.5, 0.5, 1, pic[(int)(style[3])] );
+    trap_R_DrawStretchPic(x, y, hs, vs, 0, 0, 0.5, 0.5, pic[(int)(style[0])]);
+    trap_R_DrawStretchPic(x + w - hs, y, hs, vs, 0.5, 0, 1, 0.5, pic[(int)(style[1])]);
+    trap_R_DrawStretchPic(x + w - hs, y + h - vs, hs, vs, 0.5, 0.5, 1, 1, pic[(int)(style[2])]);
+    trap_R_DrawStretchPic(x, y + h - vs, hs, vs, 0, 0.5, 0.5, 1, pic[(int)(style[3])]);
 }
 
 /*
@@ -291,15 +306,15 @@ UI_DrawRoundedRect
 Coordinates are 640*480 virtual values
 =================
 */
-void UI_DrawRoundedRect( float x, float y, float width, float height, float size, const float *style, const float *color )
+void UI_DrawRoundedRect(float x, float y, float width, float height, float size, const float *style, const float *color)
 {
-  trap_R_SetColor( color );
+    trap_R_SetColor(color);
 
-  UI_DrawTopBottom( x + size * 4, y, width - size * 8, height, size );
-  UI_DrawSides( x, y + size * 4, width, height - size * 8, size );
-  UI_DrawCorners( x, y, width, height, size * 4, style, uiInfo.uiDC.Assets.cornerOut );
+    UI_DrawTopBottom(x + size * 4, y, width - size * 8, height, size);
+    UI_DrawSides(x, y + size * 4, width, height - size * 8, size);
+    UI_DrawCorners(x, y, width, height, size * 4, style, uiInfo.uiDC.Assets.cornerOut);
 
-  trap_R_SetColor( NULL );
+    trap_R_SetColor(NULL);
 }
 
 /*
@@ -340,21 +355,21 @@ UI_SanitiseString
 Remove color codes and non-alphanumeric characters from a string
 ==================
 */
-void UI_SanitiseString( char *in, char *out, int len )
+void UI_SanitiseString(char *in, char *out, int len)
 {
     len--;
 
-    while( *in && len > 0 )
+    while (*in && len > 0)
     {
-        if( Q_IsColorString( in ) )
+        if (Q_IsColorString(in))
         {
-            in += 2;    // skip color code
+            in += 2;  // skip color code
             continue;
         }
 
-        if( isalnum( *in ) )
+        if (isalnum(*in))
         {
-            *out++ = tolower( *in );
+            *out++ = tolower(*in);
             len--;
         }
         in++;
@@ -367,19 +382,24 @@ void UI_SanitiseString( char *in, char *out, int len )
 UI_PortFromAddress
 ==================
 */
-static int UI_PortFromAddress(const char *adrStr) {
+static int UI_PortFromAddress(const char *adrStr)
+{
     int i;
     int portLength = 0;
     char portStr[MAX_ADDRESSLENGTH] = "";
     qboolean foundPort = qfalse;
 
-    if (!adrStr || !adrStr[0]) {
-      return -1;
+    if (!adrStr || !adrStr[0])
+    {
+        return -1;
     }
 
-    for (i = 0; adrStr[i] && (adrStr[i] != ' '); i++) {
-        if (!foundPort) {
-            if (adrStr[i] == ':') {
+    for (i = 0; adrStr[i] && (adrStr[i] != ' '); i++)
+    {
+        if (!foundPort)
+        {
+            if (adrStr[i] == ':')
+            {
                 foundPort = qtrue;
             }
 
@@ -390,9 +410,12 @@ static int UI_PortFromAddress(const char *adrStr) {
         portLength++;
     }
 
-    if (portLength) {
+    if (portLength)
+    {
         return atoi(portStr);
-    } else {
+    }
+    else
+    {
         return -1;
     }
 }
@@ -404,17 +427,23 @@ UI_ProtocolFromAddress
 returns 2 if 1.1 is detected, returns 1 if gpp is detected, otherwise returns 0
 ==================
 */
-static int UI_ProtocolFromAddress(const char *adrStr) {
+static int UI_ProtocolFromAddress(const char *adrStr)
+{
     int i;
 
-    if (!adrStr || !adrStr[0]) {
+    if (!adrStr || !adrStr[0])
+    {
         return 0;
     }
 
-    for (i = 0; adrStr[i]; i++) {
-        if (adrStr[i] == '-') {
-            if (adrStr[i+1]) {
-                switch (adrStr[i+1]) {
+    for (i = 0; adrStr[i]; i++)
+    {
+        if (adrStr[i] == '-')
+        {
+            if (adrStr[i + 1])
+            {
+                switch (adrStr[i + 1])
+                {
                     case '1':
                         return 2;
 
@@ -450,7 +479,7 @@ static void UI_RemoveServerFromDisplayList(int num)
             trap_LAN_GetServerInfo(ui_netSource.integer, num, info, MAX_STRING_CHARS);
 
             for (j = i; j < uiInfo.serverStatus.numDisplayServers; j++)
-                uiInfo.serverStatus.displayServers[j] = uiInfo.serverStatus.displayServers[j+1];
+                uiInfo.serverStatus.displayServers[j] = uiInfo.serverStatus.displayServers[j + 1];
 
             return;
         }
@@ -485,14 +514,14 @@ static qboolean UI_InsertServerIntoDisplayList(int num, int position)
 
     hostnameLen = strlen(hostname);
 
-    trap_LAN_GetServerAddressString(
-        ui_netSource.integer, num, adrstr, MAX_ADDRESSLENGTH);
+    trap_LAN_GetServerAddressString(ui_netSource.integer, num, adrstr, MAX_ADDRESSLENGTH);
 
     protocol = UI_ProtocolFromAddress(adrstr);
 
     port = UI_PortFromAddress(adrstr);
 
-    if (protocol && hostnameLen > 6) {
+    if (protocol && hostnameLen > 6)
+    {
         // strip the protocol tags from the hostname
         hostname[hostnameLen - 6] = '\0';
     }
@@ -500,7 +529,8 @@ static qboolean UI_InsertServerIntoDisplayList(int num, int position)
     UI_SanitiseString(hostname, basehostname, sizeof(basehostname));
 
     // check if this is a duplicate listing of a multiprotocol server
-    for (i = 0; i < uiInfo.serverStatus.numDisplayServers; i++) {
+    for (i = 0; i < uiInfo.serverStatus.numDisplayServers; i++)
+    {
         int j;
         int clients;
         int protocol2;
@@ -509,43 +539,48 @@ static qboolean UI_InsertServerIntoDisplayList(int num, int position)
         char adrstr2[MAX_ADDRESSLENGTH];
 
         trap_LAN_GetServerAddressString(
-            ui_netSource.integer,
-            uiInfo.serverStatus.displayServers[i], adrstr2, MAX_ADDRESSLENGTH);
+            ui_netSource.integer, uiInfo.serverStatus.displayServers[i], adrstr2, MAX_ADDRESSLENGTH);
 
         protocol2 = UI_ProtocolFromAddress(adrstr2);
 
         port2 = UI_PortFromAddress(adrstr2);
 
-        //compare the addresses
-        if (adrstr[0] != adrstr2[0]) {
+        // compare the addresses
+        if (adrstr[0] != adrstr2[0])
+        {
             continue;
-        } else {
+        }
+        else
+        {
             qboolean skip = qfalse;
 
-            for (j = 1; adrstr[j] && adrstr2[j]; j++) {
-                if(adrstr[j] != adrstr2[j]) {
+            for (j = 1; adrstr[j] && adrstr2[j]; j++)
+            {
+                if (adrstr[j] != adrstr2[j])
+                {
                     skip = qtrue;
                     break;
                 }
 
-                //don't compare ports
-                if (adrstr[j] == ':') {
+                // don't compare ports
+                if (adrstr[j] == ':')
+                {
                     break;
                 }
             }
 
-            if (skip) {
+            if (skip)
+            {
                 continue;
             }
         }
 
-        trap_LAN_GetServerInfo(
-            ui_netSource.integer,
-             uiInfo.serverStatus.displayServers[i], info2, MAX_STRING_CHARS);
+        trap_LAN_GetServerInfo(ui_netSource.integer, uiInfo.serverStatus.displayServers[i], info2, MAX_STRING_CHARS);
 
         // if the ports are not the same, check to see if the host names are the
         // same for older multiprotocol servers
-        if(port != port2) {
+        if (port != port2)
+        {
             int hostnameLen2;
             char hostname2[MAX_HOSTNAME_LENGTH];
             char basehostname2[MAX_HOSTNAME_LENGTH];
@@ -554,27 +589,32 @@ static qboolean UI_InsertServerIntoDisplayList(int num, int position)
 
             hostnameLen2 = strlen(hostname2);
 
-            if (protocol2 && hostnameLen2 > 6) {
-                 // strip the protocol tags from the hostname
-                 hostname2[hostnameLen2 - 7] = '\0';
+            if (protocol2 && hostnameLen2 > 6)
+            {
+                // strip the protocol tags from the hostname
+                hostname2[hostnameLen2 - 7] = '\0';
             }
 
             UI_SanitiseString(hostname2, basehostname2, sizeof(basehostname2));
 
-            //compare the hostnames
-            if (Q_stricmp(basehostname, basehostname2)) {
+            // compare the hostnames
+            if (Q_stricmp(basehostname, basehostname2))
+            {
                 continue;
             }
         }
 
         uiInfo.serverStatus.numDuplicateMultiprotocolServers++;
 
-        //show only the most recent protocol for a given server
-        if (protocol >= protocol2) {
+        // show only the most recent protocol for a given server
+        if (protocol >= protocol2)
+        {
             clients = atoi(Info_ValueForKey(info, "clients"));
             uiInfo.serverStatus.numDuplicateMultiprotocolServerClients += clients;
             return qfalse;
-        } else {
+        }
+        else
+        {
             clients = atoi(Info_ValueForKey(info2, "clients"));
             uiInfo.serverStatus.numDuplicateMultiprotocolServerClients += clients;
             UI_RemoveServerFromDisplayList(uiInfo.serverStatus.displayServers[i]);
@@ -583,7 +623,7 @@ static qboolean UI_InsertServerIntoDisplayList(int num, int position)
         }
     }
 
-    //insert the server
+    // insert the server
     uiInfo.serverStatus.numDisplayServers++;
 
     for (i = uiInfo.serverStatus.numDisplayServers; i > position; i--)
@@ -1064,40 +1104,47 @@ Returns number of matching clientids up to max.
 ==================
 */
 static void UI_BuildPlayerList();
-int UI_ClientNumbersFromString(char *s, int *plist, int max) {
-  int i, found = 0;
-  char n2[MAX_COLORFUL_NAME_LENGTH] = {""};
-  char s2[MAX_COLORFUL_NAME_LENGTH] = {""};
-  char n2_temp[MAX_COLORFUL_NAME_LENGTH] = {""};
-  char s2_temp[MAX_COLORFUL_NAME_LENGTH] = {""};
+int UI_ClientNumbersFromString(char *s, int *plist, int max)
+{
+    int i, found = 0;
+    char n2[MAX_COLORFUL_NAME_LENGTH] = {""};
+    char s2[MAX_COLORFUL_NAME_LENGTH] = {""};
+    char n2_temp[MAX_COLORFUL_NAME_LENGTH] = {""};
+    char s2_temp[MAX_COLORFUL_NAME_LENGTH] = {""};
 
-  if(max == 0) {
-    return 0;
-  }
-
-  UI_BuildPlayerList();
-
-  if(!s[0]) {
-    for(i = 0; i < uiInfo.playerCount && found < max; i++) {
-      *plist++ = i;
-      found++;
+    if (max == 0)
+    {
+        return 0;
     }
-    return found;
-  }
 
-  // now look for name matches
-  Q_strncpyz(s2_temp, s, sizeof(s2_temp));
-  Q_CleanStr(s2_temp);
-  Q_StringToLower(s2_temp, s2, sizeof(s2));
-  if(!s2[0]) {
-    return 0;
-  }
+    UI_BuildPlayerList();
 
-    for(i = 0; i < uiInfo.playerCount && found < max; i++) {
+    if (!s[0])
+    {
+        for (i = 0; i < uiInfo.playerCount && found < max; i++)
+        {
+            *plist++ = i;
+            found++;
+        }
+        return found;
+    }
+
+    // now look for name matches
+    Q_strncpyz(s2_temp, s, sizeof(s2_temp));
+    Q_CleanStr(s2_temp);
+    Q_StringToLower(s2_temp, s2, sizeof(s2));
+    if (!s2[0])
+    {
+        return 0;
+    }
+
+    for (i = 0; i < uiInfo.playerCount && found < max; i++)
+    {
         Q_strncpyz(n2_temp, uiInfo.playerNames[i], sizeof(n2_temp));
         Q_CleanStr(n2_temp);
         Q_StringToLower(n2_temp, n2, sizeof(n2));
-        if(strstr(n2, s2)) {
+        if (strstr(n2, s2))
+        {
             *plist++ = i;
             found++;
         }
@@ -1284,8 +1331,7 @@ static void UI_StopServerRefresh(void)
 
     uiInfo.serverStatus.refreshActive = qfalse;
     Com_Printf("%d servers listed in browser with %d players.\n", uiInfo.serverStatus.numDisplayServers,
-        uiInfo.serverStatus.numPlayersOnServers -
-            uiInfo.serverStatus.numDuplicateMultiprotocolServerClients);
+        uiInfo.serverStatus.numPlayersOnServers - uiInfo.serverStatus.numDuplicateMultiprotocolServerClients);
     count = trap_LAN_GetServerCount(ui_netSource.integer);
 
     if (count - uiInfo.serverStatus.numDisplayServers - uiInfo.serverStatus.numDuplicateMultiprotocolServers > 0)
@@ -1476,9 +1522,10 @@ void UI_Refresh(int realtime)
 UI_Shutdown
 =================
 */
-void UI_Shutdown(void) { 
-  BG_Bucket_Destroy_All_Buckets( );
-  trap_LAN_SaveCachedServers();
+void UI_Shutdown(void)
+{
+    BG_Bucket_Destroy_All_Buckets();
+    trap_LAN_SaveCachedServers();
 }
 
 qboolean Asset_Parse(int handle)
@@ -1884,12 +1931,12 @@ UI_alienStates
 */
 static void UI_alienStates(alienStates_t *state)
 {
-  char alienStates[MAX_TOKEN_CHARS];
+    char alienStates[MAX_TOKEN_CHARS];
 
-  trap_Cvar_VariableStringBuffer("ui_alienStates", alienStates, sizeof(alienStates));
+    trap_Cvar_VariableStringBuffer("ui_alienStates", alienStates, sizeof(alienStates));
 
-  sscanf( alienStates, "%d %d %d %d %d", &state->omBuilding, &state->omHealth,
-      &state->spawns, &state->builders, &state->boosters );
+    sscanf(alienStates, "%d %d %d %d %d", &state->omBuilding, &state->omHealth, &state->spawns, &state->builders,
+        &state->boosters);
 }
 
 /*
@@ -1899,12 +1946,12 @@ UI_humanStates
 */
 static void UI_humanStates(humanStates_t *state)
 {
-  char humanStates[MAX_TOKEN_CHARS];
+    char humanStates[MAX_TOKEN_CHARS];
 
-  trap_Cvar_VariableStringBuffer("ui_humanStates", humanStates, sizeof(humanStates));
+    trap_Cvar_VariableStringBuffer("ui_humanStates", humanStates, sizeof(humanStates));
 
-  sscanf( humanStates, "%d %d %d %d %d %d %d", &state->rcBuilding, &state->rcHealth,
-      &state->spawns, &state->builders, &state->armourys, &state->medicals, &state->computers );
+    sscanf(humanStates, "%d %d %d %d %d %d %d", &state->rcBuilding, &state->rcHealth, &state->spawns, &state->builders,
+        &state->armourys, &state->medicals, &state->computers);
 }
 
 /*
@@ -1914,22 +1961,22 @@ UI_GetStageText
 */
 static char *UI_GetStageText(int stages)
 {
-    if (stages == (( 1 << S1 )|( 1 << S2 )|( 1 << S3 )))
-      return "from stage 1";
-    else if (stages == (( 1 << S2 )|( 1 << S3 )))
-      return "from stage 2";
-    else if (stages == (( 1 << S1 )|( 1 << S3 )))
-      return "at stages 1 and 3";
-    else if (stages == (( 1 << S1 )|( 1 << S2 )))
-      return "at stages 1 and 2";
-    else if (stages == (( 1 << S3 )))
-      return "at stage 3";
-    else if (stages == ( 1 << S1 ))
-      return "at stage 1";
-    else if (stages == ( 1 << S2 ))
-      return "at stage 2";
+    if (stages == ((1 << S1) | (1 << S2) | (1 << S3)))
+        return "from stage 1";
+    else if (stages == ((1 << S2) | (1 << S3)))
+        return "from stage 2";
+    else if (stages == ((1 << S1) | (1 << S3)))
+        return "at stages 1 and 3";
+    else if (stages == ((1 << S1) | (1 << S2)))
+        return "at stages 1 and 2";
+    else if (stages == ((1 << S3)))
+        return "at stage 3";
+    else if (stages == (1 << S1))
+        return "at stage 1";
+    else if (stages == (1 << S2))
+        return "at stage 2";
     else
-      return "nevertime";
+        return "nevertime";
 }
 
 /*
@@ -1937,57 +1984,51 @@ static char *UI_GetStageText(int stages)
 UI_DrawNewProgressBar
 ===============
 */
-static void UI_DrawNewProgressBar( rectDef_t *rect, vec4_t color,
-                                vec4_t backColor, float scale, int align,
-                                int textalign, int textStyle, float borderSize,
-                                float progress )
+static void UI_DrawNewProgressBar(rectDef_t *rect, vec4_t color, vec4_t backColor, float scale, int align,
+    int textalign, int textStyle, float borderSize, float progress)
 {
-  float   rimWidth;
-  float   doneWidth, leftWidth;
-  float   tx, ty;
-  char    textBuffer[ 8 ];
-  float   borderStyle[ 4 ];
-  int     w, h;
+    float rimWidth;
+    float doneWidth, leftWidth;
+    float tx, ty;
+    char textBuffer[8];
+    float borderStyle[4];
+    int w, h;
 
-  borderStyle[0] = BORDER_FOLD;
-  borderStyle[1] = BORDER_FOLD;
-  borderStyle[2] = BORDER_FOLD;
-  borderStyle[3] = BORDER_FOLD;
+    borderStyle[0] = BORDER_FOLD;
+    borderStyle[1] = BORDER_FOLD;
+    borderStyle[2] = BORDER_FOLD;
+    borderStyle[3] = BORDER_FOLD;
 
-  if( borderSize >= 0.0f )
-    rimWidth = borderSize;
-  else
-  {
-    rimWidth = rect->h / 20.0f;
-    if( rimWidth < 0.6f )
-      rimWidth = 0.6f;
-  }
+    if (borderSize >= 0.0f)
+        rimWidth = borderSize;
+    else
+    {
+        rimWidth = rect->h / 20.0f;
+        if (rimWidth < 0.6f)
+            rimWidth = 0.6f;
+    }
 
-  if( progress < 0.0f )
-    progress = 0.0f;
-  else if( progress > 1.0f )
-    progress = 1.0f;
+    if (progress < 0.0f)
+        progress = 0.0f;
+    else if (progress > 1.0f)
+        progress = 1.0f;
 
-  doneWidth = ( rect->w - (8 + 6) * rimWidth ) * progress + 6 * rimWidth;
+    doneWidth = (rect->w - (8 + 6) * rimWidth) * progress + 6 * rimWidth;
 
-  //draw rim and bar
-  UI_DrawRoundedRect(rect->x, rect->y, rect->w, rect->h, rimWidth, borderStyle, color);
-  UI_FillRoundedRect(
-    rect->x + rimWidth * 4,
-    rect->y + rimWidth * 4,
-    doneWidth,
-    rect->h - rimWidth * 8,
-    rimWidth, borderStyle, backColor);
+    // draw rim and bar
+    UI_DrawRoundedRect(rect->x, rect->y, rect->w, rect->h, rimWidth, borderStyle, color);
+    UI_FillRoundedRect(rect->x + rimWidth * 4, rect->y + rimWidth * 4, doneWidth, rect->h - rimWidth * 8, rimWidth,
+        borderStyle, backColor);
 
-
-  //draw text
-  if( scale > 0.0 )
-  {
-    Com_sprintf( textBuffer, sizeof( textBuffer ), "%d%%", (int)( progress * 100 ) );
-    w = UI_Text_Width(textBuffer, scale);
-    h = UI_Text_Height(textBuffer, scale);
-    UI_Text_Paint( rect->x + (rect->w - w ) / 2.0, rect->y + h + ( rect->h - h ) / 2.0f, scale, color, textBuffer, 0, 0, textStyle );
-  }
+    // draw text
+    if (scale > 0.0)
+    {
+        Com_sprintf(textBuffer, sizeof(textBuffer), "%d%%", (int)(progress * 100));
+        w = UI_Text_Width(textBuffer, scale);
+        h = UI_Text_Height(textBuffer, scale);
+        UI_Text_Paint(rect->x + (rect->w - w) / 2.0, rect->y + h + (rect->h - h) / 2.0f, scale, color, textBuffer, 0, 0,
+            textStyle);
+    }
 }
 
 /*
@@ -1995,24 +2036,24 @@ static void UI_DrawNewProgressBar( rectDef_t *rect, vec4_t color,
 UI_DrawDownloadOverall
 ===============
 */
-static void UI_DrawDownloadOverall( rectDef_t *rect, vec4_t color, vec4_t backColor, float scale,
-                                    int align, int textalign, int textStyle,
-                                    float borderSize )
+static void UI_DrawDownloadOverall(rectDef_t *rect, vec4_t color, vec4_t backColor, float scale, int align,
+    int textalign, int textStyle, float borderSize)
 {
-  char downloadName[MAX_INFO_VALUE];
-  int downloadSize, downloadCount, downloadTotal, downloadDone;
+    char downloadName[MAX_INFO_VALUE];
+    int downloadSize, downloadCount, downloadTotal, downloadDone;
 
-  trap_Cvar_VariableStringBuffer("cl_downloadName", downloadName, sizeof(downloadName));
-  if (!*downloadName)
-    return;
+    trap_Cvar_VariableStringBuffer("cl_downloadName", downloadName, sizeof(downloadName));
+    if (!*downloadName)
+        return;
 
-  downloadSize = trap_Cvar_VariableValue("cl_downloadSize");
-  downloadCount = trap_Cvar_VariableValue("cl_downloadCount");
-  downloadTotal = trap_Cvar_VariableValue("cl_downloadTotal");
-  downloadDone = trap_Cvar_VariableValue("cl_downloadDone");
+    downloadSize = trap_Cvar_VariableValue("cl_downloadSize");
+    downloadCount = trap_Cvar_VariableValue("cl_downloadCount");
+    downloadTotal = trap_Cvar_VariableValue("cl_downloadTotal");
+    downloadDone = trap_Cvar_VariableValue("cl_downloadDone");
 
-  UI_DrawNewProgressBar( rect, color, backColor, scale, align, textalign, textStyle, borderSize,
-    (downloadSize ? ((float)downloadCount / downloadSize / downloadTotal) : 0) + (float)downloadDone / downloadTotal );
+    UI_DrawNewProgressBar(rect, color, backColor, scale, align, textalign, textStyle, borderSize,
+        (downloadSize ? ((float)downloadCount / downloadSize / downloadTotal) : 0) +
+            (float)downloadDone / downloadTotal);
 }
 
 /*
@@ -2046,48 +2087,27 @@ static void UI_DrawInfoPane(menuItem_t *item, rectDef_t *rect, float text_x, flo
                         ALIEN_CREDITS_PER_KILL - 1) /
                     ALIEN_CREDITS_PER_KILL;
 
-            s = va("%s\n\n%s\nAvailable %s.%s",
-                  BG_ClassConfig(item->v.pclass)->humanName,
-                  BG_Class(item->v.pclass)->info,
-                  UI_GetStageText(BG_Class(item->v.pclass)->stages),
-                  (
-                    (value > 0) ?
-                      va("\n\nFrags: %d", value) :
-                      ""
-                  )
-                );
+            s = va("%s\n\n%s\nAvailable %s.%s", BG_ClassConfig(item->v.pclass)->humanName,
+                BG_Class(item->v.pclass)->info, UI_GetStageText(BG_Class(item->v.pclass)->stages),
+                ((value > 0) ? va("\n\nFrags: %d", value) : ""));
 
             break;
 
         case INFOTYPE_WEAPON:
             value = BG_Weapon(item->v.weapon)->price;
 
-            s = va("%s\n\n%s\nAvailable %s.\n\nCredits: %s",
-                  BG_Weapon(item->v.weapon)->humanName,
-                  BG_Weapon(item->v.weapon)->info,
-                  UI_GetStageText(BG_Weapon(item->v.weapon)->stages),
-                  (
-                    (value > 0) ?
-                      va("%d", value) :
-                      "Free"
-                  )
-                );
+            s = va("%s\n\n%s\nAvailable %s.\n\nCredits: %s", BG_Weapon(item->v.weapon)->humanName,
+                BG_Weapon(item->v.weapon)->info, UI_GetStageText(BG_Weapon(item->v.weapon)->stages),
+                ((value > 0) ? va("%d", value) : "Free"));
 
             break;
 
         case INFOTYPE_UPGRADE:
             value = BG_Upgrade(item->v.upgrade)->price;
 
-            s = va("%s\n\n%s\nAvailable %s.\n\nCredits: %s",
-                  BG_Upgrade(item->v.upgrade)->humanName,
-                  BG_Upgrade(item->v.upgrade)->info,
-                  UI_GetStageText(BG_Upgrade(item->v.upgrade)->stages),
-                  (
-                    (value > 0) ?
-                      va("%d", value) :
-                      "Free"
-                  )
-                );
+            s = va("%s\n\n%s\nAvailable %s.\n\nCredits: %s", BG_Upgrade(item->v.upgrade)->humanName,
+                BG_Upgrade(item->v.upgrade)->info, UI_GetStageText(BG_Upgrade(item->v.upgrade)->stages),
+                ((value > 0) ? va("%d", value) : "Free"));
 
             break;
 
@@ -2108,16 +2128,9 @@ static void UI_DrawInfoPane(menuItem_t *item, rectDef_t *rect, float text_x, flo
                     break;
             }
 
-            s = va("%s\n\n%s\nAvailable %s.%s",
-                BG_Buildable(item->v.buildable)->humanName,
-                BG_Buildable(item->v.buildable)->info,
-                UI_GetStageText(BG_Buildable(item->v.buildable)->stages),
-                (
-                  (value > 0) ?
-                    va("\n\n%s: %d", string, value) :
-                    ""
-                )
-              );
+            s = va("%s\n\n%s\nAvailable %s.%s", BG_Buildable(item->v.buildable)->humanName,
+                BG_Buildable(item->v.buildable)->info, UI_GetStageText(BG_Buildable(item->v.buildable)->stages),
+                ((value > 0) ? va("\n\n%s: %d", string, value) : ""));
 
             break;
     }
@@ -2125,178 +2138,170 @@ static void UI_DrawInfoPane(menuItem_t *item, rectDef_t *rect, float text_x, flo
     UI_DrawTextBlock(rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, s);
 }
 
-static void UI_PositionRotatedEntityOnTag( refEntity_t *entity, const refEntity_t *parent,
-                                    qhandle_t parentModel, char *tagName )  // Imported from cg_ents.c
+static void UI_PositionRotatedEntityOnTag(
+    refEntity_t *entity, const refEntity_t *parent, qhandle_t parentModel, char *tagName)  // Imported from cg_ents.c
 {
-  int           i;
-  orientation_t lerped;
-  vec3_t        tempAxis[ 3 ];
+    int i;
+    orientation_t lerped;
+    vec3_t tempAxis[3];
 
-//AxisClear( entity->axis );
-  // lerp the tag
-  uiInfo.uiDC.lerpTag( &lerped, parentModel, parent->oldframe, parent->frame,
-                  1.0 - parent->backlerp, tagName );
+    // AxisClear( entity->axis );
+    //  lerp the tag
+    uiInfo.uiDC.lerpTag(&lerped, parentModel, parent->oldframe, parent->frame, 1.0 - parent->backlerp, tagName);
 
-  // FIXME: allow origin offsets along tag?
-  VectorCopy( parent->origin, entity->origin );
-  for( i = 0; i < 3; i++ )
-    VectorMA( entity->origin, lerped.origin[ i ], parent->axis[ i ], entity->origin );
+    // FIXME: allow origin offsets along tag?
+    VectorCopy(parent->origin, entity->origin);
+    for (i = 0; i < 3; i++)
+        VectorMA(entity->origin, lerped.origin[i], parent->axis[i], entity->origin);
 
-  // had to cast away the const to avoid compiler problems...
-  MatrixMultiply( entity->axis, lerped.axis, tempAxis );
-  MatrixMultiply( tempAxis, ( (refEntity_t *)parent )->axis, entity->axis );
+    // had to cast away the const to avoid compiler problems...
+    MatrixMultiply(entity->axis, lerped.axis, tempAxis);
+    MatrixMultiply(tempAxis, ((refEntity_t *)parent)->axis, entity->axis);
 }
 
 static void UI_DrawInfoPaneModel(menuItemModel_t *model, rectDef_t *rect)
 {
-  float x, y, w, h;
-  refdef_t refdef;
-  refEntity_t ent[4];
-  vec3_t tmpMins, tmpMaxs;
-  vec3_t mins, maxs;
-  vec3_t origin;
-  vec3_t angles;
-  float suggestedDist;
-  int i;
-  int millisPerDeg = 100;  // 36s = 1 turn
-  float tmpFrame;
+    float x, y, w, h;
+    refdef_t refdef;
+    refEntity_t ent[4];
+    vec3_t tmpMins, tmpMaxs;
+    vec3_t mins, maxs;
+    vec3_t origin;
+    vec3_t angles;
+    float suggestedDist;
+    int i;
+    int millisPerDeg = 100;  // 36s = 1 turn
+    float tmpFrame;
 
-  if (model->assetCount == 0)
-    return;
+    if (model->assetCount == 0)
+        return;
 
-  // setup the refdef
-  memset(&refdef, 0, sizeof(refdef));
+    // setup the refdef
+    memset(&refdef, 0, sizeof(refdef));
 
-  refdef.rdflags = RDF_NOWORLDMODEL;
+    refdef.rdflags = RDF_NOWORLDMODEL;
 
-  AxisClear(refdef.viewaxis);
+    AxisClear(refdef.viewaxis);
 
-  x = rect->x;
-  y = rect->y;
-  w = rect->w;
-  h = rect->h;
+    x = rect->x;
+    y = rect->y;
+    w = rect->w;
+    h = rect->h;
 
-  UI_AdjustFrom640(&x, &y, &w, &h);
+    UI_AdjustFrom640(&x, &y, &w, &h);
 
-  refdef.x = x;
-  refdef.y = y;
-  refdef.width = w;
-  refdef.height = h;
+    refdef.x = x;
+    refdef.y = y;
+    refdef.width = w;
+    refdef.height = h;
 
-  if (model->autoAdjust)
-  {
-    uiInfo.uiDC.modelBounds(model->asset[0], mins, maxs);
-    for (i = 1; i < model->assetCount; i++)  // Maybe there are already a function for this ?
+    if (model->autoAdjust)
     {
-      uiInfo.uiDC.modelBounds(model->asset[i], tmpMins, tmpMaxs);
-      if (tmpMins[0] < mins[0])
-        mins[0] = tmpMins[0];
-      if (tmpMins[1] < mins[1])
-        mins[1] = tmpMins[1];
-      if (tmpMins[2] < mins[2])
-        mins[2] = tmpMins[2];
-      if (tmpMaxs[0] > maxs[0])
-        maxs[0] = tmpMaxs[0];
-      if (tmpMaxs[1] > maxs[1])
-        maxs[1] = tmpMaxs[1];
-      if (tmpMaxs[2] > maxs[2])
-        maxs[2] = tmpMaxs[2];
-    }
+        uiInfo.uiDC.modelBounds(model->asset[0], mins, maxs);
+        for (i = 1; i < model->assetCount; i++)  // Maybe there are already a function for this ?
+        {
+            uiInfo.uiDC.modelBounds(model->asset[i], tmpMins, tmpMaxs);
+            if (tmpMins[0] < mins[0])
+                mins[0] = tmpMins[0];
+            if (tmpMins[1] < mins[1])
+                mins[1] = tmpMins[1];
+            if (tmpMins[2] < mins[2])
+                mins[2] = tmpMins[2];
+            if (tmpMaxs[0] > maxs[0])
+                maxs[0] = tmpMaxs[0];
+            if (tmpMaxs[1] > maxs[1])
+                maxs[1] = tmpMaxs[1];
+            if (tmpMaxs[2] > maxs[2])
+                maxs[2] = tmpMaxs[2];
+        }
 
-    origin[1] = 0.5 * (mins[1] + maxs[1]);
-    suggestedDist = ((0.5 * (maxs[2]*model->scale - mins[2]*model->scale)) / 0.268); // len / tan( fov/2 )
+        origin[1] = 0.5 * (mins[1] + maxs[1]);
+        suggestedDist = ((0.5 * (maxs[2] * model->scale - mins[2] * model->scale)) / 0.268);  // len / tan( fov/2 )
 
-    if (model->forceCentering)
-    {
-      origin[0] = suggestedDist * 2.0;
-      origin[2] = -0.5 * (mins[2] + maxs[2]);
-    }
-    else
-    {
-      origin[0] = suggestedDist * 0.5 + model->cameraDist * 0.5;
-      origin[2] = model->zOffset * 0.2 + (-0.5 * (mins[2] + maxs[2])) * 0.8;
-    }
-  }
-  else
-  {
-    origin[0] = model->cameraDist;
-    origin[1] = 0;
-    origin[2] = model->zOffset;
-  }
-
-
-  refdef.fov_x = (int)((float)refdef.width / 640.0f * 90.0f);
-  refdef.fov_y = atan2(
-    refdef.height,
-    refdef.width / tan( refdef.fov_x / 360 * M_PI )
-  );
-  refdef.fov_y *= ( 360 / M_PI );
-
-  refdef.fov_x *= 2;
-  refdef.fov_y *= 2;
-
-  uiInfo.uiDC.clearScene();
-
-  refdef.time = uiInfo.uiDC.realTime;
-
-  // add the model
-
-  VectorSet(angles, 0,
-    (
-      (float)(uiInfo.uiDC.realTime % (360 * millisPerDeg)) / (float)(millisPerDeg)
-    ), 0);
-
-  for (i = 0; i < model->assetCount; i++)
-  {
-    memset(&(ent[i]), 0, sizeof(ent[i]));
-
-    if( model->scale != 1.0f )
-    {
-      VectorScale( ent[i].axis[ 0 ], model->scale, ent[i].axis[ 0 ] );
-      VectorScale( ent[i].axis[ 1 ], model->scale, ent[i].axis[ 1 ] );
-      VectorScale( ent[i].axis[ 2 ], model->scale, ent[i].axis[ 2 ] );
-
-      ent[i].nonNormalizedAxes = qtrue;
-    }
-    else
-      ent[i].nonNormalizedAxes = qfalse;
-
-    ent[i].hModel = model->asset[i];
-    if (model->skin[i])
-      ent[i].customSkin = model->skin[i];
-    if (model->frame[i] == -1)
-    {
-      // Animate
-      tmpFrame = (uiInfo.uiDC.realTime * model->animationFPS[i]) / 1000;
-      ent[i].backlerp = 1.0f - (tmpFrame - floor(tmpFrame));
-      tmpFrame = (int)tmpFrame % (model->animation[i][1] - model->animation[i][0])
-                  + model->animation[i][0];
-      ent[i].frame = tmpFrame + 1;
-      ent[i].oldframe = tmpFrame;
+        if (model->forceCentering)
+        {
+            origin[0] = suggestedDist * 2.0;
+            origin[2] = -0.5 * (mins[2] + maxs[2]);
+        }
+        else
+        {
+            origin[0] = suggestedDist * 0.5 + model->cameraDist * 0.5;
+            origin[2] = model->zOffset * 0.2 + (-0.5 * (mins[2] + maxs[2])) * 0.8;
+        }
     }
     else
     {
-      // Static
-      ent[i].frame = model->frame[i];
-      ent[i].oldframe = model->frame[i];
-    }
-    if (i && strlen(model->parent[i - 1].parentTagName))
-    {
-      AxisClear(ent[i].axis);
-      UI_PositionRotatedEntityOnTag(&(ent[i]), &(ent[model->parent[i - 1].parentIndex]), model->asset[model->parent[i - 1].parentIndex], model->parent[i - 1].parentTagName);
-    }
-    else
-    {
-      VectorCopy(origin, ent[i].origin);
-      VectorCopy(origin, ent[i].lightingOrigin);
-      VectorCopy(ent[i].origin, ent[i].oldorigin);
-      AnglesToAxis(angles, ent[i].axis);
+        origin[0] = model->cameraDist;
+        origin[1] = 0;
+        origin[2] = model->zOffset;
     }
 
-    ent[i].renderfx = RF_LIGHTING_ORIGIN | RF_NOSHADOW;
-    uiInfo.uiDC.addRefEntityToScene(&(ent[i]));
-  }
-  uiInfo.uiDC.renderScene(&refdef);
+    refdef.fov_x = (int)((float)refdef.width / 640.0f * 90.0f);
+    refdef.fov_y = atan2(refdef.height, refdef.width / tan(refdef.fov_x / 360 * M_PI));
+    refdef.fov_y *= (360 / M_PI);
+
+    refdef.fov_x *= 2;
+    refdef.fov_y *= 2;
+
+    uiInfo.uiDC.clearScene();
+
+    refdef.time = uiInfo.uiDC.realTime;
+
+    // add the model
+
+    VectorSet(angles, 0, ((float)(uiInfo.uiDC.realTime % (360 * millisPerDeg)) / (float)(millisPerDeg)), 0);
+
+    for (i = 0; i < model->assetCount; i++)
+    {
+        memset(&(ent[i]), 0, sizeof(ent[i]));
+
+        if (model->scale != 1.0f)
+        {
+            VectorScale(ent[i].axis[0], model->scale, ent[i].axis[0]);
+            VectorScale(ent[i].axis[1], model->scale, ent[i].axis[1]);
+            VectorScale(ent[i].axis[2], model->scale, ent[i].axis[2]);
+
+            ent[i].nonNormalizedAxes = qtrue;
+        }
+        else
+            ent[i].nonNormalizedAxes = qfalse;
+
+        ent[i].hModel = model->asset[i];
+        if (model->skin[i])
+            ent[i].customSkin = model->skin[i];
+        if (model->frame[i] == -1)
+        {
+            // Animate
+            tmpFrame = (uiInfo.uiDC.realTime * model->animationFPS[i]) / 1000;
+            ent[i].backlerp = 1.0f - (tmpFrame - floor(tmpFrame));
+            tmpFrame = (int)tmpFrame % (model->animation[i][1] - model->animation[i][0]) + model->animation[i][0];
+            ent[i].frame = tmpFrame + 1;
+            ent[i].oldframe = tmpFrame;
+        }
+        else
+        {
+            // Static
+            ent[i].frame = model->frame[i];
+            ent[i].oldframe = model->frame[i];
+        }
+        if (i && strlen(model->parent[i - 1].parentTagName))
+        {
+            AxisClear(ent[i].axis);
+            UI_PositionRotatedEntityOnTag(&(ent[i]), &(ent[model->parent[i - 1].parentIndex]),
+                model->asset[model->parent[i - 1].parentIndex], model->parent[i - 1].parentTagName);
+        }
+        else
+        {
+            VectorCopy(origin, ent[i].origin);
+            VectorCopy(origin, ent[i].lightingOrigin);
+            VectorCopy(ent[i].origin, ent[i].oldorigin);
+            AnglesToAxis(angles, ent[i].axis);
+        }
+
+        ent[i].renderfx = RF_LIGHTING_ORIGIN | RF_NOSHADOW;
+        uiInfo.uiDC.addRefEntityToScene(&(ent[i]));
+    }
+    uiInfo.uiDC.renderScene(&refdef);
 }
 
 static void UI_DrawServerMapPreview(rectDef_t *rect, float scale, vec4_t color)
@@ -2357,6 +2362,254 @@ static void UI_DrawSelectedMapName(rectDef_t *rect, float scale, vec4_t color, i
 
     if (map >= 0 && map < uiInfo.mapCount)
         UI_Text_Paint(rect->x, rect->y, scale, color, uiInfo.mapList[map].mapName, 0, 0, textStyle);
+}
+
+// Spectator Builder Layouts - Simple text drawing functions
+static void UI_DrawSpecLayoutName(rectDef_t *rect, float scale, vec4_t color, int textStyle)
+{
+    // Draw current layout name or "Unsaved"
+    const char *name = "Unsaved";
+    int index = ui_specLayoutIndex.integer;
+
+    if (index >= 0 && index < uiInfo.specLayoutCount)
+        name = uiInfo.specLayoutNames[index];
+
+    UI_Text_Paint(rect->x, rect->y, scale, color, name, 0, 0, textStyle);
+}
+
+static void UI_DrawSpecLayoutBuildCount(rectDef_t *rect, float scale, vec4_t color, int textStyle)
+{
+    // Draw building count in format "N (XH/YA)"
+    int index = ui_specLayoutIndex.integer;
+
+    if (index >= 0 && index < uiInfo.specLayoutCount)
+    {
+        static char countStr[32];
+        int total = uiInfo.specLayoutBuildingCounts[index];
+        // Simplified - actual implementation would separate human/alien counts
+        Com_sprintf(countStr, sizeof(countStr), "%d", total);
+        UI_Text_Paint(rect->x, rect->y, scale, color, countStr, 0, 0, textStyle);
+    }
+}
+
+static void UI_DrawSpecLayoutTeam(rectDef_t *rect, float scale, vec4_t color, int textStyle)
+{
+    // Draw team name: "Humans", "Aliens", or "Both"
+    int index = ui_specLayoutIndex.integer;
+
+    if (index >= 0 && index < uiInfo.specLayoutCount)
+    {
+        const char *team = "Unknown";
+        int teamType = uiInfo.specLayoutTeams[index];
+
+        switch (teamType)
+        {
+            case 0:
+                team = "Humans";
+                break;
+            case 1:
+                team = "Aliens";
+                break;
+            case 2:
+                team = "Both";
+                break;
+        }
+
+        UI_Text_Paint(rect->x, rect->y, scale, color, team, 0, 0, textStyle);
+    }
+}
+
+static void UI_DrawSpecDialogTitle(
+    rectDef_t *rect, float scale, int textalign, int textvalign, vec4_t color, int textStyle)
+{
+    // Draw dialog title from ui_specDialog CVAR
+    char title[MAX_CVAR_VALUE_STRING];
+    trap_Cvar_VariableStringBuffer("ui_specDialogTitle", title, sizeof(title));
+
+    if (title[0] == '\0')
+        trap_Cvar_VariableStringBuffer("ui_specDialog", title, sizeof(title));
+
+    // Determine dialog type and set title color
+    if (Q_stristr(title, "Error") != NULL || Q_stristr(title, "error") != NULL)
+    {
+        vec4_t errorColor = {1.0f, 0.3f, 0.3f, 1.0f};
+        VectorCopy(errorColor, color);
+    }
+    else if (Q_stristr(title, "Success") != NULL || Q_stristr(title, "success") != NULL)
+    {
+        vec4_t successColor = {0.3f, 1.0f, 0.3f, 1.0f};
+        VectorCopy(successColor, color);
+    }
+
+    UI_DrawTextBlock(rect, 0, 0, color, scale, textalign, textvalign, textStyle, title);
+}
+
+static void UI_DrawSpecDialogMessage(
+    rectDef_t *rect, float scale, int textalign, int textvalign, vec4_t color, int textStyle)
+{
+    // Draw dialog message from ui_specDialog CVAR
+    char message[MAX_CVAR_VALUE_STRING];
+    trap_Cvar_VariableStringBuffer("ui_specDialog", message, sizeof(message));
+
+    UI_DrawTextBlock(rect, 0, 0, color, scale, textalign, textvalign, textStyle, message);
+}
+
+static void UI_DrawSpecLayoutRating(rectDef_t *rect, float scale, vec4_t color, int textStyle)
+{
+    // Draw rating as number (e.g., "4.5")
+    int index = ui_specLayoutIndex.integer;
+
+    if (index >= 0 && index < uiInfo.specLayoutCount)
+    {
+        static char ratingStr[32];
+        float rating = uiInfo.specLayoutRatings[index];
+        int numRatings = uiInfo.specLayoutRatingCounts[index];
+
+        if (numRatings > 0)
+            Com_sprintf(ratingStr, sizeof(ratingStr), "%.1f (%d)", rating, numRatings);
+        else
+            Com_sprintf(ratingStr, sizeof(ratingStr), "No ratings");
+
+        UI_Text_Paint(rect->x, rect->y, scale, color, ratingStr, 0, 0, textStyle);
+    }
+}
+
+static void UI_DrawSpecLayoutRatingStars(rectDef_t *rect, float scale, vec4_t color)
+{
+    // Draw rating as stars (★★★★☆)
+    int index = ui_specLayoutIndex.integer;
+
+    if (index >= 0 && index < uiInfo.specLayoutCount)
+    {
+        float rating = uiInfo.specLayoutRatings[index];
+        static char stars[16];
+        int i;
+        int fullStars = (int)rating;
+        int halfStar = (rating - fullStars) >= 0.5f ? 1 : 0;
+
+        // Build star string using UTF-8 stars (★ and ☆)
+        for (i = 0; i < fullStars; i++)
+            stars[i] = 0xE2;  // UTF-8 start for ★
+
+        // This is a simplified version - actual implementation would use proper Unicode
+        Com_sprintf(stars, sizeof(stars), "%.1f/5.0", rating);
+        UI_Text_Paint(rect->x, rect->y, scale, color, stars, 0, 0, 0);
+    }
+}
+
+// Spectator Builder Layouts - Info pane functions
+static void UI_DrawSpecLayoutInfoPane(rectDef_t *rect, float text_x, float text_y, float scale, int textalign,
+    int textvalign, vec4_t color, int textStyle)
+{
+    int index = ui_specLayoutIndex.integer;
+    static char info[MAX_STRING_CHARS * 2];
+
+    if (index < 0 || index >= uiInfo.specLayoutCount)
+    {
+        Q_strncpyz(info, "No layout selected", sizeof(info));
+    }
+    else
+    {
+        const char *teamStr = "Unknown";
+        char ratingStr[64];
+
+        switch (uiInfo.specLayoutTeams[index])
+        {
+            case 0:
+                teamStr = "Humans";
+                break;
+            case 1:
+                teamStr = "Aliens";
+                break;
+            case 2:
+                teamStr = "Both";
+                break;
+        }
+
+        if (uiInfo.specLayoutRatingCounts[index] > 0)
+            Com_sprintf(ratingStr, sizeof(ratingStr), "%.1f/5.0 (%d ratings)", uiInfo.specLayoutRatings[index],
+                uiInfo.specLayoutRatingCounts[index]);
+        else
+            Q_strncpyz(ratingStr, "No ratings yet", sizeof(ratingStr));
+
+        Com_sprintf(info, sizeof(info),
+            "Name: %s\n"
+            "Creator: %s\n"
+            "Created: %s\n"
+            "Buildings: %d\n"
+            "Team: %s\n"
+            "Rating: %s",
+            uiInfo.specLayoutNames[index], uiInfo.specLayoutCreators[index], uiInfo.specLayoutDates[index],
+            uiInfo.specLayoutBuildingCounts[index], teamStr, ratingStr);
+    }
+
+    UI_DrawTextBlock(rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, info);
+}
+
+static void UI_DrawSpecLayoutVoteDetails(rectDef_t *rect, float text_x, float text_y, float scale, int textalign,
+    int textvalign, vec4_t color, int textStyle)
+{
+    int index = ui_specLayoutIndex.integer;
+    static char info[MAX_STRING_CHARS];
+
+    if (index < 0 || index >= uiInfo.specLayoutCount)
+    {
+        Q_strncpyz(info, "No layout selected", sizeof(info));
+    }
+    else
+    {
+        Com_sprintf(info, sizeof(info),
+            "Name: %s\n"
+            "Creator: %s\n"
+            "Votes: %d\n"
+            "Rating: %.1f/5.0 (%d ratings)",
+            uiInfo.specLayoutNames[index], uiInfo.specLayoutCreators[index], uiInfo.specLayoutVoteCounts[index],
+            uiInfo.specLayoutRatings[index], uiInfo.specLayoutRatingCounts[index]);
+    }
+
+    UI_DrawTextBlock(rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, info);
+}
+
+static void UI_DrawSpecBuildInfoPane(rectDef_t *rect, float text_x, float text_y, float scale, int textalign,
+    int textvalign, vec4_t color, int textStyle)
+{
+    int index = uiInfo.specBuildTeamIndex;
+    static char info[MAX_STRING_CHARS];
+
+    if (index < 0 || index >= uiInfo.specBuildTeamCount)
+    {
+        Q_strncpyz(info, "No team selected", sizeof(info));
+    }
+    else
+    {
+        const char *desc = "";
+        const char *teamName = uiInfo.specBuildTeams[index];
+
+        if (Q_stricmp(teamName, "Humans") == 0)
+            desc =
+                "Place human structures for layout planning.\n"
+                "Available: Reactor, Telenode, Turret, Armoury, Medistat, DCC";
+        else if (Q_stricmp(teamName, "Aliens") == 0)
+            desc =
+                "Place alien structures for layout planning.\n"
+                "Available: Overmind, Egg, Barricade, Acid Tube, Trapper, Hive, Booster, Hovel";
+        else if (Q_stricmp(teamName, "Both") == 0)
+            desc =
+                "Place buildings for either team.\n"
+                "Full access to all structures for both teams.";
+
+        Com_sprintf(info, sizeof(info), "%s\n\n%s", teamName, desc);
+    }
+
+    UI_DrawTextBlock(rect, text_x, text_y, color, scale, textalign, textvalign, textStyle, info);
+}
+
+static void UI_DrawSpecBuildInfoPaneModel(rectDef_t *rect)
+{
+    // This would draw a 3D model preview of the team's representative building
+    // For now, this is a placeholder - actual implementation would use
+    // UI_DrawInfoPaneModel pattern with appropriate team building model
+    (void)rect;  // suppress unused parameter warning
 }
 
 static const char *UI_OwnerDrawText(int ownerDraw)
@@ -2464,7 +2717,8 @@ static void UI_BuildPlayerList(void)
         if (info[0])
         {
             Com_ClientListParse(&uiInfo.ignoreList[uiInfo.playerCount], Info_ValueForKey(info, "ig"));
-            Q_strncpyz(uiInfo.rawPlayerNames[uiInfo.playerCount], Info_ValueForKey(info, "n"), MAX_COLORFUL_NAME_LENGTH);
+            Q_strncpyz(
+                uiInfo.rawPlayerNames[uiInfo.playerCount], Info_ValueForKey(info, "n"), MAX_COLORFUL_NAME_LENGTH);
             Q_strncpyz(uiInfo.playerNames[uiInfo.playerCount], Info_ValueForKey(info, "n"), MAX_COLORFUL_NAME_LENGTH);
             Q_CleanStr(uiInfo.playerNames[uiInfo.playerCount]);
             uiInfo.clientNums[uiInfo.playerCount] = n;
@@ -2478,7 +2732,8 @@ static void UI_BuildPlayerList(void)
 
             if (team2 == team)
             {
-                Q_strncpyz(uiInfo.rawTeamNames[uiInfo.myTeamCount], Info_ValueForKey(info, "n"), MAX_COLORFUL_NAME_LENGTH);
+                Q_strncpyz(
+                    uiInfo.rawTeamNames[uiInfo.myTeamCount], Info_ValueForKey(info, "n"), MAX_COLORFUL_NAME_LENGTH);
                 Q_strncpyz(uiInfo.teamNames[uiInfo.myTeamCount], Info_ValueForKey(info, "n"), MAX_COLORFUL_NAME_LENGTH);
                 Q_CleanStr(uiInfo.teamNames[uiInfo.myTeamCount]);
                 uiInfo.teamClientNums[uiInfo.myTeamCount] = n;
@@ -2519,8 +2774,7 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
     switch (ownerDraw)
     {
         case UI_DOWNLOAD_OVERALL:
-            UI_DrawDownloadOverall(&rect, foreColor, backColor, scale, align, textalign,
-                textStyle, borderSize );
+            UI_DrawDownloadOverall(&rect, foreColor, backColor, scale, align, textalign, textStyle, borderSize);
             break;
 
         case UI_TEAMINFOPANE:
@@ -2552,9 +2806,8 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_AUPGRADEINFOPANEMODEL:
-            UI_DrawInfoPaneModel(&uiInfo.alienUpgradeListModel[
-                uiInfo.alienUpgradeList[uiInfo.alienUpgradeIndex].v.pclass
-              ], &rect);
+            UI_DrawInfoPaneModel(
+                &uiInfo.alienUpgradeListModel[uiInfo.alienUpgradeList[uiInfo.alienUpgradeIndex].v.pclass], &rect);
             break;
 
         case UI_HITEMINFOPANE:
@@ -2572,11 +2825,12 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_HBUYINFOPANEMODEL:
-            UI_DrawInfoPaneModel(&uiInfo.humanArmouryBuyListModel[
-                uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].type == INFOTYPE_WEAPON ?
-                  uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].v.weapon :
-                  (uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].v.upgrade + WP_NUM_WEAPONS)
-              ], &rect);
+            UI_DrawInfoPaneModel(
+                &uiInfo.humanArmouryBuyListModel
+                    [uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].type == INFOTYPE_WEAPON
+                            ? uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].v.weapon
+                            : (uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].v.upgrade + WP_NUM_WEAPONS)],
+                &rect);
             break;
 
         case UI_HSELLINFOPANE:
@@ -2590,9 +2844,8 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_ABUILDINFOPANEMODEL:
-            UI_DrawInfoPaneModel(&uiInfo.alienBuildListModel[
-                uiInfo.alienBuildList[uiInfo.alienBuildIndex].v.buildable
-              ], &rect);
+            UI_DrawInfoPaneModel(
+                &uiInfo.alienBuildListModel[uiInfo.alienBuildList[uiInfo.alienBuildIndex].v.buildable], &rect);
             break;
 
         case UI_HBUILDINFOPANE:
@@ -2602,9 +2855,8 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
             break;
 
         case UI_HBUILDINFOPANEMODEL:
-            UI_DrawInfoPaneModel(&uiInfo.humanBuildListModel[
-                uiInfo.humanBuildList[uiInfo.humanBuildIndex].v.buildable
-              ], &rect);
+            UI_DrawInfoPaneModel(
+                &uiInfo.humanBuildListModel[uiInfo.humanBuildList[uiInfo.humanBuildIndex].v.buildable], &rect);
             break;
 
         case UI_HELPINFOPANE:
@@ -2626,6 +2878,51 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
 
         case UI_GLINFO:
             UI_DrawGLInfo(&rect, scale, textalign, textvalign, foreColor, textStyle, text_x, text_y);
+            break;
+
+        // Spectator Builder Layouts
+        case UI_SPECLAYOUTINFOPANE:
+            UI_DrawSpecLayoutInfoPane(&rect, text_x, text_y, scale, textalign, textvalign, foreColor, textStyle);
+            break;
+
+        case UI_SPECLAYOUT_NAME:
+            UI_DrawSpecLayoutName(&rect, scale, foreColor, textStyle);
+            break;
+
+        case UI_SPECLAYOUT_BUILDCOUNT:
+            UI_DrawSpecLayoutBuildCount(&rect, scale, foreColor, textStyle);
+            break;
+
+        case UI_SPECLAYOUT_TEAM:
+            UI_DrawSpecLayoutTeam(&rect, scale, foreColor, textStyle);
+            break;
+
+        case UI_SPECLAYOUTVOTEDETAILS:
+            UI_DrawSpecLayoutVoteDetails(&rect, text_x, text_y, scale, textalign, textvalign, foreColor, textStyle);
+            break;
+
+        case UI_SPECBUILDINFOPANE:
+            UI_DrawSpecBuildInfoPane(&rect, text_x, text_y, scale, textalign, textvalign, foreColor, textStyle);
+            break;
+
+        case UI_SPECBUILDINFOPANEMODEL:
+            UI_DrawSpecBuildInfoPaneModel(&rect);
+            break;
+
+        case UI_SPECDIALOG_TITLE:
+            UI_DrawSpecDialogTitle(&rect, scale, textalign, textvalign, foreColor, textStyle);
+            break;
+
+        case UI_SPECDIALOG_MESSAGE:
+            UI_DrawSpecDialogMessage(&rect, scale, textalign, textvalign, foreColor, textStyle);
+            break;
+
+        case UI_SPECLAYOUT_RATING:
+            UI_DrawSpecLayoutRating(&rect, scale, foreColor, textStyle);
+            break;
+
+        case UI_SPECLAYOUT_RATING_STARS:
+            UI_DrawSpecLayoutRatingStars(&rect, scale, foreColor);
             break;
 
         default:
@@ -2720,6 +3017,58 @@ static qboolean UI_OwnerDrawVisible(int flags)
                 vis = qfalse;
 
             flags &= ~UI_SHOW_NOTFAVORITESERVERS;
+        }
+
+        if (flags & UI_SHOW_SPECBUILDER)
+        {
+            // Show if spectator builder is active
+            if (!trap_Cvar_VariableValue("ui_specBuilderActive"))
+                vis = qfalse;
+
+            flags &= ~UI_SHOW_SPECBUILDER;
+        }
+
+        if (flags & UI_SHOW_SPEC_LAYOUT_OWNED)
+        {
+            // Show delete/rename buttons only if current user owns the selected layout
+            int index = ui_specLayoutIndex.integer;
+
+            if (index >= 0 && index < uiInfo.specLayoutCount)
+            {
+                char userName[MAX_NAME_LENGTH];
+                const char *creator = uiInfo.specLayoutCreators[index];
+
+                trap_Cvar_VariableStringBuffer("name", userName, sizeof(userName));
+
+                // Check if current user is the owner
+                if (Q_stricmp(userName, creator) != 0)
+                    vis = qfalse;
+            }
+            else
+            {
+                // No layout selected
+                vis = qfalse;
+            }
+
+            flags &= ~UI_SHOW_SPEC_LAYOUT_OWNED;
+        }
+
+        if (flags & UI_SHOW_SPEC_LAYOUT_RATED)
+        {
+            // Show rating display only if layout has been rated
+            int index = ui_specLayoutIndex.integer;
+
+            if (index >= 0 && index < uiInfo.specLayoutCount)
+            {
+                if (uiInfo.specLayoutRatingCounts[index] == 0)
+                    vis = qfalse;
+            }
+            else
+            {
+                vis = qfalse;
+            }
+
+            flags &= ~UI_SHOW_SPEC_LAYOUT_RATED;
         }
         else
             flags = 0;
@@ -2830,9 +3179,11 @@ static void UI_LoadTeams(void)
         "of abilities including basic melee attacks, movement-"
         "crippling poisons and more.";
 
-    uiInfo.teamListModel[0].asset[0] = uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(alienPreviewClass)->modelName));
+    uiInfo.teamListModel[0].asset[0] =
+        uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(alienPreviewClass)->modelName));
     uiInfo.teamListModel[0].assetCount = 1;
-    uiInfo.teamListModel[0].skin[0] = uiInfo.uiDC.registerSkin(va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(alienPreviewClass)->modelName, BG_ClassConfig(alienPreviewClass)->skinName));
+    uiInfo.teamListModel[0].skin[0] = uiInfo.uiDC.registerSkin(va("models/players/%s/nonseg_%s.skin",
+        BG_ClassConfig(alienPreviewClass)->modelName, BG_ClassConfig(alienPreviewClass)->skinName));
     uiInfo.teamListModel[0].scale = BG_ClassConfig(alienPreviewClass)->modelScale;
     uiInfo.teamListModel[0].zOffset = BG_ClassConfig(alienPreviewClass)->zOffset;
     uiInfo.teamListModel[0].cameraDist = 100;
@@ -2887,15 +3238,18 @@ UI_AddClass
 
 static void UI_AddClass(class_t class, char *prefix)
 {
-    uiInfo.alienClassList[uiInfo.alienClassCount].text = String_Alloc(va("%s%s", prefix, BG_ClassConfig(class)->humanName));
+    uiInfo.alienClassList[uiInfo.alienClassCount].text =
+        String_Alloc(va("%s%s", prefix, BG_ClassConfig(class)->humanName));
     uiInfo.alienClassList[uiInfo.alienClassCount].cmd = String_Alloc(va("cmd class %s\n", BG_Class(class)->name));
     uiInfo.alienClassList[uiInfo.alienClassCount].type = INFOTYPE_CLASS;
 
     uiInfo.alienClassList[uiInfo.alienClassCount].v.pclass = class;
 
-    uiInfo.alienClassListModel[uiInfo.alienClassCount].asset[0] = uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(class)->modelName));
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].asset[0] =
+        uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(class)->modelName));
     uiInfo.alienClassListModel[uiInfo.alienClassCount].assetCount = 1;
-    uiInfo.alienClassListModel[uiInfo.alienClassCount].skin[0] = uiInfo.uiDC.registerSkin(va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(class)->modelName, BG_ClassConfig(class)->skinName));
+    uiInfo.alienClassListModel[uiInfo.alienClassCount].skin[0] = uiInfo.uiDC.registerSkin(
+        va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(class)->modelName, BG_ClassConfig(class)->skinName));
     uiInfo.alienClassListModel[uiInfo.alienClassCount].scale = BG_ClassConfig(class)->modelScale;
     uiInfo.alienClassListModel[uiInfo.alienClassCount].zOffset = BG_ClassConfig(class)->zOffset;
     uiInfo.alienClassListModel[uiInfo.alienClassCount].cameraDist = 100;
@@ -2912,16 +3266,16 @@ UI_LoadAlienClasses
 static void UI_LoadAlienClasses(void)
 {
     alienStates_t state;
-    stage_t       stage;
-    char          *prefix;
+    stage_t stage;
+    char *prefix;
 
     memset(&(uiInfo.alienClassListModel), 0, sizeof(uiInfo.alienClassListModel));
     uiInfo.alienClassCount = 0;
     UI_alienStates(&state);
     stage = UI_GetCurrentAlienStage();
 
-    if ( ( !state.omHealth || !state.spawns || BG_BuildableAllowedInStage(BA_A_BOOSTER, stage) && !state.boosters )
-          && !state.builders )
+    if ((!state.omHealth || !state.spawns || BG_BuildableAllowedInStage(BA_A_BOOSTER, stage) && !state.boosters) &&
+        !state.builders)
         prefix = "[!] ";
     else
         prefix = "";
@@ -2948,7 +3302,8 @@ static void UI_AddItem(weapon_t weapon, char *prefix)
     uiInfo.humanItemList[uiInfo.humanItemCount].type = INFOTYPE_WEAPON;
     uiInfo.humanItemList[uiInfo.humanItemCount].v.weapon = weapon;
 
-    uiInfo.humanItemListModel[uiInfo.humanItemCount].asset[0] = uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(weapon)->name, BG_Weapon(weapon)->name));
+    uiInfo.humanItemListModel[uiInfo.humanItemCount].asset[0] =
+        uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(weapon)->name, BG_Weapon(weapon)->name));
     uiInfo.humanItemListModel[uiInfo.humanItemCount].assetCount = 1;
     uiInfo.humanItemListModel[uiInfo.humanItemCount].scale = 1.0;
     uiInfo.humanItemListModel[uiInfo.humanItemCount].cameraDist = 0.0;
@@ -2966,18 +3321,18 @@ UI_LoadHumanItems
 static void UI_LoadHumanItems(void)
 {
     humanStates_t state;
-    stage_t       stage;
-    char          *prefix;
+    stage_t stage;
+    char *prefix;
 
     memset(&(uiInfo.humanItemListModel), 0, sizeof(uiInfo.humanItemListModel));
     uiInfo.humanItemCount = 0;
     UI_humanStates(&state);
     stage = UI_GetCurrentHumanStage();
 
-    if ( ( !state.rcHealth || !state.spawns || BG_BuildableAllowedInStage(BA_H_ARMOURY, stage) && !state.armourys
-            || BG_BuildableAllowedInStage(BA_H_MEDISTAT, stage) && !state.medicals
-            || BG_BuildableAllowedInStage(BA_H_DCC, stage) && !state.computers )
-          && !state.builders )
+    if ((!state.rcHealth || !state.spawns || BG_BuildableAllowedInStage(BA_H_ARMOURY, stage) && !state.armourys ||
+            BG_BuildableAllowedInStage(BA_H_MEDISTAT, stage) && !state.medicals ||
+            BG_BuildableAllowedInStage(BA_H_DCC, stage) && !state.computers) &&
+        !state.builders)
         prefix = "[!] ";
     else
         prefix = "";
@@ -3052,10 +3407,10 @@ UI_GetCurrentCredits
 */
 static int UI_GetCurrentCredits(void)
 {
-  char creditCvar[MAX_TOKEN_CHARS];
+    char creditCvar[MAX_TOKEN_CHARS];
 
-  trap_Cvar_VariableStringBuffer("ui_credit", creditCvar, sizeof(creditCvar));
-  return (atoi(creditCvar));
+    trap_Cvar_VariableStringBuffer("ui_credit", creditCvar, sizeof(creditCvar));
+    return (atoi(creditCvar));
 }
 
 /*
@@ -3065,17 +3420,17 @@ UI_GetConflictingUpgradeBudget
 Calculate a reduction of what will be sold when buying the upgrade
 ===============
 */
-static int UI_GetConflictingUpgradeBudget( upgrade_t upgrade )
+static int UI_GetConflictingUpgradeBudget(upgrade_t upgrade)
 {
-  int budget = 0;
-  int i;
-  int refSlots = BG_Upgrade(upgrade)->slots;
+    int budget = 0;
+    int i;
+    int refSlots = BG_Upgrade(upgrade)->slots;
 
-  for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
-      if (uiInfo.upgrades & (1 << i) && BG_Upgrade(i)->slots & refSlots)
-          budget += BG_Upgrade(i)->price;
+    for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
+        if (uiInfo.upgrades & (1 << i) && BG_Upgrade(i)->slots & refSlots)
+            budget += BG_Upgrade(i)->price;
 
-  return (budget);
+    return (budget);
 }
 
 /*
@@ -3085,10 +3440,10 @@ UI_IsAmmoFull
 */
 static qboolean UI_IsAmmoFull(void)
 {
-  char ammoFullCvar[MAX_TOKEN_CHARS];
+    char ammoFullCvar[MAX_TOKEN_CHARS];
 
-  trap_Cvar_VariableStringBuffer("ui_ammoFull", ammoFullCvar, sizeof(ammoFullCvar));
-  return (atoi(ammoFullCvar));
+    trap_Cvar_VariableStringBuffer("ui_ammoFull", ammoFullCvar, sizeof(ammoFullCvar));
+    return (atoi(ammoFullCvar));
 }
 
 /*
@@ -3098,7 +3453,7 @@ UI_CanUpgradeToWeapon
 */
 static qboolean UI_CanUpgradeToWeapon(weapon_t weapon, int sellingBudget, int credits)
 {
-  return (BG_Weapon(weapon)->price <= sellingBudget + credits);
+    return (BG_Weapon(weapon)->price <= sellingBudget + credits);
 }
 
 /*
@@ -3108,7 +3463,7 @@ UI_IsBetterWeapon
 */
 static qboolean UI_IsBetterWeapon(weapon_t weapon, int sellingBudget)
 {
-  return (BG_Weapon(weapon)->price > sellingBudget);
+    return (BG_Weapon(weapon)->price > sellingBudget);
 }
 
 /*
@@ -3118,8 +3473,8 @@ UI_CanGotUpgrade
 */
 static qboolean UI_CanGotUpgrade(upgrade_t upgrade, int credits)
 {
-  credits += UI_GetConflictingUpgradeBudget( upgrade );
-  return (BG_Upgrade(upgrade)->price <= credits);
+    credits += UI_GetConflictingUpgradeBudget(upgrade);
+    return (BG_Upgrade(upgrade)->price <= credits);
 }
 
 /*
@@ -3129,7 +3484,7 @@ UI_IsUpgradeBetter
 */
 static qboolean UI_IsUpgradeBetter(upgrade_t upgrade, int slots)
 {
-  return (!(BG_Upgrade(upgrade)->slots & slots) || upgrade == UP_BATTLESUIT);
+    return (!(BG_Upgrade(upgrade)->slots & slots) || upgrade == UP_BATTLESUIT);
 }
 
 /*
@@ -3147,7 +3502,8 @@ static void UI_LoadHumanArmouryModels(void)
         uiInfo.humanArmouryBuyListModel[i].assetCount = 0;
         if (BG_Weapon(i)->team == TEAM_HUMANS && BG_Weapon(i)->purchasable)
         {
-            uiInfo.humanArmouryBuyListModel[i].asset[0] = uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(i)->name, BG_Weapon(i)->name));
+            uiInfo.humanArmouryBuyListModel[i].asset[0] =
+                uiInfo.uiDC.registerModel(va("models/weapons/%s/%s.md3", BG_Weapon(i)->name, BG_Weapon(i)->name));
             uiInfo.humanArmouryBuyListModel[i].assetCount = 1;
             uiInfo.humanArmouryBuyListModel[i].scale = 1.0;
             uiInfo.humanArmouryBuyListModel[i].autoAdjust = qtrue;
@@ -3163,105 +3519,140 @@ static void UI_LoadHumanArmouryModels(void)
         {
             uiInfo.humanArmouryBuyListModel[j].assetCount = 1;
             uiInfo.humanArmouryBuyListModel[j].scale = 1.0;
-            switch (i) {
-              case UP_LIGHTARMOUR:
-                uiInfo.humanArmouryBuyListModel[j].assetCount = 3;
-                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
-                uiInfo.humanArmouryBuyListModel[j].asset[1] = uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
-                uiInfo.humanArmouryBuyListModel[j].asset[2] = uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
-                uiInfo.humanArmouryBuyListModel[j].skin[0] = uiInfo.uiDC.registerSkin("models/players/human_base/lower_light.skin");
-                uiInfo.humanArmouryBuyListModel[j].skin[1] = uiInfo.uiDC.registerSkin("models/players/human_base/upper_light.skin");
-                uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
-                uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
-                uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
-                uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
-                uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
-                uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 40;
-                uiInfo.humanArmouryBuyListModel[j].zOffset = -15;
-                break;
-              case UP_HELMET:
-                uiInfo.humanArmouryBuyListModel[j].assetCount = 3;
-                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
-                uiInfo.humanArmouryBuyListModel[j].asset[1] = uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
-                uiInfo.humanArmouryBuyListModel[j].asset[2] = uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
-                uiInfo.humanArmouryBuyListModel[j].skin[0] = uiInfo.uiDC.registerSkin("models/players/human_base/lower_default.skin");
-                uiInfo.humanArmouryBuyListModel[j].skin[1] = uiInfo.uiDC.registerSkin("models/players/human_base/upper_default.skin");
-                uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_light.skin");
-                uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
-                uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
-                uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
-                uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
-                uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 32;
-                uiInfo.humanArmouryBuyListModel[j].zOffset = -28;
-                break;
-              case UP_MEDKIT:
-                // Should get the red cross of medical station
-                break;
-              case UP_BATTPACK:
-                uiInfo.humanArmouryBuyListModel[j].assetCount = 4;
-                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
-                uiInfo.humanArmouryBuyListModel[j].asset[1] = uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
-                uiInfo.humanArmouryBuyListModel[j].asset[2] = uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
-                uiInfo.humanArmouryBuyListModel[j].asset[3] = uiInfo.uiDC.registerModel("models/players/human_base/battpack.md3");
-                uiInfo.humanArmouryBuyListModel[j].skin[0] = uiInfo.uiDC.registerSkin("models/players/human_base/lower_default.skin");
-                uiInfo.humanArmouryBuyListModel[j].skin[1] = uiInfo.uiDC.registerSkin("models/players/human_base/upper_default.skin");
-                uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
-                uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
-                uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
-                uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
-                uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
-                uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
-                uiInfo.humanArmouryBuyListModel[j].parent[2].parentTagName = "tag_head";
-                uiInfo.humanArmouryBuyListModel[j].parent[2].parentIndex = 1;
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 40;
-                uiInfo.humanArmouryBuyListModel[j].zOffset = -22;
-                break;
-              case UP_JETPACK:
-                uiInfo.humanArmouryBuyListModel[j].assetCount = 4;
-                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
-                uiInfo.humanArmouryBuyListModel[j].asset[1] = uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
-                uiInfo.humanArmouryBuyListModel[j].asset[2] = uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
-                uiInfo.humanArmouryBuyListModel[j].asset[3] = uiInfo.uiDC.registerModel("models/players/human_base/jetpack.md3");
-                uiInfo.humanArmouryBuyListModel[j].skin[0] = uiInfo.uiDC.registerSkin("models/players/human_base/lower_default.skin");
-                uiInfo.humanArmouryBuyListModel[j].skin[1] = uiInfo.uiDC.registerSkin("models/players/human_base/upper_default.skin");
-                uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
-                uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
-                uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
-                uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
-                uiInfo.humanArmouryBuyListModel[j].parent[0].parentIndex = 0;
-                uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
-                uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
-                uiInfo.humanArmouryBuyListModel[j].parent[2].parentTagName = "tag_head";
-                uiInfo.humanArmouryBuyListModel[j].parent[2].parentIndex = 1;
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 40;
-                uiInfo.humanArmouryBuyListModel[j].zOffset = -22;
-                break;
-              case UP_BATTLESUIT:
-              uiInfo.humanArmouryBuyListModel[j].assetCount = 3;
-                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/players/human_bsuit/lower.md3");
-                uiInfo.humanArmouryBuyListModel[j].asset[1] = uiInfo.uiDC.registerModel("models/players/human_bsuit/upper.md3");
-                uiInfo.humanArmouryBuyListModel[j].asset[2] = uiInfo.uiDC.registerModel("models/players/human_bsuit/head.md3");
-                uiInfo.humanArmouryBuyListModel[j].skin[0] = uiInfo.uiDC.registerSkin("models/players/human_bsuit/lower_default.skin");
-                uiInfo.humanArmouryBuyListModel[j].skin[1] = uiInfo.uiDC.registerSkin("models/players/human_bsuit/upper_default.skin");
-                uiInfo.humanArmouryBuyListModel[j].skin[2] = uiInfo.uiDC.registerSkin("models/players/human_bsuit/head_default.skin");
-                uiInfo.humanArmouryBuyListModel[j].frame[0] = 166;
-                uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
-                uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
-                uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
-                uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 100;
-                uiInfo.humanArmouryBuyListModel[j].zOffset = -25;
-                break;
-              case UP_GRENADE:
-                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/weapons/grenade/grenade.md3");
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 15;
-                break;
-              case UP_AMMO:
-                uiInfo.humanArmouryBuyListModel[j].asset[0] = uiInfo.uiDC.registerModel("models/weapons/shells/rifle-shell.md3");
-                uiInfo.humanArmouryBuyListModel[j].cameraDist = 15;
-                break;
+            switch (i)
+            {
+                case UP_LIGHTARMOUR:
+                    uiInfo.humanArmouryBuyListModel[j].assetCount = 3;
+                    uiInfo.humanArmouryBuyListModel[j].asset[0] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
+                    uiInfo.humanArmouryBuyListModel[j].asset[1] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
+                    uiInfo.humanArmouryBuyListModel[j].asset[2] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
+                    uiInfo.humanArmouryBuyListModel[j].skin[0] =
+                        uiInfo.uiDC.registerSkin("models/players/human_base/lower_light.skin");
+                    uiInfo.humanArmouryBuyListModel[j].skin[1] =
+                        uiInfo.uiDC.registerSkin("models/players/human_base/upper_light.skin");
+                    uiInfo.humanArmouryBuyListModel[j].skin[2] =
+                        uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
+                    uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
+                    uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
+                    uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
+                    uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
+                    uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
+                    uiInfo.humanArmouryBuyListModel[j].cameraDist = 40;
+                    uiInfo.humanArmouryBuyListModel[j].zOffset = -15;
+                    break;
+                case UP_HELMET:
+                    uiInfo.humanArmouryBuyListModel[j].assetCount = 3;
+                    uiInfo.humanArmouryBuyListModel[j].asset[0] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
+                    uiInfo.humanArmouryBuyListModel[j].asset[1] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
+                    uiInfo.humanArmouryBuyListModel[j].asset[2] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
+                    uiInfo.humanArmouryBuyListModel[j].skin[0] =
+                        uiInfo.uiDC.registerSkin("models/players/human_base/lower_default.skin");
+                    uiInfo.humanArmouryBuyListModel[j].skin[1] =
+                        uiInfo.uiDC.registerSkin("models/players/human_base/upper_default.skin");
+                    uiInfo.humanArmouryBuyListModel[j].skin[2] =
+                        uiInfo.uiDC.registerSkin("models/players/human_base/head_light.skin");
+                    uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
+                    uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
+                    uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
+                    uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
+                    uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
+                    uiInfo.humanArmouryBuyListModel[j].cameraDist = 32;
+                    uiInfo.humanArmouryBuyListModel[j].zOffset = -28;
+                    break;
+                case UP_MEDKIT:
+                    // Should get the red cross of medical station
+                    break;
+                case UP_BATTPACK:
+                    uiInfo.humanArmouryBuyListModel[j].assetCount = 4;
+                    uiInfo.humanArmouryBuyListModel[j].asset[0] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
+                    uiInfo.humanArmouryBuyListModel[j].asset[1] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
+                    uiInfo.humanArmouryBuyListModel[j].asset[2] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
+                    uiInfo.humanArmouryBuyListModel[j].asset[3] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/battpack.md3");
+                    uiInfo.humanArmouryBuyListModel[j].skin[0] =
+                        uiInfo.uiDC.registerSkin("models/players/human_base/lower_default.skin");
+                    uiInfo.humanArmouryBuyListModel[j].skin[1] =
+                        uiInfo.uiDC.registerSkin("models/players/human_base/upper_default.skin");
+                    uiInfo.humanArmouryBuyListModel[j].skin[2] =
+                        uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
+                    uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
+                    uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
+                    uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
+                    uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
+                    uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
+                    uiInfo.humanArmouryBuyListModel[j].parent[2].parentTagName = "tag_head";
+                    uiInfo.humanArmouryBuyListModel[j].parent[2].parentIndex = 1;
+                    uiInfo.humanArmouryBuyListModel[j].cameraDist = 40;
+                    uiInfo.humanArmouryBuyListModel[j].zOffset = -22;
+                    break;
+                case UP_JETPACK:
+                    uiInfo.humanArmouryBuyListModel[j].assetCount = 4;
+                    uiInfo.humanArmouryBuyListModel[j].asset[0] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/lower.md3");
+                    uiInfo.humanArmouryBuyListModel[j].asset[1] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/upper.md3");
+                    uiInfo.humanArmouryBuyListModel[j].asset[2] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/head.md3");
+                    uiInfo.humanArmouryBuyListModel[j].asset[3] =
+                        uiInfo.uiDC.registerModel("models/players/human_base/jetpack.md3");
+                    uiInfo.humanArmouryBuyListModel[j].skin[0] =
+                        uiInfo.uiDC.registerSkin("models/players/human_base/lower_default.skin");
+                    uiInfo.humanArmouryBuyListModel[j].skin[1] =
+                        uiInfo.uiDC.registerSkin("models/players/human_base/upper_default.skin");
+                    uiInfo.humanArmouryBuyListModel[j].skin[2] =
+                        uiInfo.uiDC.registerSkin("models/players/human_base/head_default.skin");
+                    uiInfo.humanArmouryBuyListModel[j].frame[0] = 157;
+                    uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
+                    uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
+                    uiInfo.humanArmouryBuyListModel[j].parent[0].parentIndex = 0;
+                    uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
+                    uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
+                    uiInfo.humanArmouryBuyListModel[j].parent[2].parentTagName = "tag_head";
+                    uiInfo.humanArmouryBuyListModel[j].parent[2].parentIndex = 1;
+                    uiInfo.humanArmouryBuyListModel[j].cameraDist = 40;
+                    uiInfo.humanArmouryBuyListModel[j].zOffset = -22;
+                    break;
+                case UP_BATTLESUIT:
+                    uiInfo.humanArmouryBuyListModel[j].assetCount = 3;
+                    uiInfo.humanArmouryBuyListModel[j].asset[0] =
+                        uiInfo.uiDC.registerModel("models/players/human_bsuit/lower.md3");
+                    uiInfo.humanArmouryBuyListModel[j].asset[1] =
+                        uiInfo.uiDC.registerModel("models/players/human_bsuit/upper.md3");
+                    uiInfo.humanArmouryBuyListModel[j].asset[2] =
+                        uiInfo.uiDC.registerModel("models/players/human_bsuit/head.md3");
+                    uiInfo.humanArmouryBuyListModel[j].skin[0] =
+                        uiInfo.uiDC.registerSkin("models/players/human_bsuit/lower_default.skin");
+                    uiInfo.humanArmouryBuyListModel[j].skin[1] =
+                        uiInfo.uiDC.registerSkin("models/players/human_bsuit/upper_default.skin");
+                    uiInfo.humanArmouryBuyListModel[j].skin[2] =
+                        uiInfo.uiDC.registerSkin("models/players/human_bsuit/head_default.skin");
+                    uiInfo.humanArmouryBuyListModel[j].frame[0] = 166;
+                    uiInfo.humanArmouryBuyListModel[j].frame[1] = 151;
+                    uiInfo.humanArmouryBuyListModel[j].parent[0].parentTagName = "tag_torso";
+                    uiInfo.humanArmouryBuyListModel[j].parent[1].parentTagName = "tag_head";
+                    uiInfo.humanArmouryBuyListModel[j].parent[1].parentIndex = 1;
+                    uiInfo.humanArmouryBuyListModel[j].cameraDist = 100;
+                    uiInfo.humanArmouryBuyListModel[j].zOffset = -25;
+                    break;
+                case UP_GRENADE:
+                    uiInfo.humanArmouryBuyListModel[j].asset[0] =
+                        uiInfo.uiDC.registerModel("models/weapons/grenade/grenade.md3");
+                    uiInfo.humanArmouryBuyListModel[j].cameraDist = 15;
+                    break;
+                case UP_AMMO:
+                    uiInfo.humanArmouryBuyListModel[j].asset[0] =
+                        uiInfo.uiDC.registerModel("models/weapons/shells/rifle-shell.md3");
+                    uiInfo.humanArmouryBuyListModel[j].cameraDist = 15;
+                    break;
             }
         }
     }
@@ -3272,65 +3663,65 @@ static void UI_LoadHumanArmouryModels(void)
 UI_LoadHumanArmouryBuysWeapon
 ===============
 */
-static void UI_LoadHumanArmouryBuysWeapon(int priority, int *j, int stage, int sellingBudget,
-                                          int credits, qboolean criticalBuilds)
+static void UI_LoadHumanArmouryBuysWeapon(
+    int priority, int *j, int stage, int sellingBudget, int credits, qboolean criticalBuilds)
 {
-  int       i = 0;
-  qboolean  addWeapon;
-  char      *prefix;
+    int i = 0;
+    qboolean addWeapon;
+    char *prefix;
 
-  for (i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++)
-  {
-      if (BG_Weapon(i)->team == TEAM_HUMANS && BG_Weapon(i)->purchasable &&
-          BG_WeaponIsAllowed(i) && !(uiInfo.weapons & (1 << i)))
-      {
-          addWeapon = qfalse;
-          switch (priority) {
-              case 0:
-                if (criticalBuilds == qtrue && i == WP_HBUILD)  // If there are critical builds to build
-                {
-                    addWeapon = qtrue;
-                    prefix = "[!] ";
-                }
-                break;
-              case 1:
-                  if (BG_WeaponAllowedInStage(i, stage) && UI_CanUpgradeToWeapon(i, sellingBudget, credits)
-                      && !(criticalBuilds == qtrue && i == WP_HBUILD))
-                  {
-                      addWeapon = qtrue;
-                      prefix = UI_IsBetterWeapon(i, sellingBudget) ? "[upgrade] " : "";
-                  }
-                  break;
-              case 2:
-                  if (BG_WeaponAllowedInStage(i, stage) && !UI_CanUpgradeToWeapon(i, sellingBudget, credits))
-                  {
-                      addWeapon = qtrue;
-                      prefix = "^0";
-                  }
-                  break;
-              case 3:
-                  if (!BG_WeaponAllowedInStage(i, stage))
-                  {
-                      addWeapon = qtrue;
-                      prefix = "[locked] ^0";
-                  }
-                  break;
-          }
+    for (i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++)
+    {
+        if (BG_Weapon(i)->team == TEAM_HUMANS && BG_Weapon(i)->purchasable && BG_WeaponIsAllowed(i) &&
+            !(uiInfo.weapons & (1 << i)))
+        {
+            addWeapon = qfalse;
+            switch (priority)
+            {
+                case 0:
+                    if (criticalBuilds == qtrue && i == WP_HBUILD)  // If there are critical builds to build
+                    {
+                        addWeapon = qtrue;
+                        prefix = "[!] ";
+                    }
+                    break;
+                case 1:
+                    if (BG_WeaponAllowedInStage(i, stage) && UI_CanUpgradeToWeapon(i, sellingBudget, credits) &&
+                        !(criticalBuilds == qtrue && i == WP_HBUILD))
+                    {
+                        addWeapon = qtrue;
+                        prefix = UI_IsBetterWeapon(i, sellingBudget) ? "[upgrade] " : "";
+                    }
+                    break;
+                case 2:
+                    if (BG_WeaponAllowedInStage(i, stage) && !UI_CanUpgradeToWeapon(i, sellingBudget, credits))
+                    {
+                        addWeapon = qtrue;
+                        prefix = "^0";
+                    }
+                    break;
+                case 3:
+                    if (!BG_WeaponAllowedInStage(i, stage))
+                    {
+                        addWeapon = qtrue;
+                        prefix = "[locked] ^0";
+                    }
+                    break;
+            }
 
-          if (addWeapon == qtrue)
-          {
-              uiInfo.humanArmouryBuyList[*j].text = String_Alloc(va("%s%s", prefix, BG_Weapon(i)->humanName));
-              uiInfo.humanArmouryBuyList[*j].cmd = String_Alloc(va("cmd buy %s\n", BG_Weapon(i)->name));
-              uiInfo.humanArmouryBuyList[*j].type = INFOTYPE_WEAPON;
-              uiInfo.humanArmouryBuyList[*j].v.weapon = i;
+            if (addWeapon == qtrue)
+            {
+                uiInfo.humanArmouryBuyList[*j].text = String_Alloc(va("%s%s", prefix, BG_Weapon(i)->humanName));
+                uiInfo.humanArmouryBuyList[*j].cmd = String_Alloc(va("cmd buy %s\n", BG_Weapon(i)->name));
+                uiInfo.humanArmouryBuyList[*j].type = INFOTYPE_WEAPON;
+                uiInfo.humanArmouryBuyList[*j].v.weapon = i;
 
-              (*j)++;
-              uiInfo.humanArmouryBuyCount++;
-          }
-      }
-  }
+                (*j)++;
+                uiInfo.humanArmouryBuyCount++;
+            }
+        }
+    }
 }
-
 
 /*
 ===============
@@ -3339,17 +3730,18 @@ UI_LoadHumanArmouryBuysUpgrade
 */
 static void UI_LoadHumanArmouryBuysUpgrade(int priority, int *j, int stage, int upgrSlots, int credits)
 {
-    int       i = 0;
-    qboolean  addUpgrade;
-    char      *prefix;
+    int i = 0;
+    qboolean addUpgrade;
+    char *prefix;
 
     for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
     {
-        if (BG_Upgrade(i)->team == TEAM_HUMANS && BG_Upgrade(i)->purchasable &&
-            BG_UpgradeIsAllowed(i) && !(uiInfo.upgrades & (1 << i)))
+        if (BG_Upgrade(i)->team == TEAM_HUMANS && BG_Upgrade(i)->purchasable && BG_UpgradeIsAllowed(i) &&
+            !(uiInfo.upgrades & (1 << i)))
         {
             addUpgrade = qfalse;
-            switch (priority) {
+            switch (priority)
+            {
                 case 0:
                     if (i == UP_AMMO && !UI_IsAmmoFull())
                     {
@@ -3365,8 +3757,8 @@ static void UI_LoadHumanArmouryBuysUpgrade(int priority, int *j, int stage, int 
                     }
                     break;
                 case 2:
-                    if ((BG_UpgradeAllowedInStage(i, stage) && !UI_CanGotUpgrade(i, credits))
-                        || (i == UP_AMMO && UI_IsAmmoFull()))
+                    if ((BG_UpgradeAllowedInStage(i, stage) && !UI_CanGotUpgrade(i, credits)) ||
+                        (i == UP_AMMO && UI_IsAmmoFull()))
                     {
                         addUpgrade = qtrue;
                         prefix = "^0";
@@ -3415,16 +3807,17 @@ static void UI_LoadHumanArmouryBuys(void)
 
     for (i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++)
         if (uiInfo.weapons & (1 << i))
-          sellingBudget += BG_Weapon(i)->price;
+            sellingBudget += BG_Weapon(i)->price;
 
     for (i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++)
         if (uiInfo.upgrades & (1 << i))
             upgrSlots |= BG_Upgrade(i)->slots;
 
-    criticalBuilds = ( ( !state.rcHealth || !state.spawns || BG_BuildableAllowedInStage(BA_H_ARMOURY, stage) && !state.armourys
-            || BG_BuildableAllowedInStage(BA_H_MEDISTAT, stage) && !state.medicals
-            || BG_BuildableAllowedInStage(BA_H_DCC, stage) && !state.computers )
-          && !state.builders );
+    criticalBuilds =
+        ((!state.rcHealth || !state.spawns || BG_BuildableAllowedInStage(BA_H_ARMOURY, stage) && !state.armourys ||
+             BG_BuildableAllowedInStage(BA_H_MEDISTAT, stage) && !state.medicals ||
+             BG_BuildableAllowedInStage(BA_H_DCC, stage) && !state.computers) &&
+            !state.builders);
 
     uiInfo.humanArmouryBuyCount = 0;
 
@@ -3521,20 +3914,22 @@ UI_LoadAlienUpgradesModels
 */
 static void UI_LoadAlienUpgradesModels(void)
 {
-  int i;
+    int i;
 
-  memset(&(uiInfo.alienUpgradeListModel), 0, sizeof(uiInfo.alienUpgradeListModel));
-  // No clean way found to determin is class is aliens one
-  for (i = PCL_NONE + 1; i < PCL_HUMAN; i++)
-  {
-    uiInfo.alienUpgradeListModel[i].asset[0] = uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(i)->modelName));
-    uiInfo.alienUpgradeListModel[i].assetCount = 1;
-    uiInfo.alienUpgradeListModel[i].skin[0] = uiInfo.uiDC.registerSkin(va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(i)->modelName, BG_ClassConfig(i)->skinName));
-    uiInfo.alienUpgradeListModel[i].scale = BG_ClassConfig(i)->modelScale;
-    uiInfo.alienUpgradeListModel[i].zOffset = BG_ClassConfig(i)->zOffset;
-    uiInfo.alienUpgradeListModel[i].cameraDist = 100;
-    uiInfo.alienUpgradeListModel[i].autoAdjust = qtrue;
-  }
+    memset(&(uiInfo.alienUpgradeListModel), 0, sizeof(uiInfo.alienUpgradeListModel));
+    // No clean way found to determin is class is aliens one
+    for (i = PCL_NONE + 1; i < PCL_HUMAN; i++)
+    {
+        uiInfo.alienUpgradeListModel[i].asset[0] =
+            uiInfo.uiDC.registerModel(va("models/players/%s/nonseg.md3", BG_ClassConfig(i)->modelName));
+        uiInfo.alienUpgradeListModel[i].assetCount = 1;
+        uiInfo.alienUpgradeListModel[i].skin[0] = uiInfo.uiDC.registerSkin(
+            va("models/players/%s/nonseg_%s.skin", BG_ClassConfig(i)->modelName, BG_ClassConfig(i)->skinName));
+        uiInfo.alienUpgradeListModel[i].scale = BG_ClassConfig(i)->modelScale;
+        uiInfo.alienUpgradeListModel[i].zOffset = BG_ClassConfig(i)->zOffset;
+        uiInfo.alienUpgradeListModel[i].cameraDist = 100;
+        uiInfo.alienUpgradeListModel[i].autoAdjust = qtrue;
+    }
 }
 
 /*
@@ -3544,9 +3939,9 @@ UI_LoadAlienUpgradesClass
 */
 static void UI_LoadAlienUpgradesClass(int priority, int *j, int class, int credits, int stage)
 {
-    int       i = 0;
-    qboolean  addClass;
-    char      *prefix;
+    int i = 0;
+    qboolean addClass;
+    char *prefix;
 
     // No clean way found to determin is class is aliens one
     for (i = PCL_NONE + 1; i < PCL_HUMAN; i++)
@@ -3554,25 +3949,25 @@ static void UI_LoadAlienUpgradesClass(int priority, int *j, int class, int credi
         addClass = qfalse;
         if (BG_ClassIsAllowed(i))
         {
-            switch (priority) {
+            switch (priority)
+            {
                 case 1:
                     if (BG_ClassCanEvolveFromTo(class, i, credits, stage, 0) >= 0)
                     {
                         addClass = qtrue;
                         // Is it stage 1 or is it newer in current stage, or is level0 (cause no adv dretch)
-                        prefix = (!stage || !BG_ClassAllowedInStage( i, 0 )
-                            || i == PCL_ALIEN_LEVEL0) ? "[upgrade] " : "";
+                        prefix = (!stage || !BG_ClassAllowedInStage(i, 0) || i == PCL_ALIEN_LEVEL0) ? "[upgrade] " : "";
                     }
                     break;
                 case 2:
-                    if (BG_ClassCanEvolveFromTo(class, i, credits, stage, 0) < 0 && BG_ClassAllowedInStage( i, stage ))
+                    if (BG_ClassCanEvolveFromTo(class, i, credits, stage, 0) < 0 && BG_ClassAllowedInStage(i, stage))
                     {
                         addClass = qtrue;
                         prefix = "^0";
                     }
                     break;
                 case 3:
-                    if (BG_ClassCanEvolveFromTo(class, i, credits, stage, 0) < 0 && !BG_ClassAllowedInStage( i, stage ))
+                    if (BG_ClassCanEvolveFromTo(class, i, credits, stage, 0) < 0 && !BG_ClassAllowedInStage(i, stage))
                     {
                         addClass = qtrue;
                         prefix = "[locked] ^0";
@@ -3625,29 +4020,29 @@ UI_LoadAlienBuildsModels
 */
 static void UI_LoadAlienBuildsModels(void)
 {
-  int i;
-  fileHandle_t  h;
-  char *modelFile;
+    int i;
+    fileHandle_t h;
+    char *modelFile;
 
-  memset(&(uiInfo.alienBuildListModel), 0, sizeof(uiInfo.alienBuildListModel));
-  for (i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++)
-  {
-      if (BG_Buildable(i)->team == TEAM_ALIENS && BG_BuildableIsAllowed(i))
-      {
-          uiInfo.alienBuildListModel[i].assetCount = 0;
-          for( h = 0; h < MAX_BUILDABLE_MODELS; h++ )
-          {
-            modelFile = BG_BuildableConfig( i )->models[ h ];
-            if( strlen( modelFile ) > 0 )
-              uiInfo.alienBuildListModel[i].asset[ uiInfo.alienBuildListModel[i].assetCount++ ]
-                = uiInfo.uiDC.registerModel( modelFile );
-          }
-          uiInfo.alienBuildListModel[i].scale = BG_BuildableConfig( i )->modelScale;
-          uiInfo.alienBuildListModel[i].zOffset = BG_BuildableConfig( i )->zOffset;
-          uiInfo.alienBuildListModel[i].cameraDist = 100;
-          uiInfo.alienBuildListModel[i].autoAdjust = qtrue;
-      }
-  }
+    memset(&(uiInfo.alienBuildListModel), 0, sizeof(uiInfo.alienBuildListModel));
+    for (i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++)
+    {
+        if (BG_Buildable(i)->team == TEAM_ALIENS && BG_BuildableIsAllowed(i))
+        {
+            uiInfo.alienBuildListModel[i].assetCount = 0;
+            for (h = 0; h < MAX_BUILDABLE_MODELS; h++)
+            {
+                modelFile = BG_BuildableConfig(i)->models[h];
+                if (strlen(modelFile) > 0)
+                    uiInfo.alienBuildListModel[i].asset[uiInfo.alienBuildListModel[i].assetCount++] =
+                        uiInfo.uiDC.registerModel(modelFile);
+            }
+            uiInfo.alienBuildListModel[i].scale = BG_BuildableConfig(i)->modelScale;
+            uiInfo.alienBuildListModel[i].zOffset = BG_BuildableConfig(i)->zOffset;
+            uiInfo.alienBuildListModel[i].cameraDist = 100;
+            uiInfo.alienBuildListModel[i].autoAdjust = qtrue;
+        }
+    }
 }
 
 /*
@@ -3657,10 +4052,10 @@ UI_LoadAlienBuildsItems
 */
 static void UI_LoadAlienBuildsItems(int priority, int *j, int stage)
 {
-    int           i = 0;
-    qboolean      addItem;
-    char          *prefix;
-    qboolean      critical;
+    int i = 0;
+    qboolean addItem;
+    char *prefix;
+    qboolean critical;
     alienStates_t state;
 
     UI_alienStates(&state);
@@ -3671,24 +4066,29 @@ static void UI_LoadAlienBuildsItems(int priority, int *j, int stage)
         critical = qfalse;
         if (BG_Buildable(i)->team == TEAM_ALIENS && BG_BuildableIsAllowed(i))
         {
-            switch (priority) {
+            switch (priority)
+            {
                 case 0:
                     break;
                 case 1:
                     if (BG_BuildableAllowedInStage(i, stage))
                     {
                         addItem = qtrue;
-                        if (i == BA_A_SPAWN && !state.spawns
-                            || i == BA_A_BOOSTER && !state.boosters
-                            || i == BA_A_OVERMIND && !state.omHealth )
+                        if (i == BA_A_SPAWN && !state.spawns || i == BA_A_BOOSTER && !state.boosters ||
+                            i == BA_A_OVERMIND && !state.omHealth)
                             critical = qtrue;
-                        prefix = (char*)(va(
-                          "%s%s%s%s",
-                          ( (!state.omHealth || state.omBuilding) && i != BA_A_OVERMIND ) ? "[overmind] " : "", // Show an overmind if it need it
-                          ( !state.omHealth && i != BA_A_OVERMIND ) ? "^0" : "", // Grey out the item if om is not building too
-                          ( !(BG_Buildable(i)->buildWeapon & uiInfo.weapons) ) ? "[upgrade][advgranger]^0 " : "", // Grey out and ask to upgrade if adv granger is needed
-                          ( critical ) ? "[!] " : "" // Inform if this item is important
-                        ));
+                        prefix = (char *)(va("%s%s%s%s",
+                            ((!state.omHealth || state.omBuilding) && i != BA_A_OVERMIND)
+                                ? "[overmind] "
+                                : "",  // Show an overmind if it need it
+                            (!state.omHealth && i != BA_A_OVERMIND)
+                                ? "^0"
+                                : "",  // Grey out the item if om is not building too
+                            (!(BG_Buildable(i)->buildWeapon & uiInfo.weapons))
+                                ? "[upgrade][advgranger]^0 "
+                                : "",  // Grey out and ask to upgrade if adv granger is needed
+                            (critical) ? "[!] " : ""  // Inform if this item is important
+                            ));
                     }
                     break;
                 case 2:
@@ -3741,28 +4141,28 @@ UI_LoadHumansBuildsModels
 */
 static void UI_LoadHumansBuildsModels(void)
 {
-  int i;
-  fileHandle_t  h;
-  char *modelFile;
+    int i;
+    fileHandle_t h;
+    char *modelFile;
 
-  memset(&(uiInfo.humanBuildListModel), 0, sizeof(uiInfo.humanBuildListModel));
-  for (i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++)
-  {
-      if (BG_Buildable(i)->team == TEAM_HUMANS && BG_BuildableIsAllowed(i))
-      {
-          for( h = 0; h < MAX_BUILDABLE_MODELS; h++ )
-          {
-            modelFile = BG_BuildableConfig( i )->models[ h ];
-            if( strlen( modelFile ) > 0 )
-              uiInfo.humanBuildListModel[i].asset[ uiInfo.humanBuildListModel[i].assetCount++ ]
-                = uiInfo.uiDC.registerModel( modelFile );
-          }
-          uiInfo.humanBuildListModel[i].scale = BG_BuildableConfig( i )->modelScale;
-          uiInfo.humanBuildListModel[i].zOffset = BG_BuildableConfig( i )->zOffset;
-          uiInfo.humanBuildListModel[i].cameraDist = 160;
-          uiInfo.humanBuildListModel[i].autoAdjust = qtrue;
-      }
-  }
+    memset(&(uiInfo.humanBuildListModel), 0, sizeof(uiInfo.humanBuildListModel));
+    for (i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++)
+    {
+        if (BG_Buildable(i)->team == TEAM_HUMANS && BG_BuildableIsAllowed(i))
+        {
+            for (h = 0; h < MAX_BUILDABLE_MODELS; h++)
+            {
+                modelFile = BG_BuildableConfig(i)->models[h];
+                if (strlen(modelFile) > 0)
+                    uiInfo.humanBuildListModel[i].asset[uiInfo.humanBuildListModel[i].assetCount++] =
+                        uiInfo.uiDC.registerModel(modelFile);
+            }
+            uiInfo.humanBuildListModel[i].scale = BG_BuildableConfig(i)->modelScale;
+            uiInfo.humanBuildListModel[i].zOffset = BG_BuildableConfig(i)->zOffset;
+            uiInfo.humanBuildListModel[i].cameraDist = 160;
+            uiInfo.humanBuildListModel[i].autoAdjust = qtrue;
+        }
+    }
 }
 
 /*
@@ -3772,10 +4172,10 @@ UI_LoadHumanBuildsItems
 */
 static void UI_LoadHumanBuildsItems(int priority, int *j, int stage)
 {
-    int           i = 0;
-    qboolean      addItem;
-    char          *prefix;
-    qboolean      critical;
+    int i = 0;
+    qboolean addItem;
+    char *prefix;
+    qboolean critical;
     humanStates_t state;
 
     UI_humanStates(&state);
@@ -3786,26 +4186,30 @@ static void UI_LoadHumanBuildsItems(int priority, int *j, int stage)
         critical = qfalse;
         if (BG_Buildable(i)->team == TEAM_HUMANS && BG_BuildableIsAllowed(i))
         {
-            switch (priority) {
+            switch (priority)
+            {
                 case 0:
                     break;
                 case 1:
                     if (BG_BuildableAllowedInStage(i, stage))
                     {
                         addItem = qtrue;
-                        if (i == BA_H_SPAWN && !state.spawns
-                            || i == BA_H_ARMOURY && !state.armourys
-                            || i == BA_H_MEDISTAT && !state.medicals
-                            || i == BA_H_DCC && !state.computers
-                            || i == BA_H_REACTOR && !state.rcHealth )
+                        if (i == BA_H_SPAWN && !state.spawns || i == BA_H_ARMOURY && !state.armourys ||
+                            i == BA_H_MEDISTAT && !state.medicals || i == BA_H_DCC && !state.computers ||
+                            i == BA_H_REACTOR && !state.rcHealth)
                             critical = qtrue;
-                        prefix = (char*)(va(
-                          "%s%s%s%s",
-                          ( (!state.rcHealth || state.rcBuilding) && i != BA_H_REACTOR ) ? "[reactor] " : "", // Show a reactor if it need it
-                          ( !state.rcHealth && i != BA_H_REACTOR ) ? "^0" : "", // Grey out the item if om is not building too
-                          ( !(BG_Buildable(i)->buildWeapon & uiInfo.weapons) ) ? "[upgrade][ckit]^0 " : "", // Grey out and ask to upgrade if adv ckit is needed. Now Ckit = AdvCkit (keep for compatibility)
-                          ( critical ) ? "[!] " : "" // Inform if this item is important
-                        ));
+                        prefix = (char *)(va("%s%s%s%s",
+                            ((!state.rcHealth || state.rcBuilding) && i != BA_H_REACTOR)
+                                ? "[reactor] "
+                                : "",  // Show a reactor if it need it
+                            (!state.rcHealth && i != BA_H_REACTOR) ? "^0"
+                                                                   : "",  // Grey out the item if om is not building too
+                            (!(BG_Buildable(i)->buildWeapon & uiInfo.weapons))
+                                ? "[upgrade][ckit]^0 "
+                                : "",  // Grey out and ask to upgrade if adv ckit is needed. Now Ckit = AdvCkit (keep
+                                       // for compatibility)
+                            (critical) ? "[!] " : ""  // Inform if this item is important
+                            ));
                     }
                     break;
                 case 2:
@@ -3847,7 +4251,6 @@ static void UI_LoadHumanBuilds(void)
     stage = UI_GetCurrentHumanStage();
 
     uiInfo.humanBuildCount = 0;
-
 
     // UI_LoadHumanBuildsItems(0, &j, stage);
     UI_LoadHumanBuildsItems(1, &j, stage);
@@ -3976,40 +4379,37 @@ static void UI_LoadDemos(void)
     char demolist[4096];
     char demoExt[32];
     char *demoname;
-    int  i = 0;
-    int  len, protocol;
+    int i = 0;
+    int len, protocol;
 
     uiInfo.demoCount = 0;
 
-    for(protocol = 0; protocol < 3; protocol++) {
-      Com_sprintf(
-        demoExt, sizeof(demoExt), "%s%d", DEMOEXT,
-        protocol == 2 ? 69 : protocol == 1 ? 70 : 71);
+    for (protocol = 0; protocol < 3; protocol++)
+    {
+        Com_sprintf(demoExt, sizeof(demoExt), "%s%d", DEMOEXT, protocol == 2 ? 69 : protocol == 1 ? 70 : 71);
 
-      uiInfo.demoCount += trap_FS_GetFileList("demos", demoExt, demolist, 4096);
+        uiInfo.demoCount += trap_FS_GetFileList("demos", demoExt, demolist, 4096);
 
-      Com_sprintf(
-          demoExt, sizeof(demoExt), ".%s%d", DEMOEXT,
-          protocol == 2 ? 69 : protocol == 1 ? 70 : 71);
+        Com_sprintf(demoExt, sizeof(demoExt), ".%s%d", DEMOEXT, protocol == 2 ? 69 : protocol == 1 ? 70 : 71);
 
-      if (uiInfo.demoCount)
-      {
-          if (uiInfo.demoCount > MAX_DEMOS)
-              uiInfo.demoCount = MAX_DEMOS;
+        if (uiInfo.demoCount)
+        {
+            if (uiInfo.demoCount > MAX_DEMOS)
+                uiInfo.demoCount = MAX_DEMOS;
 
-          demoname = demolist;
+            demoname = demolist;
 
-          for (; i < uiInfo.demoCount; i++)
-          {
-              len = strlen(demoname);
+            for (; i < uiInfo.demoCount; i++)
+            {
+                len = strlen(demoname);
 
-              if (!Q_stricmp(demoname + len - strlen(demoExt), demoExt))
-                  demoname[len - strlen(demoExt)] = '\0';
+                if (!Q_stricmp(demoname + len - strlen(demoExt), demoExt))
+                    demoname[len - strlen(demoExt)] = '\0';
 
-              uiInfo.demoList[i] = String_Alloc(demoname);
-              demoname += len + 1;
-          }
-      }
+                uiInfo.demoList[i] = String_Alloc(demoname);
+                demoname += len + 1;
+            }
+        }
     }
 }
 
@@ -4159,39 +4559,44 @@ Copies the entered partial name to entered_partial_name as output.
 Returns qtrue if the entered partial name is incomplete.
 ===============
 */
-static qboolean UI_PartialGetEnteredPartialNameFromBuffer(
-    int at_pos, char *buffer, char *clean_name, char *entered_partial_name,
-    int size_of_entered_partial_name,
-    int *uncleaned_entered_partial_name_length) {
-    char      lower_case_entered_partial_name[MAX_CVAR_VALUE_STRING] = "";
+static qboolean UI_PartialGetEnteredPartialNameFromBuffer(int at_pos, char *buffer, char *clean_name,
+    char *entered_partial_name, int size_of_entered_partial_name, int *uncleaned_entered_partial_name_length)
+{
+    char lower_case_entered_partial_name[MAX_CVAR_VALUE_STRING] = "";
     const int clean_name_length = strlen(clean_name);
-    int       i, j;
+    int i, j;
 
     memset(entered_partial_name, 0, size_of_entered_partial_name);
 
-    if(uncleaned_entered_partial_name_length) {
+    if (uncleaned_entered_partial_name_length)
+    {
         *uncleaned_entered_partial_name_length = 0;
     }
 
-    for(
-        i = at_pos + 1, j = 0;
-        i <= chatInfo.say_length && j < clean_name_length; i++, j++) {
+    for (i = at_pos + 1, j = 0; i <= chatInfo.say_length && j < clean_name_length; i++, j++)
+    {
         char *s = &buffer[i];
 
-        //skip over color codes for comparing
-        if ( Q_IsColorString( s ) ) {
+        // skip over color codes for comparing
+        if (Q_IsColorString(s))
+        {
             int color_string_length = Q_ColorStringLength(s);
 
             i += color_string_length - 1;
             s += color_string_length - 1;
-            if(uncleaned_entered_partial_name_length) {
+            if (uncleaned_entered_partial_name_length)
+            {
                 *uncleaned_entered_partial_name_length += color_string_length;
             }
-        } else if ( s[0] >= 0x20 && s[0] <= 0x7E ) {
-            if(Q_IsColorEscapeEscape(s)) {
+        }
+        else if (s[0] >= 0x20 && s[0] <= 0x7E)
+        {
+            if (Q_IsColorEscapeEscape(s))
+            {
                 i++;
                 s++;
-                if(uncleaned_entered_partial_name_length) {
+                if (uncleaned_entered_partial_name_length)
+                {
                     (*uncleaned_entered_partial_name_length)++;
                 }
             }
@@ -4200,30 +4605,31 @@ static qboolean UI_PartialGetEnteredPartialNameFromBuffer(
         entered_partial_name[j] = s[0];
         lower_case_entered_partial_name[j] = tolower(s[0]);
 
-    
-
-        if(
-            entered_partial_name[0] &&
-            entered_partial_name[0] != ' ' &&
-            strstr(clean_name, lower_case_entered_partial_name)) {
-            if(uncleaned_entered_partial_name_length) {
+        if (entered_partial_name[0] && entered_partial_name[0] != ' ' &&
+            strstr(clean_name, lower_case_entered_partial_name))
+        {
+            if (uncleaned_entered_partial_name_length)
+            {
                 (*uncleaned_entered_partial_name_length)++;
             }
-        } else {
+        }
+        else
+        {
             entered_partial_name[j] = '\0';
             return qtrue;
         }
     }
 
-    if(strlen(entered_partial_name) != clean_name_length) {
+    if (strlen(entered_partial_name) != clean_name_length)
+    {
         return qtrue;
     }
 
     return qfalse;
 }
 
-static void UI_CleanStr(
-    const char *string_in, char *string_out, size_t size_of_string_out) {
+static void UI_CleanStr(const char *string_in, char *string_out, size_t size_of_string_out)
+{
     char string_temp[MAX_COLORFUL_NAME_LENGTH] = {""};
 
     Q_strncpyz(string_temp, string_in, sizeof(string_temp));
@@ -4236,84 +4642,74 @@ static void UI_CleanStr(
 UI_TabCompleteName
 ===============
 */
-static void UI_TabCompleteName(
-    char *string, char *buffer, char *playerName, int at_pos,
-    qboolean add_space) {
-    int  i, j;
+static void UI_TabCompleteName(char *string, char *buffer, char *playerName, int at_pos, qboolean add_space)
+{
+    int i, j;
     char n2[MAX_NAME_LENGTH] = {""};
     char s2[MAX_NAME_LENGTH] = {""};
 
     UI_CleanStr(string, s2, sizeof(s2));
     UI_CleanStr(playerName, n2, sizeof(n2));
 
-    if(!s2[0] || Q_strncmp(s2, n2, sizeof(n2))) {
+    if (!s2[0] || Q_strncmp(s2, n2, sizeof(n2)))
+    {
         char entered_partial_name[MAX_CVAR_VALUE_STRING];
         int uncleaned_entered_partial_name_length;
 
         // check that the name isn't already complete in the buffer doesn't already
-        // complete 
+        // complete
 
-        if(UI_PartialGetEnteredPartialNameFromBuffer(
-            at_pos, buffer, n2, entered_partial_name, sizeof(entered_partial_name),
-            &uncleaned_entered_partial_name_length)) {
-            char  clean_name[MAX_NAME_LENGTH] = {""};
+        if (UI_PartialGetEnteredPartialNameFromBuffer(at_pos, buffer, n2, entered_partial_name,
+                sizeof(entered_partial_name), &uncleaned_entered_partial_name_length))
+        {
+            char clean_name[MAX_NAME_LENGTH] = {""};
             int clean_name_length;
 
-            Q_strncpyz(
-                clean_name, playerName, sizeof(clean_name));
+            Q_strncpyz(clean_name, playerName, sizeof(clean_name));
             Q_CleanStr(clean_name);
 
             clean_name_length = strlen(clean_name);
 
-            if(uncleaned_entered_partial_name_length > 0) {
-                qboolean end_of_buffer =
-                    !buffer[at_pos + uncleaned_entered_partial_name_length];
-                //delete the unclean partial name for replacement by the completed clean name
-                if(end_of_buffer) {
-                    buffer[at_pos +1] = '\0';
-                } else {
-                    memmove(
-                        &buffer[at_pos + 1],
-                        &buffer[at_pos + uncleaned_entered_partial_name_length + 1],
-                        chatInfo.say_length -
-                        (at_pos + uncleaned_entered_partial_name_length + 1));
-                    buffer[
-                        chatInfo.say_length -
-                        uncleaned_entered_partial_name_length] = '\0';
+            if (uncleaned_entered_partial_name_length > 0)
+            {
+                qboolean end_of_buffer = !buffer[at_pos + uncleaned_entered_partial_name_length];
+                // delete the unclean partial name for replacement by the completed clean name
+                if (end_of_buffer)
+                {
+                    buffer[at_pos + 1] = '\0';
+                }
+                else
+                {
+                    memmove(&buffer[at_pos + 1], &buffer[at_pos + uncleaned_entered_partial_name_length + 1],
+                        chatInfo.say_length - (at_pos + uncleaned_entered_partial_name_length + 1));
+                    buffer[chatInfo.say_length - uncleaned_entered_partial_name_length] = '\0';
                 }
             }
 
-            //tab complete the name
-            if(!trap_Key_GetOverstrikeMode( )) {
-                if(
-                    buffer[at_pos +1] &&
-                    (*chatInfo.say_cursor_pos < chatInfo.say_length) &&
-                    (chatInfo.say_length <  MAX_EDITFIELD - clean_name_length) &&
-                    (
-                        !chatInfo.say_max_chars ||
-                        chatInfo.say_length < chatInfo.say_max_chars ) ) {
-
-                //move the subsequent text to the right for insertion
-                memmove(
-                    &buffer[at_pos + clean_name_length + 1 + (add_space ? 1 : 0)],
-                    &buffer[at_pos + 1],
-                    chatInfo.say_length - (at_pos + 1));
+            // tab complete the name
+            if (!trap_Key_GetOverstrikeMode())
+            {
+                if (buffer[at_pos + 1] && (*chatInfo.say_cursor_pos < chatInfo.say_length) &&
+                    (chatInfo.say_length < MAX_EDITFIELD - clean_name_length) &&
+                    (!chatInfo.say_max_chars || chatInfo.say_length < chatInfo.say_max_chars))
+                {
+                    // move the subsequent text to the right for insertion
+                    memmove(&buffer[at_pos + clean_name_length + 1 + (add_space ? 1 : 0)], &buffer[at_pos + 1],
+                        chatInfo.say_length - (at_pos + 1));
                 }
             }
 
-            for(
-                i = at_pos + 1, j = 0;
-                i < MAX_EDITFIELD && j < clean_name_length;
-                i++, j++) {
+            for (i = at_pos + 1, j = 0; i < MAX_EDITFIELD && j < clean_name_length; i++, j++)
+            {
                 buffer[i] = clean_name[j];
             }
 
-            if(add_space && (i < MAX_EDITFIELD) && (buffer[i] != ' ')) {
+            if (add_space && (i < MAX_EDITFIELD) && (buffer[i] != ' '))
+            {
                 buffer[i] = ' ';
             }
 
-            *chatInfo.say_cursor_pos =
-            at_pos + clean_name_length + 1 + (add_space ? 1 : 0);
+            *chatInfo.say_cursor_pos = at_pos + clean_name_length + 1 + (add_space ? 1 : 0);
             trap_Cvar_Set("ui_sayBuffer", buffer);
         }
     }
@@ -4474,8 +4870,8 @@ static void UI_RunMenuScript(char **args)
         }
         else if (Q_stricmp(name, "LoadAlienBuilds") == 0)
         {
-          UI_LoadAlienBuildsModels();
-          UI_LoadAlienBuilds();
+            UI_LoadAlienBuildsModels();
+            UI_LoadAlienBuilds();
         }
         else if (Q_stricmp(name, "BuildAlienBuildable") == 0)
         {
@@ -4484,8 +4880,8 @@ static void UI_RunMenuScript(char **args)
         }
         else if (Q_stricmp(name, "LoadHumanBuilds") == 0)
         {
-          UI_LoadHumansBuildsModels();
-          UI_LoadHumanBuilds();
+            UI_LoadHumansBuildsModels();
+            UI_LoadHumanBuilds();
         }
         else if (Q_stricmp(name, "BuildHumanBuildable") == 0)
         {
@@ -4503,65 +4899,63 @@ static void UI_RunMenuScript(char **args)
         }
         else if (Q_stricmp(name, "Say") == 0)
         {
-            char buffer[ MAX_CVAR_VALUE_STRING ];
-            char clantagDecolored[ 32 ];
+            char buffer[MAX_CVAR_VALUE_STRING];
+            char clantagDecolored[32];
 
-            trap_Cvar_VariableStringBuffer( "ui_sayBuffer", buffer, sizeof( buffer ) );
+            trap_Cvar_VariableStringBuffer("ui_sayBuffer", buffer, sizeof(buffer));
 
-            if( !buffer[ 0 ] )
-            ;
-            else {
-
+            if (!buffer[0])
+                ;
+            else
+            {
                 // copy line to history buffer
-                if(
-                    !chatInfo.say_history_current) {
-                    Q_strncpyz(
-                        chatInfo.say_history_lines[chatInfo.nextHistoryLine % MAX_SAY_HISTORY_LINES],
+                if (!chatInfo.say_history_current)
+                {
+                    Q_strncpyz(chatInfo.say_history_lines[chatInfo.nextHistoryLine % MAX_SAY_HISTORY_LINES],
                         chatInfo.say_unsubmitted_line, MAX_CVAR_VALUE_STRING);
                     chatInfo.nextHistoryLine++;
                 }
-                Q_strncpyz(
-                    chatInfo.say_history_lines[chatInfo.nextHistoryLine % MAX_SAY_HISTORY_LINES],
-                    buffer, MAX_CVAR_VALUE_STRING);
+                Q_strncpyz(chatInfo.say_history_lines[chatInfo.nextHistoryLine % MAX_SAY_HISTORY_LINES], buffer,
+                    MAX_CVAR_VALUE_STRING);
                 chatInfo.nextHistoryLine++;
                 chatInfo.historyLine = chatInfo.nextHistoryLine;
                 chatInfo.say_history_current = qtrue;
 
-                if( ui_chatCommands.integer && ( buffer[ 0 ] == '/' ||
-                    buffer[ 0 ] == '\\' ) )
+                if (ui_chatCommands.integer && (buffer[0] == '/' || buffer[0] == '\\'))
                 {
-                    trap_Cmd_ExecuteText( EXEC_APPEND, va( "%s\n", buffer + 1 ) );
-                } else {
-                    switch (chatInfo.chat_mode) {
+                    trap_Cmd_ExecuteText(EXEC_APPEND, va("%s\n", buffer + 1));
+                }
+                else
+                {
+                    switch (chatInfo.chat_mode)
+                    {
                         case CHAT_GLOBAL:
-                            trap_Cmd_ExecuteText( EXEC_APPEND, va( "say \"%s\"\n", buffer ) );
+                            trap_Cmd_ExecuteText(EXEC_APPEND, va("say \"%s\"\n", buffer));
                             break;
 
                         case CHAT_TEAM:
-                            trap_Cmd_ExecuteText( EXEC_APPEND, va( "say_team \"%s\"\n", buffer ) );
+                            trap_Cmd_ExecuteText(EXEC_APPEND, va("say_team \"%s\"\n", buffer));
                             break;
 
                         case CHAT_ADMINS:
-                            trap_Cmd_ExecuteText( EXEC_APPEND, va( "a \"%s\"\n", buffer ) );
+                            trap_Cmd_ExecuteText(EXEC_APPEND, va("a \"%s\"\n", buffer));
                             break;
 
                         case CHAT_CLAN:
-                            Q_strncpyz(
-                                clantagDecolored, ui_clantag.string,
-                                sizeof(clantagDecolored) );
-                            Q_CleanStr( clantagDecolored );
+                            Q_strncpyz(clantagDecolored, ui_clantag.string, sizeof(clantagDecolored));
+                            Q_CleanStr(clantagDecolored);
 
-                            if(
-                                strlen(clantagDecolored) > 2 &&
-                                strlen(clantagDecolored) < 11) {
-                            trap_Cmd_ExecuteText(
-                                EXEC_APPEND,
-                                va( "m \"%s\" \"%s\"\n", clantagDecolored, buffer));
-                            } else {
-                                //string isnt long enough
-                                Com_Printf ( 
-                                    "^3Error:your ui_clantag has to be between 3 and 10 characters long. current value is:^7 %s^7\n",
-                                    clantagDecolored );
+                            if (strlen(clantagDecolored) > 2 && strlen(clantagDecolored) < 11)
+                            {
+                                trap_Cmd_ExecuteText(EXEC_APPEND, va("m \"%s\" \"%s\"\n", clantagDecolored, buffer));
+                            }
+                            else
+                            {
+                                // string isnt long enough
+                                Com_Printf(
+                                    "^3Error:your ui_clantag has to be between 3 and 10 characters long. current value "
+                                    "is:^7 %s^7\n",
+                                    clantagDecolored);
                                 key_pressed_onCharEntry = K_NONE;
                                 return;
                             }
@@ -4569,63 +4963,71 @@ static void UI_RunMenuScript(char **args)
 
                         case NUM_CHAT_MODES:
                             chatInfo.chat_mode = CHAT_GLOBAL;
-                            trap_Cmd_ExecuteText( EXEC_APPEND, va( "say \"%s\"\n", buffer ) );
+                            trap_Cmd_ExecuteText(EXEC_APPEND, va("say \"%s\"\n", buffer));
                             break;
                     }
                 }
 
                 chatInfo.say_unsubmitted_line[0] = '\0';
-                trap_Cvar_Set( "ui_sayBuffer", "" );
+                trap_Cvar_Set("ui_sayBuffer", "");
             }
         }
         else if (Q_stricmp(name, "SayKeydown") == 0)
         {
-            char buffer[ MAX_CVAR_VALUE_STRING ];
+            char buffer[MAX_CVAR_VALUE_STRING];
 
             trap_Cvar_VariableStringBuffer("ui_sayBuffer", buffer, sizeof(buffer));
-            if(chatInfo.say_history_current && !chatInfo.say_make_current_line_blank) {
+            if (chatInfo.say_history_current && !chatInfo.say_make_current_line_blank)
+            {
                 Q_strncpyz(chatInfo.say_unsubmitted_line, buffer, sizeof(chatInfo.say_unsubmitted_line));
             }
 
-            if( ui_chatCommands.integer )
+            if (ui_chatCommands.integer)
             {
-                if( buffer[ 0 ] == '/' || buffer[ 0 ] == '\\' ) {
-                    Menus_ReplaceActiveByName( "say_command" );
-                } else {
-                    switch (chatInfo.chat_mode) {
+                if (buffer[0] == '/' || buffer[0] == '\\')
+                {
+                    Menus_ReplaceActiveByName("say_command");
+                }
+                else
+                {
+                    switch (chatInfo.chat_mode)
+                    {
                         case CHAT_GLOBAL:
-                            Menus_ReplaceActiveByName( "say" );
+                            Menus_ReplaceActiveByName("say");
                             break;
 
                         case CHAT_TEAM:
-                            Menus_ReplaceActiveByName( "say_team" );
+                            Menus_ReplaceActiveByName("say_team");
                             break;
 
                         case CHAT_ADMINS:
-                            Menus_ReplaceActiveByName( "say_admins" );
+                            Menus_ReplaceActiveByName("say_admins");
                             break;
 
                         case CHAT_CLAN:
-                            Menus_ReplaceActiveByName( "say_clan" );
+                            Menus_ReplaceActiveByName("say_clan");
                             break;
 
                         case NUM_CHAT_MODES:
                             chatInfo.chat_mode = CHAT_GLOBAL;
-                            trap_Cmd_ExecuteText( EXEC_APPEND, va( "say \"%s\"\n", buffer ) );
+                            trap_Cmd_ExecuteText(EXEC_APPEND, va("say \"%s\"\n", buffer));
                             break;
                     }
                 }
 
-                //handle player name tab completion
-                if(key_pressed_onCharEntry == K_TAB) {
+                // handle player name tab completion
+                if (key_pressed_onCharEntry == K_TAB)
+                {
                     int at_pos = -1;
                     int i;
 
-                    //find the position of the nearest @ from the left of the
-                    //cursor
+                    // find the position of the nearest @ from the left of the
+                    // cursor
                     i = *chatInfo.say_cursor_pos;
-                    while(i >= 0) {
-                        if(buffer[i] == '@') {
+                    while (i >= 0)
+                    {
+                        if (buffer[i] == '@')
+                        {
                             at_pos = i;
                             break;
                         }
@@ -4633,45 +5035,40 @@ static void UI_RunMenuScript(char **args)
                         i--;
                     }
 
-                    if(at_pos >= 0) {
+                    if (at_pos >= 0)
+                    {
                         char string[MAX_CVAR_VALUE_STRING];
                         char string_clean[MAX_CVAR_VALUE_STRING];
-                        int  pids[MAX_CLIENTS];
-                        int  matches = 0;
-                        int  j;
+                        int pids[MAX_CLIENTS];
+                        int matches = 0;
+                        int j;
 
                         memset(string, 0, sizeof(string));
-                        for(
-                            i = at_pos + 1, j = 0;
-                            i <= *chatInfo.say_cursor_pos &&
-                            j < MAX_CVAR_VALUE_STRING;
-                            i++, j++) {
-                            if(
-                                (i == *chatInfo.say_cursor_pos) &&
-                                (buffer[1] == ' ')) {
+                        for (i = at_pos + 1, j = 0; i <= *chatInfo.say_cursor_pos && j < MAX_CVAR_VALUE_STRING;
+                            i++, j++)
+                        {
+                            if ((i == *chatInfo.say_cursor_pos) && (buffer[1] == ' '))
+                            {
                                 break;
                             }
 
                             string[j] = buffer[i];
                         }
 
-                        matches =
-                            UI_ClientNumbersFromString(
-                                string, pids, MAX_CLIENTS);
+                        matches = UI_ClientNumbersFromString(string, pids, MAX_CLIENTS);
 
-                        if(matches == 0) {
-                            //try one more time ignoring the cursor location
-                            string[j-1] = '\0';
-                            matches =
-                                UI_ClientNumbersFromString(
-                                    string, pids, MAX_CLIENTS);
-                        } else {
-                            //make sure that the cursor is at the end of the
-                            //entered partial name
-                            while(
-                                buffer[i] &&
-                                (UI_ClientNumbersFromString(
-                                    string, pids, MAX_CLIENTS) > 0)) {
+                        if (matches == 0)
+                        {
+                            // try one more time ignoring the cursor location
+                            string[j - 1] = '\0';
+                            matches = UI_ClientNumbersFromString(string, pids, MAX_CLIENTS);
+                        }
+                        else
+                        {
+                            // make sure that the cursor is at the end of the
+                            // entered partial name
+                            while (buffer[i] && (UI_ClientNumbersFromString(string, pids, MAX_CLIENTS) > 0))
+                            {
                                 (*chatInfo.say_cursor_pos)++;
                                 string[j] = buffer[i];
                                 i++;
@@ -4679,189 +5076,152 @@ static void UI_RunMenuScript(char **args)
                             }
                         }
 
-                        Q_strncpyz(
-                            string_clean, string, sizeof(string_clean));
+                        Q_strncpyz(string_clean, string, sizeof(string_clean));
                         Q_CleanStr(string_clean);
 
-                        if(matches > 1) {
+                        if (matches > 1)
+                        {
                             char tab_completed_name[MAX_CVAR_VALUE_STRING] = "";
-                            int  max_entered_partial_name_length =
-                                strlen(string_clean);
+                            int max_entered_partial_name_length = strlen(string_clean);
 
-                            for(i = 0; i < matches; i++) {
-                                char  entered_partial_name[MAX_CVAR_VALUE_STRING];
-                                char  clean_name[MAX_NAME_LENGTH] = {""};
-                                int   entered_partial_name_length;
-                                int   clean_name_length;
-                                int   new_matches;
-                                int   temp_pids[MAX_CLIENTS];
+                            for (i = 0; i < matches; i++)
+                            {
+                                char entered_partial_name[MAX_CVAR_VALUE_STRING];
+                                char clean_name[MAX_NAME_LENGTH] = {""};
+                                int entered_partial_name_length;
+                                int clean_name_length;
+                                int new_matches;
+                                int temp_pids[MAX_CLIENTS];
 
-                                UI_CleanStr(
-                                    uiInfo.playerNames[pids[i]], clean_name,
-                                    sizeof(clean_name));
+                                UI_CleanStr(uiInfo.playerNames[pids[i]], clean_name, sizeof(clean_name));
                                 clean_name_length = strlen(clean_name);
 
-                                //check if any of the matches can be completed
-                                //without reducing the matches
-                                if(
-                                    (
-                                        clean_name_length >
-                                        max_entered_partial_name_length) &&
-                                    (
-                                        matches ==
-                                            UI_ClientNumbersFromString(
-                                                uiInfo.playerNames[pids[i]],
-                                                temp_pids, MAX_CLIENTS))) {
+                                // check if any of the matches can be completed
+                                // without reducing the matches
+                                if ((clean_name_length > max_entered_partial_name_length) &&
+                                    (matches == UI_ClientNumbersFromString(
+                                                    uiInfo.playerNames[pids[i]], temp_pids, MAX_CLIENTS)))
+                                {
                                     Q_strncpyz(
-                                        tab_completed_name,
-                                        uiInfo.playerNames[pids[i]],
-                                        sizeof(tab_completed_name));
-                                        max_entered_partial_name_length =
-                                            clean_name_length;
+                                        tab_completed_name, uiInfo.playerNames[pids[i]], sizeof(tab_completed_name));
+                                    max_entered_partial_name_length = clean_name_length;
                                 }
 
-                                //check if partial name entered into the buffer better matches
-                                //this name
-                                UI_PartialGetEnteredPartialNameFromBuffer(
-                                    at_pos, buffer, clean_name,
-                                    entered_partial_name,
-                                    sizeof(entered_partial_name), NULL);
-                                entered_partial_name_length =
-                                    strlen(entered_partial_name);
-                                new_matches =
-                                    UI_ClientNumbersFromString(
-                                        entered_partial_name, temp_pids,
-                                        MAX_CLIENTS);
+                                // check if partial name entered into the buffer better matches
+                                // this name
+                                UI_PartialGetEnteredPartialNameFromBuffer(at_pos, buffer, clean_name,
+                                    entered_partial_name, sizeof(entered_partial_name), NULL);
+                                entered_partial_name_length = strlen(entered_partial_name);
+                                new_matches = UI_ClientNumbersFromString(entered_partial_name, temp_pids, MAX_CLIENTS);
 
-                                if(
-                                    (
-                                        entered_partial_name_length >
-                                        max_entered_partial_name_length) &&
-                                    new_matches &&
-                                    (new_matches < matches)) {
-                                    Q_strncpyz(
-                                        tab_completed_name, entered_partial_name,
-                                        sizeof(tab_completed_name));
+                                if ((entered_partial_name_length > max_entered_partial_name_length) && new_matches &&
+                                    (new_matches < matches))
+                                {
+                                    Q_strncpyz(tab_completed_name, entered_partial_name, sizeof(tab_completed_name));
                                     max_entered_partial_name_length = entered_partial_name_length;
-                                    //reset the matches
+                                    // reset the matches
                                     matches = new_matches;
-                                    for(j = 0; j < matches; j++) {
+                                    for (j = 0; j < matches; j++)
+                                    {
                                         pids[j] = temp_pids[j];
                                     }
                                     i = 0;
-                                } else if(
-                                    clean_name_length >
-                                    max_entered_partial_name_length) {
-                                    char *s_ptr =
-                                        strstr(clean_name, entered_partial_name);
+                                }
+                                else if (clean_name_length > max_entered_partial_name_length)
+                                {
+                                    char *s_ptr = strstr(clean_name, entered_partial_name);
                                     char *start = s_ptr;
                                     char partial_completion[MAX_CVAR_VALUE_STRING];
 
-                                    //check if we can have a partial tab name
-                                    //completion
-                                    Q_strncpyz(
-                                        partial_completion, entered_partial_name,
-                                        sizeof(partial_completion));
-                                    for(
-                                        j = strlen(entered_partial_name);
-                                        s_ptr[j]; j++) {
+                                    // check if we can have a partial tab name
+                                    // completion
+                                    Q_strncpyz(partial_completion, entered_partial_name, sizeof(partial_completion));
+                                    for (j = strlen(entered_partial_name); s_ptr[j]; j++)
+                                    {
                                         partial_completion[j] = s_ptr[j];
-                                        //don't change the matches
-                                        if(
-                                            matches !=
-                                            UI_ClientNumbersFromString(
-                                                partial_completion, temp_pids,
-                                                MAX_CLIENTS)) {
+                                        // don't change the matches
+                                        if (matches !=
+                                            UI_ClientNumbersFromString(partial_completion, temp_pids, MAX_CLIENTS))
+                                        {
                                             break;
                                         }
                                     }
 
                                     partial_completion[j] = '\0';
 
-                                    //check if we can have a partial tab name 
-                                    //completion to the left of the string
-                                    for(
-                                        s_ptr = start - 1;
-                                        s_ptr - clean_name >= 0; s_ptr--) {
-                                        int  partial_completion_length =
-                                            strlen(partial_completion);
+                                    // check if we can have a partial tab name
+                                    // completion to the left of the string
+                                    for (s_ptr = start - 1; s_ptr - clean_name >= 0; s_ptr--)
+                                    {
+                                        int partial_completion_length = strlen(partial_completion);
                                         char backup[MAX_CVAR_VALUE_STRING];
 
-                                        memcpy(
-                                            backup, partial_completion,
-                                            sizeof(backup));
+                                        memcpy(backup, partial_completion, sizeof(backup));
 
                                         memmove(
-                                            &partial_completion[1],
-                                            &partial_completion[0],
-                                            partial_completion_length);
+                                            &partial_completion[1], &partial_completion[0], partial_completion_length);
 
-                                            partial_completion[0] = s_ptr[0];
+                                        partial_completion[0] = s_ptr[0];
 
-                                            if(
-                                                matches !=
-                                                UI_ClientNumbersFromString(
-                                                    partial_completion,
-                                                    temp_pids, MAX_CLIENTS)) {
-                                                //restore to the previous value
-                                                //that still worked
-                                                memcpy(
-                                                    partial_completion, backup,
-                                                    sizeof(partial_completion));
-                                                break;
-                                            }
+                                        if (matches !=
+                                            UI_ClientNumbersFromString(partial_completion, temp_pids, MAX_CLIENTS))
+                                        {
+                                            // restore to the previous value
+                                            // that still worked
+                                            memcpy(partial_completion, backup, sizeof(partial_completion));
+                                            break;
+                                        }
                                     }
 
-                                    if(
-                                        strlen(partial_completion) >
-                                            max_entered_partial_name_length) {
+                                    if (strlen(partial_completion) > max_entered_partial_name_length)
+                                    {
                                         max_entered_partial_name_length = j;
-                                        Q_strncpyz(
-                                            tab_completed_name,
-                                            partial_completion,
-                                            sizeof(tab_completed_name));
+                                        Q_strncpyz(tab_completed_name, partial_completion, sizeof(tab_completed_name));
                                     }
                                 }
                             }
 
-                            if(tab_completed_name[0]) {
-                                UI_TabCompleteName(
-                                    "\0", buffer, tab_completed_name, at_pos, (matches <= 1));
+                            if (tab_completed_name[0])
+                            {
+                                UI_TabCompleteName("\0", buffer, tab_completed_name, at_pos, (matches <= 1));
                             }
 
-                            //print the multiple possibile matches
-                            for(i = 0; i < matches; i++) {
-                                Com_Printf(
-                                    "    %s\n", uiInfo.playerNames[pids[i]]);
+                            // print the multiple possibile matches
+                            for (i = 0; i < matches; i++)
+                            {
+                                Com_Printf("    %s\n", uiInfo.playerNames[pids[i]]);
                             }
-                        } else if(matches == 1) {
-                            UI_TabCompleteName(
-                                string, buffer,
-                                uiInfo.playerNames[pids[0]], at_pos, qtrue);
+                        }
+                        else if (matches == 1)
+                        {
+                            UI_TabCompleteName(string, buffer, uiInfo.playerNames[pids[0]], at_pos, qtrue);
                         }
                     }
                 }
-            } else {
-                switch (chatInfo.chat_mode) {
+            }
+            else
+            {
+                switch (chatInfo.chat_mode)
+                {
                     case CHAT_GLOBAL:
-                        Menus_ReplaceActiveByName( "say" );
+                        Menus_ReplaceActiveByName("say");
                         break;
 
                     case CHAT_TEAM:
-                        Menus_ReplaceActiveByName( "say_team" );
+                        Menus_ReplaceActiveByName("say_team");
                         break;
 
                     case CHAT_ADMINS:
-                        Menus_ReplaceActiveByName( "say_admins" );
+                        Menus_ReplaceActiveByName("say_admins");
                         break;
 
                     case CHAT_CLAN:
-                        Menus_ReplaceActiveByName( "say_clan" );
+                        Menus_ReplaceActiveByName("say_clan");
                         break;
 
                     case NUM_CHAT_MODES:
                         chatInfo.chat_mode = CHAT_GLOBAL;
-                        trap_Cmd_ExecuteText( EXEC_APPEND, va( "say \"%s\"\n", buffer ) );
+                        trap_Cmd_ExecuteText(EXEC_APPEND, va("say \"%s\"\n", buffer));
                         break;
                 }
             }
@@ -4880,10 +5240,12 @@ static void UI_RunMenuScript(char **args)
         }
         else if (Q_stricmp(name, "RunDemo") == 0)
         {
-            if(uiInfo.demoList[uiInfo.demoIndex])
+            if (uiInfo.demoList[uiInfo.demoIndex])
             {
                 trap_Cmd_ExecuteText(EXEC_APPEND, va("demo \"%s\"\n", uiInfo.demoList[uiInfo.demoIndex]));
-            } else {
+            }
+            else
+            {
                 trap_Cvar_Set("com_demoErrorMessage", "No demo selected.");
                 Menus_ActivateByName("demo_error_popmenu");
             }
@@ -5213,6 +5575,119 @@ static void UI_RunMenuScript(char **args)
                 }
             }
         }
+        // Spectator Builder Layouts
+        else if (Q_stricmp(name, "LoadSpecLayouts") == 0)
+        {
+            // Load layout list from server
+            trap_Cmd_ExecuteText(EXEC_APPEND, "specLayoutList\n");
+        }
+        else if (Q_stricmp(name, "SaveSpecLayout") == 0)
+        {
+            // Open save dialog
+            trap_Cvar_Set("ui_specLayoutName", "");
+            Menus_ActivateByName("tremulous_specbuilder_savelayout");
+        }
+        else if (Q_stricmp(name, "SaveSpecLayoutConfirm") == 0)
+        {
+            // Confirm and save layout
+            char name[33];
+            trap_Cvar_VariableStringBuffer("ui_specLayoutName", name, sizeof(name));
+
+            if (name[0] == '\0')
+            {
+                trap_Cvar_Set("ui_specDialog", "Please enter a layout name");
+                Menus_ActivateByName("tremulous_specbuilder_dialog");
+                return;
+            }
+
+            trap_Cmd_ExecuteText(EXEC_APPEND, va("specLayoutSave \"%s\"\n", name));
+        }
+        else if (Q_stricmp(name, "LoadSpecLayout") == 0)
+        {
+            // Load selected layout
+            int index = ui_specLayoutIndex.integer;
+            trap_Cmd_ExecuteText(EXEC_APPEND, va("specLayoutLoad %d\n", index));
+        }
+        else if (Q_stricmp(name, "ClearSpecLayout") == 0)
+        {
+            // Clear all buildings
+            trap_Cmd_ExecuteText(EXEC_APPEND, "specLayoutClear\n");
+        }
+        else if (Q_stricmp(name, "DeleteSpecLayout") == 0)
+        {
+            // Delete selected layout (owner only)
+            int index = ui_specLayoutIndex.integer;
+
+            // Note: Server will validate ownership
+            trap_Cmd_ExecuteText(EXEC_APPEND, va("specLayoutDelete %d\n", index));
+        }
+        else if (Q_stricmp(name, "RenameSpecLayout") == 0)
+        {
+            // Open rename dialog (owner only)
+            int index = ui_specLayoutIndex.integer;
+
+            // Note: Server will validate ownership when we call the command
+            trap_Cvar_Set("ui_specLayoutNewName", "");
+            Menus_ActivateByName("tremulous_specbuilder_rename");
+        }
+        else if (Q_stricmp(name, "RenameSpecLayoutConfirm") == 0)
+        {
+            // Confirm and rename layout
+            char newName[33];
+            trap_Cvar_VariableStringBuffer("ui_specLayoutNewName", newName, sizeof(newName));
+
+            if (newName[0] == '\0')
+            {
+                trap_Cvar_Set("ui_specDialog", "Please enter a new layout name");
+                Menus_ActivateByName("tremulous_specbuilder_dialog");
+                return;
+            }
+
+            // Note: Server will validate ownership and name
+            trap_Cmd_ExecuteText(EXEC_APPEND, va("specLayoutRename %d \"%s\"\n", ui_specLayoutIndex.integer, newName));
+        }
+        else if (Q_stricmp(name, "RateSpecLayout") == 0)
+        {
+            // Rate selected layout
+            int rating = ui_specLayoutRating.integer;
+            int index = ui_specLayoutIndex.integer;
+
+            if (rating < 1 || rating > 5)
+            {
+                trap_Cvar_Set("ui_specDialog", "Rating must be between 1 and 5");
+                Menus_ActivateByName("tremulous_specbuilder_dialog");
+                return;
+            }
+
+            trap_Cmd_ExecuteText(EXEC_APPEND, va("specLayoutRate %d %d\n", index, rating));
+        }
+        else if (Q_stricmp(name, "SortSpecLayouts") == 0)
+        {
+            // Sort layouts by selected criteria
+            trap_Cmd_ExecuteText(EXEC_APPEND, va("specLayoutSort \"%s\"\n", ui_specLayoutSortBy.string));
+        }
+        else if (Q_stricmp(name, "LoadSpecLayoutVoteList") == 0)
+        {
+            // Load votable layouts
+            trap_Cmd_ExecuteText(EXEC_APPEND, "specLayoutVoteList\n");
+        }
+        else if (Q_stricmp(name, "VoteSpecLayout") == 0)
+        {
+            // Cast vote for layout
+            int index = ui_specLayoutIndex.integer;
+            trap_Cmd_ExecuteText(EXEC_APPEND, va("specLayoutVote %d\n", index));
+        }
+        else if (Q_stricmp(name, "LoadSpecBuilderTeams") == 0)
+        {
+            // Load team list (hardcoded: Humans, Aliens, Both)
+            // This is handled by the feeder, no command needed
+        }
+        else if (Q_stricmp(name, "JoinSpecBuilderTeam") == 0)
+        {
+            // Join selected team as builder
+            int teamIndex = ui_specTeamIndex.integer;
+            trap_Cmd_ExecuteText(EXEC_APPEND, va("specBuilderTeam %d\n", teamIndex));
+        }
         else
             Com_Printf("unknown UI script %s\n", name);
     }
@@ -5296,6 +5771,15 @@ static int UI_FeederCount(int feederID)
     }
     else if (feederID == FEEDER_TREMVOICECMD)
         return uiInfo.voiceCmdCount;
+    // Spectator Builder Layouts
+    else if (feederID == FEEDER_SPECLAYOUTS)
+        return uiInfo.specLayoutCount;
+    else if (feederID == FEEDER_SPECLAYOUTS_VOTE)
+        return uiInfo.specLayoutCount;
+    else if (feederID == FEEDER_SPECBUILDTEAMS)
+        return uiInfo.specBuildTeamCount;
+    else if (feederID == FEEDER_SPECLAYOUTS_SORT)
+        return uiInfo.specLayoutCount;
 
     return 0;
 }
@@ -5549,17 +6033,12 @@ static const char *UI_FeederItemText(int feederID, int index, int column, qhandl
         if (index >= 0 && index < uiInfo.humanArmourySellCount)
         {
             // If conflicting with selected
-            if (
-                (
-                    uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].type == INFOTYPE_WEAPON ?
-                    BG_Weapon(uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].v.weapon)->slots :
-                    BG_Upgrade(uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].v.upgrade)->slots
-                ) & (
-                    uiInfo.humanArmourySellList[index].type == INFOTYPE_WEAPON ?
-                    BG_Weapon(uiInfo.humanArmourySellList[index].v.weapon)->slots :
-                    BG_Upgrade(uiInfo.humanArmourySellList[index].v.upgrade)->slots
-                )
-            )
+            if ((uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].type == INFOTYPE_WEAPON
+                        ? BG_Weapon(uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].v.weapon)->slots
+                        : BG_Upgrade(uiInfo.humanArmouryBuyList[uiInfo.humanArmouryBuyIndex].v.upgrade)->slots) &
+                (uiInfo.humanArmourySellList[index].type == INFOTYPE_WEAPON
+                        ? BG_Weapon(uiInfo.humanArmourySellList[index].v.weapon)->slots
+                        : BG_Upgrade(uiInfo.humanArmourySellList[index].v.upgrade)->slots))
                 return (va("[!] %s", uiInfo.humanArmourySellList[index].text));
             else
                 return uiInfo.humanArmourySellList[index].text;
@@ -5591,9 +6070,9 @@ static const char *UI_FeederItemText(int feederID, int index, int column, qhandl
             h = uiInfo.resolutions[index].h;
 
             if (w == 0 && h == 0)
-              Com_sprintf(resolution, sizeof(resolution), "Automatic");
+                Com_sprintf(resolution, sizeof(resolution), "Automatic");
             else
-              Com_sprintf(resolution, sizeof(resolution), "%dx%d (%s)", w, h, UI_DisplayAspectString(w, h));
+                Com_sprintf(resolution, sizeof(resolution), "%dx%d (%s)", w, h, UI_DisplayAspectString(w, h));
 
             return resolution;
         }
@@ -5608,6 +6087,32 @@ static const char *UI_FeederItemText(int feederID, int index, int column, qhandl
     {
         if (index >= 0 && index < uiInfo.voiceCmdCount)
             return uiInfo.voiceCmdList[index].text;
+    }
+    // Spectator Builder Layouts
+    else if (feederID == FEEDER_SPECLAYOUTS)
+    {
+        if (index >= 0 && index < uiInfo.specLayoutCount)
+            return uiInfo.specLayoutNames[index];
+    }
+    else if (feederID == FEEDER_SPECLAYOUTS_VOTE)
+    {
+        if (index >= 0 && index < uiInfo.specLayoutCount)
+        {
+            static char voteInfo[MAX_STRING_CHARS];
+            Com_sprintf(voteInfo, sizeof(voteInfo), "%s (%d votes)", uiInfo.specLayoutNames[index],
+                uiInfo.specLayoutVoteCounts[index]);
+            return voteInfo;
+        }
+    }
+    else if (feederID == FEEDER_SPECBUILDTEAMS)
+    {
+        if (index >= 0 && index < uiInfo.specBuildTeamCount)
+            return uiInfo.specBuildTeams[index];
+    }
+    else if (feederID == FEEDER_SPECLAYOUTS_SORT)
+    {
+        if (index >= 0 && index < uiInfo.specLayoutCount)
+            return uiInfo.specLayoutNames[index];
     }
 
     return "";
@@ -5744,6 +6249,27 @@ static void UI_FeederSelection(int feederID, int index)
     }
     else if (feederID == FEEDER_TREMVOICECMD)
         uiInfo.voiceCmdIndex = index;
+    // Spectator Builder Layouts
+    else if (feederID == FEEDER_SPECLAYOUTS)
+    {
+        uiInfo.specLayoutIndex = index;
+        trap_Cvar_Set("ui_specLayoutIndex", va("%d", index));
+    }
+    else if (feederID == FEEDER_SPECLAYOUTS_VOTE)
+    {
+        uiInfo.specLayoutIndex = index;
+        trap_Cvar_Set("ui_specLayoutIndex", va("%d", index));
+    }
+    else if (feederID == FEEDER_SPECBUILDTEAMS)
+    {
+        uiInfo.specBuildTeamIndex = index;
+        trap_Cvar_Set("ui_specTeamIndex", va("%d", index));
+    }
+    else if (feederID == FEEDER_SPECLAYOUTS_SORT)
+    {
+        uiInfo.specLayoutIndex = index;
+        trap_Cvar_Set("ui_specLayoutIndex", va("%d", index));
+    }
 }
 
 static int UI_FeederInitialise(int feederID)
@@ -5873,10 +6399,8 @@ void UI_Init(qboolean inGameLoad)
     chatInfo.chat_mode_blink_time = 0;
 
     memset(chatInfo.say_unsubmitted_line, 0, sizeof(chatInfo.say_unsubmitted_line));
-    memset(
-        chatInfo.say_history_lines, 0,
-        sizeof(chatInfo.say_history_lines[0][0]) *
-        MAX_SAY_HISTORY_LINES * MAX_CVAR_VALUE_STRING);
+    memset(chatInfo.say_history_lines, 0,
+        sizeof(chatInfo.say_history_lines[0][0]) * MAX_SAY_HISTORY_LINES * MAX_CVAR_VALUE_STRING);
     chatInfo.say_make_current_line_blank = qfalse;
     chatInfo.say_history_current = qtrue;
     chatInfo.nextHistoryLine = 0;
@@ -5993,10 +6517,14 @@ void UI_KeyEvent(int key, qboolean down)
     {
         menuDef_t *menu = Menu_GetFocused();
 
-        if(key == K_CTRL) {
-            if(down) {
+        if (key == K_CTRL)
+        {
+            if (down)
+            {
                 ctrl_held = qtrue;
-            } else {
+            }
+            else
+            {
                 ctrl_held = qfalse;
             }
         }
@@ -6265,7 +6793,8 @@ static void UI_DisplayDownloadInfo(const char *downloadName, float centerPoint, 
     Text_PaintCenter(centerPoint, yStart + 248, scale, colorWhite, xferText, 0);
 
     if (downloadSize > 0)
-        s = va("%s (%d%%, %d/%d)", downloadName, (int)((float)downloadCount * 100.0f / downloadSize), downloadDone + 1, downloadTotal);
+        s = va("%s (%d%%, %d/%d)", downloadName, (int)((float)downloadCount * 100.0f / downloadSize), downloadDone + 1,
+            downloadTotal);
     else
         s = downloadName;
 
@@ -6334,7 +6863,7 @@ void UI_DrawConnectScreen()
 
     menuDef_t *menu = Menus_FindByName("Connect");
 
-    if ( menu )
+    if (menu)
         Menu_Paint(menu, qtrue);
 
     // see what information we should display
@@ -6376,8 +6905,7 @@ void UI_DrawConnectScreen()
             s = va("Awaiting challenge...%i", cstate.connectPacketCount);
             break;
 
-        case CA_CONNECTED:
-        {
+        case CA_CONNECTED: {
             char downloadName[MAX_INFO_VALUE];
             int prompt = trap_Cvar_VariableValue("com_downloadPrompt");
 

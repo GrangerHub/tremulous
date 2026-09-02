@@ -1,0 +1,88 @@
+# ===========================================================================
+# Tremulous build configuration
+#
+# Edit values here instead of editing CMakeLists.txt. build.bat reads this
+# file (if present) and forwards every recognized key to CMake as a cache
+# variable, applied via `cmake -C <generated-cache>`.
+#
+# To ENABLE an option, delete the leading "# " on its line and set a value.
+#
+# ---------------------------------------------------------------------------
+# VERSION DEFAULT (no config.yaml needed)
+#
+# By default GAME_PRODUCT_VERSION is derived from git, mirroring the legacy
+# Makefile:
+#     git describe --tags   ->   '-' replaced with '_'
+# e.g.  v1.3.0-alpha.0.14-37-g0ea1a759  ->  v1.3.0_alpha.0.14_37_g0ea1a759
+# Set GAME_PRODUCT_VERSION below ONLY to override that git-derived default.
+#
+# ---------------------------------------------------------------------------
+# Recognized keys:
+#
+#   Build targets (booleans: 1/0, on/off, true/false, yes/no):
+#     BUILD_CLIENT         Build the game client            (default: on)
+#     BUILD_SERVER         Build the dedicated server       (default: on)
+#     BUILD_GAME_SO        Build game modules as .dll/.so (default: on)
+#     BUILD_GAME_QVM       Build game modules as QVM        (default: on)
+#     BUILD_RENDERER_OPENGL2  Build OpenGL 2 renderer        (default: on)
+#
+#   Feature toggles (booleans: 1/0, on/off, true/false, yes/no):
+#     USE_OPENAL          Enable OpenAL audio backend       (default: on)
+#     USE_OPENAL_DLOPEN   Dynamically load OpenAL at runtime (default: on)
+#     USE_VOIP            Voice-over-IP support            (default: off)
+#     USE_MUMBLE          Mumble positional-audio link     (default: off)
+#     USE_CODEC_OPUS      Opus audio codec                 (default: on)
+#     USE_RESTCLIENT      REST/libcurl update checker      (default: on)
+#     BUILD_GRANGER       Build the Granger tool           (default: on)
+#     BUILD_STATIC_LIBS   Static libs (no shared DLLs)     (default: on)
+#     USE_INTERNAL_SDL3   Use vendored SDL3                (default: on)
+#     USE_INTERNAL_JPEG   Use vendored libjpeg             (default: on)
+#
+#   Product identity (strings; quote values containing spaces):
+#     GAME_PRODUCT_VERSION  Becomes the PRODUCT_VERSION define.
+#                           DEFAULT = `git describe --tags` (sanitized).
+#                           Window title = product_name + " " + version.
+#                           Uncomment + set to override the git default.
+#     GAME_PRODUCT_NAME     Becomes the PRODUCT_NAME define.
+#                           (default: "Tremulous")
+#
+#   QVM packaging (strings):
+#     QVM_VERSION_MAJOR     e.g. 1.3.0            (default: 1.3.0)
+#     QVM_VERSION_TAG       alpha|beta|rc|release (default: alpha)
+#     QVM_VERSION_INCREMENT build number          (default: 0.15)
+#
+# Lines starting with # are comments. Unknown keys are ignored with a warning.
+# Removing or renaming this file disables the override mechanism entirely.
+# NOTE: CMake caches are sticky. To REVERT a removed override, run
+#       `build.bat clean` so the old cached value is discarded.
+# NOTE: Old TREM_PRODUCT_* variable names are still supported for backward compatibility.
+# ===========================================================================
+
+# --- Build targets (all commented out = use CMake defaults) ---
+# BUILD_CLIENT: 1
+# BUILD_SERVER: 1
+# BUILD_GAME_SO: 1
+# BUILD_GAME_QVM: 1
+# BUILD_RENDERER_OPENGL2: 1
+
+# --- Feature toggles (all commented out = use CMake defaults) ---
+# USE_OPENAL: 1
+# USE_OPENAL_DLOPEN: 1
+# USE_VOIP: 0
+# USE_MUMBLE: 0
+# USE_CODEC_OPUS: 1
+# USE_RESTCLIENT: 1
+# BUILD_GRANGER: 1
+# BUILD_STATIC_LIBS: 1
+# USE_INTERNAL_SDL3: 1
+# USE_INTERNAL_JPEG: 1
+
+# --- Product identity ---
+# Default version comes from `git describe --tags`; uncomment to override:
+# GAME_PRODUCT_VERSION: "1.3.0 alpha"
+# GAME_PRODUCT_NAME: "Tremulous"
+
+# --- QVM packaging ---
+# QVM_VERSION_MAJOR: 1.3.0
+# QVM_VERSION_TAG: alpha
+# QVM_VERSION_INCREMENT: 0.15

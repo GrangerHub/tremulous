@@ -29,7 +29,7 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 
 // Attack log file is started when server is init (!= sv_running 1!)
 // we even log attacks when the server is waiting for rcon and doesn't run a map
-int attHandle = 0; // server attack log file handle
+int attHandle = 0;  // server attack log file handle
 
 char alternateInfos[2][2][BIG_INFO_STRING];
 
@@ -47,8 +47,7 @@ static void SV_SendConfigstring(client_t *client, int i)
     int maxChunkSize = MAX_STRING_CHARS - 24;
     int len;
 
-    if (sv.configstrings[i].restricted &&
-        Com_ClientListContains(&sv.configstrings[i].clientList, client - svs.clients))
+    if (sv.configstrings[i].restricted && Com_ClientListContains(&sv.configstrings[i].clientList, client - svs.clients))
     {
         // Send a blank config string for this client if it's listed
         SV_SendServerCommand(client, "cs %i \"\"\n", i);
@@ -115,7 +114,8 @@ void SV_UpdateConfigstrings(client_t *client)
     for (int i = 0; i < MAX_CONFIGSTRINGS; i++)
     {
         // if the CS hasn't changed since we went to CS_PRIMED, ignore
-        if (!client->csUpdated[i]) continue;
+        if (!client->csUpdated[i])
+            continue;
 
         // do not always send server info to all clients
         if (i == CS_SERVERINFO && client->gentity && (client->gentity->r.svFlags & SVF_NOSERVERINFO))
@@ -223,7 +223,8 @@ void SV_SetConfigstring(int idx, const char *val)
 
             if (client->state < CS_ACTIVE)
             {
-                if (client->state == CS_PRIMED) client->csUpdated[idx] = true;
+                if (client->state == CS_PRIMED)
+                    client->csUpdated[idx] = true;
                 continue;
             }
             // do not always send server info to all clients
@@ -308,11 +309,10 @@ void SV_SetUserinfo(int idx, const char *val)
 
     Q_strncpyz(svs.clients[idx].userinfo, val, sizeof(svs.clients[idx].userinfo));
     Q_strncpyz(svs.clients[idx].name, Info_ValueForKey(val, "name"), sizeof(svs.clients[idx].name));
-    //for backwards compatibility approx hex color codes to hardcoded ansi
-    //color codes
-    Q_ApproxStrHexColors(
-      svs.clients[idx].name, svs.clients[idx].name_ansi,
-      sizeof(svs.clients[idx].name), sizeof(svs.clients[idx].name_ansi));
+    // for backwards compatibility approx hex color codes to hardcoded ansi
+    // color codes
+    Q_ApproxStrHexColors(svs.clients[idx].name, svs.clients[idx].name_ansi, sizeof(svs.clients[idx].name),
+        sizeof(svs.clients[idx].name_ansi));
 }
 
 /*
@@ -447,7 +447,8 @@ void SV_ChangeMaxClients(void)
     {
         if (svs.clients[i].state >= CS_CONNECTED)
         {
-            if (i > count) count = i;
+            if (i > count)
+                count = i;
         }
     }
     count++;
@@ -786,12 +787,13 @@ void SV_WriteAttackLog(const char *log)
 {
     if (attHandle > 0)
     {
-        char    string[512]; // 512 chars seem enough here
+        char string[512];  // 512 chars seem enough here
         qtime_t time;
 
         Com_RealTime(&time);
-        Com_sprintf(string, sizeof(string), "%i/%i/%i %i:%i:%i %s", 1900 + time.tm_year, time.tm_mday, time.tm_mon + 1, time.tm_hour, time.tm_min, time.tm_sec, log);
-        (void) FS_Write(string, strlen(string), attHandle);
+        Com_sprintf(string, sizeof(string), "%i/%i/%i %i:%i:%i %s", 1900 + time.tm_year, time.tm_mday, time.tm_mon + 1,
+            time.tm_hour, time.tm_min, time.tm_sec, log);
+        (void)FS_Write(string, strlen(string), attHandle);
     }
 
     if (sv_protect->integer & SVP_CONSOLE)
@@ -897,17 +899,25 @@ void SV_Init(void)
     sv_zombietime = Cvar_Get("sv_zombietime", "2", CVAR_TEMP);
 
     sv_allowDownload = Cvar_Get("sv_allowDownload", "0", CVAR_SERVERINFO);
-    Cvar_Get("sv_dlURL", "http://downloads.tremulous.net", CVAR_SERVERINFO | CVAR_ARCHIVE);
+    Cvar_Get("sv_dlURL", "https://tremulo.us/downloads/", CVAR_SERVERINFO | CVAR_ARCHIVE);
 
-    sv_protect    = Cvar_Get("sv_protect", "3", CVAR_ARCHIVE);
-	sv_protectLog = Cvar_Get("sv_protectLog", "sv_protect.log", CVAR_ARCHIVE);
-	SV_InitAttackLog();
+    sv_protect = Cvar_Get("sv_protect", "3", CVAR_ARCHIVE);
+    sv_protectLog = Cvar_Get("sv_protectLog", "sv_protect.log", CVAR_ARCHIVE);
+    SV_InitAttackLog();
 
     for (int a = 0; a < 3; ++a)
     {
-        sv_masters[a][0] = Cvar_Get(va("sv_%smaster1", (a == 2 ? "alt2" : a == 1 ? "alt1" : "")), MASTER_SERVER_NAME, 0);
+        sv_masters[a][0] = Cvar_Get(va("sv_%smaster1", (a == 2      ? "alt2"
+                                                           : a == 1 ? "alt1"
+                                                                    : "")),
+            MASTER_SERVER_NAME, 0);
         for (int i = 1; i < MAX_MASTER_SERVERS; i++)
-            sv_masters[a][i] = Cvar_Get(va("sv_%smaster%d", (a == 2 ? "alt2" : a == 1 ? "alt1" : ""), i + 1), "", CVAR_ARCHIVE);
+            sv_masters[a][i] = Cvar_Get(va("sv_%smaster%d",
+                                            (a == 2      ? "alt2"
+                                                : a == 1 ? "alt1"
+                                                         : ""),
+                                            i + 1),
+                "", CVAR_ARCHIVE);
     }
 
     sv_reconnectlimit = Cvar_Get("sv_reconnectlimit", "3", 0);
@@ -1004,5 +1014,6 @@ void SV_Shutdown(const char *finalmsg)
     Com_Printf("---------------------------\n");
 
     // disconnect any local clients
-    if (sv_killserver->integer != 2) CL_Disconnect(false);
+    if (sv_killserver->integer != 2)
+        CL_Disconnect(false);
 }

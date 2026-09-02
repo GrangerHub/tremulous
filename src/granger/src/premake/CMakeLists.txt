@@ -6,7 +6,17 @@ if(WIN32)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif(WIN32)
 
-add_library(premake
+# Add Lua include directory for premake
+include_directories(${CMAKE_SOURCE_DIR}/external/lua-5.3.3/src)
+
+# Add strvec functions used by premake
+set(STRVEC_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/../strvec.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../strvec.h
+)
+
+add_library(premake STATIC
+	${STRVEC_SOURCES}
 	os_access.c
 	os_chdir.c
 	os_copyfile.c
@@ -29,4 +39,7 @@ add_library(premake
 	premake.c
 	premake.h
 	string_endswith.c
-    )
+	)
+
+# Link against Lua library for premake
+target_link_libraries(premake granger_lua)

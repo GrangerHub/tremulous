@@ -31,7 +31,7 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #include "qcommon.h"
 
 static cvar_t *cvar_vars = nullptr;
-cvar_t *cvar_cheats;
+extern "C" cvar_t *cvar_cheats = nullptr;
 int cvar_modifiedFlags = 0;
 
 #define MAX_CVARS 2048
@@ -376,8 +376,8 @@ cvar_t *Cvar_Get(const char *var_name, const char *var_value, int flags)
         }
         else if (var_value[0] && strcmp(var->resetString, var_value))
         {
-            Com_DPrintf("Warning: cvar \"%s\" given initial values: \"%s\" and \"%s\"\n",
-                    var_name, var->resetString, var_value);
+            Com_DPrintf("Warning: cvar \"%s\" given initial values: \"%s\" and \"%s\"\n", var_name, var->resetString,
+                var_value);
         }
         // if we have a latched string, take that value now
         if (var->latchedString)
@@ -616,10 +616,7 @@ cvar_t *Cvar_Set2(const char *var_name, const char *value, bool force)
 Cvar_Set
 ============
 */
-void Cvar_Set(const char *var_name, const char *value)
-{
-    Cvar_Set2(var_name, value, true);
-}
+void Cvar_Set(const char *var_name, const char *value) { Cvar_Set2(var_name, value, true); }
 /*
 ============
 Cvar_SetSafe
@@ -632,11 +629,9 @@ void Cvar_SetSafe(const char *var_name, const char *value)
     if ((flags != CVAR_NONEXISTENT) && (flags & CVAR_PROTECTED))
     {
         if (value)
-            Com_Error(ERR_DROP, "Restricted source tried to set \"%s\" to \"%s\"",
-                var_name, value);
+            Com_Error(ERR_DROP, "Restricted source tried to set \"%s\" to \"%s\"", var_name, value);
         else
-            Com_Error(ERR_DROP, "Restricted source tried to modify \"%s\"",
-                var_name);
+            Com_Error(ERR_DROP, "Restricted source tried to modify \"%s\"", var_name);
         return;
     }
     Cvar_Set(var_name, value);
@@ -647,10 +642,7 @@ void Cvar_SetSafe(const char *var_name, const char *value)
 Cvar_SetLatched
 ============
 */
-void Cvar_SetLatched(const char *var_name, const char *value)
-{
-    Cvar_Set2(var_name, value, false);
-}
+void Cvar_SetLatched(const char *var_name, const char *value) { Cvar_Set2(var_name, value, false); }
 /*
 ============
 Cvar_SetValue
@@ -692,19 +684,13 @@ void Cvar_SetValueSafe(const char *var_name, float value)
 Cvar_Reset
 ============
 */
-void Cvar_Reset(const char *var_name)
-{
-    Cvar_Set2(var_name, nullptr, false);
-}
+void Cvar_Reset(const char *var_name) { Cvar_Set2(var_name, nullptr, false); }
 /*
 ============
 Cvar_ForceReset
 ============
 */
-void Cvar_ForceReset(const char *var_name)
-{
-    Cvar_Set2(var_name, nullptr, true);
-}
+void Cvar_ForceReset(const char *var_name) { Cvar_Set2(var_name, nullptr, true); }
 /*
 ============
 Cvar_SetCheatState
@@ -1285,10 +1271,7 @@ Cvar_Restart_f
 Resets all cvars to their hardcoded values
 ============
 */
-void Cvar_Restart_f(void)
-{
-    Cvar_Restart(false);
-}
+void Cvar_Restart_f(void) { Cvar_Restart(false); }
 
 /*
 =====================
@@ -1297,23 +1280,26 @@ Cvar_InfoString
 */
 char *Cvar_InfoString(int bit)
 {
-    static char	info[MAX_INFO_STRING];
-    cvar_t	*var;
+    static char info[MAX_INFO_STRING];
+    cvar_t *var;
 
     info[0] = 0;
 
-    for(var = cvar_vars; var; var = var->next)
+    for (var = cvar_vars; var; var = var->next)
     {
-        if(var->name && (var->flags & bit)) {
-            if(var->flags & CVAR_REMOVE_UNUSED_COLOR_STRINGS) {
+        if (var->name && (var->flags & bit))
+        {
+            if (var->flags & CVAR_REMOVE_UNUSED_COLOR_STRINGS)
+            {
                 char cleaned_string[MAX_CVAR_VALUE_STRING];
 
                 Q_RemoveUnusedColorStrings(var->string, cleaned_string, MAX_CVAR_VALUE_STRING);
-                if(Q_stricmp(cleaned_string, var->string)) {
+                if (Q_stricmp(cleaned_string, var->string))
+                {
                     Cvar_Set(var->name, cleaned_string);
                 }
             }
-            Info_SetValueForKey (info, var->name, var->string);
+            Info_SetValueForKey(info, var->name, var->string);
         }
     }
 
@@ -1347,10 +1333,7 @@ char *Cvar_InfoString_Big(int bit)
 Cvar_InfoStringBuffer
 =====================
 */
-void Cvar_InfoStringBuffer(int bit, char *buff, int buffsize)
-{
-    Q_strncpyz(buff, Cvar_InfoString(bit), buffsize);
-}
+void Cvar_InfoStringBuffer(int bit, char *buff, int buffsize) { Q_strncpyz(buff, Cvar_InfoString(bit), buffsize); }
 /*
 =====================
 Cvar_CheckRange

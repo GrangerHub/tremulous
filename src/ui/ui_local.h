@@ -32,6 +32,71 @@ along with Tremulous; if not, see <https://www.gnu.org/licenses/>
 #include "ui_public.h"
 #include "ui_shared.h"
 
+/*
+Spectator builder layout UI constants.
+
+These are defined in the tremulous-assets menudef.h that ships with the
+finished feature. Until the assets submodule carries them, provide the
+exact same values here so the ui module compiles standalone. The guards
+make this a no-op once menudef.h defines them (values must stay equal).
+*/
+#ifndef FEEDER_SPECLAYOUTS
+#define FEEDER_SPECLAYOUTS 25
+#endif
+#ifndef FEEDER_SPECLAYOUTS_VOTE
+#define FEEDER_SPECLAYOUTS_VOTE 26
+#endif
+#ifndef FEEDER_SPECBUILDTEAMS
+#define FEEDER_SPECBUILDTEAMS 27
+#endif
+#ifndef FEEDER_SPECLAYOUTS_SORT
+#define FEEDER_SPECLAYOUTS_SORT 28
+#endif
+
+#ifndef UI_SPECLAYOUTINFOPANE
+#define UI_SPECLAYOUTINFOPANE 92
+#endif
+#ifndef UI_SPECLAYOUT_NAME
+#define UI_SPECLAYOUT_NAME 93
+#endif
+#ifndef UI_SPECLAYOUT_BUILDCOUNT
+#define UI_SPECLAYOUT_BUILDCOUNT 94
+#endif
+#ifndef UI_SPECLAYOUT_TEAM
+#define UI_SPECLAYOUT_TEAM 95
+#endif
+#ifndef UI_SPECLAYOUTVOTEDETAILS
+#define UI_SPECLAYOUTVOTEDETAILS 96
+#endif
+#ifndef UI_SPECBUILDINFOPANE
+#define UI_SPECBUILDINFOPANE 97
+#endif
+#ifndef UI_SPECBUILDINFOPANEMODEL
+#define UI_SPECBUILDINFOPANEMODEL 98
+#endif
+#ifndef UI_SPECDIALOG_TITLE
+#define UI_SPECDIALOG_TITLE 99
+#endif
+#ifndef UI_SPECDIALOG_MESSAGE
+#define UI_SPECDIALOG_MESSAGE 100
+#endif
+#ifndef UI_SPECLAYOUT_RATING
+#define UI_SPECLAYOUT_RATING 101
+#endif
+#ifndef UI_SPECLAYOUT_RATING_STARS
+#define UI_SPECLAYOUT_RATING_STARS 102
+#endif
+
+#ifndef UI_SHOW_SPECBUILDER
+#define UI_SHOW_SPECBUILDER 0x00000080
+#endif
+#ifndef UI_SHOW_SPEC_LAYOUT_OWNED
+#define UI_SHOW_SPEC_LAYOUT_OWNED 0x00000100
+#endif
+#ifndef UI_SHOW_SPEC_LAYOUT_RATED
+#define UI_SHOW_SPEC_LAYOUT_RATED 0x00000200
+#endif
+
 //
 // ui_main.c
 //
@@ -66,6 +131,10 @@ void UI_DrawConnectScreen(void);
 #define MAX_MOVIES 256
 #define MAX_HELP_INFOPANES 32
 #define MAX_RESOLUTIONS 32
+
+// Spectator Builder Layouts
+#define MAX_SPECLAYOUTS 256
+#define MAX_SPECBUILDTEAMS 3
 
 typedef struct {
     const char *mapName;
@@ -319,6 +388,23 @@ typedef struct {
     qboolean inGameLoad;
 
     qboolean voiceCmd;
+
+    // Spectator Builder Layouts
+    char specLayoutNames[MAX_SPECLAYOUTS][MAX_NAME_LENGTH];
+    char specLayoutCreators[MAX_SPECLAYOUTS][MAX_COLORFUL_NAME_LENGTH];
+    char specLayoutDates[MAX_SPECLAYOUTS][MAX_STRING_CHARS];
+    int specLayoutBuildingCounts[MAX_SPECLAYOUTS];
+    int specLayoutTeams[MAX_SPECLAYOUTS];  // 0=humans, 1=aliens, 2=both
+    float specLayoutRatings[MAX_SPECLAYOUTS];  // average rating 1.0-5.0
+    int specLayoutRatingCounts[MAX_SPECLAYOUTS];  // number of ratings
+    int specLayoutVoteCounts[MAX_SPECLAYOUTS];  // vote count for voting
+    int specLayoutCount;
+    int specLayoutIndex;
+
+    // Spectator Builder Teams
+    char specBuildTeams[MAX_SPECBUILDTEAMS][MAX_NAME_LENGTH];
+    int specBuildTeamCount;
+    int specBuildTeamIndex;
 } uiInfo_t;
 
 extern uiInfo_t uiInfo;
@@ -328,11 +414,12 @@ char *UI_Cvar_VariableString(const char *var_name);
 void UI_SetColor(const float *rgba);
 void UI_AdjustFrom640(float *x, float *y, float *w, float *h);
 void UI_Refresh(int time);
-void UI_DrawCorners( float x, float y, float w, float h, float size, const float *style, qhandle_t *pic );
+void UI_DrawCorners(float x, float y, float w, float h, float size, const float *style, qhandle_t *pic);
 void UI_DrawHandlePic(float x, float y, float w, float h, qhandle_t hShader);
 void UI_DrawTopBottom(float x, float y, float w, float h, float size);
 void UI_FillRect(float x, float y, float width, float height, const float *color);
-void UI_FillRoundedRect( float x, float y, float width, float height, float size, const float *style, const float *color );
+void UI_FillRoundedRect(
+    float x, float y, float width, float height, float size, const float *style, const float *color);
 
 //
 // ui_syscalls.c

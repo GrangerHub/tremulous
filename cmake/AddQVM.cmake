@@ -1,20 +1,23 @@
 
 include(CMakeParseArguments)
 
-set(QVM_TOOLS_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/qvm_tools)
-set(Q3CPP_BINARY ${QVM_TOOLS_DIR}/q3cpp )
-set(Q3RCC_BINARY ${QVM_TOOLS_DIR}/q3rcc )
-set(Q3LCC_BINARY ${QVM_TOOLS_DIR}/q3lcc )
-set(Q3ASM_BINARY ${QVM_TOOLS_DIR}/q3asm )
+# Use $<TARGET_FILE:...> so the path resolves correctly for both single-config
+# (Makefiles) and multi-config (Visual Studio) generators. This avoids the
+# per-config subdirectory mismatch (e.g. qvm_tools/Release/q3cpp.exe vs qvm_tools/q3cpp.exe).
+set(Q3CPP_BINARY $<TARGET_FILE:q3cpp>)
+set(Q3RCC_BINARY $<TARGET_FILE:q3rcc>)
+set(Q3LCC_BINARY $<TARGET_FILE:q3lcc>)
+set(Q3ASM_BINARY $<TARGET_FILE:q3asm>)
 
-set(QVM_DEPS ${Q3ASM_BINARY} ${Q3CPP_BINARY} ${Q3LCC_BINARY} ${Q3RCC_BINARY})
+# Depend on the tool targets themselves (not file paths) so CMake builds them first.
+set(QVM_DEPS q3asm q3cpp q3lcc q3rcc)
 
 macro(QVM_COMPILE_ASM defs outfile infile)
     add_custom_command(
         OUTPUT  ${outfile}
         COMMAND ${Q3LCC_BINARY}
-        ARGS    ${ADD_QVM_D} -o ${outfile} ${infile}
-        DEPENDS ${QVM_DEPS} 
+        ARGS    ${defs} -I${CMAKE_SOURCE_DIR}/src -o ${outfile} ${infile}
+        DEPENDS ${QVM_DEPS}
         )
     set_source_files_properties(${outfile} PROPERTIES GENERATED TRUE)
 endmacro()
