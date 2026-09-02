@@ -4785,12 +4785,13 @@ static void CL_InitRef(void)
     cl_renderer = Cvar_Get("cl_renderer", "opengl2", CVAR_ARCHIVE | CVAR_LATCH);
 
     // Map cvar values to actual DLL filenames produced by the build system.
-    // The CMake targets output renderergl1.dll and renderergl2.dll.
-    // Custom renderer names use the renderer_<name> pattern as fallback.
+    // The canonical Makefile output names are renderer_opengl1.dll and
+    // renderer_opengl2.dll (CMake matches via OUTPUT_NAME). Custom renderer
+    // names use the renderer_<name> pattern as fallback.
     if (!Q_stricmp(cl_renderer->string, "opengl1"))
-        Com_sprintf(dllName, sizeof(dllName), "renderergl1" DLL_EXT);
+        Com_sprintf(dllName, sizeof(dllName), "renderer_opengl1" DLL_EXT);
     else if (!Q_stricmp(cl_renderer->string, "opengl2"))
-        Com_sprintf(dllName, sizeof(dllName), "renderergl2" DLL_EXT);
+        Com_sprintf(dllName, sizeof(dllName), "renderer_opengl2" DLL_EXT);
     else
         Com_sprintf(dllName, sizeof(dllName), "renderer_%s" DLL_EXT, cl_renderer->string);
 
@@ -4799,7 +4800,7 @@ static void CL_InitRef(void)
         Com_Printf("failed:\n\"%s\"\n", Sys_LibraryError());
         Cvar_ForceReset("cl_renderer");
 
-        Com_sprintf(dllName, sizeof(dllName), "renderergl1" DLL_EXT);
+        Com_sprintf(dllName, sizeof(dllName), "renderer_opengl1" DLL_EXT);
         rendererLib = Sys_LoadDll(dllName, false);
     }
 

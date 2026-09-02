@@ -136,6 +136,10 @@ else(NOT USE_RENDERER_DLOPEN)
         ${renderergl2_SRCS}
         )
 
+    # Match the canonical Makefile output name - the engine loads
+    # renderer_opengl2.dll at runtime (see cl_main.cpp).
+    set_target_properties(renderergl2 PROPERTIES OUTPUT_NAME renderer_opengl2)
+
     # When building as a DLL, USE_RENDERER_DLOPEN must be defined at compile
     # time so GetRefAPI gets extern "C" + __declspec(dllexport).  Without it
     # the symbol gets C++ name mangling and the client cannot find it via

@@ -76,11 +76,13 @@ set(CURL_USE_LDAPS OFF CACHE BOOL "" FORCE)
 # Disable curl features we don't need
 set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)           # We don't need curl.exe
 set(BUILD_LIBCURL_DOCS OFF CACHE BOOL "" FORCE)       # Don't build man pages
+set(BUILD_STATIC_LIBS ON CACHE BOOL "" FORCE)         # Static libcurl for direct linking
 set(ENABLE_ARES OFF CACHE BOOL "" FORCE)              # c-ares DNS resolver (not needed)
 set(ENABLE_CURLDEBUG OFF CACHE BOOL "" FORCE)         # TrackMemory debugging
 set(ENABLE_CURL_MANUAL OFF CACHE BOOL "" FORCE)       # curl manual page
 set(ENABLE_DEBUG OFF CACHE BOOL "" FORCE)             # curl debug features
-set(ENABLE_WEBSOCKETS OFF CACHE BOOL "" FORCE)        # Experimental websockets
+set(ENABLE_WEBSOCKETS OFF CACHE BOOL "" FORCE)        # Experimental websockets (deprecated name)
+set(CURL_DISABLE_WEBSOCKETS ON CACHE BOOL "" FORCE)   # Experimental websockets (curl 8.22+)
 set(FORCE_STATIC_VCRT OFF CACHE BOOL "" FORCE)        # /MT for static VC runtime (OpenAL)
 set(PICKY_COMPILER OFF CACHE BOOL "" FORCE)           # Extra compiler warnings
 set(USE_MSH3 OFF CACHE BOOL "" FORCE)                 # msquic for HTTP/3
@@ -88,15 +90,26 @@ set(USE_NGTCP2 OFF CACHE BOOL "" FORCE)               # ngtcp2/nghttp3 for HTTP/
 set(USE_QUICHE OFF CACHE BOOL "" FORCE)               # quiche for HTTP/3
 set(USE_WIN32_IDN OFF CACHE BOOL "" FORCE)            # WinIDN for IDN support
 
+# TLS backend: use the Windows-native Schannel backend (platform default per
+# curl's own guidance; uses the Windows system certificate store and needs no
+# external TLS dependency for the static build). Verified against
+# curl 8.22.0-DEV: HTTPS fetch through external/libs/win64/libcurl.a works.
+if(WIN32)
+    set(CURL_USE_SCHANNEL ON CACHE BOOL "" FORCE)
+endif()
+
 # Curl build options (moved from CMakeLists.txt Phase 2.2)
 set(CURL_DISABLE_TESTS ON CACHE BOOL "" FORCE)         # Disable curl tests
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)             # Disable CMake testing
+set(CURL_USE_LIBSSH2 OFF CACHE BOOL "" FORCE)          # No scp/sftp (libssh2)
 set(CURL_USE_LIBPSL OFF CACHE BOOL "" FORCE)          # Disable libpsl
 set(CURL_ZLIB OFF CACHE BOOL "" FORCE)                # Disable zlib in curl (we use our own)
 set(CURL_BROTLI OFF CACHE BOOL "" FORCE)              # Disable brotli
 set(CURL_ZSTD OFF CACHE BOOL "" FORCE)                # Disable zstd
-set(CURL_NGHTTP2 OFF CACHE BOOL "" FORCE)             # Disable nghttp2 in curl (we use our own)
-set(CURL_USE_LIBIDN2 OFF CACHE BOOL "" FORCE)         # Disable libidn2 in curl
+set(CURL_NGHTTP2 OFF CACHE BOOL "" FORCE)             # Disable nghttp2 (deprecated name)
+set(USE_NGHTTP2 OFF CACHE BOOL "" FORCE)              # Disable nghttp2 (curl 8.22+)
+set(CURL_USE_LIBIDN2 OFF CACHE BOOL "" FORCE)         # Disable libidn2 (deprecated name)
+set(USE_LIBIDN2 OFF CACHE BOOL "" FORCE)              # Disable libidn2 (curl 8.22+)
 
 # --------------------------------------------------------------------------
 # SDL3 Pre-sets

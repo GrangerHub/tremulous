@@ -55,6 +55,10 @@ else(NOT USE_RENDERER_DLOPEN)
         ${renderergl1_SRCS}
         )
 
+    # Match the canonical Makefile output name - the engine loads
+    # renderer_opengl1.dll at runtime (see cl_main.cpp).
+    set_target_properties(renderergl1 PROPERTIES OUTPUT_NAME renderer_opengl1)
+
     # When building as a DLL, USE_RENDERER_DLOPEN must be defined at compile
     # time so GetRefAPI gets extern "C" + __declspec(dllexport).  Without it
     # the symbol gets C++ name mangling and the client cannot find it via
